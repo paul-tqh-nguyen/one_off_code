@@ -1,0 +1,6 @@
+This is my MATLAB implementation of Poisson Image Editing 
+by Perez et al. The work by Perez et al. seeks to seamless
+insert a foreground image onto a background image using
+interpolation machinery based on the Poisson Equation.
+
+See paper for details: http://dl.acm.org/citation.cfm?id=882269

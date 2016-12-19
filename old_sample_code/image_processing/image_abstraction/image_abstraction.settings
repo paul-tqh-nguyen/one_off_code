@@ -1,0 +1,16 @@
+mu 15.0
+numETFIterations 3
+delta_m 1.0
+delta_n 1.0
+sigma_m 3.0
+sigma_c 3.0
+p 0.99
+binary_threshold 1.0
+numFDOGIterations 5
+kernel_dim 13
+blur_kernel_sigma 2.0
+sigma_e 64
+r_e 64
+sigma_g 4.0
+r_g 4.0
+numFBLIterations 5

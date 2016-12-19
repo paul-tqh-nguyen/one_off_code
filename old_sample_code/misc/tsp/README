@@ -1,0 +1,9 @@
+Provided is code to generate TSP art. TSP art is art 
+that attempts to provide visual representations of 
+images using solutions to the Travelling Salesman
+Problem. Since this problem is known to be NP-complete,
+we attempt here to find approximate solutions that are 
+both nearly optimal as well as visually appealing. 
+
+More details are provided here:
+http://www.oberlin.edu/math/faculty/bosch/tspart-page.html

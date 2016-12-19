@@ -1,0 +1,12 @@
+This is a little Python script I threw together rather quickly
+when I was in my fourth year of undergraduate studies to help 
+me prepare for the verbal section of the GRE. 
+
+The script reads the vocabulary from the .csv file (which .csv
+file used is hard coded in the script, this shouldn't be an 
+efficiency problem since Python code is compiled JIT). See
+the provided definitions1.csv for details on the format.
+
+The user is tested on 50 words (this number can be changed in the
+code). The user is not allowed to move on until the question is 
+answered correctly. 

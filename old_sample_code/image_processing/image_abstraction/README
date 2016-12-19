@@ -1,0 +1,11 @@
+This is an implementation of Kang's Flow-Based Image Abstraction in C/C++.
+
+Image abstraction is a form of non-photorealistic rendering that produces
+a stylized visual abstraction of a given image that conveys shape outline
+information as well as color information in a manner that preserves the 
+natural characteristic of the image.
+
+This is very computationally intensive and very sensitive to the parameter values.
+
+See Kang's paper for for further details on the technique: 
+    http://www.cs.umsl.edu/~kang/Papers/kang_tvcg09.pdf

@@ -1,0 +1,4 @@
+We use a genetic algorithm to find a near optimal parameter tuning for PatchMatch.
+
+Our fitness function seeks those sets of parameters that yield the lowest mean patch
+distance.
