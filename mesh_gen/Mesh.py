@@ -3,11 +3,45 @@
 import random
 import pdb
 import time
-from math import cos, sin, pi
+from math import cos, sin, pi, sqrt
 
 X_COORD=0
 Y_COORD=1
 Z_COORD=2
+
+def mean(l):
+    return sum(l)/float(len(l))
+
+def square(x):
+    return x*x
+    
+def triple_subtraction(A,B):
+    return (B[X_COORD]-A[X_COORD],B[Y_COORD]-A[Y_COORD],B[Z_COORD]-A[Z_COORD])
+
+def euclidean_dist(vector):
+    return sqrt([square(e) for e in vector])
+
+def normalize_vector(v):
+    return map(lambda x:x/euclidean_distance(v),v)
+
+def cross_product(*args): 
+    if len(args)==2:
+        ax = args[0][X_COORD]
+        ay = args[0][Y_COORD]
+        az = args[0][Z_COORD]
+        bx = args[1][X_COORD]
+        by = args[1][Y_COORD]
+        bz = args[1][Z_COORD]
+    if len(args)==6:
+        ax = args[0]
+        ay = args[1]
+        az = args[2]
+        bx = args[3]
+        by = args[4]
+        bz = args[5]
+    else: 
+        assert False
+    return (ay*bz-az*by,az*bx-ax*bz,ax*by-ay*bx)
 
 def rotate_about_x_axis(angle_radians, *args):
     if len(args)==1:
@@ -57,6 +91,21 @@ def rotate_about_z_axis(angle_radians, *args):
     z = z0
     return (x,y,z)
 
+def get_equation_of_bisecting_circle(p1,p2,p3,radius):
+    # https://math.stackexchange.com/questions/73237/parametric-equation-of-a-circle-in-3d-space 
+    p1_to_p2 = triple_subtraction(p2,p1)
+    p3_to_p2 = triple_subtraction(p2,p3)
+    v = normalize_vector(cross_product(p1_to_p2,p3_to_p2)) # axis of rotation for the circle
+    c = p2 # point on axis
+    a = p1_to_p2 # unit vector perpendicular to axis
+    b = cross_product(a,v) # unit vector perpendicular to axis
+    ans_func = lambda theta: (
+                    c[X_COORD]+radius*cos(theta)*a[X_COORD]+radius*sin(theta)*b[X_COORD],
+                    c[Y_COORD]+radius*cos(theta)*a[Y_COORD]+radius*sin(theta)*b[Y_COORD],
+                    c[Z_COORD]+radius*cos(theta)*a[Z_COORD]+radius*sin(theta)*b[Z_COORD],
+                    )
+    return ans_func
+
 class Mesh(object): 
     
     def __init__(self): 
@@ -94,6 +143,115 @@ class Mesh(object):
             f.write("# Faces\n")
             for face in self.face_list:
                 f.write("f "+"".join([str(v_index)+" " for v_index in face])+"\n")
+
+def cube(length=1):
+    m=Mesh()
+    m.add_face([
+                (0,length,0),
+                (length,length,0),
+                (length,0,0),
+                (0,0,0),
+                ]) 
+    m.add_face([
+                (0,0,length),
+                (length,0,length),
+                (length,length,length),
+                (0,length,length),
+                ]) 
+    m.add_face([
+                (0,0,0),
+                (length,0,0),
+                (length,0,length),
+                (0,0,length),
+                ]) 
+    m.add_face([
+                (0,length,length),
+                (length,length,length),
+                (length,length,0),
+                (0,length,0),
+                ]) 
+    m.add_face([
+                (0,0,length),
+                (0,length,length),
+                (0,length,0),
+                (0,0,0),
+                ])
+    m.add_face([
+                (length,0,0),
+                (length,length,0),
+                (length,length,length),
+                (length,0,length),
+                ])
+    return m
+
+def cone(height=10, radius=5, num_triangles=360):
+    # num_triangles is the number of triangles used for the part of the cone that isn't the base 
+    m=Mesh()
+    for triangle_index in range(num_triangles):
+        start_angle = 2*pi/float(num_triangles)*triangle_index
+        end_angle = 2*pi/float(num_triangles)*(triangle_index+1)
+        m.add_face([
+                    (0,0,height),
+                    (radius*sin(end_angle),radius*cos(end_angle),0),
+                    (radius*sin(start_angle),radius*cos(start_angle),0),
+                    ])
+    m.add_face(
+        [(radius*sin(2*pi/float(num_triangles)*triangle_index),radius*cos(2*pi/float(num_triangles)*triangle_index),0) for triangle_index in range(num_triangles)]
+    )
+    for triangle_index in range(num_triangles):
+        start_angle = 2*pi/float(num_triangles)*triangle_index
+    return m
+
+def torus(inner_radius=5, outer_radius=10, num_segments=36, segment_precision=36):
+    # num_segments refers to the number of segments we split the donut/torus into (we cut from the center outward)
+    # segment_precision refers to the number of rectangles used per segment (this is precision along the other dimension)
+    m=Mesh()
+    assert inner_radius < outer_radius
+    tube_radius = (outer_radius-inner_radius)/2.0
+    for segment_index in range(num_segments): # index along the length of the tube (the long part if we're thinking about a regular donut)
+        lengthwise_start_angle = 2*pi/float(num_segments)*segment_index
+        lengthwise_end_angle = 2*pi/float(num_segments)*(segment_index+1)
+        lengthwise_tube_start_center_x = (inner_radius+tube_radius)*cos(lengthwise_start_angle)
+        lengthwise_tube_start_center_y = (inner_radius+tube_radius)*sin(lengthwise_start_angle)
+        lengthwise_tube_start_center_z = 0
+        lengthwise_tube_end_center_x = (inner_radius+tube_radius)*cos(lengthwise_end_angle)
+        lengthwise_tube_end_center_y = (inner_radius+tube_radius)*sin(lengthwise_end_angle)
+        lengthwise_tube_end_center_z = 0
+        for rect_index in range(segment_precision): # index along the tube's circumference
+            slicewise_tube_start_angle = 2*pi/float(segment_precision)*rect_index
+            slicewise_tube_end_angle = 2*pi/float(segment_precision)*(rect_index+1)
+            # innertube coordinates
+            start_circle_coords = rotate_about_z_axis(lengthwise_start_angle, tube_radius*cos(slicewise_tube_start_angle),0,tube_radius*sin(slicewise_tube_start_angle))
+            start_circle_coords_further_along_slice = rotate_about_z_axis(lengthwise_start_angle, tube_radius*cos(slicewise_tube_end_angle),0,tube_radius*sin(slicewise_tube_end_angle))
+            end_circle_coords = rotate_about_z_axis(lengthwise_end_angle, tube_radius*cos(slicewise_tube_start_angle),0,tube_radius*sin(slicewise_tube_start_angle))
+            end_circle_coords_further_along_slice = rotate_about_z_axis(lengthwise_end_angle, tube_radius*cos(slicewise_tube_end_angle),0,tube_radius*sin(slicewise_tube_end_angle))
+            m.add_face([
+                        (lengthwise_tube_end_center_x+end_circle_coords[X_COORD],lengthwise_tube_end_center_y+end_circle_coords[Y_COORD],lengthwise_tube_end_center_z+end_circle_coords[Z_COORD]),
+                        (lengthwise_tube_end_center_x+end_circle_coords_further_along_slice[X_COORD],lengthwise_tube_end_center_y+end_circle_coords_further_along_slice[Y_COORD],lengthwise_tube_end_center_z+end_circle_coords_further_along_slice[Z_COORD]),
+                        (lengthwise_tube_start_center_x+start_circle_coords_further_along_slice[X_COORD],lengthwise_tube_start_center_y+start_circle_coords_further_along_slice[Y_COORD],lengthwise_tube_start_center_z+start_circle_coords_further_along_slice[Z_COORD]),
+                        (lengthwise_tube_start_center_x+start_circle_coords[X_COORD],lengthwise_tube_start_center_y+start_circle_coords[Y_COORD],lengthwise_tube_start_center_z+start_circle_coords[Z_COORD]),
+                        ])
+    return m
+
+def horn(precision=8):
+    m = Mesh()
+    horn_path_and_radii = [
+        ((0,0,0),None),
+        ((0,0,1),1),
+        ((0,1,2),1),
+        ((0,2,3),None),
+        ]
+    # tip of horn
+    for triangle_index in range(precision):
+        m.add_face([
+                    (horn_path_and_radii[0][X_COORD],horn_path_and_radii[0][Y_COORD],horn_path_and_radii[0][Z_COORD]),
+                    (horn_path_and_radii[0][X_COORD],horn_path_and_radii[0][Y_COORD],horn_path_and_radii[0][Z_COORD]),
+                    (horn_path_and_radii[0][X_COORD],horn_path_and_radii[0][Y_COORD],horn_path_and_radii[0][Z_COORD]),
+                    ])
+    #m=cube()
+    #m=cone()
+    m=torus()
+    m.save_to_obj_file("C:/Users/nguye/Desktop/out.obj")
 
 def main():
     # Test code
