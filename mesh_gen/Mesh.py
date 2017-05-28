@@ -143,7 +143,7 @@ def get_equation_of_bisecting_circle(p1,p2,p3,radius):
     if cp != (0,0,0): # i.e. if the 3 points do not form a line
         mean_vector = normalize_vector(tuple_addition(p1,p3)) # Note that this is not the bisecting coplanar vector (that's the variable "a" as we define it below)
         v = mean_vector # axis of rotation for the circle
-        a = normalize_vector() # unit vector perpendicular to axis
+        a = normalize_vector(cp) # unit vector perpendicular to axis
     else:
         v = p1_to_p2 # since the 3 points form a line, that line is the axis of rotation, so we can just choose either of the two vectors we calculated above
         arbitrary_vector = tuple_addition(v,(1,0,0)) # an arbitrary vector
@@ -266,32 +266,11 @@ def torus(inner_radius=5, outer_radius=10, num_segments=36, segment_precision=36
 
 def horn(precision=36):
     m = Mesh()
-    #'''
-    m.add_face([
-                (0,0,0),
-                (0.1,0,0),
-                (0.1,0,1),
-                (0,0,1),
-                ])
-    m.add_face([
-                (0,0,1),
-                (0.1,0,1),
-                (0.1,0,2),
-                (0,0,2),
-                ])
-    circ = get_equation_of_bisecting_circle((0,0,0),(0,0,1),(0,0,2),1) 
-    m.add_face([
-                circ(2*pi*face_index/float(precision))
-                for face_index in range(precision)
-                ])
-    #''' 
-    ''' 
     circ_1 = get_equation_of_bisecting_circle((0,0,0),(0,0,1),(0,1,1),1) 
     circ_2 = get_equation_of_bisecting_circle((0,0,1),(0,1,1),(0,2,1),1) 
     tube_faces = get_faces_for_tube(circ_1, circ_2, precision=36) 
     for e in tube_faces:
         m.add(e)
-    #''' 
     return m
 
 def main():
