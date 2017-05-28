@@ -9,20 +9,64 @@ X_COORD=0
 Y_COORD=1
 Z_COORD=2
 
+class Mesh(object): 
+    
+    def __init__(self): 
+        self.vertex_dict = dict() # Takes a vertex, returns the index of it. 
+        self.face_list = [] # faces are lists. These lists contain vertex indices.
+        self.vertex_count=0
+    
+    def add_vertex(self, *args):
+        if len(args)==1:
+            x = round(args[0][X_COORD],10)
+            y = round(args[0][Y_COORD],10)
+            z = round(args[0][Z_COORD],10)
+        elif len(args)==3:
+            x = round(args[X_COORD],10)
+            y = round(args[Y_COORD],10)
+            z = round(args[Z_COORD],10)
+        else: 
+            assert False
+        if (x,y,z) not in self.vertex_dict:
+            self.vertex_dict[(x,y,z)]= self.vertex_count+1 
+            self.vertex_count += 1
+        return (x,y,z)
+    
+    def add_face(self, v_list):
+        v_list = map(self.add_vertex, v_list)
+        self.face_list.append([self.vertex_dict[v] for v in v_list])
+    
+    def save_to_obj_file(self, output_file):
+        with open(output_file,'w') as f:
+            f.write("# Vertices\n")
+            for i,(coordinate,index) in enumerate(sorted(self.vertex_dict.items(),key=lambda x:x[1])):
+                assert i+1 == index
+                f.write("v "+str(coordinate[X_COORD])+" "+str(coordinate[Y_COORD])+" "+str(coordinate[Z_COORD])+"\n") 
+            f.write("\n\n")
+            f.write("# Faces\n")
+            for face in self.face_list:
+                f.write("f "+"".join([str(v_index)+" " for v_index in face])+"\n")
+
 def mean(l):
     return sum(l)/float(len(l))
 
 def square(x):
     return x*x
-    
-def triple_subtraction(A,B):
-    return (B[X_COORD]-A[X_COORD],B[Y_COORD]-A[Y_COORD],B[Z_COORD]-A[Z_COORD])
 
-def euclidean_dist(vector):
-    return sqrt([square(e) for e in vector])
+def euclidean_distance(vector):
+    return sqrt(sum([square(e) for e in vector]))
+
+def tuple_subtraction(A,B):
+    return tuple(map(lambda e:e[0]-e[1],zip(A,B)))
+
+def tuple_addition(A,B):
+    return tuple(map(lambda e:e[0]+e[1],zip(A,B)))
+
+def dot_product(A,B):
+    return tuple(map(lambda e:e[0]*e[1],zip(A,B)))
 
 def normalize_vector(v):
-    return map(lambda x:x/euclidean_distance(v),v)
+    return tuple(map(lambda x:x/euclidean_distance(v),v))
 
 def cross_product(*args): 
     if len(args)==2:
@@ -32,7 +76,7 @@ def cross_product(*args):
         bx = args[1][X_COORD]
         by = args[1][Y_COORD]
         bz = args[1][Z_COORD]
-    if len(args)==6:
+    elif len(args)==6:
         ax = args[0]
         ay = args[1]
         az = args[2]
@@ -93,56 +137,43 @@ def rotate_about_z_axis(angle_radians, *args):
 
 def get_equation_of_bisecting_circle(p1,p2,p3,radius):
     # https://math.stackexchange.com/questions/73237/parametric-equation-of-a-circle-in-3d-space 
-    p1_to_p2 = triple_subtraction(p2,p1)
-    p3_to_p2 = triple_subtraction(p2,p3)
-    v = normalize_vector(cross_product(p1_to_p2,p3_to_p2)) # axis of rotation for the circle
-    c = p2 # point on axis
-    a = p1_to_p2 # unit vector perpendicular to axis
+    p1_to_p2 = tuple_subtraction(p2,p1)
+    p3_to_p2 = tuple_subtraction(p2,p3)
+    cp = cross_product(p1_to_p2,p3_to_p2)
+    if cp != (0,0,0): # i.e. if the 3 points do not form a line
+        mean_vector = normalize_vector(tuple_addition(p1,p3)) # Note that this is not the bisecting coplanar vector (that's the variable "a" as we define it below)
+        v = mean_vector # axis of rotation for the circle
+        a = normalize_vector() # unit vector perpendicular to axis
+    else:
+        v = p1_to_p2 # since the 3 points form a line, that line is the axis of rotation, so we can just choose either of the two vectors we calculated above
+        arbitrary_vector = tuple_addition(v,(1,0,0)) # an arbitrary vector
+        a = cross_product(v,arbitrary_vector) # we just want the variable a to be perpendicular to v, since the cross product of v and any arbitrary vector is perpendicular to both v and that arbitrary vector, this value works for a.
     b = cross_product(a,v) # unit vector perpendicular to axis
+    c = p2 # point on axis
     ans_func = lambda theta: (
                     c[X_COORD]+radius*cos(theta)*a[X_COORD]+radius*sin(theta)*b[X_COORD],
                     c[Y_COORD]+radius*cos(theta)*a[Y_COORD]+radius*sin(theta)*b[Y_COORD],
                     c[Z_COORD]+radius*cos(theta)*a[Z_COORD]+radius*sin(theta)*b[Z_COORD],
-                    )
+                    )       
     return ans_func
 
-class Mesh(object): 
-    
-    def __init__(self): 
-        self.vertex_dict = dict() # Takes a vertex, returns the index of it. 
-        self.face_list = [] # faces are lists. These lists contain vertex indices.
-        self.vertex_count=0
-    
-    def add_vertex(self, *args):
-        if len(args)==1:
-            x = round(args[0][X_COORD],10)
-            y = round(args[0][Y_COORD],10)
-            z = round(args[0][Z_COORD],10)
-        elif len(args)==3:
-            x = round(args[X_COORD],10)
-            y = round(args[Y_COORD],10)
-            z = round(args[Z_COORD],10)
-        else: 
-            assert False
-        if (x,y,z) not in self.vertex_dict:
-            self.vertex_dict[(x,y,z)]= self.vertex_count+1 
-            self.vertex_count += 1
-        return (x,y,z)
-    
-    def add_face(self, v_list):
-        v_list = map(self.add_vertex, v_list)
-        self.face_list.append([self.vertex_dict[v] for v in v_list])
-    
-    def save_to_obj_file(self, output_file):
-        with open(output_file,'w') as f:
-            f.write("# Vertices\n")
-            for i,(coordinate,index) in enumerate(sorted(self.vertex_dict.items(),key=lambda x:x[1])):
-                assert i+1 == index
-                f.write("v "+str(coordinate[X_COORD])+" "+str(coordinate[Y_COORD])+" "+str(coordinate[Z_COORD])+"\n") 
-            f.write("\n\n")
-            f.write("# Faces\n")
-            for face in self.face_list:
-                f.write("f "+"".join([str(v_index)+" " for v_index in face])+"\n")
+def get_faces_for_tube(circ_func_1, circ_func_2, precision=8):
+    for precision_index in range(precision):
+        start_angle = 2*pi*precision_index/float(precision)
+        end_angle = 2*pi*(precision_index+1)/float(precision)
+        triangle_face_1 = [
+                            circ_func_1(start_angle),
+                            circ_func_1(end_angle),
+                            circ_func_2(end_angle),
+                        ]
+        triangle_face_2 = [
+                            circ_func_1(start_angle),
+                            circ_func_2(end_angle),
+                            circ_func_2(start_angle),
+                        ]
+        faces.append(triangle_face_1)
+        faces.append(triangle_face_2)
+    return faces
 
 def cube(length=1):
     m=Mesh()
@@ -233,31 +264,43 @@ def torus(inner_radius=5, outer_radius=10, num_segments=36, segment_precision=36
                         ])
     return m
 
-def horn(precision=8):
+def horn(precision=36):
     m = Mesh()
-    horn_path_and_radii = [
-        ((0,0,0),None),
-        ((0,0,1),1),
-        ((0,1,2),1),
-        ((0,2,3),None),
-        ]
-    # tip of horn
-    for triangle_index in range(precision):
-        m.add_face([
-                    (horn_path_and_radii[0][X_COORD],horn_path_and_radii[0][Y_COORD],horn_path_and_radii[0][Z_COORD]),
-                    (horn_path_and_radii[0][X_COORD],horn_path_and_radii[0][Y_COORD],horn_path_and_radii[0][Z_COORD]),
-                    (horn_path_and_radii[0][X_COORD],horn_path_and_radii[0][Y_COORD],horn_path_and_radii[0][Z_COORD]),
-                    ])
-    #m=cube()
-    #m=cone()
-    m=torus()
-    m.save_to_obj_file("C:/Users/nguye/Desktop/out.obj")
+    #'''
+    m.add_face([
+                (0,0,0),
+                (0.1,0,0),
+                (0.1,0,1),
+                (0,0,1),
+                ])
+    m.add_face([
+                (0,0,1),
+                (0.1,0,1),
+                (0.1,0,2),
+                (0,0,2),
+                ])
+    circ = get_equation_of_bisecting_circle((0,0,0),(0,0,1),(0,0,2),1) 
+    m.add_face([
+                circ(2*pi*face_index/float(precision))
+                for face_index in range(precision)
+                ])
+    #''' 
+    ''' 
+    circ_1 = get_equation_of_bisecting_circle((0,0,0),(0,0,1),(0,1,1),1) 
+    circ_2 = get_equation_of_bisecting_circle((0,0,1),(0,1,1),(0,2,1),1) 
+    tube_faces = get_faces_for_tube(circ_1, circ_2, precision=36) 
+    for e in tube_faces:
+        m.add(e)
+    #''' 
+    return m
 
 def main():
     # Test code
-    mesh = Mesh()
-    mesh.add_face([(0,0,0),(1,0,0),(0,1,0)])
-    mesh.save_to_obj_file("./out.obj")
+    #m=cube()
+    #m=cone()
+    #m=torus()
+    m=horn()
+    m.save_to_obj_file("C:/Users/nguye/Desktop/out.obj")
     
 
 if __name__ == '__main__':
