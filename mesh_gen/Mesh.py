@@ -150,30 +150,13 @@ def get_equation_of_bisecting_circle(p1,p2,p3,radius):
         a = cross_product(v,arbitrary_vector) # we just want the variable a to be perpendicular to v, since the cross product of v and any arbitrary vector is perpendicular to both v and that arbitrary vector, this value works for a.
     b = cross_product(a,v) # unit vector perpendicular to axis
     c = p2 # point on axis
+    
     ans_func = lambda theta: (
                     c[X_COORD]+radius*cos(theta)*a[X_COORD]+radius*sin(theta)*b[X_COORD],
                     c[Y_COORD]+radius*cos(theta)*a[Y_COORD]+radius*sin(theta)*b[Y_COORD],
                     c[Z_COORD]+radius*cos(theta)*a[Z_COORD]+radius*sin(theta)*b[Z_COORD],
-                    )       
+                    )
     return ans_func
-
-def get_faces_for_tube(circ_func_1, circ_func_2, precision=8):
-    for precision_index in range(precision):
-        start_angle = 2*pi*precision_index/float(precision)
-        end_angle = 2*pi*(precision_index+1)/float(precision)
-        triangle_face_1 = [
-                            circ_func_1(start_angle),
-                            circ_func_1(end_angle),
-                            circ_func_2(end_angle),
-                        ]
-        triangle_face_2 = [
-                            circ_func_1(start_angle),
-                            circ_func_2(end_angle),
-                            circ_func_2(start_angle),
-                        ]
-        faces.append(triangle_face_1)
-        faces.append(triangle_face_2)
-    return faces
 
 def cube(length=1):
     m=Mesh()
@@ -264,13 +247,104 @@ def torus(inner_radius=5, outer_radius=10, num_segments=36, segment_precision=36
                         ])
     return m
 
-def horn(precision=36):
+def horn(precision=360):
     m = Mesh()
-    circ_1 = get_equation_of_bisecting_circle((0,0,0),(0,0,1),(0,1,1),1) 
-    circ_2 = get_equation_of_bisecting_circle((0,0,1),(0,1,1),(0,2,1),1) 
-    tube_faces = get_faces_for_tube(circ_1, circ_2, precision=36) 
+    points = [
+                (0,0,0),
+                (0,0,1),
+                (0,1,2),
+                (0,2,3),
+                ]
+    radii = [
+            None, # no radius bc it's the tip
+            0.5,
+            1,
+            None, # no radius bc it's the last point that we use the determine the orientation of the second to last circle
+            ]
+    def get_circle_equation_for_point_index(point_index):
+        assert point_index > 0 # can't be the first point
+        assert point_index < len(points)-1 # can't be the last point
+        return get_equation_of_bisecting_circle(points[point_index-1],points[point_index],points[point_index+1],radii[point_index])
+    circle_equations = [None]+[get_circle_equation_for_point_index(i) for i in range(1,len(points)-1)]+[None]
+    # we want our circles to connect and look like cylinders
+    # thus, we should make the faces that connect in such a way that makes them look like "straight" cylinders rather than one that's been twisted and thus kind of look like twisted towels
+    # we do this by making the triangles that go between the two circles as "flat" and "straight" as possible. 
+    # we aim to do this heuristically (which means we're too lazy to do it properly and bc we want it to be fast, but this also means that we still may get some twisted cylinders in there)
+    # we'll start with the point at the tip. This will be our first focus point. It'll connect to the point nearest to it in the next circle. Those will define the first triangle to go between thw two.
+    # we'll incrementally in order along the same direction on the circles create the rest of the triangles
+    # the point that the tip was cclosest to is the next focus point. we repeat until we're done. 
+    # the flaw is that we can still get some "twisted" cylinders if the circles are placed a certain way (think about a circle flat on the XY plane with a z-coordinate of zero adn a circle flat on the XY plane that's very far away from the first circle with a z-coordinate of 1. If we draw triangles between the two circles this way, there may be some triangles that cross each other, which gives the twisted look. 
+    cirlce_point_lists_by_point_index = []
+    current_focus_point = points[0]
+    for equation in circle_equations:
+        if equation is None:
+            cirlce_point_lists_by_point_index.append(None)
+            continue
+        points_in_circle = [equation(2*pi*precision_index/float(precision)) for precision_index in range(precision)]
+        nearest_point = None
+        nearest_point_index = None
+        closest_dist=float("inf")
+        for i,p in enumerate(points_in_circle): # we'll use the manhattan distance for speed
+            m_dist = sum(tuple_addition(tuple(map(abs,p)),tuple(map(abs,current_focus_point))))
+            if m_dist<closest_dist:
+                closest_dist = m_dist
+                nearest_point_index = i
+                nearest_point = p
+        current_focus_point = nearest_point
+        new_points = points_in_circle[nearest_point_index:]+points_in_circle[:nearest_point_index]
+        cirlce_point_lists_by_point_index.append(new_points)
+    cirlce_point_lists_by_point_index.append(None)
+    # Tip of horn to first circle
+    tip_point = points[0]
+    first_circle_points = cirlce_point_lists_by_point_index[1]
+    for point_index, point in enumerate(first_circle_points):
+        next_point = first_circle_points[(point_index+1)%len(first_circle_points)]
+        m.add_face([
+                    tip_point,
+                    point,
+                    next_point,
+                    ])
+    # Middle tube pieces
+    for tube_index in range(1,len(points)-2):
+        first_points = cirlce_point_lists_by_point_index[tube_index]
+        second_points = cirlce_point_lists_by_point_index[tube_index+1]
+        for precision_index in range(precision):
+            m.add_face([
+                        second_points[(precision_index+1)%precision],
+                        first_points[(precision_index+1)%precision],
+                        first_points[precision_index],
+                        ])
+            m.add_face([
+                        second_points[precision_index],
+                        second_points[(precision_index+1)%precision],
+                        first_points[precision_index],
+                        ])
+            
+    '''
+    circ_1 = get_equation_of_bisecting_circle((0,0,0),(0,0,1),(0,1,1),1)
+    circ_2 = get_equation_of_bisecting_circle((0,0,1),(0,1,1),(0,2,1),1)
+    
+    faces = list()
+    for precision_index in range(precision):
+        start_angle = 2*pi*precision_index/float(precision)
+        end_angle = 2*pi*(precision_index+1)/float(precision)
+        triangle_face_1 = [
+                            circ_func_2(end_angle),
+                            circ_func_1(end_angle),
+                            circ_func_1(start_angle),
+                        ]
+        triangle_face_2 = [
+                            circ_func_2(start_angle),
+                            circ_func_2(end_angle),
+                            circ_func_1(start_angle),
+                        ]
+        faces.append(triangle_face_1)
+        faces.append(triangle_face_2)
+    
+    tube_faces = get_faces_for_tube(circ_1, circ_2, precision)
     for e in tube_faces:
-        m.add(e)
+        m.add_face(e)
+    '''
     return m
 
 def main():
