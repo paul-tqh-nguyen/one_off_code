@@ -147,8 +147,8 @@ def get_equation_of_bisecting_circle(p1,p2,p3,radius):
     else:
         v = p1_to_p2 # since the 3 points form a line, that line is the axis of rotation, so we can just choose either of the two vectors we calculated above
         arbitrary_vector = tuple_addition(v,(1,0,0)) # an arbitrary vector
-        a = cross_product(v,arbitrary_vector) # we just want the variable a to be perpendicular to v, since the cross product of v and any arbitrary vector is perpendicular to both v and that arbitrary vector, this value works for a.
-    b = cross_product(a,v) # unit vector perpendicular to axis
+        a = normalize_vector(cross_product(v,arbitrary_vector)) # we just want the variable a to be perpendicular to v, since the cross product of v and any arbitrary vector is perpendicular to both v and that arbitrary vector, this value works for a.
+    b = normalize_vector(cross_product(a,v)) # unit vector perpendicular to axis
     c = p2 # point on axis
     
     ans_func = lambda theta: (
@@ -247,7 +247,7 @@ def torus(inner_radius=5, outer_radius=10, num_segments=36, segment_precision=36
                         ])
     return m
 
-def horn(precision=360):
+def horn(precision=36):
     m = Mesh()
     '''
     points = [
@@ -263,17 +263,20 @@ def horn(precision=360):
 (0,90,-5.877852522924734),
                 ]
     #'''
-    points = [(0,x*10,4*sin(2*pi*x/10.0)) for x in range(7)]
+    points = [(0,x*10,4*sin(2*pi*x/10.0)) for x in range(4,8)]
     radii = [
             None, # no radius bc it's the tip0.0
-            0.1,
-            0.2,
-            0.3,
-            0.4,
-            0.5,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
             None, # no radius bc it's the last point that we use the determine the orientation of the second to last circle
             ]
-    assert (len(points)==len(radii))
+    #assert (len(points)==len(radii))
     def get_circle_equation_for_point_index(point_index):
         assert point_index > 0 # can't be the first point
         assert point_index < len(points)-1 # can't be the last point
@@ -289,21 +292,27 @@ def horn(precision=360):
     # the flaw is that we can still get some "twisted" cylinders if the circles are placed a certain way (think about a circle flat on the XY plane with a z-coordinate of zero adn a circle flat on the XY plane that's very far away from the first circle with a z-coordinate of 1. If we draw triangles between the two circles this way, there may be some triangles that cross each other, which gives the twisted look. 
     cirlce_point_lists_by_point_index = []
     current_focus_point = points[0]
-    for equation in circle_equations:
+    for i,equation in enumerate(circle_equations):
         if equation is None:
             cirlce_point_lists_by_point_index.append(None)
             continue
         points_in_circle = [equation(2*pi*precision_index/float(precision)) for precision_index in range(precision)]
+        '''
+        if i==2:
+            pdb.set_trace()
+        #'''
         nearest_point = None
         nearest_point_index = None
         closest_dist=float("inf")
-        for i,p in enumerate(points_in_circle): # we'll use the manhattan distance for speed
-            m_dist = sum(tuple_addition(tuple(map(abs,p)),tuple(map(abs,current_focus_point))))
-            if m_dist<closest_dist:
-                closest_dist = m_dist
+        for i,p in enumerate(points_in_circle): 
+            #dist = sum(tuple_addition(tuple(map(abs,p)),tuple(map(abs,current_focus_point)))) # we'll use the manhattan distance for speed
+            dist = sum(map(square,tuple_subtraction(p,current_focus_point))) # SSD
+            if dist<closest_dist:
+                closest_dist = dist
                 nearest_point_index = i
                 nearest_point = p
         current_focus_point = nearest_point
+        #nearest_point_index=0
         new_points = points_in_circle[nearest_point_index:]+points_in_circle[:nearest_point_index]
         cirlce_point_lists_by_point_index.append(new_points)
     cirlce_point_lists_by_point_index.append(None)
