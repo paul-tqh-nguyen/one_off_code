@@ -249,18 +249,31 @@ def torus(inner_radius=5, outer_radius=10, num_segments=36, segment_precision=36
 
 def horn(precision=360):
     m = Mesh()
+    '''
     points = [
-                (0,0,0),
-                (0,0,1),
-                (0,1,2),
-                (0,2,3),
+(0,0,0.0),
+(0,10,5.877852522924732),
+(0,20,9.510565162951535),
+(0,30,9.510565162951536),
+(0,40,5.877852522924733),
+(0,50,1.2246467991473533e-15),
+(0,60,-5.87785252292473),
+(0,70,-9.510565162951535),
+(0,80,-9.510565162951536),
+(0,90,-5.877852522924734),
                 ]
+    #'''
+    points = [(0,x*10,4*sin(2*pi*x/10.0)) for x in range(7)]
     radii = [
-            None, # no radius bc it's the tip
+            None, # no radius bc it's the tip0.0
+            0.1,
+            0.2,
+            0.3,
+            0.4,
             0.5,
-            1,
             None, # no radius bc it's the last point that we use the determine the orientation of the second to last circle
             ]
+    assert (len(points)==len(radii))
     def get_circle_equation_for_point_index(point_index):
         assert point_index > 0 # can't be the first point
         assert point_index < len(points)-1 # can't be the last point
@@ -319,32 +332,6 @@ def horn(precision=360):
                         second_points[(precision_index+1)%precision],
                         first_points[precision_index],
                         ])
-            
-    '''
-    circ_1 = get_equation_of_bisecting_circle((0,0,0),(0,0,1),(0,1,1),1)
-    circ_2 = get_equation_of_bisecting_circle((0,0,1),(0,1,1),(0,2,1),1)
-    
-    faces = list()
-    for precision_index in range(precision):
-        start_angle = 2*pi*precision_index/float(precision)
-        end_angle = 2*pi*(precision_index+1)/float(precision)
-        triangle_face_1 = [
-                            circ_func_2(end_angle),
-                            circ_func_1(end_angle),
-                            circ_func_1(start_angle),
-                        ]
-        triangle_face_2 = [
-                            circ_func_2(start_angle),
-                            circ_func_2(end_angle),
-                            circ_func_1(start_angle),
-                        ]
-        faces.append(triangle_face_1)
-        faces.append(triangle_face_2)
-    
-    tube_faces = get_faces_for_tube(circ_1, circ_2, precision)
-    for e in tube_faces:
-        m.add_face(e)
-    '''
     return m
 
 def main():
