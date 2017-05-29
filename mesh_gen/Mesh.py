@@ -263,19 +263,19 @@ def horn(precision=36):
 (0,90,-5.877852522924734),
                 ]
     #'''
-    points = [(0,x*10,4*sin(2*pi*x/10.0)) for x in range(4,8)]
-    radii = [
-            None, # no radius bc it's the tip0.0
-            1,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1,
-            1,
-            None, # no radius bc it's the last point that we use the determine the orientation of the second to last circle
-            ]
+    #points = [(0,x*10,10*sin(2*pi*x/10.0)) for x in range(100)]
+    num_points=1000
+    def f(x):
+        return sin(x)
+    start_x = 0
+    end_x = 10
+    input_values = map(lambda x:(x/float(num_points-1))*(end_x-start_x)+start_x,range(num_points))
+    points = [(10*x,10*f(x),0) for x in input_values]
+    radii = [1 for i in range(num_points)]
+    # first element of radii is None since the first point is the tip of the horn
+    # last element is also None since we don't actually draw it, we just use it to determine the angle of the last circle
+    radii[0]=None
+    radii[-1]=None
     #assert (len(points)==len(radii))
     def get_circle_equation_for_point_index(point_index):
         assert point_index > 0 # can't be the first point
@@ -286,33 +286,28 @@ def horn(precision=36):
     # thus, we should make the faces that connect in such a way that makes them look like "straight" cylinders rather than one that's been twisted and thus kind of look like twisted towels
     # we do this by making the triangles that go between the two circles as "flat" and "straight" as possible. 
     # we aim to do this heuristically (which means we're too lazy to do it properly and bc we want it to be fast, but this also means that we still may get some twisted cylinders in there)
-    # we'll start with the point at the tip. This will be our first focus point. It'll connect to the point nearest to it in the next circle. Those will define the first triangle to go between thw two.
-    # we'll incrementally in order along the same direction on the circles create the rest of the triangles
-    # the point that the tip was cclosest to is the next focus point. we repeat until we're done. 
-    # the flaw is that we can still get some "twisted" cylinders if the circles are placed a certain way (think about a circle flat on the XY plane with a z-coordinate of zero adn a circle flat on the XY plane that's very far away from the first circle with a z-coordinate of 1. If we draw triangles between the two circles this way, there may be some triangles that cross each other, which gives the twisted look. 
+    # the heuristic that we're using is to make the triangles as much like right triangles as possible (in terms of angle)
     cirlce_point_lists_by_point_index = []
     current_focus_point = points[0]
+    current_focus_point_neighbor = tuple_addition(points[0],(0,0,1)) # any point will work here since it doesn't matter who the neighbor is since the first tube is a cone
     for i,equation in enumerate(circle_equations):
         if equation is None:
             cirlce_point_lists_by_point_index.append(None)
             continue
         points_in_circle = [equation(2*pi*precision_index/float(precision)) for precision_index in range(precision)]
-        '''
-        if i==2:
-            pdb.set_trace()
-        #'''
         nearest_point = None
         nearest_point_index = None
         closest_dist=float("inf")
         for i,p in enumerate(points_in_circle): 
             #dist = sum(tuple_addition(tuple(map(abs,p)),tuple(map(abs,current_focus_point)))) # we'll use the manhattan distance for speed
-            dist = sum(map(square,tuple_subtraction(p,current_focus_point))) # SSD
+            #dist = sum(map(square,tuple_subtraction(p,current_focus_point))) # SSD
+            dist = sum(cross_product(tuple_subtraction(current_focus_point_neighbor,current_focus_point),tuple_subtraction(p,current_focus_point)))
             if dist<closest_dist:
                 closest_dist = dist
                 nearest_point_index = i
                 nearest_point = p
+                current_focus_point_neighbor = points_in_circle[(i+1)%precision]
         current_focus_point = nearest_point
-        #nearest_point_index=0
         new_points = points_in_circle[nearest_point_index:]+points_in_circle[:nearest_point_index]
         cirlce_point_lists_by_point_index.append(new_points)
     cirlce_point_lists_by_point_index.append(None)
