@@ -11,6 +11,8 @@ Created : 05/03/2019
 File Organization:
 * Misc Utilities
 * arXiv Scraping Utilities
+** Top Level arXiv Scraping Utilities
+** "Recent" Pages arXiv Scraping Utilities
 * Main Runner
 
 """
@@ -35,9 +37,12 @@ import requests
 
 # @todo move these somewhere more general
 
-def p1(iterable):
+def p1(iterable, number_of_newlines=1):
+    number_of_necessary_additional_newlines = (number_of_newlines - 1)
     for element in iterable:
-        print(element)
+        element_string = str(element)
+        additional_new_lines = ("\n"*number_of_necessary_additional_newlines)
+        print(element_string+additional_new_lines)
 
 def timer(function): # @todo make this only do something when we're in debug mode
     def timed(*args, **kw):
@@ -60,11 +65,19 @@ def execfile(file_location):
 
 ARXIV_URL = "https://arxiv.org/"
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=256)
+def get_text_at_url(url):
+    get_response = requests.get(url)
+    text = get_response.text
+    return text
+
 def arxiv_main_page_text():
-    get_response = requests.get(ARXIV_URL)
-    arxiv_main_page_text = get_response.text
+    arxiv_main_page_text = get_text_at_url(ARXIV_URL)
     return arxiv_main_page_text
+
+######################################
+# Top Level arXiv Scraping Utilities #
+######################################
 
 def arxiv_recent_page_title_and_page_link_string_iterator():
     text = arxiv_main_page_text()
@@ -103,6 +116,68 @@ def is_arxiv_recent_page_link(link_string):
     is_arxiv_recent_page_link = (string_pattern_match_result is not None)
     return is_arxiv_recent_page_link
 
+###########################################
+# "Recent" Pages arXiv Scraping Utilities #
+###########################################
+
+def recent_tester():
+    recent_page_url = "https://arxiv.org/list/math.IT/recent"
+    text = get_text_at_url(recent_page_url)
+    soup = BeautifulSoup(text, features="lxml")
+    definition_lists = soup.find_all('dl')
+    #p1(definition_lists, 30)
+    definition_list = definition_lists[0]
+    
+    definition_terms = definition_list.find_all("dt")
+    definition_term = definition_terms[0]
+    print("\ndefinition_term")
+    print(definition_term)
+    
+    link_to_page_with_abstract = definition_term.find("a", title="Abstract")
+    print("\nlink_to_page_with_abstract")
+    print(link_to_page_with_abstract)
+    
+    definition_descriptions = definition_list.find_all("dd")
+    definition_description = definition_descriptions [0]
+    
+    print("\ndefinition_description")
+    print(definition_description)
+    authors_division = definition_description.find("div", attrs={"class":"list-authors"})
+    authors_division_links = authors_division.find_all("a")
+    
+    print("\nauthors_division_links")
+    print(authors_division_links)
+    
+    subjects_division = definition_description.find("div", attrs={"class":"list-subjects"})
+    primary_subject_span = subjects_division.find("span", attrs={"class":"primary-subject"})
+    primary_subject_text = primary_subject_span.text
+    secondary_subjects = primary_subject_span.next_sibling
+    print("subjects_division")
+    print(subjects_division)
+    print("primary_subject_text")
+    print(primary_subject_text)
+    print("secondary_subjects")
+    print(secondary_subjects)
+    print("[secondary_subjects]")
+    print([secondary_subjects])
+
+    title_division = definition_description.find("div", attrs={"class":"list-title"})
+    title_header_span = title_division.find("span", text="Title:", attrs={"class":"descriptor"})
+    title_text = title_header_span.next_sibling
+    title_text_trimmed = title_text.strip()
+    print("title_division")
+    print(title_division)
+    print("title_header_span")
+    print(title_header_span)
+    print("title_text")
+    print(title_text)
+    print("title_text_trimmed")
+    print(title_text_trimmed)
+    
+    
+    
+    return None
+
 ###############
 # Main Runner #
 ###############
@@ -110,7 +185,11 @@ def is_arxiv_recent_page_link(link_string):
 # @todo get rid of this section after package becomes stable
 
 def main():
+    print("Research Fields & Recent Page Links")
     p1(arxiv_recent_page_title_and_page_link_string_iterator())
+    print("\n\n")
+    print("Testing")
+    print(recent_tester())
     return None
 
 if __name__ == '__main__':
