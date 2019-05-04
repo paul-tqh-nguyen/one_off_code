@@ -92,4 +92,6 @@ def anchor_link_is_arxiv_recent_page_link_with_research_field_denoting_text(anch
 arxiv_recent_page_link_reg_ex = re.compile("/list/.+/recent")
 
 def is_arxiv_recent_page_link(link_string):
-    return (arxiv_recent_page_link_reg_ex.match(link_string) is not None)
+    string_pattern_match_result = arxiv_recent_page_link_reg_ex.match(link_string)
+    is_arxiv_recent_page_link = (string_pattern_match_result is not None)
+    return is_arxiv_recent_page_link
