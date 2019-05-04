@@ -26,6 +26,7 @@ import time
 from functools import lru_cache
 import re
 import urllib.parse
+from warnings import warn
 
 #Third Party Imports
 from bs4 import BeautifulSoup
@@ -120,63 +121,55 @@ def is_arxiv_recent_page_link(link_string):
 # "Recent" Pages arXiv Scraping Utilities #
 ###########################################
 
-def recent_tester():
-    recent_page_url = "https://arxiv.org/list/math.IT/recent"
+def extract_info_from_recent_page_url(recent_page_url): # @todo consider returning JSON
+    '''The "Recent" page includes a bunch of papers. We return an iterator yielding tuples. The tuples are of the form (LINK_TO_PAPER_PAGE, TITLE, AUTHOR_TO_AUTHOR_LINK_DOUBLES, PRIMARY_SUBJECT, SECONDARY_SUBJECTS).'''
     text = get_text_at_url(recent_page_url)
     soup = BeautifulSoup(text, features="lxml")
     definition_lists = soup.find_all('dl')
-    #p1(definition_lists, 30)
-    definition_list = definition_lists[0]
-    
-    definition_terms = definition_list.find_all("dt")
-    definition_term = definition_terms[0]
-    print("\ndefinition_term")
-    print(definition_term)
-    
-    link_to_page_with_abstract = definition_term.find("a", title="Abstract")
-    print("\nlink_to_page_with_abstract")
-    print(link_to_page_with_abstract)
-    
-    definition_descriptions = definition_list.find_all("dd")
-    definition_description = definition_descriptions [0]
-    
-    print("\ndefinition_description")
-    print(definition_description)
-    authors_division = definition_description.find("div", attrs={"class":"list-authors"})
-    authors_division_links = authors_division.find_all("a")
-    
-    print("\nauthors_division_links")
-    print(authors_division_links)
-    
-    subjects_division = definition_description.find("div", attrs={"class":"list-subjects"})
-    primary_subject_span = subjects_division.find("span", attrs={"class":"primary-subject"})
-    primary_subject_text = primary_subject_span.text
-    secondary_subjects = primary_subject_span.next_sibling
-    print("subjects_division")
-    print(subjects_division)
-    print("primary_subject_text")
-    print(primary_subject_text)
-    print("secondary_subjects")
-    print(secondary_subjects)
-    print("[secondary_subjects]")
-    print([secondary_subjects])
+    result_iterator = map(extract_info_from_recent_pages_definition_list, definition_lists)
+    return result_iterator
 
-    title_division = definition_description.find("div", attrs={"class":"list-title"})
-    title_header_span = title_division.find("span", text="Title:", attrs={"class":"descriptor"})
-    title_text = title_header_span.next_sibling
-    title_text_trimmed = title_text.strip()
-    print("title_division")
-    print(title_division)
-    print("title_header_span")
-    print(title_header_span)
-    print("title_text")
-    print(title_text)
-    print("title_text_trimmed")
-    print(title_text_trimmed)
-    
-    
-    
-    return None
+def extract_info_from_recent_pages_definition_list(definition_list):
+    result = None
+    definition_terms = definition_list.find_all("dt")
+    definition_descriptions = definition_list.find_all("dd")
+    if not (= len(definition_terms) len(definition_descriptions)):
+        warn("{definition_list} could not be parsed properly".format(definition_list=definition_list), RuntimeWarning)
+    else:
+        term_description_doubles = zip(definition_terms, definition_descriptions)
+        result = extract_info_from_definition_term_description_doubles(term_description_doubles)
+    return result
+
+def extract_info_from_definition_term_description_doubles(term_description_doubles):
+    result = map(extract_info_from_definition_term_description_double, term_description_doubles)
+    return result
+
+def extract_info_from_definition_term_description_double(term_description_double)
+        definition_term, definition_description = term_description_double
+        
+        anchor_with_relative_link_to_paper_page = definition_term.find("a", title="Abstract")
+        relative_link_to_paper_page = anchor_with_relative_link_to_paper_page.get("href")
+        link_to_paper_page = concatenate_relative_link_to_arxiv_base_url(relative_link_to_paper_page)
+        
+        title_division = definition_description.find("div", attrs={"class":"list-title"})
+        title_header_span = title_division.find("span", text="Title:", attrs={"class":"descriptor"})
+        title_text_untrimmed = title_header_span.next_sibling
+        title = title_text.strip()
+        
+        authors_division = definition_description.find("div", attrs={"class":"list-authors"})
+        authors_division_anchors = authors_division.find_all("a")
+        authors = map(lambda link: link.get("href"), authors_division_anchors)
+        author_links = map(lanbda link.text, authors_division_anchors)
+        author_to_author_link_doubles = zip(authors, author_links)
+        
+        subjects_division = definition_description.find("div", attrs={"class":"list-subjects"})
+        primary_subject_span = subjects_division.find("span", attrs={"class":"primary-subject"})
+        primary_subject = primary_subject_span.text
+        
+        # secondary_subjects = primary_subject_span.next_sibling
+        secondary_subjects = None # stub
+        
+        result = (link_to_paper_page, title, author_to_author_link_doubles, primary_subject, secondary_subjects)
 
 ###############
 # Main Runner #
