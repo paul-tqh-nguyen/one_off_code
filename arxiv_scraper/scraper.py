@@ -21,14 +21,14 @@ File Organization:
 # @todo make sure everything is used
 # @todo write tests
 
-# Standard Library Imports
+# Imports
 import time
+import functools
 from functools import lru_cache
 import re
 import urllib.parse
+import itertools
 from warnings import warn
-
-#Third Party Imports
 from bs4 import BeautifulSoup
 import requests
 
@@ -126,50 +126,56 @@ def extract_info_from_recent_page_url(recent_page_url): # @todo consider returni
     text = get_text_at_url(recent_page_url)
     soup = BeautifulSoup(text, features="lxml")
     definition_lists = soup.find_all('dl')
-    result_iterator = map(extract_info_from_recent_pages_definition_list, definition_lists)
+    info_tuple_iterators = map(extract_info_tuple_iterator_from_recent_pages_definition_list, definition_lists)
+    result_iterator = functools.reduce(itertools.chain, info_tuple_iterators)
     return result_iterator
 
-def extract_info_from_recent_pages_definition_list(definition_list):
-    result = None
+def extract_info_tuple_iterator_from_recent_pages_definition_list(definition_list):
+    info_tuple_iterator = None
     definition_terms = definition_list.find_all("dt")
     definition_descriptions = definition_list.find_all("dd")
-    if not (= len(definition_terms) len(definition_descriptions)):
+    if not len(definition_terms) == len(definition_descriptions):
         warn("{definition_list} could not be parsed properly".format(definition_list=definition_list), RuntimeWarning)
     else:
         term_description_doubles = zip(definition_terms, definition_descriptions)
-        result = extract_info_from_definition_term_description_doubles(term_description_doubles)
+        iterator_of_info_tuple_iterators = map(extract_info_tuple_iterator_from_definition_term_description_doubles,term_description_doubles)
+        info_tuple_iterator = functools.reduce(itertools.chain, iterator_of_info_tuple_iterators)
+    return info_tuple_iterator
+
+def extract_info_tuple_iterator_from_definition_term_description_doubles(term_description_doubles):
+    result = map(extract_info_tuple_from_definition_term_description_double, term_description_doubles)
     return result
 
-def extract_info_from_definition_term_description_doubles(term_description_doubles):
-    result = map(extract_info_from_definition_term_description_double, term_description_doubles)
-    return result
+def extract_info_tuple_from_definition_term_description_double(term_description_double):
+    print("term_description_double") #there's some sort of error here
+    print(len(list(term_description_double)))
+    print(list(term_description_double))
+    definition_term, definition_description = term_description_double
 
-def extract_info_from_definition_term_description_double(term_description_double)
-        definition_term, definition_description = term_description_double
-        
-        anchor_with_relative_link_to_paper_page = definition_term.find("a", title="Abstract")
-        relative_link_to_paper_page = anchor_with_relative_link_to_paper_page.get("href")
-        link_to_paper_page = concatenate_relative_link_to_arxiv_base_url(relative_link_to_paper_page)
-        
-        title_division = definition_description.find("div", attrs={"class":"list-title"})
-        title_header_span = title_division.find("span", text="Title:", attrs={"class":"descriptor"})
-        title_text_untrimmed = title_header_span.next_sibling
-        title = title_text.strip()
-        
-        authors_division = definition_description.find("div", attrs={"class":"list-authors"})
-        authors_division_anchors = authors_division.find_all("a")
-        authors = map(lambda link: link.get("href"), authors_division_anchors)
-        author_links = map(lanbda link.text, authors_division_anchors)
-        author_to_author_link_doubles = zip(authors, author_links)
-        
-        subjects_division = definition_description.find("div", attrs={"class":"list-subjects"})
-        primary_subject_span = subjects_division.find("span", attrs={"class":"primary-subject"})
-        primary_subject = primary_subject_span.text
-        
-        # secondary_subjects = primary_subject_span.next_sibling
-        secondary_subjects = None # stub
-        
-        result = (link_to_paper_page, title, author_to_author_link_doubles, primary_subject, secondary_subjects)
+    anchor_with_relative_link_to_paper_page = definition_term.find("a", title="Abstract")
+    relative_link_to_paper_page = anchor_with_relative_link_to_paper_page.get("href")
+    link_to_paper_page = concatenate_relative_link_to_arxiv_base_url(relative_link_to_paper_page)
+    
+    title_division = definition_description.find("div", attrs={"class":"list-title"})
+    title_header_span = title_division.find("span", text="Title:", attrs={"class":"descriptor"})
+    title_text_untrimmed = title_header_span.next_sibling
+    title = title_text_untrimmed.strip()
+    
+    authors_division = definition_description.find("div", attrs={"class":"list-authors"})
+    authors_division_anchors = authors_division.find_all("a")
+    authors = map(lambda link: link.get("href"), authors_division_anchors)
+    author_links = map(lambda link: link.text, authors_division_anchors)
+    author_to_author_link_doubles = zip(authors, author_links)
+    
+    subjects_division = definition_description.find("div", attrs={"class":"list-subjects"})
+    primary_subject_span = subjects_division.find("span", attrs={"class":"primary-subject"})
+    primary_subject = primary_subject_span.text
+    
+    # secondary_subjects = primary_subject_span.next_sibling
+    secondary_subjects = None # stub
+    
+    result = (link_to_paper_page, title, author_to_author_link_doubles, primary_subject, secondary_subjects)
+    return result
 
 ###############
 # Main Runner #
@@ -182,7 +188,7 @@ def main():
     p1(arxiv_recent_page_title_and_page_link_string_iterator())
     print("\n\n")
     print("Testing")
-    print(recent_tester())
+    print(extract_info_from_recent_page_url("https://arxiv.org/list/econ.TH/recent"))
     return None
 
 if __name__ == '__main__':
