@@ -1,3 +1,3 @@
 # one_off_code
 
-Code that I will likely not use again. 
+Mostly code for playing around, learning, or demonstration.
