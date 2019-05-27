@@ -19,7 +19,6 @@ File Organization:
 
 # @todo update access privileges
 # @todo make sure everything is used
-# @todo write tests
 
 # Imports
 import time
