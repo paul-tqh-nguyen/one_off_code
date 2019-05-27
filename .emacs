@@ -4,9 +4,13 @@
 (load-theme 'manoj-dark)
 (show-paren-mode 1)
 
+;; Update EMACS Load Path
+
+(package-initialize)
+(add-to-list 'load-path "/home/paulnguyen/code/")
+
 ;; Undo Tree
 
-(add-to-list 'load-path "/home/paulnguyen/code/")
 (load "undo-tree.el")
 (global-undo-tree-mode)
 
@@ -14,6 +18,7 @@
 
 (load "rjsx-mode.el")
 (add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
+(setq sgml-attribute-offset 2) ;; @hack figure out why we have to this
 
 ;; Custom Functions
 
@@ -47,12 +52,10 @@
     (switch-to-buffer buffer-name)))
 
 (defun python ()
-  "Create a new shell buffer with the name \"*python*\" if it doesn't exist. If it does and is running, go it. If it exists and is not running, start it."
   (interactive)
   (start-shell-buffer-with-name "*python*"))
 
 (defun server ()
-  "Create a new shell buffer with the name \"*server*\" if it doesn't exist. If it does and is running, go it. If it exists and is not running, start it."
   (interactive)
   (start-shell-buffer-with-name "*server*"))
 
