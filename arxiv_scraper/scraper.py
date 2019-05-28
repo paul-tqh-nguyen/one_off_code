@@ -80,6 +80,7 @@ def arxiv_main_page_text():
 ######################################
 
 def arxiv_recent_page_title_and_page_link_string_iterator():
+    # @todo add comment with the types of values it returns and from what links it gets
     text = arxiv_main_page_text()
     soup = BeautifulSoup(text, features="lxml")
     anchor_links = soup.find_all("a")
@@ -142,13 +143,13 @@ def extract_info_tuple_iterator_from_recent_pages_definition_list(definition_lis
     return info_tuple_iterator
 
 def extract_info_tuple_iterator_from_definition_term_description_doubles(term_description_doubles):
+    for term_description_double in term_description_doubles:
+        if len(term_description_double) == 3:  # this happens, so there's some sort of error here
+            print("this is bad : {term_description_double}".format(term_description_double=term_description_double))
     result = map(extract_info_tuple_from_definition_term_description_double, term_description_doubles)
     return result
 
 def extract_info_tuple_from_definition_term_description_double(term_description_double):
-    print("term_description_double") #there's some sort of error here
-    print(len(list(term_description_double)))
-    print(list(term_description_double))
     definition_term, definition_description = term_description_double
 
     anchor_with_relative_link_to_paper_page = definition_term.find("a", title="Abstract")
@@ -187,7 +188,9 @@ def main():
     p1(arxiv_recent_page_title_and_page_link_string_iterator())
     print("\n\n")
     print("Testing")
-    print(extract_info_from_recent_page_url("https://arxiv.org/list/econ.TH/recent"))
+    recent_link = "https://arxiv.org/list/econ.TH/recent"
+    print("recent_link : {0}".format(recent_link))
+    print(list(extract_info_from_recent_page_url(recent_link)))
     return None
 
 if __name__ == '__main__':
