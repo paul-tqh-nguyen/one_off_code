@@ -31,6 +31,11 @@ from warnings import warn
 from bs4 import BeautifulSoup
 import requests
 
+# Debugging Imports
+
+import pdb
+import copy
+
 ##################
 # Misc Utilities #
 ##################
@@ -138,20 +143,16 @@ def extract_info_tuple_iterator_from_recent_pages_definition_list(definition_lis
         warn("{definition_list} could not be parsed properly".format(definition_list=definition_list), RuntimeWarning)
     else:
         term_description_doubles = zip(definition_terms, definition_descriptions)
-        iterator_of_info_tuple_iterators = map(extract_info_tuple_iterator_from_definition_term_description_doubles,term_description_doubles)
-        info_tuple_iterator = functools.reduce(itertools.chain, iterator_of_info_tuple_iterators)
+        info_tuple_iterator = extract_info_tuple_iterator_from_definition_term_description_doubles(term_description_doubles)
     return info_tuple_iterator
 
 def extract_info_tuple_iterator_from_definition_term_description_doubles(term_description_doubles):
-    for term_description_double in term_description_doubles:
-        if len(term_description_double) == 3:  # this happens, so there's some sort of error here
-            print("this is bad : {term_description_double}".format(term_description_double=term_description_double))
     result = map(extract_info_tuple_from_definition_term_description_double, term_description_doubles)
     return result
 
 def extract_info_tuple_from_definition_term_description_double(term_description_double):
     definition_term, definition_description = term_description_double
-
+    
     anchor_with_relative_link_to_paper_page = definition_term.find("a", title="Abstract")
     relative_link_to_paper_page = anchor_with_relative_link_to_paper_page.get("href")
     link_to_paper_page = concatenate_relative_link_to_arxiv_base_url(relative_link_to_paper_page)
@@ -184,8 +185,8 @@ def extract_info_tuple_from_definition_term_description_double(term_description_
 # @todo get rid of this section after package becomes stable
 
 def main():
-    print("Research Fields & Recent Page Links")
-    p1(arxiv_recent_page_title_and_page_link_string_iterator())
+    #print("Research Fields & Recent Page Links")
+    #p1(arxiv_recent_page_title_and_page_link_string_iterator())
     print("\n\n")
     print("Testing")
     recent_link = "https://arxiv.org/list/econ.TH/recent"
