@@ -30,6 +30,7 @@ import itertools
 from warnings import warn
 from bs4 import BeautifulSoup
 import requests
+import json
 
 # Debugging Imports
 
@@ -70,7 +71,7 @@ def execfile(file_location):
 
 ARXIV_URL = "https://arxiv.org/"
 
-@lru_cache(maxsize=256)
+@lru_cache(maxsize=1024)
 def get_text_at_url(url):
     get_response = requests.get(url)
     text = get_response.text
@@ -126,8 +127,45 @@ def is_arxiv_recent_page_link(link_string):
 # "Recent" Pages arXiv Scraping Utilities #
 ###########################################
 
-def extract_info_from_recent_page_url(recent_page_url): # @todo consider returning JSON
-    '''The "Recent" page includes a bunch of papers. We return an iterator yielding tuples. The tuples are of the form (LINK_TO_PAPER_PAGE, TITLE, AUTHOR_TO_AUTHOR_LINK_DOUBLES, PRIMARY_SUBJECT, SECONDARY_SUBJECTS).'''
+def extract_info_from_recent_page_url_as_json(recent_page_url):
+    info_tuples = extract_info_from_recent_page_url(recent_page_url)
+    json_iterator = map(recent_page_url_info_tuple_to_json, info_tuples)
+    return json_iterator
+
+def recent_page_url_info_tuple_to_json(info_tuple):
+    link_to_paper_page, title, author_to_author_link_dictionary, primary_subject, secondary_subjects_iterator, abstract = info_tuple
+    secondary_subjects = secondary_subjects_iterator
+    json_dict = {"page_link" : link_to_paper_page,
+                 "research_paper_title" : title,
+                 "author_info" : author_to_author_link_dictionary, 
+                 "primary_subject" : primary_subject, 
+                 "secondary_subjects" : secondary_subjects,
+                 "abstract" : abstract}
+    json_string = json.dumps(json_dict)
+    return json_string
+
+def extract_info_from_recent_page_url(recent_page_url):
+    tuple_without_abstract_iterator = extract_info_without_abstract_from_recent_page_url(recent_page_url)
+    result_iterator = map(append_abstract_to_info_extracted_from_recent_page_url, tuple_without_abstract_iterator)
+    return result_iterator
+
+def append_abstract_to_info_extracted_from_recent_page_url(info_tuple):
+    link_to_paper_page, title, author_to_author_link_dictionaries, primary_subject, secondary_subjects = info_tuple
+    abstract = abstract_text_from_arxiv_paper_url(link_to_paper_page)
+    info_tuple = (link_to_paper_page, title, author_to_author_link_dictionaries, primary_subject, secondary_subjects, abstract)
+    return info_tuple
+
+def abstract_text_from_arxiv_paper_url(paper_url):
+    text = get_text_at_url(paper_url)
+    soup = BeautifulSoup(text, features="lxml")
+    abstract_block_quote = soup.find("blockquote", {"class": "abstract mathjax"})
+    abstract_span = abstract_block_quote.find("span", {"class": "descriptor"})
+    abstract_text_raw = abstract_span.next_sibling
+    abstract_text = abstract_text_raw.replace("\n", " ").strip()
+    return abstract_text
+
+def extract_info_without_abstract_from_recent_page_url(recent_page_url):
+    '''The "Recent" page includes a bunch of papers. We return an iterator yielding tuples. The tuples are of the form (LINK_TO_PAPER_PAGE, TITLE, AUTHOR_TO_AUTHOR_LINK_DICTIONARIES, PRIMARY_SUBJECT, SECONDARY_SUBJECTS).'''
     text = get_text_at_url(recent_page_url)
     soup = BeautifulSoup(text, features="lxml")
     definition_lists = soup.find_all('dl')
@@ -164,19 +202,28 @@ def extract_info_tuple_from_definition_term_description_double(term_description_
     
     authors_division = definition_description.find("div", attrs={"class":"list-authors"})
     authors_division_anchors = authors_division.find_all("a")
-    authors = map(lambda link: link.get("href"), authors_division_anchors)
-    author_links = map(lambda link: link.text, authors_division_anchors)
+    authors = map(lambda link: link.text, authors_division_anchors)
+    author_relative_links = map(lambda link: link.get("href"), authors_division_anchors)
+    author_links = map(concatenate_relative_link_to_arxiv_base_url, author_relative_links)
     author_to_author_link_doubles = zip(authors, author_links)
+    author_to_author_link_dictionary_iterator = map(author_to_author_link_double_to_author_to_author_link_dictionary, author_to_author_link_doubles)
+    author_to_author_link_dictionaries = list(author_to_author_link_dictionary_iterator)
     
     subjects_division = definition_description.find("div", attrs={"class":"list-subjects"})
     primary_subject_span = subjects_division.find("span", attrs={"class":"primary-subject"})
     primary_subject = primary_subject_span.text
+
+    secondary_subjects_unprocessed = primary_subject_span.next_sibling
+    secondary_subjects = list(filter(bool, (map(lambda string : string.strip(), secondary_subjects_unprocessed.split(";")))))
     
-    # secondary_subjects = primary_subject_span.next_sibling
-    secondary_subjects = None # stub
-    
-    result = (link_to_paper_page, title, author_to_author_link_doubles, primary_subject, secondary_subjects)
+    result = (link_to_paper_page, title, author_to_author_link_dictionaries, primary_subject, secondary_subjects)
     return result
+
+def author_to_author_link_double_to_author_to_author_link_dictionary(author_to_author_link_double):
+    author, author_link = author_to_author_link_double
+    author_to_author_link_dictionary = {"author" : author,
+                                        "author_link" : author_link}
+    return author_to_author_link_dictionary
 
 ###############
 # Main Runner #
@@ -191,7 +238,8 @@ def main():
     print("Testing")
     recent_link = "https://arxiv.org/list/econ.TH/recent"
     print("recent_link : {0}".format(recent_link))
-    print(list(extract_info_from_recent_page_url(recent_link)))
+    #print(list(extract_info_from_recent_page_url(recent_link)))
+    p1(extract_info_from_recent_page_url_as_json(recent_link), 4)
     return None
 
 if __name__ == '__main__':
