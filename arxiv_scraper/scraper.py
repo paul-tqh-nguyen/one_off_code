@@ -13,6 +13,7 @@ File Organization:
 * arXiv Scraping Utilities
 ** Top Level arXiv Scraping Utilities
 ** "Recent" Pages arXiv Scraping Utilities
+* MongoDB Connection Utilities
 * Main Runner
 
 """
@@ -31,6 +32,8 @@ from warnings import warn
 from bs4 import BeautifulSoup
 import requests
 import json
+import pymongo
+import getpass
 
 # Debugging Imports
 
@@ -224,6 +227,32 @@ def author_to_author_link_double_to_author_to_author_link_dictionary(author_to_a
     author_to_author_link_dictionary = {"author" : author,
                                         "author_link" : author_link}
     return author_to_author_link_dictionary
+
+################################
+# MongoDB Connection Utilities #
+################################
+
+MONGO_DB_CONNECTION_URL_FORMAT_STRING = "mongodb+srv://{username}:{password}@arxiv-news-paper-v2tf1.mongodb.net/test?retryWrites=true&w=majority"
+
+def arxiv_mongo_db_connection_url(username0, password0):
+    username = urllib.parse.quote_plus(username0)
+    password = urllib.parse.quote_plus(password0)
+    mongo_db_connection_url = "mongodb+srv://{username}:{password}@arxiv-news-paper-v2tf1.mongodb.net/test?retryWrites=true&w=majority".format(username=username, password=password)
+    return mongo_db_connection_url
+
+@lru_cache(maxsize=1)
+def arxiv_mongo_db_connection():
+    username = input("Username: ")
+    password = getpass.getpass("Password: ")
+    mongo_db_connection_url = arxiv_mongo_db_connection_url(username, password)
+    client = pymongo.MongoClient(mongo_db_connection_url)
+    db = client.get_database("arxivRecentPapers")
+    return db
+
+def arxiv_recent_papers_collection():
+    db = arxiv_mongo_db_connection()
+    arxiv_recent_papers_collection = db.recentPapers
+    return arxiv_recent_papers_collection
 
 ###############
 # Main Runner #
