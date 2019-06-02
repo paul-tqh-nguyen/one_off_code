@@ -248,7 +248,7 @@ def authenticate_mongo_db_with_unquoted_credentials(db, username, password):
 
 @lru_cache(maxsize=32)
 def arxiv_mongo_db_client(username=None, password=None):
-    if username is None:
+    if username is None: # @todo abstract this out and stick it in other places ; cache it as well
         username = input("Username: ")
     if password is None:
         password = getpass.getpass("Password: ")
