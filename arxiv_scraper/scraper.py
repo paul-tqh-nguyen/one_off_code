@@ -234,10 +234,10 @@ def author_to_author_link_double_to_author_to_author_link_dictionary(author_to_a
 
 MONGO_DB_CONNECTION_URL_FORMAT_STRING = "mongodb+srv://{username}:{password}@arxiv-news-paper-v2tf1.mongodb.net/test?retryWrites=true&w=majority"
 
-def arxiv_mongo_db_connection_url(username0, password0):
-    username = urllib.parse.quote_plus(username0)
-    password = urllib.parse.quote_plus(password0)
-    mongo_db_connection_url = "mongodb+srv://{username}:{password}@arxiv-news-paper-v2tf1.mongodb.net/test?retryWrites=true&w=majority".format(username=username, password=password)
+def arxiv_mongo_db_connection_url(username, password):
+    username_quoted = urllib.parse.quote_plus(username)
+    password_quoted = urllib.parse.quote_plus(password)
+    mongo_db_connection_url = MONGO_DB_CONNECTION_URL_FORMAT_STRING.format(username=username_quoted, password=password_quoted)
     return mongo_db_connection_url
 
 @lru_cache(maxsize=32)
@@ -249,6 +249,14 @@ def arxiv_mongo_db_connection(username=None, password=None):
     mongo_db_connection_url = arxiv_mongo_db_connection_url(username, password)
     client = pymongo.MongoClient(mongo_db_connection_url)
     db = client["arxivRecentPapers"]
+    print(MONGO_DB_CONNECTION_URL_FORMAT_STRING)
+    print("pre auth")
+    username_quoted = urllib.parse.quote_plus(username)
+    password_quoted = urllib.parse.quote_plus(password)
+    print(username_quoted)
+    print(password_quoted)
+    db.authenticate(username_quoted, password_quoted)
+    print("post auth")
     return db
 
 def arxiv_recent_papers_collection(username=None, password=None):
@@ -267,10 +275,36 @@ def main():
     #p1(arxiv_recent_page_title_and_page_link_string_iterator())
     print("\n\n")
     print("Testing")
-    recent_link = "https://arxiv.org/list/econ.TH/recent"
-    print("recent_link : {0}".format(recent_link))
+    #recent_link = "https://arxiv.org/list/econ.TH/recent"
+    #print("recent_link : {0}".format(recent_link))
     #print(list(extract_info_from_recent_page_url(recent_link)))
-    p1(extract_info_from_recent_page_url_as_json(recent_link), 4)
+    #p1(extract_info_from_recent_page_url_as_json(recent_link), 4)
+    username = "paul_tqh_nguyen"
+    password = ""
+    url = arxiv_mongo_db_connection_url(urllib.parse.quote_plus(username),urllib.parse.quote_plus(password))
+    print("url")
+    print(url)
+    my_client = pymongo.MongoClient(url)
+    print("my_client")
+    print(my_client)
+    print("my_client.server_info()")
+    print(my_client.server_info())
+    my_database = my_client.test
+    print("my_database")
+    print(my_database)
+    my_collection = my_database.foods
+    print("my_collection")
+    print(my_collection)
+    my_collection.insert_one({
+        "_id": 1,
+        "name": "pizza",
+        "calories": 266,
+        "fats": {
+            "saturated": 4.5,
+            "trans": 0.2
+        },
+        "protein": 11
+    })
     return None
 
 if __name__ == '__main__':
