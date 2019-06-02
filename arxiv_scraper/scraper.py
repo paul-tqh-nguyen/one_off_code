@@ -240,29 +240,33 @@ def arxiv_mongo_db_connection_url(username, password):
     mongo_db_connection_url = MONGO_DB_CONNECTION_URL_FORMAT_STRING.format(username=username_quoted, password=password_quoted)
     return mongo_db_connection_url
 
+def authenticate_mongo_db_with_unquoted_credentials(db, username, password):
+    username_quoted = urllib.parse.quote_plus(username)
+    password_quoted = urllib.parse.quote_plus(password)
+    db.authenticate(username_quoted, password_quoted)
+    return db
+
 @lru_cache(maxsize=32)
-def arxiv_mongo_db_connection(username=None, password=None):
+def arxiv_mongo_db_client(username=None, password=None):
     if username is None:
         username = input("Username: ")
     if password is None:
         password = getpass.getpass("Password: ")
     mongo_db_connection_url = arxiv_mongo_db_connection_url(username, password)
     client = pymongo.MongoClient(mongo_db_connection_url)
+    return client
+
+def arxic_recent_papers_db(client):
     db = client["arxivRecentPapers"]
-    print(MONGO_DB_CONNECTION_URL_FORMAT_STRING)
-    print("pre auth")
-    username_quoted = urllib.parse.quote_plus(username)
-    password_quoted = urllib.parse.quote_plus(password)
-    print(username_quoted)
-    print(password_quoted)
-    db.authenticate(username_quoted, password_quoted)
-    print("post auth")
     return db
 
 def arxiv_recent_papers_collection(username=None, password=None):
-    db = arxiv_mongo_db_connection(username, password)
-    arxiv_recent_papers_collection = db.recentPapers
+    client = arxiv_mongo_db_client(username, password)
+    db = arxic_recent_papers_db(client)
+    arxiv_recent_papers_collection = db["recentPapers"]
     return arxiv_recent_papers_collection
+
+# [doc for doc in arxiv_recent_papers_collection("paul_tqh_nguyen","").find({})]
 
 ###############
 # Main Runner #
@@ -282,29 +286,6 @@ def main():
     username = "paul_tqh_nguyen"
     password = ""
     url = arxiv_mongo_db_connection_url(urllib.parse.quote_plus(username),urllib.parse.quote_plus(password))
-    print("url")
-    print(url)
-    my_client = pymongo.MongoClient(url)
-    print("my_client")
-    print(my_client)
-    print("my_client.server_info()")
-    print(my_client.server_info())
-    my_database = my_client.test
-    print("my_database")
-    print(my_database)
-    my_collection = my_database.foods
-    print("my_collection")
-    print(my_collection)
-    my_collection.insert_one({
-        "_id": 1,
-        "name": "pizza",
-        "calories": 266,
-        "fats": {
-            "saturated": 4.5,
-            "trans": 0.2
-        },
-        "protein": 11
-    })
     return None
 
 if __name__ == '__main__':
