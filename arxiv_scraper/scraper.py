@@ -240,17 +240,19 @@ def arxiv_mongo_db_connection_url(username0, password0):
     mongo_db_connection_url = "mongodb+srv://{username}:{password}@arxiv-news-paper-v2tf1.mongodb.net/test?retryWrites=true&w=majority".format(username=username, password=password)
     return mongo_db_connection_url
 
-@lru_cache(maxsize=1)
-def arxiv_mongo_db_connection():
-    username = input("Username: ")
-    password = getpass.getpass("Password: ")
+@lru_cache(maxsize=32)
+def arxiv_mongo_db_connection(username=None, password=None):
+    if username is None:
+        username = input("Username: ")
+    if password is None:
+        password = getpass.getpass("Password: ")
     mongo_db_connection_url = arxiv_mongo_db_connection_url(username, password)
     client = pymongo.MongoClient(mongo_db_connection_url)
-    db = client.get_database("arxivRecentPapers")
+    db = client["arxivRecentPapers"]
     return db
 
-def arxiv_recent_papers_collection():
-    db = arxiv_mongo_db_connection()
+def arxiv_recent_papers_collection(username=None, password=None):
+    db = arxiv_mongo_db_connection(username, password)
     arxiv_recent_papers_collection = db.recentPapers
     return arxiv_recent_papers_collection
 
