@@ -3,6 +3,7 @@
 (setq inhibit-startup-screen t)
 (load-theme 'manoj-dark)
 (show-paren-mode 1)
+(setq visible-bell 1)
 
 ;; Update EMACS Load Path
 
