@@ -20,6 +20,7 @@ File Organization:
 
 # @todo update access privileges
 # @todo make sure everything is used
+# @todo make sure everything has types declared
 
 # Imports
 import time
@@ -232,41 +233,46 @@ def author_to_author_link_double_to_author_to_author_link_dictionary(author_to_a
 # MongoDB Connection Utilities #
 ################################
 
+RECENT_PAPERS_DB_NAME="arxivRecentPapers"
+RECENT_PAPERS_COLLECTION_NAME="recentPapers"
+
+@lru_cache(maxsize=1)
+def _get_username_and_password():
+    print("Please Enter In Your Credentials To Access the arXiv Recent Papers Cache DB.")
+    username = input("Username: ")
+    password = getpass.getpass("Password: ")
+    return username, password
+
 MONGO_DB_CONNECTION_URL_FORMAT_STRING = "mongodb+srv://{username}:{password}@arxiv-news-paper-v2tf1.mongodb.net/test?retryWrites=true&w=majority"
 
-def arxiv_mongo_db_connection_url(username, password):
+def _arxiv_mongo_db_connection_url():
+    username, password = _get_username_and_password() # @todo handle badd authentication info gracefully
     username_quoted = urllib.parse.quote_plus(username)
     password_quoted = urllib.parse.quote_plus(password)
     mongo_db_connection_url = MONGO_DB_CONNECTION_URL_FORMAT_STRING.format(username=username_quoted, password=password_quoted)
     return mongo_db_connection_url
 
-def authenticate_mongo_db_with_unquoted_credentials(db, username, password):
-    username_quoted = urllib.parse.quote_plus(username)
-    password_quoted = urllib.parse.quote_plus(password)
-    db.authenticate(username_quoted, password_quoted)
-    return db
-
-@lru_cache(maxsize=32)
-def arxiv_mongo_db_client(username=None, password=None):
-    if username is None: # @todo abstract this out and stick it in other places ; cache it as well
-        username = input("Username: ")
-    if password is None:
-        password = getpass.getpass("Password: ")
-    mongo_db_connection_url = arxiv_mongo_db_connection_url(username, password)
+@lru_cache(maxsize=1)
+def _arxiv_mongo_db_client():
+    mongo_db_connection_url = _arxiv_mongo_db_connection_url()
     client = pymongo.MongoClient(mongo_db_connection_url)
     return client
 
-def arxic_recent_papers_db(client):
-    db = client["arxivRecentPapers"]
+def _arxic_recent_papers_db(client):
+    db = client.get_database(RECENT_PAPERS_DB_NAME)
     return db
 
-def arxiv_recent_papers_collection(username=None, password=None):
-    client = arxiv_mongo_db_client(username, password)
-    db = arxic_recent_papers_db(client)
-    arxiv_recent_papers_collection = db["recentPapers"]
+def _arxiv_recent_papers_collection():
+    client = _arxiv_mongo_db_client()
+    db = _arxic_recent_papers_db(client)
+    arxiv_recent_papers_collection = pymongo.collection.Collection(db,RECENT_PAPERS_COLLECTION_NAME)
     return arxiv_recent_papers_collection
 
-# [doc for doc in arxiv_recent_papers_collection("paul_tqh_nguyen","").find({})]
+
+def _arxiv_recent_paper_docs_as_dicts():
+    arxiv_recent_papers_collection = _arxiv_recent_papers_collection()
+    arxiv_recent_paper_json_docs = [doc for doc in arxiv_recent_papers_collection.find({})]
+    return arxiv_recent_paper_json_docs
 
 ###############
 # Main Runner #
@@ -283,9 +289,8 @@ def main():
     #print("recent_link : {0}".format(recent_link))
     #print(list(extract_info_from_recent_page_url(recent_link)))
     #p1(extract_info_from_recent_page_url_as_json(recent_link), 4)
-    username = "paul_tqh_nguyen"
-    password = ""
-    url = arxiv_mongo_db_connection_url(urllib.parse.quote_plus(username),urllib.parse.quote_plus(password))
+    print("_arxiv_recent_paper_docs_as_dicts")
+    p1(_arxiv_recent_paper_docs_as_dicts())
     return None
 
 if __name__ == '__main__':
