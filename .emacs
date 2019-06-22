@@ -1,9 +1,10 @@
-;; Standard Settings
+;; Common Settings
 
 (setq inhibit-startup-screen t)
 (load-theme 'manoj-dark)
 (show-paren-mode 1)
 (setq visible-bell 1)
+(add-to-list 'display-buffer-alist '("^\\*shell\\*$" . (display-buffer-same-window)))
 
 ;; Update EMACS Load Path
 
