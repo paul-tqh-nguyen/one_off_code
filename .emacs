@@ -18,6 +18,8 @@
 ;; Javascript Settings
 
 (load "rjsx-mode.el")
+(load "js2-mode.el")
+(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
 (add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
 (setq sgml-attribute-offset 2) ;; @hack figure out why we have to this
 
@@ -66,5 +68,7 @@
 (global-set-key (kbd "C-x C-b") 'buffer-menu)
 (global-set-key (kbd "C-x a") 'undo-tree-visualize)
 ;;(global-set-key (kbd "C-c b") 'switch-to-python-buffer) ;; @todo get this working
+;;(global-set-key (kbd "C-M-<left>") 'backward-sexp) ;; @todo get this working
+;;(global-set-key (kbd "C-M-<right>") 'forward-sexp) ;; @todo get this working
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
