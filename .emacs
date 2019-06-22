@@ -8,7 +8,7 @@
 ;; Update EMACS Load Path
 
 (package-initialize)
-(add-to-list 'load-path "/home/paulnguyen/code/")
+(add-to-list 'load-path "/home/pnguyen/code/")
 
 ;; Undo Tree
 
