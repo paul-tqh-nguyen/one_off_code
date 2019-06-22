@@ -1,4 +1,4 @@
-;; Common Settings
+;; Less Invasive Settings
 
 (setq inhibit-startup-screen t)
 (load-theme 'manoj-dark)
@@ -57,10 +57,12 @@
 
 (defun python ()
   (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*python\\*$" . (display-buffer-same-window)))
   (start-shell-buffer-with-name "*python*"))
 
 (defun server ()
   (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*server\\*$" . (display-buffer-same-window)))
   (start-shell-buffer-with-name "*server*"))
 
 ;; Shortcut Keys
