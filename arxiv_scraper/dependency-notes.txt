@@ -1,8 +1,0 @@
-These are the Python3 libraries that might be good to install prior to using this application.
-
-This list is not exhaustive.
-
-sudo apt-get install python3-pip
-sudo pip3 install bs4
-sudo pip3 install pymongo
-sudo pip3 install dnspython
