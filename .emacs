@@ -72,6 +72,8 @@
 (global-set-key (kbd "C-c \"") 'escape-quotes)
 (global-set-key (kbd "C-x C-b") 'buffer-menu)
 (global-set-key (kbd "C-x a") 'undo-tree-visualize)
+(global-set-key (kbd "C-c ;") 'comment-region)
+(global-set-key (kbd "C-c :") 'uncomment-region)
 ;;(global-set-key (kbd "C-c b") 'switch-to-python-buffer) ;; @todo get this working
 ;;(global-set-key (kbd "C-M-<left>") 'backward-sexp) ;; @todo get this working
 ;;(global-set-key (kbd "C-M-<right>") 'forward-sexp) ;; @todo get this working
