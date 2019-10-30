@@ -22,46 +22,32 @@ def convert_text_to_integer_representation(text, character_to_integer_map):
     integer_numpy_array_representation = np.array(integer_list_representation)
     return integer_numpy_array_representation
 
-SEQUENCE_LENGTH = 100
+def sequence_to_input_output_pair(sequence):
+    input_sequence = sequence[:-1]
+    target_sequence = sequence[1:]
+    return input_sequence, target_sequence
+
+def text_to_int_sequence_intput_output_pairs(text, input_sequence_length):
+    text_as_int = convert_text_to_integer_representation(text, character_to_integer_map)
+    char_dataset = tf.data.Dataset.from_tensor_slices(text_as_int)
+    int_sequence_dataset = char_dataset.batch(input_sequence_length+1, drop_remainder=True)
+    int_sequence_intput_output_pairs = int_sequence_dataset.map(sequence_to_input_output_pair)
+    return int_sequence_intput_output_pairs
+
+INPUT_SEQUENCE_LENGTH = 100
+BATCH_SIZE = 64
 
 def main():
     
     text = gather_entire_text()
     character_to_integer_map, integer_to_character_map, vocabulary = generate_character_to_index_mappings(text)
-    text_as_int = convert_text_to_integer_representation(text, character_to_integer_map)
-    num_iterations_per_epoch = len(text)//SEQUENCE_LENGTH
+    total_num_characters = len(text)
+    num_iterations_per_epoch = total_num_characters//INPUT_SEQUENCE_LENGTH
+    dataset = text_to_int_sequence_intput_output_pairs(text, INPUT_SEQUENCE_LENGTH) #todo rename "dataset" to something with "input""output""pairs"
     
-    # Create training examples / targets
-    char_dataset = tf.data.Dataset.from_tensor_slices(text_as_int)
-    
-    print("Here are some of the first characters in the dataset.")
-    for i in char_dataset.take(5):
-        print(integer_to_character_map[i.numpy()])
-    
-    sequences = char_dataset.batch(SEQUENCE_LENGTH+1, drop_remainder=True)
-    
-    print("Here are some of the sequences.")
-    for item in sequences.take(5):
-        print(repr(''.join(integer_to_character_map[item.numpy()])))
-    
-    def split_input_target(chunk):
-        input_text = chunk[:-1]
-        target_text = chunk[1:]
-        return input_text, target_text
-    
-    dataset = sequences.map(split_input_target)
-    
-    for input_example, target_example in  dataset.take(1):
-        print ('Input data: ', repr(''.join(integer_to_character_map[input_example.numpy()])))
-        print ('Target data:', repr(''.join(integer_to_character_map[target_example.numpy()])))
-    
-    for i, (input_idx, target_idx) in enumerate(zip(input_example[:5], target_example[:5])):
-        print("Step {:4d}".format(i))
-        print("  input: {} ({:s})".format(input_idx, repr(integer_to_character_map[input_idx])))
-        print("  expected output: {} ({:s})".format(target_idx, repr(integer_to_character_map[target_idx])))
-    
+    exit() #####################################################################################################################
+        
     # Batch size
-    BATCH_SIZE = 64
     steps_per_epoch = num_iterations_per_epoch//BATCH_SIZE
     
     # Buffer size to shuffle the dataset

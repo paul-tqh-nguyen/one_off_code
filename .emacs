@@ -57,10 +57,45 @@
       (shell buffer-name)
     (switch-to-buffer buffer-name)))
 
+(defun tmp ()
+  (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*tmp\\*$" . (display-buffer-same-window)))
+  (start-shell-buffer-with-name "*tmp*"))
+
+(defun runner ()
+  (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*runner\\*$" . (display-buffer-same-window)))
+  (start-shell-buffer-with-name "*runner*"))
+
+(defun second ()
+  (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*second\\*$" . (display-buffer-same-window)))
+  (start-shell-buffer-with-name "*second*"))
+
+(defun thrid ()
+  (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*thrid\\*$" . (display-buffer-same-window)))
+  (start-shell-buffer-with-name "*thrid*"))
+
+(defun fourth ()
+  (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*fourth\\*$" . (display-buffer-same-window)))
+  (start-shell-buffer-with-name "*fourth*"))
+
+(defun fifth ()
+  (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*fifth\\*$" . (display-buffer-same-window)))
+  (start-shell-buffer-with-name "*fifth*"))
+
 (defun python ()
   (interactive)
   (add-to-list 'display-buffer-alist '("^\\*python\\*$" . (display-buffer-same-window)))
   (start-shell-buffer-with-name "*python*"))
+
+(defun node ()
+  (interactive)
+  (add-to-list 'display-buffer-alist '("^\\*node\\*$" . (display-buffer-same-window)))
+  (start-shell-buffer-with-name "*node*"))
 
 (defun server ()
   (interactive)
@@ -74,7 +109,6 @@
 (global-set-key (kbd "C-x a") 'undo-tree-visualize)
 (global-set-key (kbd "C-c ;") 'comment-region)
 (global-set-key (kbd "C-c :") 'uncomment-region)
-;;(global-set-key (kbd "C-c b") 'switch-to-python-buffer) ;; @todo get this working
 ;;(global-set-key (kbd "C-M-<left>") 'backward-sexp) ;; @todo get this working
 ;;(global-set-key (kbd "C-M-<right>") 'forward-sexp) ;; @todo get this working
 (put 'downcase-region 'disabled nil)
