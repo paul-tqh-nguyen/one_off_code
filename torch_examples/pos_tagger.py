@@ -45,10 +45,15 @@ class LSTMTagger(nn.Module):
         self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
 
     def forward(self, sentence):
+        print("within forward")
+        print("sentence: {sentence}".format(sentence=sentence))
         embeds = self.word_embeddings(sentence)
+        print("embeds.shape: {x}".format(x=embeds.shape))
         lstm_out, _ = self.lstm(embeds.view(len(sentence), 1, -1))
+        print("lstm_out.shape: {x}".format(x=lstm_out.shape))
         tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
         tag_scores = F.log_softmax(tag_space, dim=1)
+        print("forward done")
         return tag_scores
 
 def prepare_sequence(seq, to_ix):
@@ -78,8 +83,8 @@ def main():
     tag_to_ix = {"DET": 0, "NN": 1, "V": 2}
     ix_to_tag = {v:k for k,v in tag_to_ix.items()}
     
-    EMBEDDING_DIM = 6
-    HIDDEN_DIM = 6
+    EMBEDDING_DIM = 12
+    HIDDEN_DIM = 12
     
     model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))
     loss_function = nn.NLLLoss()
@@ -87,6 +92,7 @@ def main():
     
     for epoch in range(300):
         for sentence, tags in training_data:
+            print("\n\n\n")
 
             model.zero_grad()
 
@@ -94,12 +100,17 @@ def main():
             targets = prepare_sequence(tags, tag_to_ix)
         
             tag_scores = model(sentence_in)
+
+            print("sentence: {sentence}".format(sentence=sentence))
+            print("sentence_in: {sentence_in}".format(sentence_in=sentence_in))
+            print("targets: {targets}".format(targets=targets))
+            print("tag_scores: {tag_scores}".format(tag_scores=tag_scores))
+            
             
             loss = loss_function(tag_scores, targets)
             loss.backward()
             optimizer.step()
-            
-    # See what the scores are after training
+    
     with torch.no_grad():
         
         input_example = training_data[0][0]

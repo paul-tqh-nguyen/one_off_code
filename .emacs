@@ -109,7 +109,7 @@
 (global-set-key (kbd "C-x a") 'undo-tree-visualize)
 (global-set-key (kbd "C-c ;") 'comment-region)
 (global-set-key (kbd "C-c :") 'uncomment-region)
-;;(global-set-key (kbd "C-M-<left>") 'backward-sexp) ;; @todo get this working
-;;(global-set-key (kbd "C-M-<right>") 'forward-sexp) ;; @todo get this working
+(global-set-key (kbd "<C-M-left>") 'backward-sexp) ;; @todo get this working
+(global-set-key (kbd "<C-M-right>") 'forward-sexp) ;; @todo get this working
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
