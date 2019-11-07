@@ -29,6 +29,7 @@ import string
 from collections import OrderedDict
 import torch
 import torch.nn as nn
+from torch.utils import data
 
 WORD2VEC_BIN_LOCATION = '/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin'
 WORD2VEC_MODEL = KeyedVectors.load_word2vec_format('/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin', binary=True)
@@ -86,10 +87,15 @@ def tensor_from_normalized_word(word: str):
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
     return tensor
 
-def tensors_from_sentence_string(sentence_string):
+def tensors_from_sentence_string(sentence_string: str):
     normalized_words = normalized_words_from_sentence_string(sentence_string)
     tensors = map(tensor_from_normalized_word, normalized_words)
     return tensors
+
+def sentence_matrix_from_sentence_string(sentence_string: str):
+    word_tensors = tuple(tensors_from_sentence_string(sentence_string))
+    sentence_matrix = torch.stack(word_tensors)
+    return sentence_matrix
 
 #####################
 # Model Definitions #
@@ -113,12 +119,10 @@ class SentimentAnalysisNetwork(nn.Module):
         self.attention_layer.to(self.device)
         self.prediction_layers.to(self.device)
     
-    def forward(self, sentence_string):
-        word_tensors = tuple(tensors_from_sentence_string(sentence_string))
-        number_of_words = len(word_tensors)
-        sentence_matrix = torch.stack(word_tensors)
-        batch_size = 1
-        sentence_batch_matrix = sentence_matrix.view(number_of_words, batch_size, -1)
+    def forward(self, sentence_strings):
+        batch_size = len(sentence_strings)
+        sentence_matrices_unpadded = [sentence_matrix_from_sentence_string(sentence_string) for sentence_string in sentence_strings]
+        sentence_batch_matrix = torch.nn.utils.rnn.pad_sequence(sentence_matrices_unpadded)
         sentence_batch_matrix = sentence_batch_matrix.to(self.device)
         embedded_tensors = self.embedding_layer(sentence_batch_matrix)
         encoded_tensors, _ = self.encoding_layer(embedded_tensors)
@@ -147,6 +151,19 @@ POSITIVE_STRINGS = [
 POSITIVE_RESULT = torch.tensor([1,0]).float()
 NEGATIVE_RESULT = torch.tensor([0,1]).float()
 
+class SentimentDataset(data.Dataset):
+  def __init__(self, strings, expected_classification_tensors):
+        self.x_data = strings
+        self.y_data = expected_classification_tensors
+    
+  def __len__(self):
+        return len(self.x_data)
+    
+  def __getitem__(self, index):
+        x_datum = self.x_data[index]
+        y_datum = self.y_data[index]
+        return x_datum, y_datum
+
 def sentiment_result_to_string(sentiment_result):
     sentiment_result_string = None
     positive_result = POSITIVE_RESULT.to(sentiment_result.device)
@@ -159,11 +176,11 @@ def sentiment_result_to_string(sentiment_result):
         raise Exception('The following is not a supported sentiment: {sentiment_result}'.format(sentiment_result=sentiment_result))
     return sentiment_result_string
 
-NUMBER_OF_EPOCHS = 3000
+NUMBER_OF_EPOCHS = 1000
 LEARNING_RATE = 1e-3
 
 DEBUG_MODE = False
-
+ 
 def main():
     if DEBUG_MODE:
         torch.manual_seed(1)
@@ -172,35 +189,35 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
     x_data = POSITIVE_STRINGS+NEGATIVE_STRINGS
     y_data = torch.stack([POSITIVE_RESULT]*len(POSITIVE_STRINGS)+[NEGATIVE_RESULT]*len(NEGATIVE_STRINGS)).to(model.device)
+    training_set = SentimentDataset(x_data, y_data)
+    training_generator = data.DataLoader(training_set, batch_size=3, shuffle=True)
+    print("Starting training.")
     for epoch_index in range(NUMBER_OF_EPOCHS):
-        epoch_loss = 0
-        for x_datum, y_datum in zip(x_data, y_data):
-            y_batch_predicted = model(x_datum)
-            y_batch = y_datum.view(1,-1).to(model.device)
-            loss = loss_function(y_batch_predicted, y_batch)
-            epoch_loss += loss
+        for x_batch, y_batch in training_generator:
+            y_batch_predicted = model(x_batch)
+            epoch_loss = loss_function(y_batch_predicted, y_batch)
             optimizer.zero_grad()
-            loss.backward()
+            epoch_loss.backward()
             optimizer.step()
-        if (0==epoch_index%50):
-            print("\n\n")
-            print("===================================================================")
+        if (0==epoch_index%50 or epoch_index==NUMBER_OF_EPOCHS-1):
+            #print("\n")
+            #print("===================================================================")
             correct_result_number = 0
             for x_datum, y_datum in zip(x_data, y_data):
-                print("Input: {x}".format(x=x_datum))
+                #print("Input: {x}".format(x=x_datum))
                 expected_result = sentiment_result_to_string(y_datum)
-                print("Expected Output: {x}".format(x=expected_result))
+                #print("Expected Output: {x}".format(x=expected_result))
                 y_batch_predicted = model(x_datum)
                 actual_result = sentiment_result_to_string(torch.round(y_batch_predicted[0]))
-                print("Actual Output: {x}".format(x=actual_result))
-                print("\n")
+                #print("Actual Output: {x}".format(x=actual_result))
+                #print("\n")
                 if actual_result == expected_result:
                     correct_result_number += 1
             total_result_number = len(x_data)
-            print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=len(x_data)))
+            #print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=len(x_data)))
             print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=epoch_index,loss=epoch_loss))
-            print("Loss per datapoint for {epoch_index} is {loss}".format(epoch_index=epoch_index,loss=epoch_loss/total_result_number))
-            print("===================================================================")
+            #print("Loss per datapoint for {epoch_index} is {loss}".format(epoch_index=epoch_index,loss=epoch_loss/total_result_number))
+            #print("===================================================================")
 
 if __name__ == '__main__':
     main()
