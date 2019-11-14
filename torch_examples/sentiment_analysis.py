@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -OO
 
 """
 
@@ -52,7 +52,7 @@ def dt(var_name_string):
 
 @contextmanager
 def timeout(time, functionToExecuteOnTimeout=None):
-    '''NB: This cannot be nested.'''
+    """NB: This cannot be nested."""
     signal.signal(signal.SIGALRM, _raise_timeout)
     signal.alarm(time)
     try:
@@ -133,7 +133,8 @@ NUMBER_OF_SENTIMENTS = 2
 class SelfAttentionLayers(nn.Module):
     def __init__(self, input_size=400, number_of_attention_heads=2, hidden_size=None):
         super().__init__()
-        self.number_of_attention_heads = number_of_attention_heads # only used for assertion checking
+        if __debug__: # only used for assertion checking
+            self.number_of_attention_heads = number_of_attention_heads
         if hidden_size == None:
             hidden_size = input_size // 2
         self.attention_layers = nn.Sequential(OrderedDict([
@@ -180,8 +181,9 @@ class SelfAttentionLayers(nn.Module):
 class SentimentAnalysisNetwork(nn.Module):
     def __init__(self, embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24):
         super().__init__()
-        self.embedding_hidden_size = embedding_hidden_size # only used for assertion checking
-        self.number_of_attention_heads = number_of_attention_heads # only used for assertion checking
+        if __debug__: # only used for assertion checking
+            self.embedding_hidden_size = embedding_hidden_size
+            self.number_of_attention_heads = number_of_attention_heads
         self.embedding_layers = nn.Sequential(OrderedDict([
             ("reduction_layer", nn.Linear(WORD2VEC_VECTOR_LENGTH, embedding_hidden_size)),
             ("activation", nn.ReLU(True)),
