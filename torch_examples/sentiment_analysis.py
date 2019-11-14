@@ -118,8 +118,10 @@ class SelfAttentionLayers(nn.Module):
             ("activation", nn.ReLU(True)),
             ("attention_layer", nn.Linear(hidden_size, number_of_attention_heads)),
         ]))
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
     def to(self, device):
+        self.device = device
         self.attention_layers.to(device)
         
     def forward(self, input_matrix):
@@ -128,6 +130,20 @@ class SelfAttentionLayers(nn.Module):
         assert tuple(attention_weights_pre_softmax.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads), "attention_weights_pre_softmax has unexpected dimensions."
         attention_weights = F.softmax(attention_weights_pre_softmax, dim=0)
         assert tuple(attention_weights.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads), "attention_weights has unexpected dimensions."
+        attention_weights_batch_first = attention_weights.transpose(0,1)
+        assert tuple(attention_weights_batch_first.shape) == (batch_size, max_number_of_words, self.number_of_attention_heads), "attention_weights_batch_first has unexpected dimensions."
+        attention_weights_batch_first_transpose = attention_weights_batch_first.transpose(1,2)
+        assert tuple(attention_weights_batch_first_transpose.shape) == (batch_size, self.number_of_attention_heads, max_number_of_words), \
+            "attention_weights_batch_first_transpose has unexpected dimensions."
+        attention_weights_times_transpose = attention_weights_batch_first.matmul(attention_weights_batch_first_transpose)
+        assert tuple(attention_weights_times_transpose.shape) == (batch_size, max_number_of_words, max_number_of_words), "attention_weights_times_transpose has unexpected dimensions."
+        identity_matrix = torch.eye(max_number_of_words).repeat(batch_size,1,1).to(self.device)
+        assert tuple(identity_matrix.shape) == (batch_size, max_number_of_words, max_number_of_words), "identity_matrix has unexpected dimensions."
+        attenion_regularization_penalty_unnormalized = attention_weights_times_transpose - identity_matrix
+        assert tuple(attenion_regularization_penalty_unnormalized.shape) == (batch_size, max_number_of_words, max_number_of_words), \
+            "attenion_regularization_penalty_unnormalized has unexpected dimensions."
+        attenion_regularization_penalty_per_batch = torch.sqrt((attenion_regularization_penalty_unnormalized**2).sum(dim=1).sum(dim=1))
+        attenion_regularization_penalty = attenion_regularization_penalty_per_batch.sum(dim=0)
         attention_weights_duplicated = attention_weights.view(-1,1).repeat(1,input_size).view(max_number_of_words, batch_size, self.number_of_attention_heads*input_size)
         assert tuple(attention_weights_duplicated.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads*input_size), "attention_weights_duplicated has unexpected dimensions."
         input_matrix_duplicated = input_matrix.repeat(1,1,self.number_of_attention_heads) 
@@ -136,7 +152,7 @@ class SelfAttentionLayers(nn.Module):
         assert tuple(weight_adjusted_input_matrix.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads*input_size), "weight_adjusted_input_matrix has unexpected dimensions."
         attended_matrix = torch.sum(weight_adjusted_input_matrix, dim=0)
         assert tuple(attended_matrix.shape) == (batch_size, self.number_of_attention_heads*input_size), "attended_matrix has unexpected dimensions."
-        return attended_matrix
+        return attended_matrix, attenion_regularization_penalty
 
 class SentimentAnalysisNetwork(nn.Module):
     def __init__(self, embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24):
@@ -172,10 +188,10 @@ class SentimentAnalysisNetwork(nn.Module):
         assert tuple(embeddeding_batch_matrix.shape) == (max_number_of_words, batch_size, self.embedding_hidden_size)
         encoding_batch_matrix, _ = self.encoding_layers(embeddeding_batch_matrix)
         assert tuple(encoding_batch_matrix.shape) == (max_number_of_words, batch_size, 2*self.embedding_hidden_size)
-        attention_matrix = self.attention_layers(encoding_batch_matrix)
+        attention_matrix, attenion_regularization_penalty = self.attention_layers(encoding_batch_matrix)
         assert tuple(attention_matrix.shape) == (batch_size, self.number_of_attention_heads*2*self.embedding_hidden_size)
         prediction_scores = self.prediction_layers(attention_matrix)
-        return prediction_scores
+        return prediction_scores, attenion_regularization_penalty
 
 #######################
 # Dataset Definitions #
@@ -243,9 +259,8 @@ class SentimentAnalysisClassifier():
         for new_epoch_index in range(number_of_epochs_to_train):
             epoch_loss = 0
             for x_batch, y_batch in self.training_generator:
-                y_batch_predicted = self.model(x_batch)
-                batch_loss = self.loss_function(y_batch_predicted, y_batch)
-                # @todo account for the penalty in the cost
+                y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
+                batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty
                 self.optimizer.zero_grad()
                 batch_loss.backward()
                 epoch_loss += float(batch_loss)
@@ -260,7 +275,7 @@ class SentimentAnalysisClassifier():
         correct_result_number = 0
         for x_datum, y_datum in zip(self.x_data, self.y_data):
             expected_result = sentiment_result_to_string(y_datum)
-            y_batch_predicted = self.model(x_datum)
+            y_batch_predicted, _ = self.model(x_datum)
             actual_result = sentiment_result_to_string(torch.round(y_batch_predicted[0]))
             if verbose:
                 print("Input: {x}".format(x=x_datum))
@@ -290,7 +305,7 @@ def main():
         classifier.print_current_state()
         classifier.train(number_of_epochs_between_updates)
     classifier.print_current_state()
-            
+    
 if __name__ == '__main__':
     main()
 
