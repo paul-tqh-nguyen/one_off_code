@@ -191,6 +191,7 @@ class SentimentAnalysisNetwork(nn.Module):
         attention_matrix, attenion_regularization_penalty = self.attention_layers(encoding_batch_matrix)
         assert tuple(attention_matrix.shape) == (batch_size, self.number_of_attention_heads*2*self.embedding_hidden_size)
         prediction_scores = self.prediction_layers(attention_matrix)
+        assert tuple(prediction_scores.shape) == (batch_size, NUMBER_OF_SENTIMENTS)
         return prediction_scores, attenion_regularization_penalty
 
 #######################
@@ -235,6 +236,7 @@ def sentiment_result_to_string(sentiment_result):
     sentiment_result_string = None
     positive_result = POSITIVE_RESULT.to(sentiment_result.device)
     negative_result = NEGATIVE_RESULT.to(sentiment_result.device)
+    assert sentiment_result.shape == positive_result.shape
     if torch.all(sentiment_result == positive_result):
         sentiment_result_string = "Positive"
     elif torch.all(sentiment_result == negative_result):
@@ -244,11 +246,18 @@ def sentiment_result_to_string(sentiment_result):
     return sentiment_result_string
 
 class SentimentAnalysisClassifier():
-    def __init__(self, batch_size=1, learning_rate=1e-2):
+    def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
+                 embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=241
+    ):
+        self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
         self.most_recent_epoch_loss = 0
         self.loss_function = nn.BCELoss()
-        self.model = SentimentAnalysisNetwork()
+        self.model = SentimentAnalysisNetwork(
+            embedding_hidden_size=embedding_hidden_size,
+            lstm_dropout_prob=lstm_dropout_prob,
+            number_of_attention_heads=number_of_attention_heads,
+            attention_hidden_size=attention_hidden_size)
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)        
         self.x_data = POSITIVE_STRINGS+NEGATIVE_STRINGS
         self.y_data = torch.stack([POSITIVE_RESULT]*len(POSITIVE_STRINGS)+[NEGATIVE_RESULT]*len(NEGATIVE_STRINGS)).to(self.model.device)
@@ -260,7 +269,7 @@ class SentimentAnalysisClassifier():
             epoch_loss = 0
             for x_batch, y_batch in self.training_generator:
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
-                batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty
+                batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
                 batch_loss.backward()
                 epoch_loss += float(batch_loss)
@@ -275,19 +284,22 @@ class SentimentAnalysisClassifier():
         correct_result_number = 0
         for x_datum, y_datum in zip(self.x_data, self.y_data):
             expected_result = sentiment_result_to_string(y_datum)
-            y_batch_predicted, _ = self.model(x_datum)
+            x_batch = [x_datum]
+            y_batch_predicted, _ = self.model(x_batch)
             actual_result = sentiment_result_to_string(torch.round(y_batch_predicted[0]))
             if verbose:
                 print("Input: {x}".format(x=x_datum))
                 print("Expected Output: {x}".format(x=expected_result))
                 print("Actual Output: {x}".format(x=actual_result))
+                print("Raw Expected Output: {x}".format(x=y_datum))
+                print("Raw Actual Output: {x}".format(x=y_batch_predicted))
                 print("\n")
             if actual_result == expected_result:
                 correct_result_number += 1
         total_result_number = len(self.x_data)
         if verbose:
-            print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=total_result_number))
             print("Loss per datapoint for {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
+        print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=total_result_number))
         print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
         if verbose:
             print("===================================================================")
@@ -296,16 +308,31 @@ class SentimentAnalysisClassifier():
 # Main Runner #
 ###############
 
-def main():
-    classifier = SentimentAnalysisClassifier()
-    number_of_epochs = 9000
+def main(batch_size=1,
+         learning_rate=1e-2,
+         attenion_regularization_penalty_multiplicative_factor=0.1,
+         embedding_hidden_size=200,
+         lstm_dropout_prob=0.2,
+         number_of_attention_heads=2,
+         attention_hidden_size=24
+):
+    classifier = SentimentAnalysisClassifier(
+        batch_size=batch_size,
+        learning_rate=learning_rate,
+        attenion_regularization_penalty_multiplicative_factor=attenion_regularization_penalty_multiplicative_factor,
+        embedding_hidden_size=embedding_hidden_size,
+        lstm_dropout_prob=lstm_dropout_prob,
+        number_of_attention_heads=number_of_attention_heads,
+        attention_hidden_size=attention_hidden_size)
+    number_of_epochs = 999000
     number_of_epochs_between_updates = 50
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
+    print_verbosely = False
     for update_index in range(number_of_updates):
-        classifier.print_current_state()
+        classifier.print_current_state(print_verbosely)
         classifier.train(number_of_epochs_between_updates)
-    classifier.print_current_state()
-    
+    classifier.print_current_state(print_verbosely)
+
 if __name__ == '__main__':
     main()
 
