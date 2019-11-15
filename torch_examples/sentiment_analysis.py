@@ -337,7 +337,7 @@ class SentimentAnalysisClassifier():
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)
         training_set, validation_set = determine_training_and_validation_datasets()
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
-        self.validation_generator = data.DataLoader(, batch_size=1, shuffle=False)
+        self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         
     def train(self, number_of_epochs_to_train):
         self.model.train()
