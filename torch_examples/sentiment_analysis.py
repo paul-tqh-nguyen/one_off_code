@@ -26,7 +26,7 @@ File Organization:
 # Imports #
 ###########
 
-from typing import List
+from typing import Iterable
 from gensim.models import KeyedVectors
 import string
 from collections import OrderedDict
@@ -37,6 +37,7 @@ from torch.utils import data
 from contextlib import contextmanager
 import time
 import csv
+import random
 
 WORD2VEC_BIN_LOCATION = '/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin'
 WORD2VEC_MODEL = KeyedVectors.load_word2vec_format('/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin', binary=True)
@@ -140,25 +141,27 @@ SENTIMENTS = list(map(lambda x:x[1], RAW_VALUE_TO_SENTIMENT_PAIRS))
 
 NUMBER_OF_SENTIMENTS = len(SENTIMENTS)
 
-TORCH_ARANGE_NUMBER_OF_SENTIMENTS = torch.arange(NUMBER_OF_SENTIMENTS)
-
 SENTIMENT_INDEX_TO_SENTIMENT_MAP = {index:sentiment for index, sentiment in enumerate(SENTIMENTS)}
 SENTIMENT_TO_SENTIMENT_INDEX_MAP = {sentiment:index for index, sentiment in enumerate(SENTIMENTS)}
 
 def sentiment_to_one_hot_vector(sentiment):
     assert sentiment in SENTIMENTS
     sentiment_index = SENTIMENT_TO_SENTIMENT_INDEX_MAP[sentiment]
-    one_hot_vector = torch.zeros(NUMBER_OF_SENTIMENTS,dtype=int)
+    one_hot_vector = torch.zeros(NUMBER_OF_SENTIMENTS)
     one_hot_vector[sentiment_index] = 1
     return one_hot_vector
 
 def truncate_sentiment_result(sentiment_result):
-    return torch.round(sentiment_result/sentiment_result.max())
+    truncated_sentiment_result = torch.floor(sentiment_result/sentiment_result.max())
+    assert torch.sum(truncated_sentiment_result) == 1
+    return truncated_sentiment_result
+
+TORCH_ARANGE_NUMBER_OF_SENTIMENTS = torch.arange(NUMBER_OF_SENTIMENTS, dtype=torch.float32)
 
 def sentiment_result_to_string(sentiment_result_0):
     sentiment_result = truncate_sentiment_result(sentiment_result_0)
     sentiment_result_string = None
-    assert tuple(sentiment_result.shape) == (NUMBER_OF_SENTIMENTS)
+    assert tuple(sentiment_result.shape) == (NUMBER_OF_SENTIMENTS,)
     assert torch.sum(sentiment_result) == 1
     sentiment_index = int(sentiment_result.dot(TORCH_ARANGE_NUMBER_OF_SENTIMENTS))
     sentiment_string = SENTIMENT_INDEX_TO_SENTIMENT_MAP[sentiment_index]
@@ -167,20 +170,20 @@ def sentiment_result_to_string(sentiment_result_0):
 TRAINING_DATA_LOCATION = "./data/train.csv"
 TEST_DATA_LOCATION = "./data/test.csv"
 
-VALIDATION_DATA_PORTION = 0.10
+VALIDATION_DATA_PORTION = 0.00010 # @hack this is small for debugging purposes
 
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = {} # @todo do something with this
 
-with open(TRAINING_DATA_LOCATION) as training_data_csv_file_location:
-    training_data_csv_reader = csv.DictReader(training_data_csv_file_location, delimiter=',')
+with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
+    training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
     for row_dict in training_data_csv_reader:
         id = row_dict.pop('ItemID')
         TRAINING_DATA_ID_TO_DATA_MAP[id]=row_dict
 
-with open(TEST_DATA_LOCATION) as test_data_csv_file_location:
-    test_data_csv_reader = csv.DictReader(test_data_csv_file_location, delimiter=',')
+with open(TEST_DATA_LOCATION, encoding='ISO-8859-1') as test_data_csv_file:
+    test_data_csv_reader = csv.DictReader(test_data_csv_file, delimiter=',')
     for row_dict in test_data_csv_reader:
         id = row_dict['ItemID']
         text = row_dict['SentimentText']
@@ -300,7 +303,7 @@ class SentimentAnalysisNetwork(nn.Module):
         self.attention_layers.to(self.device)
         self.prediction_layers.to(self.device)
         
-    def forward(self, sentence_strings: List[str]):
+    def forward(self, sentence_strings: Iterable[str]):
         batch_size = len(sentence_strings)
         sentence_matrices_unpadded = [sentence_matrix_from_sentence_string(sentence_string) for sentence_string in sentence_strings]
         sentence_batch_matrix = torch.nn.utils.rnn.pad_sequence(sentence_matrices_unpadded)
@@ -339,11 +342,19 @@ class SentimentAnalysisClassifier():
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
         self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         
-    def train(self, number_of_epochs_to_train):
+    def train(self, number_of_epochs_to_train, number_of_iterations_per_status_update=None):
         self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
             epoch_loss = 0
-            for x_batch, y_batch in self.training_generator:
+            total_number_of_iterations = len(self.training_generator.dataset)
+            for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
+                if number_of_iterations_per_status_update is not None:
+                    if (iteration_index % number_of_iterations_per_status_update) == 0:
+                        current_global_epoch=self.number_of_completed_epochs+new_epoch_index
+                        print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
+                            iteration_index=iteration_index,
+                            total_number_of_iterations=total_number_of_iterations,
+                            current_global_epoch=current_global_epoch))
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
@@ -363,9 +374,11 @@ class SentimentAnalysisClassifier():
             print("===================================================================")
         correct_result_number = 0
         for x_batch, y_batch in self.validation_generator:
-            assert tuple(x_batch.shape) == (1)
+            assert isinstance(x_batch, tuple)
+            assert len(x_batch) == 1
             assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
-            expected_result = sentiment_result_to_string(y_batch[0])
+            y_datum = y_batch[0]
+            expected_result = sentiment_result_to_string(y_datum)
             y_batch_predicted, _ = self.evaluate(x_batch)
             assert y_batch_predicted.shape == (1,NUMBER_OF_SENTIMENTS)
             actual_result = sentiment_result_to_string(y_batch_predicted[0])
@@ -379,7 +392,7 @@ class SentimentAnalysisClassifier():
                 print("\n")
             if actual_result == expected_result:
                 correct_result_number += 1
-        total_result_number = len(self.x_data)
+        total_result_number = len(self.validation_generator.dataset)
         if verbose:
             print("Loss per datapoint for {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
         print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=total_result_number))
@@ -407,8 +420,9 @@ def main(batch_size=1,
         lstm_dropout_prob=lstm_dropout_prob,
         number_of_attention_heads=number_of_attention_heads,
         attention_hidden_size=attention_hidden_size)
-    number_of_epochs = 999000
-    number_of_epochs_between_updates = 50
+    number_of_epochs = 9000
+    number_of_epochs_between_updates = 1
+    number_of_iterations_between_updates = 500
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
     print_verbosely = False
     for update_index in range(number_of_updates):
@@ -418,9 +432,8 @@ def main(batch_size=1,
                 end_epoch_index=(update_index+1)*number_of_epochs_between_updates,
                 time_for_epochs=number_of_seconds,
         ))):
-            classifier.train(number_of_epochs_between_updates)
+            classifier.train(number_of_epochs_between_updates, number_of_iterations_between_updates)
     classifier.print_current_state(print_verbosely)
 
 if __name__ == '__main__':
     main()
-
