@@ -26,8 +26,8 @@ File Organization:
 # Imports #
 ###########
 
-from typing import Iterable
-from gensim.models import KeyedVectors
+from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
+from typing import Iterable, List
 import string
 from collections import OrderedDict
 import torch
@@ -39,10 +39,6 @@ import time
 import csv
 import random
 
-WORD2VEC_BIN_LOCATION = '/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin'
-WORD2VEC_MODEL = KeyedVectors.load_word2vec_format('/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin', binary=True)
-WORD2VEC_VECTOR_LENGTH = 300
-PUNCTUATION_SET = set(string.punctuation)
 UNSEEN_WORD_TO_TENSOR_MAP = {}
 
 ###################
@@ -77,23 +73,27 @@ def timer(print_function_callback):
 # String Utilities #
 ####################
 
+PUNCTUATION_SET = set(string.punctuation)
+
 def remove_punctuation(input_string):
     return ''.join(char for char in input_string if char not in PUNCTUATION_SET)
+
+def string_is_non_empty(string: str):
+    return string
 
 def normalize_word_string(word_string):
     normalized_word_string = word_string.lower()
     normalized_word_string = remove_punctuation(normalized_word_string)
     return normalized_word_string
 
-def normalized_words_from_sentence_string(sentence_string):
-    """
-    sentence_string is assumed to contain only one sentence. 
-    For example, 'Red is a color. Green is a color.' violates this assumption while 'We play spots, e.g. football.' does not.
-    """
-    normalized_sentence_string = sentence_string
-    words = normalized_sentence_string.split(' ')
-    normalized_sentence_string_words = map(normalize_word_string, words)
-    return normalized_sentence_string_words
+def normalized_words_from_text_string(text_string):
+    """text_string is assumed to be a tweet."""
+    # @todo fix the assumptions on this
+    normalized_text_string = text_string
+    normalized_words = normalized_text_string.split(' ')
+    normalized_words = filter(string_is_non_empty, normalized_words)
+    normalized_words = map(normalize_word_string, normalized_words)
+    return normalized_words
 
 ###############################
 # String <-> Tensor Utilities #
@@ -116,15 +116,15 @@ def tensor_from_normalized_word(word: str):
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
     return tensor
 
-def tensors_from_sentence_string(sentence_string: str):
-    normalized_words = normalized_words_from_sentence_string(sentence_string)
+def tensors_from_text_string(text_string: str):
+    normalized_words = normalized_words_from_text_string(text_string)
     tensors = map(tensor_from_normalized_word, normalized_words)
     return tensors
 
-def sentence_matrix_from_sentence_string(sentence_string: str):
-    word_tensors = tuple(tensors_from_sentence_string(sentence_string))
-    sentence_matrix = torch.stack(word_tensors)
-    return sentence_matrix
+def text_string_matrix_from_text_string(text_string: str):
+    word_tensors = tuple(tensors_from_text_string(text_string))
+    text_string_matrix = torch.stack(word_tensors)
+    return text_string_matrix
 
 #######################
 # Dataset Definitions #
@@ -170,15 +170,21 @@ def sentiment_result_to_string(sentiment_result_0):
 TRAINING_DATA_LOCATION = "./data/train.csv"
 TEST_DATA_LOCATION = "./data/test.csv"
 
-VALIDATION_DATA_PORTION = 0.00010 # @hack this is small for debugging purposes
+VALIDATION_DATA_PORTION = 0.10
 
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = {} # @todo do something with this
 
+PORTION_OF_TRAINING_DATA_TO_USE = 0.001
+
 with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
-    for row_dict in training_data_csv_reader:
+    row_dicts = list(training_data_csv_reader)
+    number_of_row_dicts = len(row_dicts)
+    for row_dict_index, row_dict in enumerate(row_dicts):
+        if row_dict_index/number_of_row_dicts >= PORTION_OF_TRAINING_DATA_TO_USE:
+            break
         id = row_dict.pop('ItemID')
         TRAINING_DATA_ID_TO_DATA_MAP[id]=row_dict
 
@@ -303,14 +309,14 @@ class SentimentAnalysisNetwork(nn.Module):
         self.attention_layers.to(self.device)
         self.prediction_layers.to(self.device)
         
-    def forward(self, sentence_strings: Iterable[str]):
-        batch_size = len(sentence_strings)
-        sentence_matrices_unpadded = [sentence_matrix_from_sentence_string(sentence_string) for sentence_string in sentence_strings]
-        sentence_batch_matrix = torch.nn.utils.rnn.pad_sequence(sentence_matrices_unpadded)
-        sentence_batch_matrix = sentence_batch_matrix.to(self.device)
-        max_number_of_words = max(map(len, sentence_matrices_unpadded))
-        assert tuple(sentence_batch_matrix.shape) == (max_number_of_words, batch_size, WORD2VEC_VECTOR_LENGTH), "sentence_batch_matrix has unexpected dimensions."
-        embeddeding_batch_matrix = self.embedding_layers(sentence_batch_matrix)
+    def forward(self, text_strings: Iterable[str]):
+        batch_size = len(text_strings)
+        text_string_matrices_unpadded = [text_string_matrix_from_text_string(text_string) for text_string in text_strings]
+        text_string_batch_matrix = torch.nn.utils.rnn.pad_sequence(text_string_matrices_unpadded)
+        text_string_batch_matrix = text_string_batch_matrix.to(self.device)
+        max_number_of_words = max(map(len, text_string_matrices_unpadded))
+        assert tuple(text_string_batch_matrix.shape) == (max_number_of_words, batch_size, WORD2VEC_VECTOR_LENGTH), "text_string_batch_matrix has unexpected dimensions."
+        embeddeding_batch_matrix = self.embedding_layers(text_string_batch_matrix)
         assert tuple(embeddeding_batch_matrix.shape) == (max_number_of_words, batch_size, self.embedding_hidden_size)
         encoding_batch_matrix, _ = self.encoding_layers(embeddeding_batch_matrix)
         assert tuple(encoding_batch_matrix.shape) == (max_number_of_words, batch_size, 2*self.embedding_hidden_size)
@@ -342,6 +348,10 @@ class SentimentAnalysisClassifier():
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
         self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         
+    def print_dataset_stats(self):
+        print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
+        print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
+        
     def train(self, number_of_epochs_to_train, number_of_iterations_per_status_update=None):
         self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
@@ -349,7 +359,7 @@ class SentimentAnalysisClassifier():
             total_number_of_iterations = len(self.training_generator.dataset)
             for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
                 if number_of_iterations_per_status_update is not None:
-                    if (iteration_index % number_of_iterations_per_status_update) == 0:
+                    if (iteration_index != 0) and (iteration_index % number_of_iterations_per_status_update) == 0:
                         current_global_epoch=self.number_of_completed_epochs+new_epoch_index
                         print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
                             iteration_index=iteration_index,
@@ -369,8 +379,8 @@ class SentimentAnalysisClassifier():
         return self.model(strings)
     
     def print_current_state(self, verbose=False):
+        print()
         if verbose:
-            print("\n")
             print("===================================================================")
         correct_result_number = 0
         for x_batch, y_batch in self.validation_generator:
@@ -393,9 +403,8 @@ class SentimentAnalysisClassifier():
             if actual_result == expected_result:
                 correct_result_number += 1
         total_result_number = len(self.validation_generator.dataset)
-        if verbose:
-            print("Loss per datapoint for {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
         print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=total_result_number))
+        print("Loss per datapoint for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
         print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
         if verbose:
             print("===================================================================")
@@ -425,15 +434,37 @@ def main(batch_size=1,
     number_of_iterations_between_updates = 500
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
     print_verbosely = False
+    print()
+    print("Starting Training.")
+    print()
+    classifier.print_dataset_stats()
+    classifier.print_current_state(print_verbosely)
     for update_index in range(number_of_updates):
-        classifier.print_current_state(print_verbosely)
         with timer(lambda number_of_seconds: print("Time for epochs {start_epoch_index} to {end_epoch_index}: {time_for_epochs} seconds".format(
                 start_epoch_index=update_index*number_of_epochs_between_updates,
-                end_epoch_index=(update_index+1)*number_of_epochs_between_updates,
+                end_epoch_index=(update_index+1)*number_of_epochs_between_updates-1,
                 time_for_epochs=number_of_seconds,
         ))):
             classifier.train(number_of_epochs_between_updates, number_of_iterations_between_updates)
+            classifier.print_current_state(print_verbosely)
     classifier.print_current_state(print_verbosely)
+    print("Training Complete.")
+
+def validate_text_processing():
+    csv_file_locations = [TRAINING_DATA_LOCATION, TEST_DATA_LOCATION]
+    for csv_file_location in csv_file_locations:
+        with open(csv_file_location, encoding='ISO-8859-1') as csv_file:
+            csv_reader = csv.DictReader(csv_file, delimiter=',')
+            for row_dict in csv_reader:
+                sentiment_text = row_dict['SentimentText']
+                normalized_text_words = list(normalized_words_from_text_string(sentiment_text))
+                words_unknown_to_word2vec = list(filter(lambda word: word in WORD2VEC_MODEL, normalized_text_words))
+                print()
+                print("Raw Text: {sentiment_text}".format(sentiment_text=sentiment_text))
+                print("Normalized Words: {normalized_text_words}".format(normalized_text_words=normalized_text_words))
+                print("Words Unknown to WORD2VEC: {words_unknown_to_word2vec}".format(words_unknown_to_word2vec=words_unknown_to_word2vec))
+                time.sleep(5) # @hack for debugging convenience
 
 if __name__ == '__main__':
-    main()
+    validate_text_processing()
+    #main()
