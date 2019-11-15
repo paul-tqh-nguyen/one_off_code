@@ -36,6 +36,7 @@ import torch.nn.functional as F
 from torch.utils import data
 from contextlib import contextmanager
 import time
+import csv
 
 WORD2VEC_BIN_LOCATION = '/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin'
 WORD2VEC_MODEL = KeyedVectors.load_word2vec_format('/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin', binary=True)
@@ -124,11 +125,108 @@ def sentence_matrix_from_sentence_string(sentence_string: str):
     sentence_matrix = torch.stack(word_tensors)
     return sentence_matrix
 
+#######################
+# Dataset Definitions #
+#######################
+
+RAW_VALUE_TO_SENTIMENT_PAIRS = [
+    ("0", "Negative"),
+    ("1", "Positive"),
+]
+
+RAW_VALUE_TO_SENTIMENT_MAP = dict(RAW_VALUE_TO_SENTIMENT_PAIRS)
+
+SENTIMENTS = list(map(lambda x:x[1], RAW_VALUE_TO_SENTIMENT_PAIRS))
+
+NUMBER_OF_SENTIMENTS = len(SENTIMENTS)
+
+TORCH_ARANGE_NUMBER_OF_SENTIMENTS = torch.arange(NUMBER_OF_SENTIMENTS)
+
+SENTIMENT_INDEX_TO_SENTIMENT_MAP = {index:sentiment for index, sentiment in enumerate(SENTIMENTS)}
+SENTIMENT_TO_SENTIMENT_INDEX_MAP = {sentiment:index for index, sentiment in enumerate(SENTIMENTS)}
+
+def sentiment_to_one_hot_vector(sentiment):
+    assert sentiment in SENTIMENTS
+    sentiment_index = SENTIMENT_TO_SENTIMENT_INDEX_MAP[sentiment]
+    one_hot_vector = torch.zeros(NUMBER_OF_SENTIMENTS,dtype=int)
+    one_hot_vector[sentiment_index] = 1
+    return one_hot_vector
+
+def truncate_sentiment_result(sentiment_result):
+    return torch.round(sentiment_result/sentiment_result.max())
+
+def sentiment_result_to_string(sentiment_result_0):
+    sentiment_result = truncate_sentiment_result(sentiment_result_0)
+    sentiment_result_string = None
+    assert tuple(sentiment_result.shape) == (NUMBER_OF_SENTIMENTS)
+    assert torch.sum(sentiment_result) == 1
+    sentiment_index = int(sentiment_result.dot(TORCH_ARANGE_NUMBER_OF_SENTIMENTS))
+    sentiment_string = SENTIMENT_INDEX_TO_SENTIMENT_MAP[sentiment_index]
+    return sentiment_string
+
+TRAINING_DATA_LOCATION = "./data/train.csv"
+TEST_DATA_LOCATION = "./data/test.csv"
+
+VALIDATION_DATA_PORTION = 0.10
+
+TRAINING_DATA_ID_TO_DATA_MAP = {}
+TRAINING_DATA_ID_TO_DATA_MAP = {}
+TEST_DATA_ID_TO_TEXT_MAP = {} # @todo do something with this
+
+with open(TRAINING_DATA_LOCATION) as training_data_csv_file_location:
+    training_data_csv_reader = csv.DictReader(training_data_csv_file_location, delimiter=',')
+    for row_dict in training_data_csv_reader:
+        id = row_dict.pop('ItemID')
+        TRAINING_DATA_ID_TO_DATA_MAP[id]=row_dict
+
+with open(TEST_DATA_LOCATION) as test_data_csv_file_location:
+    test_data_csv_reader = csv.DictReader(test_data_csv_file_location, delimiter=',')
+    for row_dict in test_data_csv_reader:
+        id = row_dict['ItemID']
+        text = row_dict['SentimentText']
+        TEST_DATA_ID_TO_TEXT_MAP[id]=text
+
+class SentimentLabelledDataset(data.Dataset):
+    def __init__(self, texts, one_hot_sentiment_vectors):
+        self.x_data = texts
+        self.y_data = one_hot_sentiment_vectors
+        assert len(self.x_data) == len(self.y_data)
+        
+    def __len__(self):
+        assert len(self.x_data) == len(self.y_data)
+        return len(self.x_data)
+    
+    def __getitem__(self, index):
+        x_datum = self.x_data[index]
+        y_datum = self.y_data[index]
+        return x_datum, y_datum
+
+def determine_training_and_validation_datasets():
+    data_dictionaries = list(TRAINING_DATA_ID_TO_DATA_MAP.values())
+    random.shuffle(data_dictionaries)
+    number_of_validation_data_points = round(VALIDATION_DATA_PORTION*len(data_dictionaries))
+    training_inputs = []
+    training_labels = []
+    validation_inputs = []
+    validation_labels = []
+    for data_dictionary_index, data_dictionary in enumerate(data_dictionaries):
+        sentiment_text = data_dictionary['SentimentText']
+        raw_sentiment = data_dictionary['Sentiment']
+        sentiment = RAW_VALUE_TO_SENTIMENT_MAP[raw_sentiment]
+        one_hot_vector = sentiment_to_one_hot_vector(sentiment)
+        if data_dictionary_index < number_of_validation_data_points:
+            validation_inputs.append(sentiment_text)
+            validation_labels.append(one_hot_vector)
+        else:
+            training_inputs.append(sentiment_text)
+            training_labels.append(one_hot_vector)
+    training_dataset = SentimentLabelledDataset(training_inputs, training_labels)
+    validation_dataset = SentimentLabelledDataset(validation_inputs, validation_labels)
+    return training_dataset, validation_dataset
+
 #####################
 # Model Definitions #
 #####################
-
-NUMBER_OF_SENTIMENTS = 2
 
 class SelfAttentionLayers(nn.Module):
     def __init__(self, input_size=400, number_of_attention_heads=2, hidden_size=None):
@@ -219,56 +317,9 @@ class SentimentAnalysisNetwork(nn.Module):
         assert tuple(prediction_scores.shape) == (batch_size, NUMBER_OF_SENTIMENTS)
         return prediction_scores, attenion_regularization_penalty
 
-#######################
-# Dataset Definitions #
-#######################
-
-NEGATIVE_STRINGS = [
-    "Welds didn't hold... So disappointed", 
-    "The item was bent inside the undamaged box.", 
-    "Bad craftsmanship at welding position.", 
-    "Knock Off version of the USA Made Vortex, THIS IS NOT THE SAME QUALITY, chinese crap.", 
-]
-
-POSITIVE_STRINGS = [
-    "Makes the best chicken wings.", 
-    "Works great at about half the price of others.", 
-    "Very pleased.", 
-    "Excellent product. Works as advertised.", 
-]
-
-POSITIVE_RESULT = torch.tensor([1,0]).float()
-NEGATIVE_RESULT = torch.tensor([0,1]).float() 
-
-class SentimentDataset(data.Dataset):
-  def __init__(self, strings, expected_classification_tensors):
-        self.x_data = strings
-        self.y_data = expected_classification_tensors
-    
-  def __len__(self):
-        return len(self.x_data)
-    
-  def __getitem__(self, index):
-        x_datum = self.x_data[index]
-        y_datum = self.y_data[index]
-        return x_datum, y_datum
-
 ##########################
 # Classifier Definitions #
 ##########################
-
-def sentiment_result_to_string(sentiment_result):
-    sentiment_result_string = None
-    positive_result = POSITIVE_RESULT.to(sentiment_result.device)
-    negative_result = NEGATIVE_RESULT.to(sentiment_result.device)
-    assert sentiment_result.shape == positive_result.shape
-    if torch.all(sentiment_result == positive_result):
-        sentiment_result_string = "Positive"
-    elif torch.all(sentiment_result == negative_result):
-        sentiment_result_string = "Negative"
-    else:
-        raise Exception('The following is not a supported sentiment: {sentiment_result}'.format(sentiment_result=sentiment_result))
-    return sentiment_result_string
 
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
@@ -283,13 +334,13 @@ class SentimentAnalysisClassifier():
             lstm_dropout_prob=lstm_dropout_prob,
             number_of_attention_heads=number_of_attention_heads,
             attention_hidden_size=attention_hidden_size)
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)        
-        self.x_data = POSITIVE_STRINGS+NEGATIVE_STRINGS
-        self.y_data = torch.stack([POSITIVE_RESULT]*len(POSITIVE_STRINGS)+[NEGATIVE_RESULT]*len(NEGATIVE_STRINGS)).to(self.model.device)
-        training_set = SentimentDataset(self.x_data, self.y_data)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)
+        training_set, validation_set = determine_training_and_validation_datasets()
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
+        self.validation_generator = data.DataLoader(, batch_size=1, shuffle=False)
         
     def train(self, number_of_epochs_to_train):
+        self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
             epoch_loss = 0
             for x_batch, y_batch in self.training_generator:
@@ -301,19 +352,26 @@ class SentimentAnalysisClassifier():
                 self.optimizer.step()
             self.most_recent_epoch_loss = epoch_loss
             self.number_of_completed_epochs += 1
-                
+            
+    def evaluate(self, strings: List[str]):
+        self.model.eval()
+        return self.model(strings)
+    
     def print_current_state(self, verbose=False):
         if verbose:
             print("\n")
             print("===================================================================")
         correct_result_number = 0
-        for x_datum, y_datum in zip(self.x_data, self.y_data):
-            expected_result = sentiment_result_to_string(y_datum)
-            x_batch = [x_datum]
-            y_batch_predicted, _ = self.model(x_batch)
-            actual_result = sentiment_result_to_string(torch.round(y_batch_predicted[0]))
+        for x_batch, y_batch in self.validation_generator:
+            assert tuple(x_batch.shape) == (1)
+            assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
+            expected_result = sentiment_result_to_string(y_batch[0])
+            y_batch_predicted, _ = self.evaluate(x_batch)
+            assert y_batch_predicted.shape == (1,NUMBER_OF_SENTIMENTS)
+            actual_result = sentiment_result_to_string(y_batch_predicted[0])
             if verbose:
-                print("Input: {x}".format(x=x_datum))
+                input_string = x_batch[0]
+                print("Input: {x}".format(x=input_string))
                 print("Expected Output: {x}".format(x=expected_result))
                 print("Actual Output: {x}".format(x=actual_result))
                 print("Raw Expected Output: {x}".format(x=y_datum))
