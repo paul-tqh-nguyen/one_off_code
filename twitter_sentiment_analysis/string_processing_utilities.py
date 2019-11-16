@@ -25,20 +25,21 @@ File Organization:
 import string
 import html
 import re
+from spellchecker import SpellChecker
 from word2vec_utilities import WORD2VEC_MODEL
-from typing import List
+from typing import List, Tuple
 
 ###################################
 # Unknown Word DWIMming Utilities #
 ###################################
 
-def omg_star_applicaility(word_string: str) -> bool:
+def omg_star_applicability(word_string: str) -> bool:
     return re.findall("^omg.+$", word_string.lower())
 
 def omg_star_expand(word_string: str) -> str:
     return ["omg"]
 
-def num_word_concatenation_applicaility(word_string: str) -> bool:
+def num_word_concatenation_applicability(word_string: str) -> bool:
     return re.findall("^[0-9]+[a-z]+$", word_string.lower())
     
 def num_word_concatenation_expand(word_string: str) -> str:
@@ -48,9 +49,44 @@ def num_word_concatenation_expand(word_string: str) -> str:
     character_substring = word_string.replace(number_substring, '')
     return [number_substring, character_substring]
 
+VOWELS = {'a','e','i','o','u'}
+SPELL_CHECKER = SpellChecker()
+
+def possibly_dwim_duplicate_letters_exaggeration(word_string: str) -> Tuple[bool,str]:
+    reduced_word = word_string.lower()
+    letters = set(reduced_word)
+    for _ in word_string:
+        no_change_happened = True
+        for letter in letters:
+            letter_probable_upper_limit = 2 if letter in VOWELS else 1
+            disallowed_letter_duplicate_sequence = letter*(letter_probable_upper_limit+1)
+            disallowed_letter_duplicate_sequence_replacement = letter*letter_probable_upper_limit
+            if disallowed_letter_duplicate_sequence in reduced_word:
+                no_change_happened = False
+                reduced_word = reduced_word.replace(disallowed_letter_duplicate_sequence, disallowed_letter_duplicate_sequence_replacement)
+        if no_change_happened:
+            break
+    candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
+    candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
+    for candidate_word in candidate_words_that_dont_introduce_new_characters:
+        if candidate_word in WORD2VEC_MODEL:
+            reduced_word = candidate_word
+            reduced_word_is_known = True
+            break
+    return reduced_word_is_known, reduced_word
+
+def duplicate_letters_exaggeration_applicability(word_string: str) -> bool:
+    corrected_word_is_known, _ = possibly_dwim_duplicate_letters_exaggeration(word_string)
+    return corrected_word_is_known
+
+def duplicate_letters_exaggeration_expand(word_string: str) -> str:
+    _, corrected_word = possibly_dwim_duplicate_letters_exaggeration(word_string)
+    return [corrected_word]
+
 DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS = [
-    (omg_star_applicaility, omg_star_expand),
-    (num_word_concatenation_applicaility, num_word_concatenation_expand),
+    (omg_star_applicability, omg_star_expand),
+    (num_word_concatenation_applicability, num_word_concatenation_expand),
+    (duplicate_letters_exaggeration_applicability, duplicate_letters_exaggeration_expand),
 ]
 
 def possibly_dwim_unknown_words(word_strings: List[str]) -> str:
