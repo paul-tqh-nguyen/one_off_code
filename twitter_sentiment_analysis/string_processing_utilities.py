@@ -226,6 +226,10 @@ def possibly_dwim_duplicate_letters_exaggeration(word_string: str) -> Tuple[bool
                     reduced_word = candidate_word
                     reduced_word_is_known = True
                     break
+            if not reduced_word_is_known:
+                if len(candidate_words_via_spell_checker) == 1:
+                    reduced_word = tuple(candidate_words_via_spell_checker)[0]
+                    reduced_word_is_known = reduced_word in WORD2VEC_MODEL
     return reduced_word_is_known, reduced_word
 
 def duplicate_letters_exaggeration_applicability(word_string: str) -> bool:
@@ -262,7 +266,7 @@ def possibly_dwim_unknown_words(word_strings: List[str]) -> str:
 ###########################################
 
 EMOTICONS = '''
-:‑D :D 8‑D 8D x‑D xD X‑D XD =D =3 B^D :‑( :( :‑c :c :‑< :< :‑[ :[ :-|| >:[ :{ :@ >:( :-)) :'‑( :'( :'‑) :') D‑': D:< D: D8 D; D= DX :‑O :O :‑o :o :-0 8‑0 >:O :-* :* :× ;‑) ;) *-) *) ;‑] ;] ;^) :‑, ;D :‑P :P X‑P XP x‑p xp :‑p :p :‑Þ :Þ :‑þ :þ :‑b :b d: =p >:P :‑/ :/ :‑. >:\ >:/ :\ =/ =\ :L =L :S :‑| :| :$ ://) ://3 :‑X :X :‑# :# :‑& :& O:‑) O:) 0:‑3 0:3 0:‑) 0:) 0;^) >:‑) >:) }:‑) }:) 3:‑) 3:) >;) >:3 >;3 |;‑) |‑O :‑J #‑) %‑) %) <:‑| ',:-| ',:-l :-| T_T @-) 
+:‑D :D 8‑D 8D x‑D X‑D =D =3 B^D :‑( :( :‑c :c :‑< :< :‑[ :[ :-|| >:[ :{ :@ >:( :-)) :'‑( :'( :'‑) :') D‑': D:< D: D8 D; D= :‑O :O :‑o :o :-0 8‑0 >:O :-* :* :× ;‑) ;) *-) *) ;‑] ;] ;^) :‑, ;D :‑P :P X‑P x‑p :‑p :p :‑Þ :Þ :‑þ :þ :‑b :b d: =p >:P :‑/ :/ :‑. >:\ >:/ :\ =/ =\ :L =L :S :‑| :| :$ ://) ://3 :‑X :X :‑# :# :‑& :& O:‑) O:) 0:‑3 0:3 0:‑) 0:) 0;^) >:‑) >:) }:‑) }:) 3:‑) 3:) >;) >:3 >;3 |;‑) |‑O :‑J #‑) %‑) %) <:‑| ',:-| ',:-l :-| T_T @-) 
 '''.strip().split(' ')
 
 MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES = EMOTICONS+[
