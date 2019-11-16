@@ -24,6 +24,7 @@ File Organization:
 import unittest
 import csv
 import re
+import random
 from word2vec_utilities import WORD2VEC_MODEL
 from string_processing_utilities import word_string_resembles_meaningful_special_character_sequence_placeholder, normalized_words_from_text_string, PUNCTUATION_SET
 from sentiment_analysis import TRAINING_DATA_LOCATION, TEST_DATA_LOCATION
@@ -32,7 +33,16 @@ from sentiment_analysis import TRAINING_DATA_LOCATION, TEST_DATA_LOCATION
 # Testing Utilities #
 #####################
 
-COMMONLY_USED_MISSING_WORD2VEC_WORDS = ['a']
+COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
+    # stop words
+    'a', 'to', 'and', 'of',
+    # words worth learning
+    'blowd', 'yipee',
+    # Proper Nouns @todo handle named entities
+    'hifa', 'edeka', 'swartz', "semisonic",
+    # @ to figure out
+    'uplanders',
+]
 
 def string_corresponds_to_number(word_string: str) -> str:
     return bool(re.findall("^[0-9]+$", word_string))
@@ -56,10 +66,14 @@ class testTextStringNormalizationViaData(unittest.TestCase):
         for csv_file_location in csv_file_locations:
             with open(csv_file_location, encoding='ISO-8859-1') as csv_file:
                 csv_reader = csv.DictReader(csv_file, delimiter=',')
-                for row_dict in csv_reader:
+                row_dicts = list(csv_reader)
+                #random.shuffle(row_dicts)
+                for row_dict in row_dicts:
                     sentiment_text = row_dict['SentimentText']
                     questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
-                    self.assertTrue(len(questionable_normalized_words)==0, msg="We failed to process \"{sentiment_text}\" properly as we got the questionable words {questionable_normalized_words}".format(sentiment_text=sentiment_text, questionable_normalized_words=questionable_normalized_words))
+                    self.assertTrue(len(questionable_normalized_words)==0,
+                                    msg="We failed to process \"{sentiment_text}\" properly as we got the questionable words {questionable_normalized_words}".format(
+                                        sentiment_text=sentiment_text, questionable_normalized_words=questionable_normalized_words))
 
 def run_all_tests():
     print()
