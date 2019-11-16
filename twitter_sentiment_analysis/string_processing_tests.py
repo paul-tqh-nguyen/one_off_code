@@ -36,12 +36,16 @@ from sentiment_analysis import TRAINING_DATA_LOCATION, TEST_DATA_LOCATION
 COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
     # stop words
     'a', 'to', 'and', 'of',
-    # words worth learning
-    'blowd', 'yipee',
+    # new words worth learning during training
+    'blowd', 'yipee', 'momacita',
     # Proper Nouns @todo handle named entities
-    'hifa', 'edeka', 'swartz', "semisonic",
-    # @ to figure out
+    'hifa', 'edeka', 'swartz', "semisonic", 'sytycd', 'christy','pavel','safina','eddings',
+    # @todo to figure out
     'uplanders',
+    # non-sense
+    'leysh', 't9ar5',
+    # words we don't care to learn
+    'tda' # today
 ]
 
 def string_corresponds_to_number(word_string: str) -> str:
@@ -68,12 +72,16 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                 csv_reader = csv.DictReader(csv_file, delimiter=',')
                 row_dicts = list(csv_reader)
                 #random.shuffle(row_dicts)
+                failed_string_to_questionable_normalized_words_map = dict()
                 for row_dict in row_dicts:
                     sentiment_text = row_dict['SentimentText']
                     questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
-                    self.assertTrue(len(questionable_normalized_words)==0,
-                                    msg="We failed to process \"{sentiment_text}\" properly as we got the questionable words {questionable_normalized_words}".format(
-                                        sentiment_text=sentiment_text, questionable_normalized_words=questionable_normalized_words))
+                    if len(questionable_normalized_words)!=0:
+                        failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
+                self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
+                                msg="We failed to process the following: \n{bad_pairs_printout}".format(
+                                    bad_pairs_printout = ''.join(['"{0}" : {1}'.format(sentiment_text, questionable_normalized_words)
+                                                                  for sentiment_text, questionable_normalized_words in failed_string_to_questionable_normalized_words_map.items()])))
 
 def run_all_tests():
     print()

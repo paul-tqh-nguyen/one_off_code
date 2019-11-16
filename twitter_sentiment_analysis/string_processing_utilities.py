@@ -183,7 +183,6 @@ def number_word_concatenation_expand(word_string: str) -> List[str]:
     assert len(number_matches)==1
     number_substring = number_matches[0]
     character_substring = word_string.replace(number_substring, '')
-    assert character_substring in WORD2VEC_MODEL
     return [number_substring, character_substring]
 
 def aw_star_applicability(word_string: str) -> bool:
@@ -193,6 +192,31 @@ def aw_star_expand(word_string: str) -> List[str]:
     expanded_word = "aw"
     assert expanded_word in WORD2VEC_MODEL 
     return [expanded_word]
+
+def possibly_split_two_concatenated_words(word_string: str) -> Tuple[bool,Tuple[str,str]]:
+    min_first_word_length = 5
+    min_second_word_length = 3
+    split_words = []
+    split_words_are_known = False
+    word_string_length = len(word_string)
+    if word_string_length > min_first_word_length+min_second_word_length:
+        split_index_supremum = word_string_length-(min_second_word_length-1)
+        for split_index in range(min_first_word_length, split_index_supremum):
+            first_word = word_string[:split_index]
+            second_word = word_string[split_index:]
+            if first_word in WORD2VEC_MODEL and second_word in WORD2VEC_MODEL:
+                split_words_are_known = True
+                split_words = (first_word, second_word)
+                break            
+    return split_words_are_known, split_words
+
+def two_word_concatenation_applicability(word_string: str) -> bool:
+    split_words_are_known, _ = possibly_split_two_concatenated_words(word_string)
+    return split_words_are_known
+
+def two_word_concatenation_expand(word_string: str) -> List[str]:
+    _, (first_word, second_word) = possibly_split_two_concatenated_words(word_string)
+    return [first_word, second_word]
 
 VOWELS = {'a','e','i','o','u'}
 CONSONANTS = {'b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','x','z','w','y'}
@@ -245,10 +269,11 @@ DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS = [
     (omg_star_applicability, omg_star_expand),
     (number_word_concatenation_applicability, number_word_concatenation_expand),
     (aw_star_applicability, aw_star_expand),
+    (two_word_concatenation_applicability, two_word_concatenation_expand),
     (duplicate_letters_exaggeration_applicability, duplicate_letters_exaggeration_expand),
 ]
 
-def possibly_dwim_unknown_words(word_strings: List[str]) -> str:
+def perform_single_pass_to_dwim_unknown_words(word_strings: List[str]) -> str:
     updated_word_strings = []
     for word_string in word_strings:
         final_strings = [word_string]
@@ -260,6 +285,17 @@ def possibly_dwim_unknown_words(word_strings: List[str]) -> str:
         for final_string in final_strings:
             updated_word_strings.append(final_string)
     return updated_word_strings
+
+def possibly_dwim_unknown_words(word_strings: List[str]) -> str:
+    max_number_of_passes = sum(map(len,word_strings))
+    current_word_strings = word_strings
+    for _ in range(max_number_of_passes):
+        updated_word_strings = perform_single_pass_to_dwim_unknown_words(current_word_strings)
+        if current_word_strings == updated_word_strings:
+            break
+        else:
+            current_word_strings = updated_word_strings
+    return current_word_strings
 
 ###########################################
 # Meaningful Character Sequence Utilities #
