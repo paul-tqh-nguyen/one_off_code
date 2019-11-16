@@ -13,7 +13,6 @@ File Name : sentiment_analysis.py
 File Organization:
 * Imports
 * Misc. Utilities
-* String Utilities
 * String <-> Tensor Utilities
 * Model Definitions
 * Dataset Definitions
@@ -27,8 +26,8 @@ File Organization:
 ###########
 
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
+from string_processing_utilities import normalized_words_from_text_string
 from typing import Iterable, List
-import string
 from collections import OrderedDict
 import torch
 import torch.nn as nn
@@ -68,32 +67,6 @@ def timer(print_function_callback):
     end_time = time.time()
     elapsed_time = end_time - start_time
     print_function_callback(elapsed_time)
-
-####################
-# String Utilities #
-####################
-
-PUNCTUATION_SET = set(string.punctuation)
-
-def remove_punctuation(input_string):
-    return ''.join(char for char in input_string if char not in PUNCTUATION_SET)
-
-def string_is_non_empty(string: str):
-    return string
-
-def normalize_word_string(word_string):
-    normalized_word_string = word_string.lower()
-    normalized_word_string = remove_punctuation(normalized_word_string)
-    return normalized_word_string
-
-def normalized_words_from_text_string(text_string):
-    """text_string is assumed to be a tweet."""
-    # @todo fix the assumptions on this
-    normalized_text_string = text_string
-    normalized_words = normalized_text_string.split(' ')
-    normalized_words = filter(string_is_non_empty, normalized_words)
-    normalized_words = map(normalize_word_string, normalized_words)
-    return normalized_words
 
 ###############################
 # String <-> Tensor Utilities #
@@ -450,21 +423,5 @@ def main(batch_size=1,
     classifier.print_current_state(print_verbosely)
     print("Training Complete.")
 
-def validate_text_processing():
-    csv_file_locations = [TRAINING_DATA_LOCATION, TEST_DATA_LOCATION]
-    for csv_file_location in csv_file_locations:
-        with open(csv_file_location, encoding='ISO-8859-1') as csv_file:
-            csv_reader = csv.DictReader(csv_file, delimiter=',')
-            for row_dict in csv_reader:
-                sentiment_text = row_dict['SentimentText']
-                normalized_text_words = list(normalized_words_from_text_string(sentiment_text))
-                words_unknown_to_word2vec = list(filter(lambda word: word in WORD2VEC_MODEL, normalized_text_words))
-                print()
-                print("Raw Text: {sentiment_text}".format(sentiment_text=sentiment_text))
-                print("Normalized Words: {normalized_text_words}".format(normalized_text_words=normalized_text_words))
-                print("Words Unknown to WORD2VEC: {words_unknown_to_word2vec}".format(words_unknown_to_word2vec=words_unknown_to_word2vec))
-                time.sleep(5) # @hack for debugging convenience
-
 if __name__ == '__main__':
-    validate_text_processing()
-    #main()
+    main()
