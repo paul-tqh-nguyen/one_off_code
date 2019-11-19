@@ -27,8 +27,24 @@ import string
 import html
 import re
 import spellchecker
+import unicodedata
+from functools import lru_cache
 from word2vec_utilities import WORD2VEC_MODEL
 from typing import List, Tuple
+
+#########################
+# Named Entity Handling #
+#########################
+
+def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
+    text_string_with_replacements = text_string
+    word_strings = re.findall(r"\b\w+\b", text_string)
+    for word_string in word_strings: # @todo handle multi-word cases
+        if word_string not in WORD2VEC_MODEL:
+            word_string_is_well_known_named_entity_via_wikidata = word_w
+            if word_string_is_well_known_named_entity_via_wikidata:
+                text_string_with_replacements.replace
+    return text_string_with_replacements
 
 #########################
 # Contraction Expansion #
@@ -167,103 +183,139 @@ def expand_contractions(text_string: str) -> str:
 # Unknown Word DWIMming Utilities #
 ###################################
 
-def omg_star_applicability(word_string: str) -> bool:
-    return bool(re.findall("^omg.+$", word_string.lower()))
+def re_pattern_has_at_least_one_match(re_pattern: str, input_string: str, flags=0) -> bool:
+    reg_exp_match_iterator = re.finditer(re_pattern, input_string, flags)
+    match_exists = False
+    try:
+        match_exists = reg_exp_match_iterator.__next__()
+    except StopIteration:
+        pass
+    return match_exists
 
-def omg_star_expand(word_string: str) -> List[str]:
-    expanded_word = "omg"
-    assert expanded_word in WORD2VEC_MODEL 
-    return [expanded_word]
+def omg_star_applicability(text_string: str) -> bool:
+    applicable = re_pattern_has_at_least_one_match(r"\bomg\w+\b", text_string, re.IGNORECASE)
+    return applicable
 
-def number_word_concatenation_applicability(word_string: str) -> bool:
-    return bool(re.findall("^[0-9]+[a-z]+$", word_string.lower()))
-    
-def number_word_concatenation_expand(word_string: str) -> List[str]:
-    number_matches = re.findall("^[0-9]+", word_string)
-    assert len(number_matches)==1
-    number_substring = number_matches[0]
-    character_substring = word_string.replace(number_substring, '')
-    return [number_substring, character_substring]
+def omg_star_expand(text_string: str) -> str:
+    expanded_text_string = text_string
+    word_replacement = "omg"
+    assert word_replacement in WORD2VEC_MODEL
+    expanded_text_string = re.sub(r"\bomg\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
+    return expanded_text_string
 
-def aw_star_applicability(word_string: str) -> bool:
-    return bool(re.findall("^aw[a|e|i|o|u|h|\!]*$", word_string.lower()))
+def number_word_concatenation_applicability(text_string: str) -> bool:
+    applicable = re_pattern_has_at_least_one_match(r"\b[0-9]+[a-z]+\b", text_string, re.IGNORECASE)
+    return applicable
 
-def aw_star_expand(word_string: str) -> List[str]:
-    expanded_word = "aw"
-    assert expanded_word in WORD2VEC_MODEL 
-    return [expanded_word]
+def number_word_concatenation_expand(text_string: str) -> str:
+    expanded_text_string = text_string
+    matches = re.findall(r"\b[0-9]+[a-z]+\b", text_string, re.IGNORECASE)
+    for match in matches:
+        numeric_half_matches = re.findall(r"\b[0-9]+", match)
+        assert len(numeric_half_matches) == 1
+        numeric_half_match = numeric_half_matches[0]
+        alphabetic_half = match.replace(numeric_half_match, "")
+        replacement = numeric_half_match+' '+alphabetic_half
+        expanded_text_string = re.sub(r"\b"+match+r"\b", replacement, expanded_text_string, 1)
+    return expanded_text_string
 
-def possibly_split_two_concatenated_words(word_string: str) -> Tuple[bool,Tuple[str,str]]:
+def aw_star_applicability(text_string: str) -> bool:
+    applicable = re_pattern_has_at_least_one_match(r"\baw[w|a|e|i|o|u|h|\!]*\b", text_string, re.IGNORECASE)
+    return applicable
+
+def aw_star_expand(text_string: str) -> str:
+    expanded_text_string = text_string
+    matches = re.findall(r"\baw[w|a|e|i|o|u|h|\!]*\b", text_string, re.IGNORECASE)
+    word_replacement = "aw"
+    assert word_replacement in WORD2VEC_MODEL
+    for match in matches:
+        if match.lower() != 'awe':
+            expanded_text_string = expanded_text_string.replace(match, word_replacement)
+    return expanded_text_string
+
+@lru_cache(maxsize=4)
+def possibly_split_two_concatenated_words(text_string: str) -> Tuple[bool,str]:
+    updated_text_string = text_string
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
     min_first_word_length = 5
     min_second_word_length = 3
-    split_words = []
-    split_words_are_known = False
-    word_string_length = len(word_string)
-    if word_string_length > min_first_word_length+min_second_word_length:
-        split_index_supremum = word_string_length-(min_second_word_length-1)
-        for split_index in range(min_first_word_length, split_index_supremum):
-            first_word = word_string[:split_index]
-            second_word = word_string[split_index:]
-            if first_word in WORD2VEC_MODEL and second_word in WORD2VEC_MODEL:
-                split_words_are_known = True
-                split_words = (first_word, second_word)
-                break            
-    return split_words_are_known, split_words
+    for word_match in word_match_iterator:
+        word = word_match.group()
+        split_words = []
+        split_words_are_known = False
+        word_length = len(word)
+        if word_length > min_first_word_length+min_second_word_length:
+            split_index_supremum = word_length-(min_second_word_length-1)
+            for split_index in range(min_first_word_length, split_index_supremum):
+                first_sub_word = word[:split_index]
+                second_sub_word = word[split_index:]
+                if first_sub_word in WORD2VEC_MODEL and second_sub_word in WORD2VEC_MODEL:
+                    split_words_are_known = True
+                    split_words_combined = first_sub_word+' '+second_sub_word
+                    updated_text_string = re.sub(r"\b"+word+r"\b", split_words_combined, updated_text_string, 1)
+                    break
+    return split_words_are_known, updated_text_string
 
-def two_word_concatenation_applicability(word_string: str) -> bool:
-    split_words_are_known, _ = possibly_split_two_concatenated_words(word_string)
+def two_word_concatenation_applicability(text_string: str) -> bool:
+    split_words_are_known, _ = possibly_split_two_concatenated_words(text_string)
     return split_words_are_known
 
-def two_word_concatenation_expand(word_string: str) -> List[str]:
-    _, (first_word, second_word) = possibly_split_two_concatenated_words(word_string)
-    return [first_word, second_word]
+def two_word_concatenation_expand(text_string: str) -> str:
+    _, updated_text_string = possibly_split_two_concatenated_words(text_string)
+    return updated_text_string
 
 VOWELS = {'a','e','i','o','u'}
-CONSONANTS = {'b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','x','z','w','y'}
-ALPHABETIC_CHARACTERS = VOWELS.union(CONSONANTS)
 SPELL_CHECKER = spellchecker.SpellChecker()
 
-def possibly_dwim_duplicate_letters_exaggeration(word_string: str) -> Tuple[bool,str]:
-    reduced_word = word_string.lower()
-    reduced_word_is_known = False
-    letters = set(reduced_word)
-    if letters.issubset(ALPHABETIC_CHARACTERS):
-        for _ in word_string:
-            no_change_happened = True
-            for letter in letters:
-                letter_probable_upper_limit = 2 if letter in VOWELS else 1
-                disallowed_letter_duplicate_sequence = letter*(letter_probable_upper_limit+1)
-                disallowed_letter_duplicate_sequence_replacement = letter*letter_probable_upper_limit
-                if disallowed_letter_duplicate_sequence in reduced_word:
-                    no_change_happened = False
-                    reduced_word = reduced_word.replace(disallowed_letter_duplicate_sequence, disallowed_letter_duplicate_sequence_replacement)
-                    reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-                    if reduced_word_is_known:
-                        break
-            if no_change_happened or reduced_word_is_known:
-                break
-        if not reduced_word_is_known:
-            candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
-            candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
-            for candidate_word in candidate_words_that_dont_introduce_new_characters:
-                if candidate_word in WORD2VEC_MODEL:
-                    reduced_word = candidate_word
-                    reduced_word_is_known = True
+@lru_cache(maxsize=4)
+def possibly_dwim_duplicate_letters_exaggeration(text_string: str) -> Tuple[bool,str]:
+    updated_text_string = text_string
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
+    some_reduced_word_is_known = False
+    for word_match in word_match_iterator:
+        word_string = word_match.group()
+        if word_string not in WORD2VEC_MODEL:
+            reduced_word = word_string.lower()
+            reduced_word_is_known = False
+            letters = set(reduced_word)
+            for _ in word_string:
+                no_change_happened = True
+                for letter in letters:
+                    letter_probable_upper_limit = 2 if letter in VOWELS else 1
+                    disallowed_letter_duplicate_sequence = letter*(letter_probable_upper_limit+1)
+                    disallowed_letter_duplicate_sequence_replacement = letter*letter_probable_upper_limit
+                    if disallowed_letter_duplicate_sequence in reduced_word:
+                        no_change_happened = False
+                        reduced_word = reduced_word.replace(disallowed_letter_duplicate_sequence, disallowed_letter_duplicate_sequence_replacement)
+                        reduced_word_is_known = reduced_word in WORD2VEC_MODEL
+                        if reduced_word_is_known:
+                            break
+                if no_change_happened or reduced_word_is_known:
                     break
+            if not reduced_word_is_known:
+                candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
+                candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
+                for candidate_word in candidate_words_that_dont_introduce_new_characters:
+                    if candidate_word in WORD2VEC_MODEL:
+                        reduced_word = candidate_word
+                        reduced_word_is_known = True
+                        break
             if not reduced_word_is_known:
                 if len(candidate_words_via_spell_checker) == 1:
                     reduced_word = tuple(candidate_words_via_spell_checker)[0]
                     reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-    return reduced_word_is_known, reduced_word
+            if reduced_word_is_known:
+                updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
+            some_reduced_word_is_known = some_reduced_word_is_known or reduced_word_is_known
+    return some_reduced_word_is_known, updated_text_string
 
-def duplicate_letters_exaggeration_applicability(word_string: str) -> bool:
-    corrected_word_is_known, _ = possibly_dwim_duplicate_letters_exaggeration(word_string)
+def duplicate_letters_exaggeration_applicability(text_string: str) -> bool:
+    corrected_word_is_known, _ = possibly_dwim_duplicate_letters_exaggeration(text_string)
     return corrected_word_is_known
 
-def duplicate_letters_exaggeration_expand(word_string: str) -> str:
-    _, corrected_word = possibly_dwim_duplicate_letters_exaggeration(word_string)
-    assert corrected_word in WORD2VEC_MODEL
-    return [corrected_word]
+def duplicate_letters_exaggeration_expand(text_string: str) -> str:
+    _, corrected_text_string = possibly_dwim_duplicate_letters_exaggeration(text_string)
+    return corrected_text_string
 
 DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS = [
     (omg_star_applicability, omg_star_expand),
@@ -273,29 +325,26 @@ DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS = [
     (duplicate_letters_exaggeration_applicability, duplicate_letters_exaggeration_expand),
 ]
 
-def perform_single_pass_to_dwim_unknown_words(word_strings: List[str]) -> str:
-    updated_word_strings = []
-    for word_string in word_strings:
-        final_strings = [word_string]
-        if word_string not in WORD2VEC_MODEL:
-            for applicability_function, expand_function in DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS:
-                if applicability_function(word_string):
-                    final_strings = expand_function(word_string)
-                    break
-        for final_string in final_strings:
-            updated_word_strings.append(final_string)
-    return updated_word_strings
+def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
+    updated_text_string = text_string
+    for applicability_function, expand_function in DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS:
+        if applicability_function(updated_text_string):
+            updated_text_string = expand_function(updated_text_string)
+            break
+    return updated_text_string
 
-def possibly_dwim_unknown_words(word_strings: List[str]) -> str:
-    max_number_of_passes = sum(map(len,word_strings))
-    current_word_strings = word_strings
-    for _ in range(max_number_of_passes):
-        updated_word_strings = perform_single_pass_to_dwim_unknown_words(current_word_strings)
-        if current_word_strings == updated_word_strings:
+def possibly_dwim_unknown_words(text_string: str) -> str:
+    current_text_string = text_string
+    premature_exit = False
+    for _ in range(text_string):
+        updated_text_string = perform_single_pass_to_dwim_unknown_words(text_string)
+        if current_text_string == updated_text_string:
+            premature_exit = True
             break
         else:
-            current_word_strings = updated_word_strings
-    return current_word_strings
+            current_text_string = updated_text_string
+    assert premature_exit, "Unknown word DWIMming did not process until quiescence."
+    return current_text_string
 
 ###########################################
 # Meaningful Character Sequence Utilities #
@@ -329,33 +378,43 @@ def word_string_resembles_meaningful_special_character_sequence_placeholder(word
 # Misc. String Utilities #
 ##########################
 
-def is_tagged_user_handle(word_string: str) -> bool:
-    return bool(re.findall("^@.*$", word_string)) and " " not in word_string
+def replace_exotic_character(character: str) -> str:
+    normalized_character = unicodedata.normalize('NFKD', character).encode('ascii', 'ignore').decode('utf-8')
+    if normalized_character != character:
+        normalized_character = " "+normalized_character+" "
+    return normalized_character
+
+def replace_exotic_characters(text_string: str) -> str:
+    text_string_with_replacements = text_string
+    text_string_with_replacements = ''.join(map(replace_exotic_character, text_string))
+    return text_string_with_replacements
 
 TAGGED_USER_PLACEHOLDER = PLACEHOLDER_PREFIX+"0tagged0user"
 
 def replace_tagged_users_with_placeholder_token(text_string: str) -> str:
-    updated_text_string = ' '.join([TAGGED_USER_PLACEHOLDER if is_tagged_user_handle(word_string) else word_string for word_string in text_string.split(' ')])
+    updated_text_string = text_string
+    tagged_users = re.findall(r"@\w+", text_string)
+    for tagged_user in tagged_users:
+        updated_text_string = updated_text_string.replace(tagged_user, ' '+TAGGED_USER_PLACEHOLDER+' ')
     return updated_text_string
 
 URL_PLACEHOLDER = PLACEHOLDER_PREFIX+"0url0link"
 URL_REGEX_PATTERN = "(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})"
 
-def replace_tagged_urls_with_placeholder_token(text_string: str) -> str:
+def replace_urls_with_placeholder_token(text_string: str) -> str:
     updated_text_string = text_string
     urls = re.findall(URL_REGEX_PATTERN, text_string)
     for url in urls:
         updated_text_string = updated_text_string.replace(url, URL_PLACEHOLDER)
     return updated_text_string
 
-HASH_TAG_REGEX_PATTERN = "B(\#[a-zA-Z]+\b)"
+HASH_TAG_REGEX_PATTERN = "#\w+"
 
 def replace_hash_tags_with_placeholder_token(text_string: str) -> str:
-    # @todo is it better to learn what the hash tags mean? Or to have a global token for the hash tag
     updated_text_string = text_string
     hash_tags = re.findall(HASH_TAG_REGEX_PATTERN, text_string)
     for hash_tag in hash_tags:
-        updated_text_string = updated_text_string.replace(hash_tag, PLACEHOLDER_PREFIX+''.join([char for char in hash_tag if char in ALPHABETIC_CHARACTERS]))
+        updated_text_string = updated_text_string.replace(hash_tag, PLACEHOLDER_PREFIX+'0hash0tag')
     return updated_text_string
 
 def lower_case_string(input_string: str) -> str:
@@ -376,28 +435,29 @@ def simplify_elipsis_sequences(input_string: str) -> str:
     simplified_sequence = simplify_substrings_until_quiescence('....','...',simplified_sequence)
     return simplified_sequence
 
+PUNCTUATION_SET = set(string.punctuation)
+
 def simplify_spaces(input_string: str) -> str:
     return simplify_substrings_until_quiescence('  ',' ',input_string).strip()
-
-PUNCTUATION_SET = set(string.punctuation)
 
 def separate_punctuation(text_string: str) -> str:
     final_text_string = text_string
     for punctuation_character in PUNCTUATION_SET:
         final_text_string = final_text_string.replace(punctuation_character, " "+punctuation_character+" ")
+    final_text_string = simplify_spaces(final_text_string)
     return final_text_string
 
 def normalized_words_from_text_string(text_string: str) -> List[str]: 
     normalized_text_string = text_string
     normalized_text_string = html.unescape(normalized_text_string)
     normalized_text_string = replace_tagged_users_with_placeholder_token(normalized_text_string)
-    normalized_text_string = replace_tagged_urls_with_placeholder_token(normalized_text_string)
+    normalized_text_string = replace_urls_with_placeholder_token(normalized_text_string)
     normalized_text_string = replace_hash_tags_with_placeholder_token(normalized_text_string)
     normalized_text_string = replace_meaningful_special_character_sequence_with_placeholder_token(normalized_text_string)
-    # @todo expand contractions
+    normalized_text_string = replace_exotic_characters(normalized_text_string)
+    normalized_text_string = expand_contractions(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
-    normalized_text_string = simplify_spaces(normalized_text_string)
-    normalized_words = normalized_text_string.split(' ')
-    normalized_words = possibly_dwim_unknown_words(normalized_words)
-    normalized_words = map(lower_case_string, normalized_words)
-    return normalized_words
+    normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
+    normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string)
+    normalized_text_string = lower_case_string(normalized_text_string)
+    return normalized_text_string
