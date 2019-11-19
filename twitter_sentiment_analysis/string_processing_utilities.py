@@ -461,3 +461,5 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string)
     normalized_text_string = lower_case_string(normalized_text_string)
     return normalized_text_string
+
+# @todo add a main() that prints out what this library does
