@@ -18,4 +18,8 @@ WORD2VEC_BIN_LOCATION = '/home/pnguyen/code/datasets/GoogleNews-vectors-negative
 WORD2VEC_MODEL = KeyedVectors.load_word2vec_format(WORD2VEC_BIN_LOCATION, binary=True)
 WORD2VEC_VECTOR_LENGTH = len(WORD2VEC_MODEL['king'])
 
-# @todo add a main() that prints out what this library does
+def main():
+    print("This module contains WRD2VEC importing utilities.")
+
+if __name__ == '__main__':
+    main()
