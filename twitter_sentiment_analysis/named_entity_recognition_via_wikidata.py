@@ -27,6 +27,7 @@ import pyppeteer
 import unicodedata
 import re
 import bidict
+from functools import lru_cache
 from typing import List, Tuple, Set
 
 #############
@@ -35,9 +36,13 @@ from typing import List, Tuple, Set
 
 def _execute_async_task(task):
     event_loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(event_loop)
-    results = event_loop.run_until_complete(asyncio.gather(task))
-    event_loop.close()
+    try:
+        asyncio.set_event_loop(event_loop)
+        results = event_loop.run_until_complete(asyncio.gather(task))
+    except Exception:
+        pass
+    finally:
+        event_loop.close()
     assert len(results) == 1
     result = results[0]
     return result
@@ -161,6 +166,7 @@ def find_commonly_known_isas(term_ids: List[str]) -> Set[Tuple[str, str]]:
     result = _execute_async_task(task)
     return result
 
+@lru_cache(maxsize=32768)
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
     term_ids = string_corresponding_commonly_known_entities(input_string)
     #print("term_ids {}".format(term_ids))

@@ -36,13 +36,13 @@ from sentiment_analysis import TRAINING_DATA_LOCATION, TEST_DATA_LOCATION
 
 COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
     # Proper Nouns @todo handle named entities
-    'hifa', 'edeka', 'swartz', "semisonic", 'sytycd', 'christy', 'pavel', 'safina', 'eddings', 'sannesias', 'winona', 'trae', 'tombre', 'rishabh', 'paramore', 'coldplay', 'neena', 'jlew', 
-    'taylorrhicks', 'grac', 'seville', 'drexel', 'voltron', 'win7rc', 'lagerfeld', 'ahmier', 'zoro', 'rinitis', 'gongwer', 'aiden', 'jerrys', 'voltrons', 'hedo', 'bebot', 'lagerfeld', 'imodium', 
-    'kimmy', 'nkotb', 'da70mm', 'minaj', 'f16', 'kallis', 'uat', 'pman', 'canaveral', 'imal', 'ohac', 'tirthankar', 'ankie','smf','dinara', 'garros','manee','anyer','burswood','shottas','karmada',
-    'pixma', 'mx310','alistair','landin','ayonna','robsten','farrah', 'fawcett','kerrang','bizkit','rsl','paley','bjork','rb2','palmolive','supertramp','bcd', 'nodaji','trackle','btvs','lautner',
-    'standfield','roberson','mgonewild','sadie','jbarsodmg','pbmall','farrah','aidan','avett','thames','horton','kokomo','brandice','bertolucci','lalalauren', 'weikert', 'hartley', 'cardona',
-    'mmva','villarreal', 'leland', 'enigk','epsom','doodadoo','foxtell','bisante','tommi', 'oulu','farrah', 'fawcett','poirot','clopin','westwick','birtney', 'ciaraaaa','marah','irissa','stavros',
-    'drunvalo','melchizedek','paraguay',
+    # 'hifa', 'edeka', 'swartz', "semisonic", 'sytycd', 'christy', 'pavel', 'safina', 'eddings', 'sannesias', 'winona', 'trae', 'tombre', 'rishabh', 'paramore', 'coldplay', 'neena', 'jlew', 
+    # 'taylorrhicks', 'grac', 'seville', 'drexel', 'voltron', 'win7rc', 'lagerfeld', 'ahmier', 'zoro', 'rinitis', 'gongwer', 'aiden', 'jerrys', 'voltrons', 'hedo', 'bebot', 'lagerfeld', 'imodium', 
+    # 'kimmy', 'nkotb', 'da70mm', 'minaj', 'f16', 'kallis', 'uat', 'pman', 'canaveral', 'imal', 'ohac', 'tirthankar', 'ankie','smf','dinara', 'garros','manee','anyer','burswood','shottas','karmada',
+    # 'pixma', 'mx310','alistair','landin','ayonna','robsten','farrah', 'fawcett','kerrang','bizkit','rsl','paley','bjork','rb2','palmolive','supertramp','bcd', 'nodaji','trackle','btvs','lautner',
+    # 'standfield','roberson','mgonewild','sadie','jbarsodmg','pbmall','farrah','aidan','avett','thames','horton','kokomo','brandice','bertolucci','lalalauren', 'weikert', 'hartley', 'cardona',
+    # 'mmva','villarreal', 'leland', 'enigk','epsom','doodadoo','foxtell','bisante','tommi', 'oulu','farrah', 'fawcett','poirot','clopin','westwick','birtney', 'ciaraaaa','marah','irissa','stavros',
+    # 'drunvalo','melchizedek','paraguay',
     # stop words
     'a', 'to', 'and', 'of',
     # @todo figure out how to handle these
@@ -100,7 +100,12 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
                     if len(questionable_normalized_words)!=0:
                         failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
+                        print()
                         print("{} : {}".format(sentiment_text, questionable_normalized_words))
+                        from named_entity_recognition_via_wikidata import questionable_normalized_word
+                        for questionable_normalized_word in questionable_normalized_words:
+                            print(questionable_normalized_word)
+                            print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
                 self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
                                 msg="We failed to process the following: \n{bad_pairs_printout}".format(
                                     bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
