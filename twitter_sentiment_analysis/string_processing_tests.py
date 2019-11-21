@@ -113,17 +113,23 @@ class testTextStringNormalizationViaData(unittest.TestCase):
         failed_string_to_questionable_normalized_words_map = dict()
         for iteration_index, (input_batch, _) in tqdm.tqdm(enumerate(training_generator)):
             assert len(input_batch)==1
-            sentiment_text= input_batch[0]
-            print(sentiment_text)
-            questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
+            sentiment_text = input_batch[0]
+            questionable_normalized_words_determination_timing_results = dict()
+            with timer(lambda time: questionable_normalized_words_determination_timing_results['total_time']=result):
+                questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
+            questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
+            max_tolerable_number_of_seconds_for_processing = 0.01
+            if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
+                print("Processing the following string took more than {max_tolerable_number_of_seconds_for_processing}:\n{sentiment_text}".format(
+                    max_tolerable_number_of_seconds_for_processing=max_tolerable_number_of_seconds_for_processing,
+                    sentiment_text=sentiment_text))
             if len(questionable_normalized_words)!=0:
                 failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
-                print()
-                print("{} : {}".format(sentiment_text, questionable_normalized_words))
-                # from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
-                # for questionable_normalized_word in questionable_normalized_words:
-                #     print(questionable_normalized_word)
-                #     print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
+                print("\n{sentiment_text} : {questionable_normalized_words}".format(sentiment_text=sentiment_text, questionable_normalized_words=questionable_normalized_words))
+                from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
+                for questionable_normalized_word in questionable_normalized_words:
+                    print(questionable_normalized_word)
+                    print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
             self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
                             msg="We failed to process the following: \n{bad_pairs_printout}".format(
                                 bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
@@ -143,30 +149,5 @@ def run_all_tests():
     print("Test run complete.")
     print()
 
-def tester():
-    import cProfile
-    with timer("Single Iteration Expected Mean Time Pass 3"):
-        questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
-    #cProfile.run('''if True:
-    iteration_limit = 2
-    training_set, validation_set = determine_training_and_validation_datasets() ### Redundant
-    training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False) ### Redundant
-    with timer("Training Data Iteration With 1 Iteration"):
-        for iteration_index, (input_batch, _) in (enumerate(training_generator)):
-            if iteration_index>=iteration_limit:
-                break
-            assert len(input_batch)==1
-            sentiment_text= input_batch[0]
-            print(sentiment_text)
-            questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
-            print(questionable_normalized_words)
-            #''')
-    #cProfile.run('''if True:
-    with timer("Single Iteration Expected Mean Time Pass 4"):
-        questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
-        #''')
-    #import code; code.interact(local=locals())
-
 if __name__ == '__main__':
-    #run_all_tests()
-    tester()
+    run_all_tests()
