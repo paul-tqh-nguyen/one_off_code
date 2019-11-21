@@ -92,20 +92,18 @@ class testTextStringNormalizationViaData(unittest.TestCase):
         for csv_file_location in csv_file_locations:
             with open(csv_file_location, encoding='ISO-8859-1') as csv_file:
                 csv_reader = csv.DictReader(csv_file, delimiter=',')
-                row_dicts = list(csv_reader)
-                #random.shuffle(row_dicts)
                 failed_string_to_questionable_normalized_words_map = dict()
-                for row_dict_index, row_dict in tqdm.tqdm(list(enumerate(row_dicts))):
+                for row_dict_index, row_dict in tqdm.tqdm(enumerate(csv_reader)):
                     sentiment_text = row_dict['SentimentText']
                     questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
                     if len(questionable_normalized_words)!=0:
                         failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
                         print()
                         print("{} : {}".format(sentiment_text, questionable_normalized_words))
-                        from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
-                        for questionable_normalized_word in questionable_normalized_words:
-                            print(questionable_normalized_word)
-                            print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
+                        # from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
+                        # for questionable_normalized_word in questionable_normalized_words:
+                        #     print(questionable_normalized_word)
+                        #     print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
                 self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
                                 msg="We failed to process the following: \n{bad_pairs_printout}".format(
                                     bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
