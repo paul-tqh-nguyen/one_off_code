@@ -144,25 +144,10 @@ def run_all_tests():
     print()
 
 def tester():
-    # iteration_limit = 2
-    # training_set, validation_set = determine_training_and_validation_datasets()
-    # training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False)
-    # validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
-    # import cProfile
-    # with timer("Single Iteration Expected Mean Time Pass 1"):
-    #     questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
-    # with timer("Single Iteration Expected Mean Time Pass 2"):
-    #     questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
-    # with timer("Training Data Iteration With NO-OP Body"):
-    #     for iteration_index, (input_batch, _) in (enumerate(training_generator)):
-    #         if iteration_index>=iteration_limit:
-    #             break
-    #         assert len(input_batch)==1
-    #         sentiment_text= input_batch[0]
-    #         print(sentiment_text)
+    import cProfile
     with timer("Single Iteration Expected Mean Time Pass 3"):
         questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
-    cProfile.run('''if True:
+    #cProfile.run('''if True:
     iteration_limit = 2
     training_set, validation_set = determine_training_and_validation_datasets() ### Redundant
     training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False) ### Redundant
@@ -175,20 +160,11 @@ def tester():
             print(sentiment_text)
             questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
             print(questionable_normalized_words)
-''')
-    cProfile.run('''if True:
+            #''')
+    #cProfile.run('''if True:
     with timer("Single Iteration Expected Mean Time Pass 4"):
         questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
-''')
-    # with timer("Training Data Iteration with 2 Iterations"):
-    #     for iteration_index, (input_batch, _) in (enumerate(training_generator)):
-    #         if iteration_index>=iteration_limit:
-    #             break
-    #         assert len(input_batch)==1
-    #         sentiment_text= input_batch[0]
-    #         print(sentiment_text)
-    #         questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
-    #         print(questionable_normalized_words)
+        #''')
     #import code; code.interact(local=locals())
 
 if __name__ == '__main__':

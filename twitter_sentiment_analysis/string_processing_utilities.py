@@ -12,9 +12,10 @@ File Name : string_processing_utilities.py
 
 File Organization:
 * Imports
+* Meaningful Character Sequence Utilities
+* Named Entity Handling
 * Contraction Expansion
 * Unknown Word DWIMming Utilities
-* Meaningful Character Sequence Utilities
 * Misc. String Utilities
 
 """
@@ -31,6 +32,34 @@ import unicodedata
 from functools import lru_cache
 from word2vec_utilities import WORD2VEC_MODEL
 from typing import List, Tuple
+
+###########################################
+# Meaningful Character Sequence Utilities #
+###########################################
+
+EMOTICONS = '''
+:‑D :D 8‑D 8D x‑D X‑D =D =3 B^D :‑( :( :‑c :c :‑< :< :‑[ :[ :-|| >:[ :{ :@ >:( :-)) :'‑( :'( :'‑) :') D‑': D:< D: D8 D; D= :‑O :O :‑o :o :-0 8‑0 >:O :-* :* :× ;‑) ;) *-) *) ;‑] ;] ;^) :‑, ;D :‑P :P X‑P x‑p :‑p :p :‑Þ :Þ :‑þ :þ :‑b :b d: =p >:P :‑/ :/ :‑. >:\ >:/ :\ =/ =\ :L =L :S :‑| :| :$ ://) ://3 :‑X :X :‑# :# :‑& :& O:‑) O:) 0:‑3 0:3 0:‑) 0:) 0;^) >:‑) >:) }:‑) }:) 3:‑) 3:) >;) >:3 >;3 |;‑) |‑O :‑J #‑) %‑) %) <:‑| ',:-| ',:-l :-| T_T @-) 
+'''.strip().split(' ')
+
+MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES = EMOTICONS+[
+    "...",
+]
+
+PLACEHOLDER_PREFIX = "0meaningful0special0character0sequence0id"
+
+MEANINGFUL_SPECIAL_CHARACTER_SEQUENCE_TO_PLACE_HOLDER_MAP = {meaningful_special_character_sequence : PLACEHOLDER_PREFIX+str(index) \
+                                                             for index, meaningful_special_character_sequence in \
+                                                             enumerate(MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES)}
+
+def replace_meaningful_special_character_sequence_with_placeholder_token(text_string: str) -> str:
+    text_string_with_replacements = text_string
+    text_string_with_replacements = simplify_elipsis_sequences(text_string_with_replacements)
+    for meaningful_special_character_sequence, placeholder in MEANINGFUL_SPECIAL_CHARACTER_SEQUENCE_TO_PLACE_HOLDER_MAP.items():
+        text_string_with_replacements = text_string_with_replacements.replace(meaningful_special_character_sequence, ' '+placeholder+' ')
+    return text_string_with_replacements
+
+def word_string_resembles_meaningful_special_character_sequence_placeholder(word_string: str) -> bool:
+    return bool(re.findall("^0meaningful0special0character0sequence0id.+$", word_string))
 
 #########################
 # Named Entity Handling #
@@ -241,19 +270,20 @@ def possibly_split_two_concatenated_words(text_string: str) -> Tuple[bool,str]:
     min_second_word_length = 3
     for word_match in word_match_iterator:
         word = word_match.group()
-        split_words = []
-        split_words_are_known = False
-        word_length = len(word)
-        if word_length > min_first_word_length+min_second_word_length:
-            split_index_supremum = word_length-(min_second_word_length-1)
-            for split_index in range(min_first_word_length, split_index_supremum):
-                first_sub_word = word[:split_index]
-                second_sub_word = word[split_index:]
-                if first_sub_word in WORD2VEC_MODEL and second_sub_word in WORD2VEC_MODEL:
-                    split_words_are_known = True
-                    split_words_combined = first_sub_word+' '+second_sub_word
-                    updated_text_string = re.sub(r"\b"+word+r"\b", split_words_combined, updated_text_string, 1)
-                    break
+        if not word_string_resembles_meaningful_special_character_sequence_placeholder(word):
+            split_words = []
+            split_words_are_known = False
+            word_length = len(word)
+            if word_length > min_first_word_length+min_second_word_length:
+                split_index_supremum = word_length-(min_second_word_length-1)
+                for split_index in range(min_first_word_length, split_index_supremum):
+                    first_sub_word = word[:split_index]
+                    second_sub_word = word[split_index:]
+                    if first_sub_word in WORD2VEC_MODEL and second_sub_word in WORD2VEC_MODEL:
+                        split_words_are_known = True
+                        split_words_combined = first_sub_word+' '+second_sub_word
+                        updated_text_string = re.sub(r"\b"+word+r"\b", split_words_combined, updated_text_string, 1)
+                        break
     return split_words_are_known, updated_text_string
 
 def two_word_concatenation_applicability(text_string: str) -> bool:
@@ -270,43 +300,45 @@ SPELL_CHECKER = spellchecker.SpellChecker()
 @lru_cache(maxsize=4)
 def possibly_dwim_duplicate_letters_exaggeration(text_string: str) -> Tuple[bool,str]:
     updated_text_string = text_string
-    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
     some_reduced_word_is_known = False
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
     for word_match in word_match_iterator:
         word_string = word_match.group()
-        if word_string not in WORD2VEC_MODEL:
-            reduced_word = word_string.lower()
-            reduced_word_is_known = False
-            letters = set(reduced_word)
-            for _ in word_string:
-                no_change_happened = True
-                for letter in letters:
-                    letter_probable_upper_limit = 2 if letter in VOWELS else 1
-                    disallowed_letter_duplicate_sequence = letter*(letter_probable_upper_limit+1)
-                    disallowed_letter_duplicate_sequence_replacement = letter*letter_probable_upper_limit
-                    if disallowed_letter_duplicate_sequence in reduced_word:
-                        no_change_happened = False
-                        reduced_word = reduced_word.replace(disallowed_letter_duplicate_sequence, disallowed_letter_duplicate_sequence_replacement)
-                        reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-                        if reduced_word_is_known:
-                            break
-                if no_change_happened or reduced_word_is_known:
-                    break
-            if not reduced_word_is_known:
-                candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
-                candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
-                for candidate_word in candidate_words_that_dont_introduce_new_characters:
-                    if candidate_word in WORD2VEC_MODEL:
-                        reduced_word = candidate_word
-                        reduced_word_is_known = True
+        if not word_string_resembles_meaningful_special_character_sequence_placeholder(word_string):
+            if word_string not in WORD2VEC_MODEL:
+                reduced_word = word_string.lower()
+                reduced_word_is_known = False
+                letters = set(reduced_word)
+                for _ in word_string:
+                    no_change_happened = True
+                    for letter in letters:
+                        letter_probable_upper_limit = 2 if letter in VOWELS else 1
+                        disallowed_letter_duplicate_sequence = letter*(letter_probable_upper_limit+1)
+                        disallowed_letter_duplicate_sequence_replacement = letter*letter_probable_upper_limit
+                        if disallowed_letter_duplicate_sequence in reduced_word:
+                            no_change_happened = False
+                            reduced_word = reduced_word.replace(disallowed_letter_duplicate_sequence, disallowed_letter_duplicate_sequence_replacement)
+                            reduced_word_is_known = reduced_word in WORD2VEC_MODEL
+                            if reduced_word_is_known:
+                                break
+                    if no_change_happened or reduced_word_is_known:
                         break
-            if not reduced_word_is_known:
-                if len(candidate_words_via_spell_checker) == 1:
-                    reduced_word = tuple(candidate_words_via_spell_checker)[0]
-                    reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-            if reduced_word_is_known:
-                updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
-            some_reduced_word_is_known = some_reduced_word_is_known or reduced_word_is_known
+                if not reduced_word_is_known:
+                    print("reduced_word being spell-checked {}".format(reduced_word))
+                    candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
+                    candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
+                    for candidate_word in candidate_words_that_dont_introduce_new_characters:
+                        if candidate_word in WORD2VEC_MODEL:
+                            reduced_word = candidate_word
+                            reduced_word_is_known = True
+                            break
+                if not reduced_word_is_known:
+                    if len(candidate_words_via_spell_checker) == 1:
+                        reduced_word = tuple(candidate_words_via_spell_checker)[0]
+                        reduced_word_is_known = reduced_word in WORD2VEC_MODEL
+                if reduced_word_is_known:
+                    updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
+                some_reduced_word_is_known = some_reduced_word_is_known or reduced_word_is_known
     return some_reduced_word_is_known, updated_text_string
 
 def duplicate_letters_exaggeration_applicability(text_string: str) -> bool:
@@ -345,34 +377,6 @@ def possibly_dwim_unknown_words(text_string: str) -> str:
             current_text_string = updated_text_string
     assert premature_exit, "Unknown word DWIMming did not process until quiescence."
     return current_text_string
-
-###########################################
-# Meaningful Character Sequence Utilities #
-###########################################
-
-EMOTICONS = '''
-:‑D :D 8‑D 8D x‑D X‑D =D =3 B^D :‑( :( :‑c :c :‑< :< :‑[ :[ :-|| >:[ :{ :@ >:( :-)) :'‑( :'( :'‑) :') D‑': D:< D: D8 D; D= :‑O :O :‑o :o :-0 8‑0 >:O :-* :* :× ;‑) ;) *-) *) ;‑] ;] ;^) :‑, ;D :‑P :P X‑P x‑p :‑p :p :‑Þ :Þ :‑þ :þ :‑b :b d: =p >:P :‑/ :/ :‑. >:\ >:/ :\ =/ =\ :L =L :S :‑| :| :$ ://) ://3 :‑X :X :‑# :# :‑& :& O:‑) O:) 0:‑3 0:3 0:‑) 0:) 0;^) >:‑) >:) }:‑) }:) 3:‑) 3:) >;) >:3 >;3 |;‑) |‑O :‑J #‑) %‑) %) <:‑| ',:-| ',:-l :-| T_T @-) 
-'''.strip().split(' ')
-
-MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES = EMOTICONS+[
-    "...",
-]
-
-PLACEHOLDER_PREFIX = "0meaningful0special0character0sequence0id"
-
-MEANINGFUL_SPECIAL_CHARACTER_SEQUENCE_TO_PLACE_HOLDER_MAP = {meaningful_special_character_sequence : PLACEHOLDER_PREFIX+str(index) \
-                                                             for index, meaningful_special_character_sequence in \
-                                                             enumerate(MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES)}
-
-def replace_meaningful_special_character_sequence_with_placeholder_token(text_string: str) -> str:
-    text_string_with_replacements = text_string
-    text_string_with_replacements = simplify_elipsis_sequences(text_string_with_replacements)
-    for meaningful_special_character_sequence, placeholder in MEANINGFUL_SPECIAL_CHARACTER_SEQUENCE_TO_PLACE_HOLDER_MAP.items():
-        text_string_with_replacements = text_string_with_replacements.replace(meaningful_special_character_sequence, ' '+placeholder+' ')
-    return text_string_with_replacements
-
-def word_string_resembles_meaningful_special_character_sequence_placeholder(word_string: str) -> bool:
-    return bool(re.findall("^0meaningful0special0character0sequence0id.+$", word_string))
 
 ##########################
 # Misc. String Utilities #
