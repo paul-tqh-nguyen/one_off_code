@@ -26,7 +26,8 @@ import asyncio
 import pyppeteer
 import unicodedata
 import re
-from typing import List, Tuple
+import bidict
+from typing import List, Tuple, Set
 
 #############
 # Utilities #
@@ -82,7 +83,11 @@ def string_corresponding_commonly_known_entities(input_string: str) -> List[str]
     result = _execute_async_task(task)
     return result
 
-ORGANIZATION_ID = 'Q43229'
+TYPE_TO_ID_MAPPING = bidict.bidict({
+    'Organization': 'Q43229',
+    'Given Name': 'Q202444',
+})
+
 QUERY_TEMPLATE_FOR_ENTITY_COMMONLY_KNOWN_ISAS = '''
 SELECT ?VALID_GENLS ?TERM
 WHERE 
@@ -90,13 +95,14 @@ WHERE
   VALUES ?TERM {{ {space_separated_term_ids} }}.
   ?TERM wdt:P31 ?IMMEDIATE_GENLS.
   ?IMMEDIATE_GENLS 	wdt:P279* ?VALID_GENLS.
-  VALUES ?VALID_GENLS {{ '''+'wd:'+ORGANIZATION_ID+''' }}.
+  VALUES ?VALID_GENLS {{ '''+' '.join(map(lambda type_string: 'wd:'+type_string, TYPE_TO_ID_MAPPING.values()))+''' }}.
 }}
 '''
+
 WIKI_DATA_QUERY_SERVICE_URI = 'https://query.wikidata.org'
 
-async def _find_commonly_known_isas_via_web_scraper(term_ids_without_item_prefix:str) -> List[str]:
-    term_type_pairs = []
+async def _find_commonly_known_isas_via_web_scraper(term_ids_without_item_prefix:str) -> Set[Tuple[str, str]]:
+    term_type_id_pairs = set()
     if len(term_ids_without_item_prefix) != 0:
         term_ids = map(lambda raw_term_id: 'wd:'+raw_term_id, term_ids_without_item_prefix)
         space_separated_term_ids = ' '.join(term_ids)
@@ -134,21 +140,24 @@ async def _find_commonly_known_isas_via_web_scraper(term_ids_without_item_prefix
                 else:
                     raise Exception("Unexpected variable name {unexpected_variable_name}".format(unexpected_variable_name=anchor_variable))
                 if bool(current_term) and bool(current_type):
-                    term_type_pairs.append((current_term, current_type))
+                    term_type_id_pairs.add((current_term, current_type))
+                    current_term = None
+                    current_type = None
         except pyppeteer.errors.NetworkError:
             pass
         finally:
             await browser.close()
-    return term_type_pairs
+    return term_type_id_pairs
 
-def find_commonly_known_isas(term_ids: List[str]) -> List[Tuple[str, str]]:
+def find_commonly_known_isas(term_ids: List[str]) -> Set[Tuple[str, str]]:
     task = _find_commonly_known_isas_via_web_scraper(term_ids)
     result = _execute_async_task(task)
     return result
 
-def string_corresponding_wikidata_term_type_pairs(input_string: str) -> List[Tuple[str, str]]:
+def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
     term_ids = string_corresponding_commonly_known_entities(input_string)
-    term_type_pairs = find_commonly_known_isas(term_ids)
+    term_type_id_pairs = find_commonly_known_isas(term_ids)
+    term_type_pairs = [(term, TYPE_TO_ID_MAPPING.inverse[type_id]) for term, type_id in term_type_id_pairs]
     return term_type_pairs
 
 def main():
