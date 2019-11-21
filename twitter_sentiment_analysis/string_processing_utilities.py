@@ -36,15 +36,15 @@ from typing import List, Tuple
 # Named Entity Handling #
 #########################
 
-def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
-    text_string_with_replacements = text_string
-    word_strings = re.findall(r"\b\w+\b", text_string)
-    for word_string in word_strings: # @todo handle multi-word cases
-        if word_string not in WORD2VEC_MODEL:
-            word_string_is_well_known_named_entity_via_wikidata = word_w
-            if word_string_is_well_known_named_entity_via_wikidata:
-                text_string_with_replacements.replace
-    return text_string_with_replacements
+# def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
+#     text_string_with_replacements = text_string
+#     word_strings = re.findall(r"\b\w+\b", text_string)
+#     for word_string in word_strings: # @todo handle multi-word cases
+#         if word_string not in WORD2VEC_MODEL:
+#             word_string_is_well_known_named_entity_via_wikidata = word_w
+#             if word_string_is_well_known_named_entity_via_wikidata:
+#                 text_string_with_replacements.replace
+#     return text_string_with_replacements
 
 #########################
 # Contraction Expansion #
@@ -336,7 +336,7 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
 def possibly_dwim_unknown_words(text_string: str) -> str:
     current_text_string = text_string
     premature_exit = False
-    for _ in range(text_string):
+    for _ in text_string:
         updated_text_string = perform_single_pass_to_dwim_unknown_words(text_string)
         if current_text_string == updated_text_string:
             premature_exit = True
@@ -458,8 +458,9 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = expand_contractions(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
     normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
-    normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string)
+    # normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string) # @todo get thsi working
     normalized_text_string = lower_case_string(normalized_text_string)
-    return normalized_text_string
+    normalized_words = normalized_text_string.split(' ')
+    return normalized_words
 
 # @todo add a main() that prints out what this library does

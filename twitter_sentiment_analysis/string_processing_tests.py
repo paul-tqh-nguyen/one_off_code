@@ -102,7 +102,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                         failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
                         print()
                         print("{} : {}".format(sentiment_text, questionable_normalized_words))
-                        from named_entity_recognition_via_wikidata import questionable_normalized_word
+                        from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
                         for questionable_normalized_word in questionable_normalized_words:
                             print(questionable_normalized_word)
                             print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
