@@ -16,7 +16,7 @@ from gensim.models import KeyedVectors
 
 WORD2VEC_BIN_LOCATION = '/home/pnguyen/code/datasets/GoogleNews-vectors-negative300.bin'
 WORD2VEC_MODEL = KeyedVectors.load_word2vec_format(WORD2VEC_BIN_LOCATION, binary=True)
-WORD2VEC_VECTOR_LENGTH = len(WORD2VEC_MODEL['queen'])
+WORD2VEC_VECTOR_LENGTH = len(WORD2VEC_MODEL['king'])
 
 def main():
     print("This module contains WRD2VEC importing utilities.")
