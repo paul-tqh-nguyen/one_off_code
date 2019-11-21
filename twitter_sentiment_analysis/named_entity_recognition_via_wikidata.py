@@ -104,7 +104,7 @@ async def _find_commonly_known_isas_via_web_scraper(term_ids_without_item_prefix
         sparql_query_encoded = urllib.parse.quote(sparql_query)
         number_of_variables_queried = 2
         uri = WIKI_DATA_QUERY_SERVICE_URI+'/#'+sparql_query_encoded
-        browser = await pyppeteer.launch({'headless': False})
+        browser = await pyppeteer.launch({'headless': True})
         page = await browser.newPage()
         try:
             await page.goto(uri)
