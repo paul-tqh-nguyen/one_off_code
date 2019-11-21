@@ -12,6 +12,7 @@ File Name : string_processing_tests.py
 
 File Organization:
 * Imports
+* Misc. Utilities
 * Testing Utilities
 * Tests
 
@@ -22,13 +23,31 @@ File Organization:
 ###########
 
 import unittest
-import csv
 import re
-import random
 import tqdm
+import time
+from contextlib import contextmanager
+from torch.utils import data
 from word2vec_utilities import WORD2VEC_MODEL
 from string_processing_utilities import word_string_resembles_meaningful_special_character_sequence_placeholder, normalized_words_from_text_string, PUNCTUATION_SET
-from sentiment_analysis import TRAINING_DATA_LOCATION, TEST_DATA_LOCATION
+from sentiment_analysis import determine_training_and_validation_datasets
+
+###################
+# Misc. Utilities #
+###################
+
+@contextmanager
+def timer(section_name=None, exitCallback=None):
+    start_time = time.time()
+    yield
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    if bool(exitCallback):
+        exitCallback(elapsed_time)
+    elif section_name:
+        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
+    else:
+        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
 #####################
 # Testing Utilities #
@@ -37,12 +56,12 @@ from sentiment_analysis import TRAINING_DATA_LOCATION, TEST_DATA_LOCATION
 COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
     # Proper Nouns @todo handle named entities
     # 'hifa', 'edeka', 'swartz', "semisonic", 'sytycd', 'christy', 'pavel', 'safina', 'eddings', 'sannesias', 'winona', 'trae', 'tombre', 'rishabh', 'paramore', 'coldplay', 'neena', 'jlew', 
-    # 'taylorrhicks', 'grac', 'seville', 'drexel', 'voltron', 'win7rc', 'lagerfeld', 'ahmier', 'zoro', 'rinitis', 'gongwer', 'aiden', 'jerrys', 'voltrons', 'hedo', 'bebot', 'lagerfeld', 'imodium', 
-    # 'kimmy', 'nkotb', 'da70mm', 'minaj', 'f16', 'kallis', 'uat', 'pman', 'canaveral', 'imal', 'ohac', 'tirthankar', 'ankie','smf','dinara', 'garros','manee','anyer','burswood','shottas','karmada',
-    # 'pixma', 'mx310','alistair','landin','ayonna','robsten','farrah', 'fawcett','kerrang','bizkit','rsl','paley','bjork','rb2','palmolive','supertramp','bcd', 'nodaji','trackle','btvs','lautner',
+    # 'taylorrhicks', 'grac', 'seville', 'drexel', 'voltron', 'win7rc', 'lagerfeld', 'ahmier', 'zoro', 'rinitis', 'gongwer', 'aiden', 'jerrys', 'voltrons', 'hedo',
+    # 'kimmy', 'nkotb', 'da70mm', 'minaj', 'f16', 'kallis', 'uat', 'pman', 'canaveral', 'imal', 'ohac', 'tirthankar', 'ankie','smf','dinara', 'garros','manee','anyer','burswood',
+    # 'pixma', 'mx310','alistair','landin','ayonna','robsten','farrah', 'fawcett','kerrang','bizkit','rsl','paley','bjork','rb2','palmolive','supertramp','bcd', 'nodaji','trackle',
     # 'standfield','roberson','mgonewild','sadie','jbarsodmg','pbmall','farrah','aidan','avett','thames','horton','kokomo','brandice','bertolucci','lalalauren', 'weikert', 'hartley', 'cardona',
-    # 'mmva','villarreal', 'leland', 'enigk','epsom','doodadoo','foxtell','bisante','tommi', 'oulu','farrah', 'fawcett','poirot','clopin','westwick','birtney', 'ciaraaaa','marah','irissa','stavros',
-    # 'drunvalo','melchizedek','paraguay',
+    # 'mmva','villarreal', 'leland', 'enigk','epsom','doodadoo','foxtell','bisante','tommi', 'oulu','farrah', 'fawcett','poirot','clopin','westwick','birtney', 'ciaraaaa','marah',
+    # 'drunvalo','melchizedek','paraguay','irissa','stavros','shottas','karmada','btvs','lautner','bebot', 'lagerfeld', 'imodium',
     # stop words
     'a', 'to', 'and', 'of',
     # @todo figure out how to handle these
@@ -88,26 +107,27 @@ def failed_string_to_questionable_normalized_words_map_repr(failed_string_to_que
 
 class testTextStringNormalizationViaData(unittest.TestCase):
     def testTextStringNormalizationViaData(self):
-        csv_file_locations = [TRAINING_DATA_LOCATION, TEST_DATA_LOCATION]
-        for csv_file_location in csv_file_locations:
-            with open(csv_file_location, encoding='ISO-8859-1') as csv_file:
-                csv_reader = csv.DictReader(csv_file, delimiter=',')
-                failed_string_to_questionable_normalized_words_map = dict()
-                for row_dict_index, row_dict in tqdm.tqdm(enumerate(csv_reader)):
-                    sentiment_text = row_dict['SentimentText']
-                    questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
-                    if len(questionable_normalized_words)!=0:
-                        failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
-                        print()
-                        print("{} : {}".format(sentiment_text, questionable_normalized_words))
-                        # from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
-                        # for questionable_normalized_word in questionable_normalized_words:
-                        #     print(questionable_normalized_word)
-                        #     print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
-                self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
-                                msg="We failed to process the following: \n{bad_pairs_printout}".format(
-                                    bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
-
+        training_set, validation_set = determine_training_and_validation_datasets()
+        training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False)
+        validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
+        failed_string_to_questionable_normalized_words_map = dict()
+        for iteration_index, (input_batch, _) in tqdm.tqdm(enumerate(training_generator)):
+            assert len(input_batch)==1
+            sentiment_text= input_batch[0]
+            print(sentiment_text)
+            questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
+            if len(questionable_normalized_words)!=0:
+                failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
+                print()
+                print("{} : {}".format(sentiment_text, questionable_normalized_words))
+                # from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
+                # for questionable_normalized_word in questionable_normalized_words:
+                #     print(questionable_normalized_word)
+                #     print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
+            self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
+                            msg="We failed to process the following: \n{bad_pairs_printout}".format(
+                                bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
+            
 def run_all_tests():
     print()
     print("Running our test suite.")
@@ -123,5 +143,54 @@ def run_all_tests():
     print("Test run complete.")
     print()
 
+def tester():
+    # iteration_limit = 2
+    # training_set, validation_set = determine_training_and_validation_datasets()
+    # training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False)
+    # validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
+    # import cProfile
+    # with timer("Single Iteration Expected Mean Time Pass 1"):
+    #     questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
+    # with timer("Single Iteration Expected Mean Time Pass 2"):
+    #     questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
+    # with timer("Training Data Iteration With NO-OP Body"):
+    #     for iteration_index, (input_batch, _) in (enumerate(training_generator)):
+    #         if iteration_index>=iteration_limit:
+    #             break
+    #         assert len(input_batch)==1
+    #         sentiment_text= input_batch[0]
+    #         print(sentiment_text)
+    with timer("Single Iteration Expected Mean Time Pass 3"):
+        questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
+    cProfile.run('''if True:
+    iteration_limit = 2
+    training_set, validation_set = determine_training_and_validation_datasets() ### Redundant
+    training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False) ### Redundant
+    with timer("Training Data Iteration With 1 Iteration"):
+        for iteration_index, (input_batch, _) in (enumerate(training_generator)):
+            if iteration_index>=iteration_limit:
+                break
+            assert len(input_batch)==1
+            sentiment_text= input_batch[0]
+            print(sentiment_text)
+            questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
+            print(questionable_normalized_words)
+''')
+    cProfile.run('''if True:
+    with timer("Single Iteration Expected Mean Time Pass 4"):
+        questionable_normalized_words_from_text_string("""          .. Omgaga. Im sooo  im gunna CRy. I've been at this dentist since 11.. I was suposed 2 just get a crown put on (30mins)...""")
+''')
+    # with timer("Training Data Iteration with 2 Iterations"):
+    #     for iteration_index, (input_batch, _) in (enumerate(training_generator)):
+    #         if iteration_index>=iteration_limit:
+    #             break
+    #         assert len(input_batch)==1
+    #         sentiment_text= input_batch[0]
+    #         print(sentiment_text)
+    #         questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
+    #         print(questionable_normalized_words)
+    #import code; code.interact(local=locals())
+
 if __name__ == '__main__':
-    run_all_tests()
+    #run_all_tests()
+    tester()
