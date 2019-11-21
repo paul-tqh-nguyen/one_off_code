@@ -65,13 +65,15 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
             if parsable_text_match:
                 parsable_text = parsable_text_match.group()
                 parsable_text = parsable_text.replace(')','')
-                (label, term_id) = parsable_text.split('(')
-                label = label.strip()
-                term_id = term_id.strip()
-                if _normalize_string_wrt_unicode(label).lower() == _normalize_string_wrt_unicode(input_string).lower():
-                    wikidata_entities_corresponding_to_string.append(term_id)
-                    if len(wikidata_entities_corresponding_to_string)>5:
-                        break
+                parsable_text_parts = parsable_text.split('(')
+                if len(parsable_text_parts)==2:
+                    (label, term_id) = parsable_text_parts
+                    label = label.strip()
+                    term_id = term_id.strip()
+                    if _normalize_string_wrt_unicode(label).lower() == _normalize_string_wrt_unicode(input_string).lower():
+                        wikidata_entities_corresponding_to_string.append(term_id)
+                        if len(wikidata_entities_corresponding_to_string)>5:
+                            break
     except pyppeteer.errors.NetworkError:
         pass
     finally:
@@ -85,7 +87,9 @@ def string_corresponding_commonly_known_entities(input_string: str) -> List[str]
 
 TYPE_TO_ID_MAPPING = bidict.bidict({
     'Organization': 'Q43229',
-    'Given Name': 'Q202444',
+    'Anthroponym': 'Q10856962',
+    'Work': 'Q386724',
+    'Natural Geographic Entity': 'Q27096220',
 })
 
 QUERY_TEMPLATE_FOR_ENTITY_COMMONLY_KNOWN_ISAS = '''
@@ -96,6 +100,9 @@ WHERE
   ?TERM wdt:P31 ?IMMEDIATE_GENLS.
   ?IMMEDIATE_GENLS 	wdt:P279* ?VALID_GENLS.
   VALUES ?VALID_GENLS {{ '''+' '.join(map(lambda type_string: 'wd:'+type_string, TYPE_TO_ID_MAPPING.values()))+''' }}.
+  MINUS {{
+    ?TERM wdt:P31 wd:Q4167410 .
+  }}
 }}
 '''
 
@@ -156,7 +163,9 @@ def find_commonly_known_isas(term_ids: List[str]) -> Set[Tuple[str, str]]:
 
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
     term_ids = string_corresponding_commonly_known_entities(input_string)
+    #print("term_ids {}".format(term_ids))
     term_type_id_pairs = find_commonly_known_isas(term_ids)
+    #print("term_type_id_pairs {}".format(term_type_id_pairs))
     term_type_pairs = [(term, TYPE_TO_ID_MAPPING.inverse[type_id]) for term, type_id in term_type_id_pairs]
     return term_type_pairs
 
