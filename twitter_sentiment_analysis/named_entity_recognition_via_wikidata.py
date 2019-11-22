@@ -169,9 +169,7 @@ def find_commonly_known_isas(term_ids: List[str]) -> Set[Tuple[str, str]]:
 @lru_cache(maxsize=32768)
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
     term_ids = string_corresponding_commonly_known_entities(input_string)
-    #print("term_ids {}".format(term_ids))
     term_type_id_pairs = find_commonly_known_isas(term_ids)
-    #print("term_type_id_pairs {}".format(term_type_id_pairs))
     term_type_pairs = [(term, TYPE_TO_ID_MAPPING.inverse[type_id]) for term, type_id in term_type_id_pairs]
     return term_type_pairs
 

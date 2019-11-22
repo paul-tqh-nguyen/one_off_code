@@ -12,6 +12,7 @@ File Name : string_processing_utilities.py
 
 File Organization:
 * Imports
+* Misc. Utilities
 * Meaningful Character Sequence Utilities
 * Named Entity Handling
 * Contraction Expansion
@@ -31,7 +32,23 @@ import spellchecker
 import unicodedata
 from functools import lru_cache
 from word2vec_utilities import WORD2VEC_MODEL
+from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
 from typing import List, Tuple
+
+###################
+# Misc. Utilities #
+###################
+
+PLACEHOLDER_PREFIX = "place0holder0token0with0id"
+
+def word_string_resembles_meaningful_special_character_sequence_placeholder(word_string: str) -> bool:
+    return bool(re.findall(r"^"+PLACEHOLDER_PREFIX+r".+$", word_string))
+
+def unknown_word_worth_dwimming(word_string: str) -> bool:
+    return word_string not in WORD2VEC_MODEL and \
+        not word_string_resembles_meaningful_special_character_sequence_placeholder(word_string) and \
+        not word_string.isnumeric() and \
+        word_string.lower() != 'a'
 
 ###########################################
 # Meaningful Character Sequence Utilities #
@@ -45,8 +62,6 @@ MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES = EMOTICONS+[
     "...",
 ]
 
-PLACEHOLDER_PREFIX = "0meaningful0special0character0sequence0id"
-
 MEANINGFUL_SPECIAL_CHARACTER_SEQUENCE_TO_PLACE_HOLDER_MAP = {meaningful_special_character_sequence : PLACEHOLDER_PREFIX+str(index) \
                                                              for index, meaningful_special_character_sequence in \
                                                              enumerate(MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES)}
@@ -58,22 +73,23 @@ def replace_meaningful_special_character_sequence_with_placeholder_token(text_st
         text_string_with_replacements = text_string_with_replacements.replace(meaningful_special_character_sequence, ' '+placeholder+' ')
     return text_string_with_replacements
 
-def word_string_resembles_meaningful_special_character_sequence_placeholder(word_string: str) -> bool:
-    return bool(re.findall("^0meaningful0special0character0sequence0id.+$", word_string))
-
 #########################
 # Named Entity Handling #
 #########################
 
-# def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
-#     text_string_with_replacements = text_string
-#     word_strings = re.findall(r"\b\w+\b", text_string)
-#     for word_string in word_strings: # @todo handle multi-word cases
-#         if word_string not in WORD2VEC_MODEL:
-#             word_string_is_well_known_named_entity_via_wikidata = word_w
-#             if word_string_is_well_known_named_entity_via_wikidata:
-#                 text_string_with_replacements.replace
-#     return text_string_with_replacements
+NAMED_ENTITY_PLACEHOLDER = PLACEHOLDER_PREFIX+"0named0entity"
+
+# @todo also see if we can handle the "Also known as" lexical information we get if we click on the Wikidata search suggestions; it would handle cases like "SYTYCD"
+def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
+    text_string_with_replacements = text_string
+    word_strings = re.findall(r"\b\w+\b", text_string)
+    for word_string in word_strings: # @todo handle multi-word cases
+        if unknown_word_worth_dwimming(word_string):
+            # @todo consider doing something more robust with the extra semantic information
+            word_string_is_well_known_named_entity_via_wikidata = bool(string_corresponding_wikidata_term_type_pairs(word_string))
+            if word_string_is_well_known_named_entity_via_wikidata:
+                text_string_with_replacements = re.sub(r"\b"+word_string+r"\b", NAMED_ENTITY_PLACEHOLDER, text_string_with_replacements, 1)
+    return text_string_with_replacements
 
 #########################
 # Contraction Expansion #
@@ -304,40 +320,39 @@ def possibly_dwim_duplicate_letters_exaggeration(text_string: str) -> Tuple[bool
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
     for word_match in word_match_iterator:
         word_string = word_match.group()
-        if not word_string_resembles_meaningful_special_character_sequence_placeholder(word_string):
-            if word_string not in WORD2VEC_MODEL:
-                reduced_word = word_string.lower()
-                reduced_word_is_known = False
-                letters = set(reduced_word)
-                for _ in word_string:
-                    no_change_happened = True
-                    for letter in letters:
-                        letter_probable_upper_limit = 2 if letter in VOWELS else 1
-                        disallowed_letter_duplicate_sequence = letter*(letter_probable_upper_limit+1)
-                        disallowed_letter_duplicate_sequence_replacement = letter*letter_probable_upper_limit
-                        if disallowed_letter_duplicate_sequence in reduced_word:
-                            no_change_happened = False
-                            reduced_word = reduced_word.replace(disallowed_letter_duplicate_sequence, disallowed_letter_duplicate_sequence_replacement)
-                            reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-                            if reduced_word_is_known:
-                                break
-                    if no_change_happened or reduced_word_is_known:
-                        break
-                if not reduced_word_is_known:
-                    candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
-                    candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
-                    for candidate_word in candidate_words_that_dont_introduce_new_characters:
-                        if candidate_word in WORD2VEC_MODEL:
-                            reduced_word = candidate_word
-                            reduced_word_is_known = True
-                            break
-                if not reduced_word_is_known:
-                    if len(candidate_words_via_spell_checker) == 1:
-                        reduced_word = tuple(candidate_words_via_spell_checker)[0]
+        if unknown_word_worth_dwimming(word_string):
+            reduced_word = word_string.lower()
+            reduced_word_is_known = False
+            letters = set(reduced_word)
+            for _ in word_string:
+                no_change_happened = True
+                for letter in letters:
+                    letter_probable_upper_limit = 2 if letter in VOWELS else 1
+                    disallowed_letter_duplicate_sequence = letter*(letter_probable_upper_limit+1)
+                    disallowed_letter_duplicate_sequence_replacement = letter*letter_probable_upper_limit
+                    if disallowed_letter_duplicate_sequence in reduced_word:
+                        no_change_happened = False
+                        reduced_word = reduced_word.replace(disallowed_letter_duplicate_sequence, disallowed_letter_duplicate_sequence_replacement)
                         reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-                if reduced_word_is_known:
-                    updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
-                some_reduced_word_is_known = some_reduced_word_is_known or reduced_word_is_known
+                        if reduced_word_is_known:
+                            break
+                if no_change_happened or reduced_word_is_known:
+                    break
+            if not reduced_word_is_known:
+                candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
+                candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
+                for candidate_word in candidate_words_that_dont_introduce_new_characters:
+                    if candidate_word in WORD2VEC_MODEL:
+                        reduced_word = candidate_word
+                        reduced_word_is_known = True
+                        break
+            if not reduced_word_is_known:
+                if len(candidate_words_via_spell_checker) == 1:
+                    reduced_word = tuple(candidate_words_via_spell_checker)[0]
+                    reduced_word_is_known = reduced_word in WORD2VEC_MODEL
+            if reduced_word_is_known:
+                updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
+            some_reduced_word_is_known = some_reduced_word_is_known or reduced_word_is_known
     return some_reduced_word_is_known, updated_text_string
 
 def duplicate_letters_exaggeration_applicability(text_string: str) -> bool:
@@ -360,15 +375,17 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
     for applicability_function, expand_function in DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS:
         if applicability_function(updated_text_string):
-            updated_text_string = expand_function(updated_text_string)
-            break
+            expanded_result = expand_function(updated_text_string)
+            if expanded_result != updated_text_string:
+                updated_text_string = expanded_result
+                break
     return updated_text_string
 
 def possibly_dwim_unknown_words(text_string: str) -> str:
     current_text_string = text_string
     premature_exit = False
     for _ in text_string:
-        updated_text_string = perform_single_pass_to_dwim_unknown_words(text_string)
+        updated_text_string = perform_single_pass_to_dwim_unknown_words(current_text_string)
         if current_text_string == updated_text_string:
             premature_exit = True
             break
@@ -461,7 +478,7 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = expand_contractions(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
     normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
-    # normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string) # @todo get this working
+    normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string)
     normalized_text_string = lower_case_string(normalized_text_string)
     normalized_words = normalized_text_string.split(' ')
     return normalized_words

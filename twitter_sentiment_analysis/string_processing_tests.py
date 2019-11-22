@@ -29,7 +29,7 @@ import time
 from contextlib import contextmanager
 from torch.utils import data
 from word2vec_utilities import WORD2VEC_MODEL
-from string_processing_utilities import word_string_resembles_meaningful_special_character_sequence_placeholder, normalized_words_from_text_string, PUNCTUATION_SET
+from string_processing_utilities import normalized_words_from_text_string, PUNCTUATION_SET
 from sentiment_analysis import determine_training_and_validation_datasets
 
 ###################
@@ -93,7 +93,7 @@ def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     unknown_words_worth_mentioning = filter(lambda word: word not in WORD2VEC_MODEL, normalized_words)
     unknown_words_worth_mentioning = filter(lambda word: word not in COMMONLY_USED_MISSING_WORD2VEC_WORDS, unknown_words_worth_mentioning)
     unknown_words_worth_mentioning = filter(lambda word: word not in PUNCTUATION_SET, unknown_words_worth_mentioning)
-    unknown_words_worth_mentioning = filter(lambda word: not word_string_resembles_meaningful_special_character_sequence_placeholder(word), unknown_words_worth_mentioning)
+    unknown_words_worth_mentioning = filter(lambda word: unknown_word_worth_dwimming(word), unknown_words_worth_mentioning)
     unknown_words_worth_mentioning = filter(lambda word: not string_corresponds_to_number(word), unknown_words_worth_mentioning)
     return list(unknown_words_worth_mentioning)
 
@@ -127,7 +127,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     sentiment_text=sentiment_text))
             if len(questionable_normalized_words)!=0:
                 failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
-                print("\n{sentiment_text} : {questionable_normalized_words}".format(sentiment_text=sentiment_text, questionable_normalized_words=questionable_normalized_words))
+                print("\n\n{sentiment_text} : {questionable_normalized_words}".format(sentiment_text=sentiment_text, questionable_normalized_words=questionable_normalized_words))
                 from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
                 for questionable_normalized_word in questionable_normalized_words:
                     print("questionable_normalized_word : {questionable_normalized_word}".format(questionable_normalized_word=questionable_normalized_word))
