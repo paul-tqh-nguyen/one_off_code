@@ -45,7 +45,7 @@ def word_string_resembles_meaningful_special_character_sequence_placeholder(word
     return bool(re.findall(r"^"+PLACEHOLDER_PREFIX+r".+$", word_string))
 
 def common_word_missing_from_word2vec_model(word_string: str) -> bool:
-    return word_string.lower() in ['a','to']
+    return word_string.lower() in ['a','to', 'and']
 
 def unknown_word_worth_dwimming(word_string: str) -> bool:
     return not word_string.isnumeric() and \
