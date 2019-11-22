@@ -44,12 +44,12 @@ PLACEHOLDER_PREFIX = "place0holder0token0with0id"
 def word_string_resembles_meaningful_special_character_sequence_placeholder(word_string: str) -> bool:
     return bool(re.findall(r"^"+PLACEHOLDER_PREFIX+r".+$", word_string))
 
-def common_word_not_in_word2vec_model(word_string: str) -> bool:
+def common_word_missing_from_word2vec_model(word_string: str) -> bool:
     return word_string.lower() in ['a','to']
 
 def unknown_word_worth_dwimming(word_string: str) -> bool:
     return not word_string.isnumeric() and \
-        word_string.lower() != 'a' and \
+        not common_word_missing_from_word2vec_model(word_string) and \
         word_string not in PUNCTUATION_SET and \
         not word_string_resembles_meaningful_special_character_sequence_placeholder(word_string) and \
         word_string not in WORD2VEC_MODEL
@@ -90,6 +90,7 @@ def replace_well_known_named_entities_with_placeholder_token(text_string: str) -
     for word_string in word_strings: # @todo handle multi-word cases
         if unknown_word_worth_dwimming(word_string):
             # @todo consider doing something more robust with the extra semantic information
+            print("Attempting to search Wikidata for : {}".format(word_string))
             word_string_is_well_known_named_entity_via_wikidata = bool(string_corresponding_wikidata_term_type_pairs(word_string))
             if word_string_is_well_known_named_entity_via_wikidata:
                 text_string_with_replacements = re.sub(r"\b"+word_string+r"\b", NAMED_ENTITY_PLACEHOLDER, text_string_with_replacements, 1)
