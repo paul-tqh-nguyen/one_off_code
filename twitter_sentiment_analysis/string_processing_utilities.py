@@ -284,11 +284,11 @@ def possibly_split_two_concatenated_words(text_string: str) -> Tuple[bool,str]:
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
     min_first_word_length = 5
     min_second_word_length = 3
+    split_words_are_known = False
     for word_match in word_match_iterator:
         word = word_match.group()
-        if not word_string_resembles_meaningful_special_character_sequence_placeholder(word):
+        if unknown_word_worth_dwimming(word):
             split_words = []
-            split_words_are_known = False
             word_length = len(word)
             if word_length > min_first_word_length+min_second_word_length:
                 split_index_supremum = word_length-(min_second_word_length-1)
