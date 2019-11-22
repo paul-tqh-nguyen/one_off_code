@@ -113,12 +113,9 @@ class testTextStringNormalizationViaData(unittest.TestCase):
         log_progress = False
         possibly_tqdm = tqdm.tqdm if log_progress else identity
         for iteration_index, (input_batch, _) in possibly_tqdm(enumerate(training_generator)):
-            print()
-            print("==============================================================================================")
+            notes_worth_printing = []
             assert len(input_batch)==1
             sentiment_text = input_batch[0]
-            print("Current Sentence Being Processed:\n{sentiment_text}\n".format(
-                sentiment_text=sentiment_text))
             questionable_normalized_words_determination_timing_results = dict()
             def note_questionable_normalized_words_determination_timing_results(time):
                 questionable_normalized_words_determination_timing_results['total_time'] = time
@@ -127,19 +124,28 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
             max_tolerable_number_of_seconds_for_processing = 0.01
             if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
-                print("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
+                notes_worth_printing.append("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
                     questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
                     sentiment_text=sentiment_text))
             if len(questionable_normalized_words)!=0:
                 failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
-                print("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
-                print()
-                from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
+                notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
+                notes_worth_printing.append()
+                from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs # @todo get rid of this section
                 for questionable_normalized_word in questionable_normalized_words:
-                    print("questionable_normalized_word : {questionable_normalized_word}".format(questionable_normalized_word=questionable_normalized_word))
-                    print("Wikidata Possible Matches : {wikidata_possible_matches}".format(wikidata_possible_matches=string_corresponding_wikidata_term_type_pairs(questionable_normalized_word)))
-            print("==============================================================================================")
-            print()
+                    notes_worth_printing.append("questionable_normalized_word : {questionable_normalized_word}".format(questionable_normalized_word=questionable_normalized_word))
+                    notes_worth_printing.appendprint("Wikidata Possible Matches : {wikidata_possible_matches}".format(
+                        wikidata_possible_matches=string_corresponding_wikidata_term_type_pairs(questionable_normalized_word)))
+            if len(notes_worth_printing) != 0:
+                print()
+                print("==============================================================================================")
+                print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
+                print("Current Sentence Being Processed:\n{sentiment_text}\n".format(
+                    sentiment_text=sentiment_text))
+                for note in notes_worth_printing:
+                    print(note)
+                print("==============================================================================================")
+                print()
         self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
                         msg="We failed to process the following: \n{bad_pairs_printout}".format(
                             bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
