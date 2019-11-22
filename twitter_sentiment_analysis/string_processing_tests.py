@@ -29,7 +29,7 @@ import time
 from contextlib import contextmanager
 from torch.utils import data
 from word2vec_utilities import WORD2VEC_MODEL
-from string_processing_utilities import normalized_words_from_text_string, PUNCTUATION_SET
+from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET
 from sentiment_analysis import determine_training_and_validation_datasets
 
 ###################
