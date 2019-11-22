@@ -115,7 +115,9 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             assert len(input_batch)==1
             sentiment_text = input_batch[0]
             questionable_normalized_words_determination_timing_results = dict()
-            with timer(lambda time: questionable_normalized_words_determination_timing_results['total_time']=result):
+            def note_questionable_normalized_words_determination_timing_results(time):
+                questionable_normalized_words_determination_timing_results['total_time'] = time
+            with timer(exitCallback=note_questionable_normalized_words_determination_timing_results):
                 questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
             questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
             max_tolerable_number_of_seconds_for_processing = 0.01
@@ -128,11 +130,11 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                 print("\n{sentiment_text} : {questionable_normalized_words}".format(sentiment_text=sentiment_text, questionable_normalized_words=questionable_normalized_words))
                 from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
                 for questionable_normalized_word in questionable_normalized_words:
-                    print(questionable_normalized_word)
-                    print(string_corresponding_wikidata_term_type_pairs(questionable_normalized_word))
-            self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
-                            msg="We failed to process the following: \n{bad_pairs_printout}".format(
-                                bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
+                    print("questionable_normalized_word : {questionable_normalized_word}".format(questionable_normalized_word=questionable_normalized_word))
+                    print("Wikidata Possible Matches : {wikidata_possible_matches}".format(wikidata_possible_matches=string_corresponding_wikidata_term_type_pairs(questionable_normalized_word)))
+        self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
+                        msg="We failed to process the following: \n{bad_pairs_printout}".format(
+                            bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
             
 def run_all_tests():
     print()

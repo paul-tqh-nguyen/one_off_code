@@ -19,7 +19,7 @@ WORD2VEC_MODEL = KeyedVectors.load_word2vec_format(WORD2VEC_BIN_LOCATION, binary
 WORD2VEC_VECTOR_LENGTH = len(WORD2VEC_MODEL['queen'])
 
 def main():
-    print("This module contains WRD2VEC importing utilities.")
+    print("This module contains WORD2VEC importing utilities.")
 
 if __name__ == '__main__':
     main()

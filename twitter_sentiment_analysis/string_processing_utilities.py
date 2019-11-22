@@ -324,7 +324,6 @@ def possibly_dwim_duplicate_letters_exaggeration(text_string: str) -> Tuple[bool
                     if no_change_happened or reduced_word_is_known:
                         break
                 if not reduced_word_is_known:
-                    print("reduced_word being spell-checked {}".format(reduced_word))
                     candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
                     candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
                     for candidate_word in candidate_words_that_dont_introduce_new_characters:
@@ -462,9 +461,14 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = expand_contractions(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
     normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
-    # normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string) # @todo get thsi working
+    # normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string) # @todo get this working
     normalized_text_string = lower_case_string(normalized_text_string)
     normalized_words = normalized_text_string.split(' ')
     return normalized_words
 
-# @todo add a main() that prints out what this library does
+
+def main():
+    print("This module contains string normalization utilities for sentiment analysis on Twitter data.")
+
+if __name__ == '__main__':
+    main()
