@@ -1,4 +1,4 @@
-unkn#!/usr/bin/python3 -O
+#!/usr/bin/python3 -O
 
 """
 
