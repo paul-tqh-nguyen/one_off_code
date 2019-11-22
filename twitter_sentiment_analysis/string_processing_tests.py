@@ -36,6 +36,9 @@ from sentiment_analysis import determine_training_and_validation_datasets
 # Misc. Utilities #
 ###################
 
+def identity(args):
+    return args
+
 @contextmanager
 def timer(section_name=None, exitCallback=None):
     start_time = time.time()
@@ -111,7 +114,9 @@ class testTextStringNormalizationViaData(unittest.TestCase):
         training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False)
         validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         failed_string_to_questionable_normalized_words_map = dict()
-        for iteration_index, (input_batch, _) in tqdm.tqdm(enumerate(training_generator)):
+        log_progress = False
+        possibly_tqdm = tqdm.tqdm if log_progress else identity
+        for iteration_index, (input_batch, _) in possibly_tqdm(enumerate(training_generator)):
             assert len(input_batch)==1
             sentiment_text = input_batch[0]
             questionable_normalized_words_determination_timing_results = dict()
@@ -122,8 +127,8 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
             max_tolerable_number_of_seconds_for_processing = 0.01
             if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
-                print("Processing the following string took more than {max_tolerable_number_of_seconds_for_processing}:\n{sentiment_text}".format(
-                    max_tolerable_number_of_seconds_for_processing=max_tolerable_number_of_seconds_for_processing,
+                print("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}".format(
+                    questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
                     sentiment_text=sentiment_text))
             if len(questionable_normalized_words)!=0:
                 failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
