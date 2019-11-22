@@ -84,7 +84,7 @@ NAMED_ENTITY_PLACEHOLDER = PLACEHOLDER_PREFIX+"0named0entity"
 def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
     text_string_with_replacements = text_string
     word_strings = re.findall(r"\b\w+\b", text_string)
-   for word_string in word_strings: # @todo handle multi-word cases
+    for word_string in word_strings: # @todo handle multi-word cases
         if unknown_word_worth_dwimming(word_string):
             # @todo consider doing something more robust with the extra semantic information
             word_string_is_well_known_named_entity_via_wikidata = bool(string_corresponding_wikidata_term_type_pairs(word_string))

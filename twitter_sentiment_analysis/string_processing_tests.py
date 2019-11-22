@@ -130,11 +130,11 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             if len(questionable_normalized_words)!=0:
                 failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
                 notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
-                notes_worth_printing.append()
+                notes_worth_printing.append("")
                 from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs # @todo get rid of this section
                 for questionable_normalized_word in questionable_normalized_words:
                     notes_worth_printing.append("questionable_normalized_word : {questionable_normalized_word}".format(questionable_normalized_word=questionable_normalized_word))
-                    notes_worth_printing.appendprint("Wikidata Possible Matches : {wikidata_possible_matches}".format(
+                    notes_worth_printing.append("Wikidata Possible Matches : {wikidata_possible_matches}".format(
                         wikidata_possible_matches=string_corresponding_wikidata_term_type_pairs(questionable_normalized_word)))
             if len(notes_worth_printing) != 0:
                 print()
