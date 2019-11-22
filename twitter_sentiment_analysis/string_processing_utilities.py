@@ -44,6 +44,9 @@ PLACEHOLDER_PREFIX = "place0holder0token0with0id"
 def word_string_resembles_meaningful_special_character_sequence_placeholder(word_string: str) -> bool:
     return bool(re.findall(r"^"+PLACEHOLDER_PREFIX+r".+$", word_string))
 
+def common_word_not_in_word2vec_model(word_string: str) -> bool:
+    return word_string.lower() in ['a','to']
+
 def unknown_word_worth_dwimming(word_string: str) -> bool:
     return not word_string.isnumeric() and \
         word_string.lower() != 'a' and \
