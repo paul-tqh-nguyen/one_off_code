@@ -149,7 +149,7 @@ TRAINING_DATA_ID_TO_DATA_MAP = {}
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = {} # @todo do something with this
 
-PORTION_OF_TRAINING_DATA_TO_USE = 0.001
+PORTION_OF_TRAINING_DATA_TO_USE = 0.01
 
 with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
