@@ -90,6 +90,7 @@ COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
 
 def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     normalized_words = normalized_words_from_text_string(text_string)
+    unknown_words_worth_mentioning = normalized_words
     unknown_words_worth_mentioning = filter(lambda word: word not in COMMONLY_USED_MISSING_WORD2VEC_WORDS, unknown_words_worth_mentioning)
     unknown_words_worth_mentioning = filter(lambda word: unknown_word_worth_dwimming(word), unknown_words_worth_mentioning)
     return list(unknown_words_worth_mentioning)
@@ -112,8 +113,12 @@ class testTextStringNormalizationViaData(unittest.TestCase):
         log_progress = False
         possibly_tqdm = tqdm.tqdm if log_progress else identity
         for iteration_index, (input_batch, _) in possibly_tqdm(enumerate(training_generator)):
+            print()
+            print("==============================================================================================")
             assert len(input_batch)==1
             sentiment_text = input_batch[0]
+            print("Current Sentence Being Processed:\n{sentiment_text}\n".format(
+                sentiment_text=sentiment_text))
             questionable_normalized_words_determination_timing_results = dict()
             def note_questionable_normalized_words_determination_timing_results(time):
                 questionable_normalized_words_determination_timing_results['total_time'] = time
@@ -122,16 +127,19 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
             max_tolerable_number_of_seconds_for_processing = 0.01
             if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
-                print("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}".format(
+                print("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
                     questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
                     sentiment_text=sentiment_text))
             if len(questionable_normalized_words)!=0:
                 failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
-                print("\n\n{sentiment_text} : {questionable_normalized_words}".format(sentiment_text=sentiment_text, questionable_normalized_words=questionable_normalized_words))
+                print("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
+                print()
                 from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
                 for questionable_normalized_word in questionable_normalized_words:
                     print("questionable_normalized_word : {questionable_normalized_word}".format(questionable_normalized_word=questionable_normalized_word))
                     print("Wikidata Possible Matches : {wikidata_possible_matches}".format(wikidata_possible_matches=string_corresponding_wikidata_term_type_pairs(questionable_normalized_word)))
+            print("==============================================================================================")
+            print()
         self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
                         msg="We failed to process the following: \n{bad_pairs_printout}".format(
                             bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))

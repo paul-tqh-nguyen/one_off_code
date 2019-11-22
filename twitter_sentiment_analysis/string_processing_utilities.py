@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -O
+unkn#!/usr/bin/python3 -O
 
 """
 
@@ -84,8 +84,11 @@ NAMED_ENTITY_PLACEHOLDER = PLACEHOLDER_PREFIX+"0named0entity"
 def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
     text_string_with_replacements = text_string
     word_strings = re.findall(r"\b\w+\b", text_string)
+    print("replace_well_known_named_entities_with_placeholder_token")
+    print("word_strings {}".format(word_strings))
     for word_string in word_strings: # @todo handle multi-word cases
         if unknown_word_worth_dwimming(word_string):
+            print("This passes unknown_word_worth_dwimming : {}".format(word_string))
             # @todo consider doing something more robust with the extra semantic information
             word_string_is_well_known_named_entity_via_wikidata = bool(string_corresponding_wikidata_term_type_pairs(word_string))
             if word_string_is_well_known_named_entity_via_wikidata:
@@ -438,8 +441,14 @@ def replace_hash_tags_with_placeholder_token(text_string: str) -> str:
         updated_text_string = updated_text_string.replace(hash_tag, PLACEHOLDER_PREFIX+'0hash0tag')
     return updated_text_string
 
-def lower_case_string(input_string: str) -> str:
-    return input_string.lower()
+def lower_case_unknown_words(text_string: str) -> str:
+    text_string_with_replacements = text_string
+    word_strings = re.findall(r"\b\w+\b", text_string)
+    for word_string in word_strings:
+        if unknown_word_worth_dwimming(word_string):
+            replacement = word_string.lower()
+            text_string_with_replacements = re.sub(r"\b"+word_string+r"\b", replacement, text_string_with_replacements, 1)
+    return text_string_with_replacements
 
 def simplify_substrings_until_quiescence(old: str, new: str, input_string: str) -> str:
     simplified_string = input_string
@@ -480,7 +489,7 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = separate_punctuation(normalized_text_string)
     normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
     normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string)
-    normalized_text_string = lower_case_string(normalized_text_string)
+    normalized_text_string = lower_case_unknown_words(normalized_text_string)
     normalized_words = normalized_text_string.split(' ')
     return normalized_words
 
