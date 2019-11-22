@@ -110,6 +110,7 @@ def failed_string_to_questionable_normalized_words_map_repr(failed_string_to_que
 
 class testTextStringNormalizationViaData(unittest.TestCase):
     def testTextStringNormalizationViaData(self):
+        print()
         training_set, validation_set = determine_training_and_validation_datasets()
         training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False)
         validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)

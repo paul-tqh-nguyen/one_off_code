@@ -262,7 +262,7 @@ def number_word_concatenation_expand(text_string: str) -> str:
         alphabetic_half = match.replace(numeric_half_match, "")
         replacement = numeric_half_match+' '+alphabetic_half
         expanded_text_string = re.sub(r"\b"+match+r"\b", replacement, expanded_text_string, 1)
-    return expanded_text_string
+        return expanded_text_string
 
 def aw_star_applicability(text_string: str) -> bool:
     applicable = re_pattern_has_at_least_one_match(r"\baw[w|a|e|i|o|u|h|\!]*\b", text_string, re.IGNORECASE)
@@ -482,7 +482,6 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = lower_case_string(normalized_text_string)
     normalized_words = normalized_text_string.split(' ')
     return normalized_words
-
 
 def main():
     print("This module contains string normalization utilities for sentiment analysis on Twitter data.")

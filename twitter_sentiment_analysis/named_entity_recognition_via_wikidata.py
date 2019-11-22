@@ -171,6 +171,9 @@ def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tupl
     term_ids = string_corresponding_commonly_known_entities(input_string)
     term_type_id_pairs = find_commonly_known_isas(term_ids)
     term_type_pairs = [(term, TYPE_TO_ID_MAPPING.inverse[type_id]) for term, type_id in term_type_id_pairs]
+    print('string_corresponding_wikidata_term_type_pairs')
+    print('input_string {}'.format(input_string))
+    print('term_type_pairs {}'.format(term_type_pairs))
     return term_type_pairs
 
 def main():
