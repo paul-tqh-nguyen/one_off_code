@@ -88,16 +88,10 @@ COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
     'perfekta', # foreign language
 ]
 
-def string_corresponds_to_number(word_string: str) -> str:
-    return bool(re.findall("^[0-9]+$", word_string))
-
 def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     normalized_words = normalized_words_from_text_string(text_string)
-    unknown_words_worth_mentioning = filter(lambda word: word not in WORD2VEC_MODEL, normalized_words)
     unknown_words_worth_mentioning = filter(lambda word: word not in COMMONLY_USED_MISSING_WORD2VEC_WORDS, unknown_words_worth_mentioning)
-    unknown_words_worth_mentioning = filter(lambda word: word not in PUNCTUATION_SET, unknown_words_worth_mentioning)
     unknown_words_worth_mentioning = filter(lambda word: unknown_word_worth_dwimming(word), unknown_words_worth_mentioning)
-    unknown_words_worth_mentioning = filter(lambda word: not string_corresponds_to_number(word), unknown_words_worth_mentioning)
     return list(unknown_words_worth_mentioning)
 
 def failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map: dict) -> None:

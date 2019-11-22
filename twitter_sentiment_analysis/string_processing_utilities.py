@@ -45,10 +45,11 @@ def word_string_resembles_meaningful_special_character_sequence_placeholder(word
     return bool(re.findall(r"^"+PLACEHOLDER_PREFIX+r".+$", word_string))
 
 def unknown_word_worth_dwimming(word_string: str) -> bool:
-    return word_string not in WORD2VEC_MODEL and \
+    return not word_string.isnumeric() and \
+        word_string.lower() != 'a' and \
+        word_string not in PUNCTUATION_SET and \
         not word_string_resembles_meaningful_special_character_sequence_placeholder(word_string) and \
-        not word_string.isnumeric() and \
-        word_string.lower() != 'a'
+        word_string not in WORD2VEC_MODEL
 
 ###########################################
 # Meaningful Character Sequence Utilities #

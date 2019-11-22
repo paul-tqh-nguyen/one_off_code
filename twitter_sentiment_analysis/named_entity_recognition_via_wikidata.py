@@ -166,7 +166,7 @@ def find_commonly_known_isas(term_ids: List[str]) -> Set[Tuple[str, str]]:
     result = _execute_async_task(task)
     return result
 
-@lru_cache(maxsize=32768)
+#@lru_cache(maxsize=32768) # @todo turn this back on
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
     term_ids = string_corresponding_commonly_known_entities(input_string)
     term_type_id_pairs = find_commonly_known_isas(term_ids)
