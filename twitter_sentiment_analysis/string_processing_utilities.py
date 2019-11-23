@@ -79,19 +79,18 @@ EMOTICONS = '''
 :‑D :D 8‑D 8D x‑D X‑D =D =3 B^D :‑( :( :‑c :c :‑< :< :‑[ :[ :-|| >:[ :{ :@ >:( :-)) :'‑( :'( :'‑) :') D‑': D:< D: D8 D; D= :‑O :O :‑o :o :-0 8‑0 >:O :-* :* :× ;‑) ;) *-) *) ;‑] ;] ;^) :‑, ;D :‑P :P X‑P x‑p :‑p :p :‑Þ :Þ :‑þ :þ :‑b :b d: =p >:P :‑/ :/ :‑. >:\ >:/ :\ =/ =\ :L =L :S :‑| :| :$ ://) ://3 :‑X :X :‑# :# :‑& :& O:‑) O:) 0:‑3 0:3 0:‑) 0:) 0;^) >:‑) >:) }:‑) }:) 3:‑) 3:) >;) >:3 >;3 |;‑) |‑O :‑J #‑) %‑) %) <:‑| ',:-| ',:-l :-| T_T @-) 
 '''.strip().split(' ')
 
-MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES = EMOTICONS+[
-    "...",
-]
+EMOTICON_TO_PLACE_HOLDER_MAP = {meaningful_special_character_sequence : PLACEHOLDER_PREFIX+'0emoticon'+str(index) \
+                                for index, meaningful_special_character_sequence in \
+                                enumerate(EMOTICONS)}
 
-MEANINGFUL_SPECIAL_CHARACTER_SEQUENCE_TO_PLACE_HOLDER_MAP = {meaningful_special_character_sequence : PLACEHOLDER_PREFIX+str(index) \
-                                                             for index, meaningful_special_character_sequence in \
-                                                             enumerate(MEANINGFUL_SPECIAL_CHARACTER_SEQUENCES)}
+ELIPSIS_PLACE_HOLDER = PLACEHOLDER_PREFIX+'0elipsis'
 
 def replace_meaningful_special_character_sequence_with_placeholder_token(text_string: str) -> str:
     text_string_with_replacements = text_string
     text_string_with_replacements = simplify_elipsis_sequences(text_string_with_replacements)
-    for meaningful_special_character_sequence, placeholder in MEANINGFUL_SPECIAL_CHARACTER_SEQUENCE_TO_PLACE_HOLDER_MAP.items():
-        text_string_with_replacements = text_string_with_replacements.replace(meaningful_special_character_sequence, ' '+placeholder+' ')
+    for emoticon, placeholder in EMOTICON_TO_PLACE_HOLDER_MAP.items():
+        text_string_with_replacements = re.sub(r"\b"+re.escape(emoticon)+r"\b", placeholder, text_string_with_replacements, 0)
+    text_string_with_replacements = text_string_with_replacements.replace('...', ELIPSIS_PLACE_HOLDER)
     return text_string_with_replacements
 
 #########################
@@ -523,8 +522,9 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = replace_tagged_users_with_placeholder_token(normalized_text_string)
     normalized_text_string = replace_urls_with_placeholder_token(normalized_text_string)
     normalized_text_string = replace_hash_tags_with_placeholder_token(normalized_text_string)
-    normalized_text_string = replace_meaningful_special_character_sequence_with_placeholder_token(normalized_text_string)
     normalized_text_string = replace_exotic_characters(normalized_text_string)
+    print(normalized_text_string)
+    normalized_text_string = replace_meaningful_special_character_sequence_with_placeholder_token(normalized_text_string)
     normalized_text_string = expand_contractions(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
     normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
