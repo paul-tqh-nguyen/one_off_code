@@ -242,7 +242,7 @@ CONTRACTION_EXPANSION_PAIRS_SORTED_BIGGEST_FIRST = sorted(CONTRACTION_EXPANSION_
 def expand_contractions(text_string: str) -> str:
     updated_text_string = text_string
     for contraction, expansion in CONTRACTION_EXPANSION_PAIRS_SORTED_BIGGEST_FIRST:
-        updated_text_string = updated_text_string.replace(contraction, expansion)
+        updated_text_string = re.sub(r"\b"+contraction+r"\b", expansion, updated_text_string, 0, re.IGNORECASE)
     return updated_text_string
 
 ###################################
