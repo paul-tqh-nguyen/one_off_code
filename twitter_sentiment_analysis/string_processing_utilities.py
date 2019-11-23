@@ -33,11 +33,14 @@ import unicodedata
 from functools import lru_cache
 from word2vec_utilities import WORD2VEC_MODEL
 from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 ###################
 # Misc. Utilities #
 ###################
+
+def false(*args, **kwargs):
+    return False
 
 PLACEHOLDER_PREFIX = "place0holder0token0with0id"
 
@@ -53,6 +56,20 @@ def unknown_word_worth_dwimming(word_string: str) -> bool:
         word_string not in PUNCTUATION_SET and \
         not word_string_resembles_meaningful_special_character_sequence_placeholder(word_string) and \
         word_string not in WORD2VEC_MODEL
+
+def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequence: str, new_subsequence: str, word_exception_checker: Callable[[str], bool]=false) -> str:
+    updated_text_string = text_string
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
+    for word_match in word_match_iterator:
+        word_string = word_match.group()
+        if not word_exception_checker(word_string):
+            if unknown_word_worth_dwimming(word_string):
+                word_string_normalized = word_string.lower()
+                if old_subsequence in word_string_normalized:
+                    corrected_word = word_string_normalized.replace(old_subsequence, new_subsequence)
+                    if corrected_word in WORD2VEC_MODEL:
+                        updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
+    return updated_text_string
 
 ###########################################
 # Meaningful Character Sequence Utilities #
@@ -244,12 +261,13 @@ def number_word_concatenation_expand(text_string: str) -> str:
     expanded_text_string = text_string
     matches = re.findall(r"\b[0-9]+[a-z]+\b", text_string, re.IGNORECASE)
     for match in matches:
-        numeric_half_matches = re.findall(r"\b[0-9]+", match)
-        assert len(numeric_half_matches) == 1
-        numeric_half_match = numeric_half_matches[0]
-        alphabetic_half = match.replace(numeric_half_match, "")
-        replacement = numeric_half_match+' '+alphabetic_half
-        expanded_text_string = re.sub(r"\b"+match+r"\b", replacement, expanded_text_string, 1)
+        if unknown_word_worth_dwimming(match):
+            numeric_half_matches = re.findall(r"\b[0-9]+", match)
+            assert len(numeric_half_matches) == 1
+            numeric_half_match = numeric_half_matches[0]
+            alphabetic_half = match.replace(numeric_half_match, "")
+            replacement = numeric_half_match+' '+alphabetic_half
+            expanded_text_string = re.sub(r"\b"+match+r"\b", replacement, expanded_text_string, 1)
     return expanded_text_string
 
 def aw_star_expand(text_string: str) -> str:
@@ -282,17 +300,6 @@ def two_word_concatenation_expand(text_string: str) -> str:
                         break
     return updated_text_string
 
-def f_instead_of_ph_slang_expand(text_string: str) -> bool:
-    updated_text_string = text_string
-    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
-    for word_match in word_match_iterator:
-        word = word_match.group()
-        if unknown_word_worth_dwimming(word):
-            corrected_word = word.lower().replace('f','ph')
-            if corrected_word in WORD2VEC_MODEL:
-                updated_text_string = re.sub(r"\b"+word+r"\b", corrected_word, updated_text_string, 1)
-    return updated_text_string
-
 def _starts_with(big: str, small: str) -> bool:
     len_small = len(small)
     return len(big) >= len_small and big[:len_small] == small
@@ -316,8 +323,9 @@ def laughing_expand(text_string: str) -> str:
     word_match_iterator = re.finditer(r"\b\w+\b", text_string, re.IGNORECASE)
     for word_match in word_match_iterator:
         word = word_match.group()
-        if _word_string_corresponds_to_laugh(word):
-            text_string_with_replacements = re.sub(r"\b"+word+r"\b", 'haha', text_string_with_replacements, 1)
+        if unknown_word_worth_dwimming(word):
+            if _word_string_corresponds_to_laugh(word):
+                text_string_with_replacements = re.sub(r"\b"+word+r"\b", 'haha', text_string_with_replacements, 1)
     return text_string_with_replacements
 
 VOWELS = {'a','e','i','o','u'}
@@ -362,13 +370,45 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                 updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
     return updated_text_string
 
+SLANG_WORD_DICTIONARY = {
+    'ily2' : "I love you too",
+    'sowwy' : "sorry",
+    'luvly' : "lovely",
+    'ilysfm' : "I love you so fucking much",
+}
+
+def slang_word_expand(text_string: str) -> str:
+    updated_text_string = text_string
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
+    for word_match in word_match_iterator:
+        word_string = word_match.group()
+        if unknown_word_worth_dwimming(word_string):
+            word_string_canonicalized_for_lookup = word_string.lower()
+            if word_string_canonicalized_for_lookup in SLANG_WORD_DICTIONARY:
+                expanded_text = SLANG_WORD_DICTIONARY[word_string_canonicalized_for_lookup]
+                updated_text_string = re.sub(r"\b"+word_string+r"\b", expanded_text, updated_text_string, 1)
+    return updated_text_string
+
+def our_or_british_sland_correction_expand(text_string: str) -> str:
+    word_is_our_exactly = lambda word: word.lower() == 'our'
+    return _correct_words_via_subsequence_substitutions(text_string, 'our', 'or', word_is_our_exactly)
+
+def q_g_slang_correction_expand(text_string: str) -> bool:
+    return _correct_words_via_subsequence_substitutions(text_string, 'q', 'g')
+
+def f_ph_slang_correction_expand(text_string: str) -> bool:
+    return _correct_words_via_subsequence_substitutions(text_string, 'f', 'ph')
+
 DWIMMING_EXPAND_FUNCTIONS = [
     omg_star_expand,
     number_word_concatenation_expand,
     aw_star_expand,
     two_word_concatenation_expand,
-    f_instead_of_ph_slang_expand,
+    q_g_slang_correction_expand,
+    f_ph_slang_correction_expand,
+    our_or_british_sland_correction_expand,
     laughing_expand,
+    slang_word_expand,
     duplicate_letters_exaggeration_expand,
 ]
 
