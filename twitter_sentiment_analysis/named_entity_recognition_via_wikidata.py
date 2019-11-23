@@ -27,6 +27,7 @@ import pyppeteer
 import unicodedata
 import re
 import bidict
+import string
 from functools import lru_cache
 from typing import List, Tuple, Set
 
@@ -36,10 +37,11 @@ from typing import List, Tuple, Set
 
 def _execute_async_task(task):
     event_loop = asyncio.new_event_loop()
+    results = None
     try:
         asyncio.set_event_loop(event_loop)
         results = event_loop.run_until_complete(asyncio.gather(task))
-    except Exception:
+    except Exception as err:
         pass
     finally:
         event_loop.close()
@@ -51,6 +53,15 @@ WIKIDATA_SEARCH_URI_TEMPLATE = 'https://www.wikidata.org/w/index.php?sort=releva
 
 def _normalize_string_wrt_unicode(input_string: str) -> str:
     normalized_string = unicodedata.normalize('NFKD', input_string).encode('ascii', 'ignore').decode('utf-8')
+    return normalized_string
+
+PUNUCTION_REMOVING_TRANSLATION_TABLE = str.maketrans('', '', string.punctuation)
+
+def _normalize_string_for_wikidata_entity_label_comparison(input_string: str) -> str:
+    normalized_string = input_string
+    normalized_string = _normalize_string_wrt_unicode(normalized_string)
+    normalized_string = normalized_string.lower()
+    normalized_string = normalized_string.translate(PUNUCTION_REMOVING_TRANSLATION_TABLE)
     return normalized_string
 
 async def _most_relevant_wikidata_entities_corresponding_to_string(input_string: str) -> str:
@@ -75,7 +86,7 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
                     (label, term_id) = parsable_text_parts
                     label = label.strip()
                     term_id = term_id.strip()
-                    if _normalize_string_wrt_unicode(label).lower() == _normalize_string_wrt_unicode(input_string).lower():
+                    if _normalize_string_for_wikidata_entity_label_comparison(label) == _normalize_string_for_wikidata_entity_label_comparison(input_string):
                         wikidata_entities_corresponding_to_string.append(term_id)
                         if len(wikidata_entities_corresponding_to_string)>5:
                             break
