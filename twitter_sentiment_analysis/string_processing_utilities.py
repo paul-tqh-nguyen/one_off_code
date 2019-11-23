@@ -287,7 +287,7 @@ def mhm_expand(text_string: str) -> str:
     expanded_text_string = text_string
     word_replacement = "sure"
     assert word_replacement in WORD2VEC_MODEL
-    expanded_text_string = re.sub(r"\bomgm+h+m+\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
+    expanded_text_string = re.sub(r"\bm+h+m+\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
     return expanded_text_string
 
 def number_word_concatenation_expand(text_string: str) -> str:
