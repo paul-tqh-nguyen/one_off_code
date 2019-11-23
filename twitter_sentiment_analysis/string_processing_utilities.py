@@ -89,6 +89,7 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                     else:
                         base_word_plus_suffix_characters = set(corrected_word)
+                        print("checking candidate spellings for : {}".format(corrected_word))
                         corrected_word_candidates = SPELL_CHECKER.candidates(corrected_word)
                         corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word)==base_word_plus_suffix_characters, corrected_word_candidates)
                         for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
@@ -105,18 +106,18 @@ EMOTICONS = '''
 :‑D :D 8‑D 8D x‑D X‑D =D =3 B^D :‑( :( :‑c :c :‑< :< :‑[ :[ :-|| >:[ :{ :@ >:( :-)) :'‑( :'( :'‑) :') D‑': D:< D: D8 D; D= :‑O :O :‑o :o :-0 8‑0 >:O :-* :* :× ;‑) ;) *-) *) ;‑] ;] ;^) :‑, ;D :‑P :P X‑P x‑p :‑p :p :‑Þ :Þ :‑þ :þ :‑b :b d: =p >:P :‑/ :/ :‑. >:\ >:/ :\ =/ =\ :L =L :S :‑| :| :$ ://) ://3 :‑X :X :‑# :# :‑& :& O:‑) O:) 0:‑3 0:3 0:‑) 0:) 0;^) >:‑) >:) }:‑) }:) 3:‑) 3:) >;) >:3 >;3 |;‑) |‑O :‑J #‑) %‑) %) <:‑| ',:-| ',:-l :-| T_T @-) 
 '''.strip().split(' ')
 
-EMOTICON_TO_PLACE_HOLDER_MAP = {meaningful_special_character_sequence : PLACEHOLDER_PREFIX+'0emoticon'+str(index) \
+EMOTICON_TO_PLACEHOLDER_MAP = {meaningful_special_character_sequence : PLACEHOLDER_PREFIX+'0emoticon'+str(index) \
                                 for index, meaningful_special_character_sequence in \
                                 enumerate(EMOTICONS)}
 
-ELIPSIS_PLACE_HOLDER = PLACEHOLDER_PREFIX+'0elipsis'
+ELIPSIS_PLACEHOLDER = PLACEHOLDER_PREFIX+'0elipsis'
 
 def replace_meaningful_special_character_sequence_with_placeholder_token(text_string: str) -> str:
     text_string_with_replacements = text_string
     text_string_with_replacements = simplify_elipsis_sequences(text_string_with_replacements)
-    for emoticon, placeholder in EMOTICON_TO_PLACE_HOLDER_MAP.items():
+    for emoticon, placeholder in EMOTICON_TO_PLACEHOLDER_MAP.items():
         text_string_with_replacements = re.sub(r"\b"+re.escape(emoticon)+r"\b", placeholder, text_string_with_replacements, 0)
-    text_string_with_replacements = text_string_with_replacements.replace('...', ELIPSIS_PLACE_HOLDER)
+    text_string_with_replacements = text_string_with_replacements.replace('...', ' '+ELIPSIS_PLACEHOLDER+' ')
     return text_string_with_replacements
 
 #########################
@@ -282,6 +283,13 @@ def omg_star_expand(text_string: str) -> str:
     expanded_text_string = re.sub(r"\bomg\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
     return expanded_text_string
 
+def mhm_expand(text_string: str) -> str:
+    expanded_text_string = text_string
+    word_replacement = "sure"
+    assert word_replacement in WORD2VEC_MODEL
+    expanded_text_string = re.sub(r"\bomgm+h+m+\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
+    return expanded_text_string
+
 def number_word_concatenation_expand(text_string: str) -> str:
     expanded_text_string = text_string
     matches = re.findall(r"\b[0-9]+[a-z]+\b", text_string, re.IGNORECASE)
@@ -380,6 +388,7 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                     break
             if not reduced_word_is_known:
                 candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
+                print("checking candidate spellings for : {}".format(reduced_word))
                 candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
                 for candidate_word in candidate_words_that_dont_introduce_new_characters:
                     if candidate_word in WORD2VEC_MODEL:
@@ -400,6 +409,9 @@ SLANG_WORD_DICTIONARY = {
     "luvly" : "lovely",
     "ilysfm" : "I love you so fucking much",
     "fu2" : "fuck you too",
+    "bday" : "birthday",
+    "lmbo" : "lmao",
+    "woots" : "woot",
 }
 
 def slang_word_expand(text_string: str) -> str:
@@ -437,6 +449,7 @@ def ies_suffix_expand(text_string: str) -> bool:
 
 DWIMMING_EXPAND_FUNCTIONS = [
     omg_star_expand,
+    mhm_expand,
     number_word_concatenation_expand,
     aw_star_expand,
     two_word_concatenation_expand,
