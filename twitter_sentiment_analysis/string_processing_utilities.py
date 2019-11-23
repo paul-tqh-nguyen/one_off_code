@@ -233,29 +233,12 @@ def expand_contractions(text_string: str) -> str:
 # Unknown Word DWIMming Utilities #
 ###################################
 
-def re_pattern_has_at_least_one_match(re_pattern: str, input_string: str, flags=0) -> bool:
-    reg_exp_match_iterator = re.finditer(re_pattern, input_string, flags)
-    match_exists = False
-    try:
-        match_exists = reg_exp_match_iterator.__next__()
-    except StopIteration:
-        pass
-    return match_exists
-
-def omg_star_applicability(text_string: str) -> bool:
-    applicable = re_pattern_has_at_least_one_match(r"\bomg\w+\b", text_string, re.IGNORECASE)
-    return applicable
-
 def omg_star_expand(text_string: str) -> str:
     expanded_text_string = text_string
     word_replacement = "omg"
     assert word_replacement in WORD2VEC_MODEL
     expanded_text_string = re.sub(r"\bomg\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
     return expanded_text_string
-
-def number_word_concatenation_applicability(text_string: str) -> bool:
-    applicable = re_pattern_has_at_least_one_match(r"\b[0-9]+[a-z]+\b", text_string, re.IGNORECASE)
-    return applicable
 
 def number_word_concatenation_expand(text_string: str) -> str:
     expanded_text_string = text_string
@@ -267,11 +250,7 @@ def number_word_concatenation_expand(text_string: str) -> str:
         alphabetic_half = match.replace(numeric_half_match, "")
         replacement = numeric_half_match+' '+alphabetic_half
         expanded_text_string = re.sub(r"\b"+match+r"\b", replacement, expanded_text_string, 1)
-        return expanded_text_string
-
-def aw_star_applicability(text_string: str) -> bool:
-    applicable = re_pattern_has_at_least_one_match(r"\baw[w|a|e|i|o|u|h|\!]*\b", text_string, re.IGNORECASE)
-    return applicable
+    return expanded_text_string
 
 def aw_star_expand(text_string: str) -> str:
     expanded_text_string = text_string
@@ -283,58 +262,35 @@ def aw_star_expand(text_string: str) -> str:
             expanded_text_string = expanded_text_string.replace(match, word_replacement)
     return expanded_text_string
 
-@lru_cache(maxsize=4)
-def possibly_split_two_concatenated_words(text_string: str) -> Tuple[bool,str]:
+def two_word_concatenation_expand(text_string: str) -> str:
     updated_text_string = text_string
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
-    min_first_word_length = 5
-    min_second_word_length = 3
-    split_words_are_known = False
     for word_match in word_match_iterator:
         word = word_match.group()
         if unknown_word_worth_dwimming(word):
-            split_words = []
             word_length = len(word)
+            min_first_word_length = 5
+            min_second_word_length = 3
             if word_length > min_first_word_length+min_second_word_length:
                 split_index_supremum = word_length-(min_second_word_length-1)
                 for split_index in range(min_first_word_length, split_index_supremum):
                     first_sub_word = word[:split_index]
                     second_sub_word = word[split_index:]
                     if first_sub_word in WORD2VEC_MODEL and second_sub_word in WORD2VEC_MODEL:
-                        split_words_are_known = True
                         split_words_combined = first_sub_word+' '+second_sub_word
                         updated_text_string = re.sub(r"\b"+word+r"\b", split_words_combined, updated_text_string, 1)
                         break
-    return split_words_are_known, updated_text_string
-
-def two_word_concatenation_applicability(text_string: str) -> bool:
-    split_words_are_known, _ = possibly_split_two_concatenated_words(text_string)
-    return split_words_are_known
-
-def two_word_concatenation_expand(text_string: str) -> str:
-    _, updated_text_string = possibly_split_two_concatenated_words(text_string)
     return updated_text_string
 
-@lru_cache(maxsize=4)
-def possibly_find_known_word_substitute_wrt_f_for_ph_slang(text_string: str) -> Tuple[bool,str]:
+def f_instead_of_ph_slang_expand(text_string: str) -> bool:
     updated_text_string = text_string
-    replacement_known = False
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
     for word_match in word_match_iterator:
         word = word_match.group()
         if unknown_word_worth_dwimming(word):
             corrected_word = word.lower().replace('f','ph')
             if corrected_word in WORD2VEC_MODEL:
-                replacement_known = True
                 updated_text_string = re.sub(r"\b"+word+r"\b", corrected_word, updated_text_string, 1)
-    return replacement_known, updated_text_string
-
-def f_instead_of_ph_slang_applicability(text_string: str) -> bool:
-    replacement_known, _ = possibly_find_known_word_substitute_wrt_f_for_ph_slang(text_string)
-    return replacement_known
-
-def f_instead_of_ph_slang_expand(text_string: str) -> bool:
-    _, updated_text_string = possibly_find_known_word_substitute_wrt_f_for_ph_slang(text_string)
     return updated_text_string
 
 def _starts_with(big: str, small: str) -> bool:
@@ -354,16 +310,6 @@ def _word_string_corresponds_to_laugh(word_string: str) -> bool:
     word_string_corresponds_to_laugh = len(non_laugh_characters)==0
     return word_string_corresponds_to_laugh
 
-def laughing_applicability(text_string: str) -> bool:
-    applicable = False
-    word_match_iterator = re.finditer(r"\b\w+\b", text_string, re.IGNORECASE)
-    for word_match in word_match_iterator:
-        word = word_match.group()
-        if _word_string_corresponds_to_laugh(word):
-            applicable = True
-            break
-    return applicable
-
 def laughing_expand(text_string: str) -> str:
     text_string_with_replacements = text_string
     word_match_iterator = re.finditer(r"\b\w+\b", text_string, re.IGNORECASE)
@@ -376,10 +322,8 @@ def laughing_expand(text_string: str) -> str:
 VOWELS = {'a','e','i','o','u'}
 SPELL_CHECKER = spellchecker.SpellChecker()
 
-@lru_cache(maxsize=4)
-def possibly_dwim_duplicate_letters_exaggeration(text_string: str) -> Tuple[bool,str]:
+def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     updated_text_string = text_string
-    some_reduced_word_is_known = False
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
     for word_match in word_match_iterator:
         word_string = word_match.group()
@@ -415,35 +359,25 @@ def possibly_dwim_duplicate_letters_exaggeration(text_string: str) -> Tuple[bool
                     reduced_word_is_known = reduced_word in WORD2VEC_MODEL
             if reduced_word_is_known:
                 updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
-            some_reduced_word_is_known = some_reduced_word_is_known or reduced_word_is_known
-    return some_reduced_word_is_known, updated_text_string
+    return updated_text_string
 
-def duplicate_letters_exaggeration_applicability(text_string: str) -> bool:
-    corrected_word_is_known, _ = possibly_dwim_duplicate_letters_exaggeration(text_string)
-    return corrected_word_is_known
-
-def duplicate_letters_exaggeration_expand(text_string: str) -> str:
-    _, corrected_text_string = possibly_dwim_duplicate_letters_exaggeration(text_string)
-    return corrected_text_string
-
-DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS = [ # @todo simplify this ; we only need the expand functions
-    (omg_star_applicability, omg_star_expand),
-    (number_word_concatenation_applicability, number_word_concatenation_expand),
-    (aw_star_applicability, aw_star_expand),
-    (two_word_concatenation_applicability, two_word_concatenation_expand),
-    (f_instead_of_ph_slang_applicability, f_instead_of_ph_slang_expand),
-    (laughing_applicability, laughing_expand),
-    (duplicate_letters_exaggeration_applicability, duplicate_letters_exaggeration_expand),
+DWIMMING_EXPAND_FUNCTIONS = [
+    omg_star_expand,
+    number_word_concatenation_expand,
+    aw_star_expand,
+    two_word_concatenation_expand,
+    f_instead_of_ph_slang_expand,
+    laughing_expand,
+    duplicate_letters_exaggeration_expand,
 ]
 
 def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
-    for applicability_function, expand_function in DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS:
-        if applicability_function(updated_text_string):
-            expanded_result = expand_function(updated_text_string)
-            if expanded_result != updated_text_string:
-                updated_text_string = expanded_result
-                break
+    for expand_function in DWIMMING_EXPAND_FUNCTIONS:
+        expanded_result = expand_function(updated_text_string)
+        if expanded_result != updated_text_string:
+            updated_text_string = expanded_result
+            break
     return updated_text_string
 
 def possibly_dwim_unknown_words(text_string: str) -> str:
