@@ -242,6 +242,7 @@ def expand_contractions(text_string: str) -> str:
     updated_text_string = text_string
     for contraction, expansion in CONTRACTION_EXPANSION_PAIRS_SORTED_BIGGEST_FIRST:
         updated_text_string = re.sub(r"\b"+contraction+r"\b", expansion, updated_text_string, 0, re.IGNORECASE)
+        updated_text_string = re.sub(r"\b"+contraction.replace("'", "")+r"\b", expansion, updated_text_string, 0, re.IGNORECASE)
     return updated_text_string
 
 ###################################
@@ -398,15 +399,32 @@ def q_g_slang_correction_expand(text_string: str) -> bool:
 def f_ph_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'f', 'ph')
 
-def g_dropping_correction_expand(text_string: str) -> bool:
-    return _correct_words_via_subsequence_substitutions(text_string, 'in', 'ing')
+def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
+    updated_text_string = text_string
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
+    for old_suffix, new_suffix in [('t', 'ed'), ('ed', 't')]:
+        old_suffix_len = len(old_suffix)
+        for word_match in word_match_iterator:
+            word_string = word_match.group()
+            if unknown_word_worth_dwimming(word_string):
+                word_string_normalized = word_string.lower()
+                if re.match('^\w+'+re.escape(old_suffix)+r'$', word_string_normalized):
+                    base_word = word_string_normalized[:-old_suffix_len]
+                    corrected_word = base_word+new_suffix
+                    if corrected_word in WORD2VEC_MODEL:
+                        updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
+                    else:
+                        corrected_word = base_word+base_word[-1]+new_suffix
+                        if corrected_word in WORD2VEC_MODEL:
+                            updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
+    return updated_text_string
 
 DWIMMING_EXPAND_FUNCTIONS = [
     omg_star_expand,
     number_word_concatenation_expand,
     aw_star_expand,
     two_word_concatenation_expand,
-    g_dropping_correction_expand,
+    irregular_past_tense_dwimming_expand,
     q_g_slang_correction_expand,
     f_ph_slang_correction_expand,
     our_or_british_sland_correction_expand,
