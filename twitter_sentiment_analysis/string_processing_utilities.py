@@ -302,12 +302,13 @@ def _word_string_corresponds_to_laugh(word_string: str) -> bool:
     word_string = word_string.lower()
     acceptable_prefixes = "mw", "mu", "h", "g", "b", "bw"
     prefix_starts_word_string_test = lambda acceptable_starting_string: _starts_with(word_string, acceptable_starting_string)
-    relevant_prefixes = filter(prefix_starts_word_string_test, acceptable_prefixes)
-    relevant_prefix = max(relevant_prefixes, key=len)
-    relevant_prefix_len = len(relevant_prefix)
-    remaining_word_string = word_string[relevant_prefix_len:]
-    non_laugh_characters = re.sub(r"[hga]+", '', remaining_word_string, 0, re.IGNORECASE)
-    word_string_corresponds_to_laugh = len(non_laugh_characters)==0
+    relevant_prefixes = list(filter(prefix_starts_word_string_test, acceptable_prefixes))
+    if len(relevant_prefixes) != 0:
+        relevant_prefix = max(relevant_prefixes, key=len)
+        relevant_prefix_len = len(relevant_prefix)
+        remaining_word_string = word_string[relevant_prefix_len:]
+        non_laugh_characters = re.sub(r"[hga]+", '', remaining_word_string, 0, re.IGNORECASE)
+        word_string_corresponds_to_laugh = len(non_laugh_characters)==0
     return word_string_corresponds_to_laugh
 
 def laughing_expand(text_string: str) -> str:
