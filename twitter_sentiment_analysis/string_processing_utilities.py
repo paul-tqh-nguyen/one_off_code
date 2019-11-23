@@ -82,7 +82,7 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
         if not word_exception_checker(word_string):
             if unknown_word_worth_dwimming(word_string):
                 word_string_normalized = word_string.lower()
-                if re.match('^\w+'+re.escape(old_suffix)+r'$', word_string_normalized):
+                if re.match(r'^\w+'+re.escape(old_suffix)+r'$', word_string_normalized):
                     base_word = word_string_normalized[:-old_suffix_len]
                     corrected_word = base_word+new_suffix
                     if corrected_word in WORD2VEC_MODEL:
@@ -430,12 +430,18 @@ def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
     updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'ed', 't')
     return updated_text_string
 
+def ies_suffix_expand(text_string: str) -> bool:
+    updated_text_string = text_string
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'ies', 's')
+    return updated_text_string
+
 DWIMMING_EXPAND_FUNCTIONS = [
     omg_star_expand,
     number_word_concatenation_expand,
     aw_star_expand,
     two_word_concatenation_expand,
     irregular_past_tense_dwimming_expand,
+    ies_suffix_expand,
     q_g_slang_correction_expand,
     f_ph_slang_correction_expand,
     our_or_british_sland_correction_expand,
