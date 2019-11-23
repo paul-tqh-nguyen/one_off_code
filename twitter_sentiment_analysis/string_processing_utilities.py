@@ -107,7 +107,6 @@ def replace_well_known_named_entities_with_placeholder_token(text_string: str) -
     for word_string in word_strings: # @todo handle multi-word cases
         if unknown_word_worth_dwimming(word_string):
             # @todo consider doing something more robust with the extra semantic information
-            print("Attempting to search Wikidata for : {}".format(word_string))
             word_string_is_well_known_named_entity_via_wikidata = bool(string_corresponding_wikidata_term_type_pairs(word_string))
             if word_string_is_well_known_named_entity_via_wikidata:
                 text_string_with_replacements = re.sub(r"\b"+word_string+r"\b", NAMED_ENTITY_PLACEHOLDER, text_string_with_replacements, 1)
@@ -371,10 +370,11 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     return updated_text_string
 
 SLANG_WORD_DICTIONARY = {
-    'ily2' : "I love you too",
-    'sowwy' : "sorry",
-    'luvly' : "lovely",
-    'ilysfm' : "I love you so fucking much",
+    "ily2" : "I love you too",
+    "sowwy" : "sorry",
+    "luvly" : "lovely",
+    "ilysfm" : "I love you so fucking much",
+    "fu2" : "fuck you too",
 }
 
 def slang_word_expand(text_string: str) -> str:
@@ -399,11 +399,15 @@ def q_g_slang_correction_expand(text_string: str) -> bool:
 def f_ph_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'f', 'ph')
 
+def g_dropping_correction_expand(text_string: str) -> bool:
+    return _correct_words_via_subsequence_substitutions(text_string, 'in', 'ing')
+
 DWIMMING_EXPAND_FUNCTIONS = [
     omg_star_expand,
     number_word_concatenation_expand,
     aw_star_expand,
     two_word_concatenation_expand,
+    g_dropping_correction_expand,
     q_g_slang_correction_expand,
     f_ph_slang_correction_expand,
     our_or_british_sland_correction_expand,

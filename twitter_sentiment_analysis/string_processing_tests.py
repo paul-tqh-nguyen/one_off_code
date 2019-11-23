@@ -132,15 +132,14 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                 notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                 notes_worth_printing.append("")
             if len(notes_worth_printing) != 0:
-                print()
-                print("==============================================================================================")
-                print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
-                print("Current Sentence Being Processed:\n{sentiment_text}\n".format(
-                    sentiment_text=sentiment_text))
-                for note in notes_worth_printing:
-                    print(note)
-                print("==============================================================================================")
-                print()
+                # print()
+                # print("==============================================================================================")
+                # print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
+                print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
+                # for note in notes_worth_printing:
+                #     print(note)
+                # print("==============================================================================================")
+                # print()
         self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
                         msg="We failed to process the following: \n{bad_pairs_printout}".format(
                             bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
