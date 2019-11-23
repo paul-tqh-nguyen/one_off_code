@@ -71,6 +71,32 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
     return updated_text_string
 
+SPELL_CHECKER = spellchecker.SpellChecker()
+
+def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
+    updated_text_string = text_string
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
+    old_suffix_len = len(old_suffix)
+    for word_match in word_match_iterator:
+        word_string = word_match.group()
+        if not word_exception_checker(word_string):
+            if unknown_word_worth_dwimming(word_string):
+                word_string_normalized = word_string.lower()
+                if re.match('^\w+'+re.escape(old_suffix)+r'$', word_string_normalized):
+                    base_word = word_string_normalized[:-old_suffix_len]
+                    corrected_word = base_word+new_suffix
+                    if corrected_word in WORD2VEC_MODEL:
+                        updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
+                    else:
+                        base_word_plus_suffix_characters = set(corrected_word)
+                        corrected_word_candidates = SPELL_CHECKER.candidates(corrected_word)
+                        corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word)==base_word_plus_suffix_characters, corrected_word_candidates)
+                        for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
+                            if corrected_word_candidate in WORD2VEC_MODEL:
+                                updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word_candidate, updated_text_string, 1)
+                                break
+    return updated_text_string
+
 ###########################################
 # Meaningful Character Sequence Utilities #
 ###########################################
@@ -328,7 +354,6 @@ def laughing_expand(text_string: str) -> str:
     return text_string_with_replacements
 
 VOWELS = {'a','e','i','o','u'}
-SPELL_CHECKER = spellchecker.SpellChecker()
 
 def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     updated_text_string = text_string
@@ -401,22 +426,8 @@ def f_ph_slang_correction_expand(text_string: str) -> bool:
 
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
     updated_text_string = text_string
-    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
-    for old_suffix, new_suffix in [('t', 'ed'), ('ed', 't')]:
-        old_suffix_len = len(old_suffix)
-        for word_match in word_match_iterator:
-            word_string = word_match.group()
-            if unknown_word_worth_dwimming(word_string):
-                word_string_normalized = word_string.lower()
-                if re.match('^\w+'+re.escape(old_suffix)+r'$', word_string_normalized):
-                    base_word = word_string_normalized[:-old_suffix_len]
-                    corrected_word = base_word+new_suffix
-                    if corrected_word in WORD2VEC_MODEL:
-                        updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
-                    else:
-                        corrected_word = base_word+base_word[-1]+new_suffix
-                        if corrected_word in WORD2VEC_MODEL:
-                            updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed')
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'ed', 't')
     return updated_text_string
 
 DWIMMING_EXPAND_FUNCTIONS = [
@@ -541,7 +552,6 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = replace_urls_with_placeholder_token(normalized_text_string)
     normalized_text_string = replace_hash_tags_with_placeholder_token(normalized_text_string)
     normalized_text_string = replace_exotic_characters(normalized_text_string)
-    print(normalized_text_string)
     normalized_text_string = replace_meaningful_special_character_sequence_with_placeholder_token(normalized_text_string)
     normalized_text_string = expand_contractions(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
