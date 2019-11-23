@@ -315,6 +315,64 @@ def two_word_concatenation_expand(text_string: str) -> str:
     _, updated_text_string = possibly_split_two_concatenated_words(text_string)
     return updated_text_string
 
+@lru_cache(maxsize=4)
+def possibly_find_known_word_substitute_wrt_f_for_ph_slang(text_string: str) -> Tuple[bool,str]:
+    updated_text_string = text_string
+    replacement_known = False
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
+    for word_match in word_match_iterator:
+        word = word_match.group()
+        if unknown_word_worth_dwimming(word):
+            corrected_word = word.lower().replace('f','ph')
+            if corrected_word in WORD2VEC_MODEL:
+                replacement_known = True
+                updated_text_string = re.sub(r"\b"+word+r"\b", corrected_word, updated_text_string, 1)
+    return replacement_known, updated_text_string
+
+def f_instead_of_ph_slang_applicability(text_string: str) -> bool:
+    replacement_known, _ = possibly_find_known_word_substitute_wrt_f_for_ph_slang(text_string)
+    return replacement_known
+
+def f_instead_of_ph_slang_expand(text_string: str) -> bool:
+    _, updated_text_string = possibly_find_known_word_substitute_wrt_f_for_ph_slang(text_string)
+    return updated_text_string
+
+def _starts_with(big: str, small: str) -> bool:
+    len_small = len(small)
+    return len(big) >= len_small and big[:len_small] == small
+
+def _word_string_corresponds_to_laugh(word_string: str) -> bool:
+    word_string_corresponds_to_laugh = False
+    word_string = word_string.lower()
+    acceptable_prefixes = "mw", "mu", "h", "g", "b", "bw"
+    prefix_starts_word_string_test = lambda acceptable_starting_string: _starts_with(word_string, acceptable_starting_string)
+    relevant_prefixes = filter(prefix_starts_word_string_test, acceptable_prefixes)
+    relevant_prefix = max(relevant_prefixes, key=len)
+    relevant_prefix_len = len(relevant_prefix)
+    remaining_word_string = word_string[relevant_prefix_len:]
+    non_laugh_characters = re.sub(r"[hga]+", '', remaining_word_string, 0, re.IGNORECASE)
+    word_string_corresponds_to_laugh = len(non_laugh_characters)==0
+    return word_string_corresponds_to_laugh
+
+def laughing_applicability(text_string: str) -> bool:
+    applicable = False
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string, re.IGNORECASE)
+    for word_match in word_match_iterator:
+        word = word_match.group()
+        if _word_string_corresponds_to_laugh(word):
+            applicable = True
+            break
+    return applicable
+
+def laughing_expand(text_string: str) -> str:
+    text_string_with_replacements = text_string
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string, re.IGNORECASE)
+    for word_match in word_match_iterator:
+        word = word_match.group()
+        if _word_string_corresponds_to_laugh(word):
+            text_string_with_replacements = re.sub(r"\b"+word+r"\b", 'haha', text_string_with_replacements, 1)
+    return text_string_with_replacements
+
 VOWELS = {'a','e','i','o','u'}
 SPELL_CHECKER = spellchecker.SpellChecker()
 
@@ -373,6 +431,8 @@ DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS = [
     (number_word_concatenation_applicability, number_word_concatenation_expand),
     (aw_star_applicability, aw_star_expand),
     (two_word_concatenation_applicability, two_word_concatenation_expand),
+    (f_instead_of_ph_slang_applicability, f_instead_of_ph_slang_expand),
+    (laughing_applicability, laughing_expand),
     (duplicate_letters_exaggeration_applicability, duplicate_letters_exaggeration_expand),
 ]
 
