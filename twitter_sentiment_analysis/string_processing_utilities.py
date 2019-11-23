@@ -426,7 +426,7 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     _, corrected_text_string = possibly_dwim_duplicate_letters_exaggeration(text_string)
     return corrected_text_string
 
-DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS = [
+DWIMMING_APPLICABILITY_FUNCTION_EXPAND_FUNCTION_PAIRS = [ # @todo simplify this ; we only need the expand functions
     (omg_star_applicability, omg_star_expand),
     (number_word_concatenation_applicability, number_word_concatenation_expand),
     (aw_star_applicability, aw_star_expand),
