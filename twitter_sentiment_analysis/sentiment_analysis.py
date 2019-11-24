@@ -25,18 +25,16 @@ File Organization:
 # Imports #
 ###########
 
-from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
-from string_processing_utilities import normalized_words_from_text_string
 from typing import Iterable, List
 from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils import data
-from contextlib import contextmanager
-import time
 import csv
 import random
+from string_processing_utilities import timeout, timer, normalized_words_from_text_string
+from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 
 UNSEEN_WORD_TO_TENSOR_MAP = {}
 
@@ -46,27 +44,6 @@ UNSEEN_WORD_TO_TENSOR_MAP = {}
  
 def dt(var_name_string):
     return 'print("{{variable}} : {{value}}".format(variable="{var_name_string}", value=locals()["{var_name_string}"]))'.format(var_name_string=var_name_string)
-
-@contextmanager
-def timeout(time, functionToExecuteOnTimeout=None):
-    """NB: This cannot be nested."""
-    signal.signal(signal.SIGALRM, _raise_timeout)
-    signal.alarm(time)
-    try:
-        yield
-    except TimeoutError:
-        if functionToExecuteOnTimeout is not None:
-            functionToExecuteOnTimeout()
-    finally:
-        signal.signal(signal.SIGALRM, signal.SIG_IGN)
-
-@contextmanager
-def timer(print_function_callback):
-    start_time = time.time()
-    yield
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print_function_callback(elapsed_time)
 
 ###############################
 # String <-> Tensor Utilities #
@@ -149,7 +126,7 @@ TRAINING_DATA_ID_TO_DATA_MAP = {}
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = {} # @todo do something with this
 
-PORTION_OF_TRAINING_DATA_TO_USE = 0.01
+PORTION_OF_TRAINING_DATA_TO_USE = 1
 
 with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
@@ -413,7 +390,7 @@ def main(batch_size=1,
     classifier.print_dataset_stats()
     classifier.print_current_state(print_verbosely)
     for update_index in range(number_of_updates):
-        with timer(lambda number_of_seconds: print("Time for epochs {start_epoch_index} to {end_epoch_index}: {time_for_epochs} seconds".format(
+        with timer(exitCallback=lambda number_of_seconds: print("Time for epochs {start_epoch_index} to {end_epoch_index}: {time_for_epochs} seconds".format(
                 start_epoch_index=update_index*number_of_epochs_between_updates,
                 end_epoch_index=(update_index+1)*number_of_epochs_between_updates-1,
                 time_for_epochs=number_of_seconds,

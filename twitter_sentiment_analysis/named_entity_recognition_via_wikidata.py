@@ -73,23 +73,36 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
     try:
         await page.goto(uri)
         await page.waitForSelector('div#mw-content-text')
-        await page.waitForSelector('ul.mw-search-results')
-        search_results_divs = await page.querySelectorAll('div.mw-search-result-heading')
-        for search_results_div in search_results_divs:
-            search_results_div_text_content = await page.evaluate('(search_results_div) => search_results_div.textContent', search_results_div)
-            parsable_text_match = re.match(r'^.+\(Q[0-9]+\) +$', search_results_div_text_content)
-            if parsable_text_match:
-                parsable_text = parsable_text_match.group()
-                parsable_text = parsable_text.replace(')','')
-                parsable_text_parts = parsable_text.split('(')
-                if len(parsable_text_parts)==2:
-                    (label, term_id) = parsable_text_parts
-                    label = label.strip()
-                    term_id = term_id.strip()
-                    if _normalize_string_for_wikidata_entity_label_comparison(label) == _normalize_string_for_wikidata_entity_label_comparison(input_string):
-                        wikidata_entities_corresponding_to_string.append(term_id)
-                        if len(wikidata_entities_corresponding_to_string)>5:
-                            break
+        await page.waitForSelector('p.mw-search-createlink')
+        all_divs = await page.querySelectorAll('div')
+        search_results_have_shown_up = None
+        for div in all_divs:
+            div_classname_string = await page.evaluate('(div) => div.className', div)
+            div_classnames = div_classname_string.split(' ')
+            for div_classname in div_classnames:
+                if div_classnames == 'mw-search-nonefound':
+                    search_results_have_shown_up = False
+                elif div_classnames == 'mw-search-results':
+                    search_results_have_shown_up = True
+                if search_results_have_shown_up is not None:
+                    break
+        if search_results_have_shown_up:
+            search_results_divs = await page.querySelectorAll('div.mw-search-result-heading')
+            for search_results_div in search_results_divs:
+                search_results_div_text_content = await page.evaluate('(search_results_div) => search_results_div.textContent', search_results_div)
+                parsable_text_match = re.match(r'^.+\(Q[0-9]+\) +$', search_results_div_text_content)
+                if parsable_text_match:
+                    parsable_text = parsable_text_match.group()
+                    parsable_text = parsable_text.replace(')','')
+                    parsable_text_parts = parsable_text.split('(')
+                    if len(parsable_text_parts)==2:
+                        (label, term_id) = parsable_text_parts
+                        label = label.strip()
+                        term_id = term_id.strip()
+                        if _normalize_string_for_wikidata_entity_label_comparison(label) == _normalize_string_for_wikidata_entity_label_comparison(input_string):
+                            wikidata_entities_corresponding_to_string.append(term_id)
+                            if len(wikidata_entities_corresponding_to_string)>5:
+                                break
     except pyppeteer.errors.NetworkError:
         pass
     finally:
@@ -98,7 +111,7 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
 
 def string_corresponding_commonly_known_entities(input_string: str) -> List[str]:
     task = _most_relevant_wikidata_entities_corresponding_to_string(input_string)
-    result = _execute_async_task(task)
+   result = _execute_async_task(task)
     return result
 
 TYPE_TO_ID_MAPPING = bidict.bidict({
@@ -182,8 +195,6 @@ def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tupl
     term_ids = string_corresponding_commonly_known_entities(input_string)
     term_type_id_pairs = find_commonly_known_isas(term_ids)
     term_type_pairs = [(term, TYPE_TO_ID_MAPPING.inverse[type_id]) for term, type_id in term_type_id_pairs]
-    print("Attempting to search Wikidata for : {}".format(input_string))
-    print("Wikidata Results : {}".format(term_type_pairs))
     return term_type_pairs
 
 def main():

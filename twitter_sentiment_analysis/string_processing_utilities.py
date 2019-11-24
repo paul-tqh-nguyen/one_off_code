@@ -30,6 +30,8 @@ import html
 import re
 import spellchecker
 import unicodedata
+import time
+from contextlib import contextmanager
 from functools import lru_cache
 from word2vec_utilities import WORD2VEC_MODEL
 from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
@@ -38,6 +40,32 @@ from typing import List, Tuple, Callable
 ###################
 # Misc. Utilities #
 ###################
+
+@contextmanager
+def timeout(time, functionToExecuteOnTimeout=None):
+    """NB: This cannot be nested."""
+    signal.signal(signal.SIGALRM, _raise_timeout)
+    signal.alarm(time)
+    try:
+        yield
+    except TimeoutError:
+        if functionToExecuteOnTimeout is not None:
+            functionToExecuteOnTimeout()
+    finally:
+        signal.signal(signal.SIGALRM, signal.SIG_IGN)
+
+@contextmanager
+def timer(section_name=None, exitCallback=None):
+    start_time = time.time()
+    yield
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    if exitCallback != None:
+        exitCallback(elapsed_time)
+    elif section_name:
+        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
+    else:
+        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
 def false(*args, **kwargs):
     return False
@@ -89,7 +117,6 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                     else:
                         base_word_plus_suffix_characters = set(corrected_word)
-                        print("checking candidate spellings for : {}".format(corrected_word))
                         corrected_word_candidates = SPELL_CHECKER.candidates(corrected_word)
                         corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word)==base_word_plus_suffix_characters, corrected_word_candidates)
                         for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
@@ -126,13 +153,11 @@ def replace_meaningful_special_character_sequence_with_placeholder_token(text_st
 
 NAMED_ENTITY_PLACEHOLDER = PLACEHOLDER_PREFIX+"0named0entity"
 
-# @todo also see if we can handle the "Also known as" lexical information we get if we click on the Wikidata search suggestions; it would handle cases like "SYTYCD"
 def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
     text_string_with_replacements = text_string
     word_strings = re.findall(r"\b\w+\b", text_string)
-    for word_string in word_strings: # @todo handle multi-word cases
+    for word_string in word_strings:
         if unknown_word_worth_dwimming(word_string):
-            # @todo consider doing something more robust with the extra semantic information
             word_string_is_well_known_named_entity_via_wikidata = bool(string_corresponding_wikidata_term_type_pairs(word_string))
             if word_string_is_well_known_named_entity_via_wikidata:
                 text_string_with_replacements = re.sub(r"\b"+word_string+r"\b", NAMED_ENTITY_PLACEHOLDER, text_string_with_replacements, 1)
@@ -388,7 +413,6 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                     break
             if not reduced_word_is_known:
                 candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
-                print("checking candidate spellings for : {}".format(reduced_word))
                 candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
                 for candidate_word in candidate_words_that_dont_introduce_new_characters:
                     if candidate_word in WORD2VEC_MODEL:

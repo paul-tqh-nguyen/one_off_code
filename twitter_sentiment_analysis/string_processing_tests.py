@@ -25,11 +25,10 @@ File Organization:
 import unittest
 import re
 import tqdm
-import time
 from contextlib import contextmanager
 from torch.utils import data
 from word2vec_utilities import WORD2VEC_MODEL
-from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET
+from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
 from sentiment_analysis import determine_training_and_validation_datasets
 
 ###################
@@ -38,19 +37,6 @@ from sentiment_analysis import determine_training_and_validation_datasets
 
 def identity(args):
     return args
-
-@contextmanager
-def timer(section_name=None, exitCallback=None):
-    start_time = time.time()
-    yield
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    if bool(exitCallback):
-        exitCallback(elapsed_time)
-    elif section_name:
-        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
-    else:
-        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
 #####################
 # Testing Utilities #
@@ -123,23 +109,23 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                 questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
             questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
             max_tolerable_number_of_seconds_for_processing = 0.01
-            if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
-                notes_worth_printing.append("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
-                    questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
-                    sentiment_text=sentiment_text))
+            # if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
+            #     notes_worth_printing.append("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
+            #         questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
+            #         sentiment_text=sentiment_text))
             if len(questionable_normalized_words)!=0:
                 failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
                 notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                 notes_worth_printing.append("")
             if len(notes_worth_printing) != 0:
-                # print()
-                # print("==============================================================================================")
-                # print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
+                print()
+                print("==============================================================================================")
+                print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
                 print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
-                # for note in notes_worth_printing:
-                #     print(note)
-                # print("==============================================================================================")
-                # print()
+                for note in notes_worth_printing:
+                    print(note)
+                print("==============================================================================================")
+                print()
         self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
                         msg="We failed to process the following: \n{bad_pairs_printout}".format(
                             bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
