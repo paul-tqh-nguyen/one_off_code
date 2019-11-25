@@ -171,7 +171,7 @@ async def _find_commonly_known_isas_via_web_scraper(term_ids_without_item_prefix
             await page.waitForSelector(selector_query_for_arbitrary_text_inside_query_box)
             button = await page.querySelector('button#execute-button')
             await page.evaluate('(button) => button.click()', button)
-            await page.waitForSelector('a.item-link')
+            await page.waitForSelector('table.table.table-bordered.table-hover')
             column_header_divs = await page.querySelectorAll('div.th-inner.sortable.both')
             assert len(column_header_divs) == number_of_variables_queried
             variable_names = []
