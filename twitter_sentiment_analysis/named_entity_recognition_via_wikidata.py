@@ -48,6 +48,7 @@ def _execute_async_task(task):
         pass
     finally:
         event_loop.close()
+    import time; time.sleep(4); print("done sleeping")
     assert len(results) == 1
     result = results[0]
     return result
@@ -119,6 +120,9 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
     return wikidata_entities_corresponding_to_string
 
 def string_corresponding_commonly_known_entities(input_string: str) -> List[str]:
+    print()
+    print("string_corresponding_commonly_known_entities")
+    print("input_string {}".format(input_string))
     task = _most_relevant_wikidata_entities_corresponding_to_string(input_string)
     result = _execute_async_task(task)
     return result
@@ -199,6 +203,9 @@ async def _find_commonly_known_isas_via_web_scraper(term_ids_without_item_prefix
     return term_type_id_pairs
 
 def find_commonly_known_isas(term_ids: List[str]) -> Set[Tuple[str, str]]:
+    print()
+    print("find_commonly_known_isas")
+    print("term_ids {}".format(term_ids))
     task = _find_commonly_known_isas_via_web_scraper(term_ids)
     result = _execute_async_task(task)
     return result
