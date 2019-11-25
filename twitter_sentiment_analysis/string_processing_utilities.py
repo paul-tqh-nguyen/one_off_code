@@ -588,7 +588,8 @@ def separate_punctuation(text_string: str) -> str:
     final_text_string = simplify_spaces(final_text_string)
     return final_text_string
 
-def normalized_words_from_text_string(text_string: str) -> List[str]: 
+def normalized_words_from_text_string(text_string: str) -> List[str]:
+    # @todo handle camel cased "words", e.g. "crystalmarieDONTluvSpiteAnymore"
     normalized_text_string = text_string
     normalized_text_string = html.unescape(normalized_text_string)
     normalized_text_string = replace_tagged_users_with_placeholder_token(normalized_text_string)

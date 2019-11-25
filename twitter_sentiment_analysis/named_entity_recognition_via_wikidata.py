@@ -12,7 +12,10 @@ File Name : named_entity_recognition_via_wikidata.py
 
 File Organization:
 * Imports
-* Utilities
+* Async IO Utilities
+* Wikidata Search Utilities
+* Wikidata Query Service Utilities
+* Most Abstract Interface
 
 """
 
@@ -31,9 +34,9 @@ import string
 from functools import lru_cache
 from typing import List, Tuple, Set
 
-#############
-# Utilities #
-#############
+######################
+# Async IO Utilities #
+######################
 
 def _execute_async_task(task):
     event_loop = asyncio.new_event_loop()
@@ -48,6 +51,10 @@ def _execute_async_task(task):
     assert len(results) == 1
     result = results[0]
     return result
+
+#############################
+# Wikidata Search Utilities #
+#############################
 
 WIKIDATA_SEARCH_URI_TEMPLATE = 'https://www.wikidata.org/w/index.php?sort=relevance&search={encoded_string}'
 
@@ -73,19 +80,21 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
     try:
         await page.goto(uri)
         await page.waitForSelector('div#mw-content-text')
-        await page.waitForSelector('p.mw-search-createlink')
-        all_divs = await page.querySelectorAll('div')
+        search_results_div = await page.waitForSelector('div.searchresults')
+        search_results_paragraph_elements = await search_results_div.querySelectorAll('p')
         search_results_have_shown_up = None
-        for div in all_divs:
-            div_classname_string = await page.evaluate('(div) => div.className', div)
-            div_classnames = div_classname_string.split(' ')
-            for div_classname in div_classnames:
-                if div_classnames == 'mw-search-nonefound':
+        for paragraph_element in search_results_paragraph_elements:
+            paragraph_element_classname_string = await page.evaluate('(p) => p.className', paragraph_element)
+            paragraph_element_classnames = paragraph_element_classname_string.split(' ')
+            for paragraph_element_classname in paragraph_element_classnames:
+                if paragraph_element_classname == 'mw-search-nonefound':
                     search_results_have_shown_up = False
-                elif div_classnames == 'mw-search-results':
+                elif paragraph_element_classname == 'mw-search-pager-bottom':
                     search_results_have_shown_up = True
                 if search_results_have_shown_up is not None:
                     break
+            if search_results_have_shown_up is not None:
+                break
         if search_results_have_shown_up:
             search_results_divs = await page.querySelectorAll('div.mw-search-result-heading')
             for search_results_div in search_results_divs:
@@ -111,8 +120,12 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
 
 def string_corresponding_commonly_known_entities(input_string: str) -> List[str]:
     task = _most_relevant_wikidata_entities_corresponding_to_string(input_string)
-   result = _execute_async_task(task)
+    result = _execute_async_task(task)
     return result
+
+####################################
+# Wikidata Query Service Utilities #
+####################################
 
 TYPE_TO_ID_MAPPING = bidict.bidict({
     'Organization': 'Q43229',
@@ -189,6 +202,10 @@ def find_commonly_known_isas(term_ids: List[str]) -> Set[Tuple[str, str]]:
     task = _find_commonly_known_isas_via_web_scraper(term_ids)
     result = _execute_async_task(task)
     return result
+
+###########################
+# Most Abstract Interface #
+###########################
 
 @lru_cache(maxsize=32768)
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
