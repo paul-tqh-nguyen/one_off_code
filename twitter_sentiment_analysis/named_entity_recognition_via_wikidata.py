@@ -46,6 +46,8 @@ def _execute_async_task(task):
         results = event_loop.run_until_complete(asyncio.gather(task))
     except Exception as err:
         print("_execute_async_task err : {}".format(err))
+        print(err)
+        print("----------------")
         pass
     finally:
         event_loop.close()
@@ -180,7 +182,7 @@ async def _query_wikidata_via_web_scraper(sparql_query:str) -> List[dict]:
         await page.waitForSelector(selector_query_for_arbitrary_text_inside_query_box)
         button = await page.querySelector('button#execute-button')
         await page.evaluate('(button) => button.click()', button)
-        await page.waitForSelector('table.table.table-bordered.table-hover')
+        await page.waitForSelector('div.th-inner.sortable.both')
         column_header_divs = await page.querySelectorAll('div.th-inner.sortable.both')
         assert len(column_header_divs) == number_of_variables_queried
         variable_names = []
@@ -197,7 +199,8 @@ async def _query_wikidata_via_web_scraper(sparql_query:str) -> List[dict]:
             entity_id = anchor_link.replace('http://www.wikidata.org/entity/','')
             anchor_variable_with_question_mark_prefix = '?'+anchor_variable
             result[anchor_variable_with_question_mark_prefix] = entity_id
-            if (anchor_index%number_of_variables_queried==0 and anchor_index!=0) or len(anchors)-1 == anchor_index:
+            if (1+anchor_index)%number_of_variables_queried==0:
+                assert len(result) == number_of_variables_queried
                 results.append(result)
                 result = dict()
     except pyppeteer.errors.NetworkError:
@@ -224,16 +227,12 @@ def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tu
         term_ids = map(lambda raw_term_id: 'wd:'+raw_term_id, term_ids_without_item_prefix)
         space_separated_term_ids = ' '.join(term_ids)
         sparql_query = QUERY_TEMPLATE_FOR_ENTITY_COMMONLY_KNOWN_ISAS.format(space_separated_term_ids=space_separated_term_ids)
-        print("sparql_query {}".format(sparql_query))
         results = execute_sparql_query_via_wikidata(sparql_query)
-        print("results {}".format(results))
         for result in results:
-            print("result {}".format(result))
             term_type = result['?VALID_GENLS']
             term_id = result['?TERM']
             term_type_id_pair = (term_type, term_id)
             term_type_id_pairs.add(term_type_id_pair)
-    print("term_type_id_pairs {}".format(term_type_id_pairs))
     return term_type_id_pairs
 
 @lru_cache(maxsize=32768)
