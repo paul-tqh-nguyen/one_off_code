@@ -487,10 +487,10 @@ def ee_y_slang_correction_expand(text_string: str) -> bool:
 def z_s_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'z', 's')
 
-def 0_o_slang_correction_expand(text_string: str) -> bool:
+def zero_o_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, '0', 'o')
 
-def 8_ate_slang_correction_expand(text_string: str) -> bool:
+def eight_ate_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'at')
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'ate')
@@ -527,8 +527,8 @@ DWIMMING_EXPAND_FUNCTIONS = [
     f_ph_slang_correction_expand,
     ee_y_slang_correction_expand,
     z_s_slang_correction_expand,
-    0_o_slang_correction_expand,
-    8_ate_slang_correction_expand,
+    zero_o_slang_correction_expand,
+    eight_ate_slang_correction_expand,
     oo_u_slang_correction_expand,
     our_or_british_sland_correction_expand,
     laughing_expand,
@@ -541,6 +541,7 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
         expanded_result = expand_function(updated_text_string)
         if expanded_result != updated_text_string:
+            print()
             print("old : {}".format(updated_text_string))
             print("new : {}".format(expanded_result))
             updated_text_string = expanded_result
