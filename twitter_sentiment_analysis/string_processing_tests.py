@@ -43,35 +43,8 @@ def identity(args):
 #####################
 
 COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
-    # Proper Nouns @todo handle named entities
-    # 'hifa', 'edeka', 'swartz', "semisonic", 'sytycd', 'christy', 'pavel', 'safina', 'eddings', 'sannesias', 'winona', 'trae', 'tombre', 'rishabh', 'paramore', 'coldplay', 'neena', 'jlew', 
-    # 'taylorrhicks', 'grac', 'seville', 'drexel', 'voltron', 'win7rc', 'lagerfeld', 'ahmier', 'zoro', 'rinitis', 'gongwer', 'aiden', 'jerrys', 'voltrons', 'hedo',
-    # 'kimmy', 'nkotb', 'da70mm', 'minaj', 'f16', 'kallis', 'uat', 'pman', 'canaveral', 'imal', 'ohac', 'tirthankar', 'ankie','smf','dinara', 'garros','manee','anyer','burswood',
-    # 'pixma', 'mx310','alistair','landin','ayonna','robsten','farrah', 'fawcett','kerrang','bizkit','rsl','paley','bjork','rb2','palmolive','supertramp','bcd', 'nodaji','trackle',
-    # 'standfield','roberson','mgonewild','sadie','jbarsodmg','pbmall','farrah','aidan','avett','thames','horton','kokomo','brandice','bertolucci','lalalauren', 'weikert', 'hartley', 'cardona',
-    # 'mmva','villarreal', 'leland', 'enigk','epsom','doodadoo','foxtell','bisante','tommi', 'oulu','farrah', 'fawcett','poirot','clopin','westwick','birtney', 'ciaraaaa','marah',
-    # 'drunvalo','melchizedek','paraguay','irissa','stavros','shottas','karmada','btvs','lautner','bebot', 'lagerfeld', 'imodium',
     # stop words
     'a', 'to', 'and', 'of',
-    # @todo figure out how to handle these
-    'quh', 'uqhh', 'qotta', 'qet','aiqht', # replace G's with Q's
-    'blowd', 'yipee', 'momacita', 'beautifulylost', 'scoobs','muah','huhuhu', 'tlk', 'mowin', 'loviie','steezy','sowwy', 'lmbo', 'really2','longlelong','st0mach', 'g0od','fallatio','nsfw',
-    'trippn', 'ontd','quizzage','woots','neighbours', 'mhmm','1920x1080', '1280x1024','blankeys','sleepies','goodbassplayer','spilt','fonebook','boyfie','luvly','ilysfm','thelovelybones',
-    'lalalalala','killah','ticketsandpassports', 'lufflies','kandie','bahahaha','doesnt','tmr','imy','loveeupeople','seeester','nuu','eckkky','littleboxofevil','tew','jajajaja','iming',
-    'wasnt', 'honour','goodmorning','frisby','seeya','icant','fxcking','fcked','nitey','bouta','bahaa','hosptal','doesnt','blesh','asdfghjkl'
-    # non-sense
-    'leysh', 't9ar5','cmf','oilipo','drizzy','nbeem','hourst','twittz','nessa','trvs','kqs','ar47','t20',
-    # words we don't care to learn
-    'tda', # means "today"
-    'huz', # random slang    
-    'throwbie', # rare word
-    'quorn', # rare word
-    'mysapce', # typo
-    'fu2', # not clear what this means in context
-    'anoron', 'reedcourty', # part of bad link
-    # spanish
-    'menno', 'chootaa', 'chhoota', 'morrea', 'faltam', 'talvez', 'seja', 'nfase', 'aten','madres',
-    'perfekta', # foreign language
 ]
 
 def questionable_normalized_words_from_text_string(text_string: str) -> bool:

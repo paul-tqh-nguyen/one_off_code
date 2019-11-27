@@ -31,7 +31,6 @@ import unicodedata
 import re
 import bidict
 import string
-from functools import lru_cache
 from typing import List, Tuple, Set
 
 ######################
@@ -235,7 +234,6 @@ def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tu
             term_type_pairs.add(term_type_pair)
     return term_type_pairs
 
-@lru_cache(maxsize=32768)
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
     term_ids = _string_corresponding_commonly_known_entities(input_string)
     term_type_pairs = _find_commonly_known_isas(term_ids)
