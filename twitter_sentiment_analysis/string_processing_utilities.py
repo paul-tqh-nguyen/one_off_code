@@ -479,7 +479,10 @@ def f_ph_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'f', 'ph')
 
 def ee_y_slang_correction_expand(text_string: str) -> bool:
-    return _correct_words_via_subsequence_substitutions(text_string, 'ee', 'y')
+    corrected_text_string = text_string
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ee', 'y')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ie', 'y')
+    return corrected_text_string
 
 def z_s_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'z', 's')
