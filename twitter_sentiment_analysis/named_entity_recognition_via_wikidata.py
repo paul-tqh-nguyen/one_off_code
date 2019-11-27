@@ -206,31 +206,35 @@ async def _query_wikidata_via_web_scraper(sparql_query:str) -> List[dict]:
         await browser.close()
     return results
 
+###########################
+# Most Abstract Interface #
+###########################
+
 def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
     task = _query_wikidata_via_web_scraper(sparql_query)
     result = _execute_async_task(task)
     return result
 
-def _find_commonly_known_isas(term_ids: List[str]) -> Set[Tuple[str, str]]:
+def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tuple[str, str]]:
     print()
     print("_find_commonly_known_isas")
-    print("term_ids {}".format(term_ids))
+    print("term_ids_without_item_prefix {}".format(term_ids_without_item_prefix))
     term_type_id_pairs = set()
     if len(term_ids_without_item_prefix) != 0:
         term_ids = map(lambda raw_term_id: 'wd:'+raw_term_id, term_ids_without_item_prefix)
         space_separated_term_ids = ' '.join(term_ids)
         sparql_query = QUERY_TEMPLATE_FOR_ENTITY_COMMONLY_KNOWN_ISAS.format(space_separated_term_ids=space_separated_term_ids)
+        print("sparql_query {}".format(sparql_query))
         results = execute_sparql_query_via_wikidata(sparql_query)
+        print("results {}".format(results))
         for result in results:
+            print("result {}".format(result))
             term_type = result['?VALID_GENLS']
-            term_id = result['?TERM_ID']
+            term_id = result['?TERM']
             term_type_id_pair = (term_type, term_id)
-            term_type_id_pairs.append(term_type_id_pair)
+            term_type_id_pairs.add(term_type_id_pair)
+    print("term_type_id_pairs {}".format(term_type_id_pairs))
     return term_type_id_pairs
-
-###########################
-# Most Abstract Interface #
-###########################
 
 @lru_cache(maxsize=32768)
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
@@ -242,5 +246,5 @@ def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tupl
 def main():
     print("This module contains utilities for named entity recognition via Wikidata scraping.")
 
-if _name_ == '_main_':
+if __name__ == '__main__':
     main()
