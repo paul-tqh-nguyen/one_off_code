@@ -541,6 +541,8 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
         expanded_result = expand_function(updated_text_string)
         if expanded_result != updated_text_string:
+            print("old : {}".format(updated_text_string))
+            print("new : {}".format(expanded_result))
             updated_text_string = expanded_result
             break
     return updated_text_string
