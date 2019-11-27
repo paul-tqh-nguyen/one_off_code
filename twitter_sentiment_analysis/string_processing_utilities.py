@@ -492,6 +492,12 @@ def 8_ate_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'eight')
     return corrected_text_string
 
+def oo_u_slang_correction_expand(text_string: str) -> bool:
+    corrected_text_string = text_string
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'oo', 'u')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'u', 'oo')
+    return corrected_text_string
+
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
     updated_text_string = text_string
     updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed')
@@ -518,6 +524,7 @@ DWIMMING_EXPAND_FUNCTIONS = [
     z_s_slang_correction_expand,
     0_o_slang_correction_expand,
     8_ate_slang_correction_expand,
+    oo_u_slang_correction_expand,
     our_or_british_sland_correction_expand,
     laughing_expand,
     slang_word_expand,
@@ -627,6 +634,7 @@ def separate_punctuation(text_string: str) -> str:
 
 def normalized_words_from_text_string(text_string: str) -> List[str]:
     # @todo handle camel cased "words", e.g. "crystalmarieDONTluvSpiteAnymore"
+    # @todo handle "toooooootally"
     '''# @todo handle this error
 ==============================================================================================
 Current Iteration: 2548
