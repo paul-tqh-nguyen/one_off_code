@@ -442,13 +442,14 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     return updated_text_string
 
 SLANG_WORD_DICTIONARY = {
-    "ily2" : "I love you too",
-    "sowwy" : "sorry",
-    "luvly" : "lovely",
-    "ilysfm" : "I love you so fucking much",
-    "fu2" : "fuck you too",
     "bday" : "birthday",
+    "fu2" : "fuck you too",
+    "hungy" : "hungry",
+    "ilysfm" : "I love you so fucking much",
+    "ily2" : "I love you too",
     "lmbo" : "lmao",
+    "luvly" : "lovely",
+    "sowwy" : "sorry",
     "woots" : "woot",
 }
 
