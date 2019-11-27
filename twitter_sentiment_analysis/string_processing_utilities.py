@@ -328,6 +328,20 @@ def number_word_concatenation_expand(text_string: str) -> str:
             expanded_text_string = re.sub(r"\b"+match+r"\b", replacement, expanded_text_string, 1)
     return expanded_text_string
 
+
+def word_number_concatenation_expand(text_string: str) -> str:
+    expanded_text_string = text_string
+    matches = re.findall(r"\b[a-z]+[0-9]+\b", text_string, re.IGNORECASE)
+    for match in matches:
+        if unknown_word_worth_dwimming(match):
+            numeric_half_matches = re.findall(r"\b[0-9]+", match)
+            assert len(numeric_half_matches) == 1
+            numeric_half_match = numeric_half_matches[0]
+            alphabetic_half = match.replace(numeric_half_match, "")
+            replacement = alphabetic_half+' '+numeric_half_match
+            expanded_text_string = re.sub(r"\b"+match+r"\b", replacement, expanded_text_string, 1)
+    return expanded_text_string
+
 def aw_star_expand(text_string: str) -> str:
     expanded_text_string = text_string
     matches = re.findall(r"\baw[w|a|e|i|o|u|h|\!]*\b", text_string, re.IGNORECASE)
@@ -475,6 +489,7 @@ DWIMMING_EXPAND_FUNCTIONS = [
     omg_star_expand,
     mhm_expand,
     number_word_concatenation_expand,
+    word_number_concatenation_expand,
     aw_star_expand,
     two_word_concatenation_expand,
     irregular_past_tense_dwimming_expand,
