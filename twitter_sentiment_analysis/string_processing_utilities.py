@@ -445,11 +445,13 @@ SLANG_WORD_DICTIONARY = {
     "bday" : "birthday",
     "fu2" : "fuck you too",
     "hungy" : "hungry",
+    "idunno" : "I do not know",
     "ilysfm" : "I love you so fucking much",
     "ily2" : "I love you too",
     "inorite" : "I know right",
     "lmbo" : "lmao",
     "luvly" : "lovely",
+    "smthg" : "something",
     "sowwy" : "sorry",
     "woots" : "woot",
 }
