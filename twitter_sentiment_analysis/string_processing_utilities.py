@@ -447,6 +447,7 @@ SLANG_WORD_DICTIONARY = {
     "hungy" : "hungry",
     "ilysfm" : "I love you so fucking much",
     "ily2" : "I love you too",
+    "inorite" : "I know right",
     "lmbo" : "lmao",
     "luvly" : "lovely",
     "sowwy" : "sorry",
@@ -475,6 +476,22 @@ def q_g_slang_correction_expand(text_string: str) -> bool:
 def f_ph_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'f', 'ph')
 
+def ee_y_slang_correction_expand(text_string: str) -> bool:
+    return _correct_words_via_subsequence_substitutions(text_string, 'ee', 'y')
+
+def z_s_slang_correction_expand(text_string: str) -> bool:
+    return _correct_words_via_subsequence_substitutions(text_string, 'z', 's')
+
+def 0_o_slang_correction_expand(text_string: str) -> bool:
+    return _correct_words_via_subsequence_substitutions(text_string, '0', 'o')
+
+def 8_ate_slang_correction_expand(text_string: str) -> bool:
+    corrected_text_string = text_string
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'at')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'ate')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'eight')
+    return corrected_text_string
+
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
     updated_text_string = text_string
     updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed')
@@ -497,6 +514,10 @@ DWIMMING_EXPAND_FUNCTIONS = [
     ies_suffix_expand,
     q_g_slang_correction_expand,
     f_ph_slang_correction_expand,
+    ee_y_slang_correction_expand,
+    z_s_slang_correction_expand,
+    0_o_slang_correction_expand,
+    8_ate_slang_correction_expand,
     our_or_british_sland_correction_expand,
     laughing_expand,
     slang_word_expand,
@@ -606,6 +627,26 @@ def separate_punctuation(text_string: str) -> str:
 
 def normalized_words_from_text_string(text_string: str) -> List[str]:
     # @todo handle camel cased "words", e.g. "crystalmarieDONTluvSpiteAnymore"
+    '''# @todo handle this error
+==============================================================================================
+Current Iteration: 2548
+Current Sentence Being Processed:
+ brokeback mountain was terrible.
+8838,0,Sentiment140,# @Catherine42 I wouldn't mind but I only had 1/2 a portion &amp; then left 1/2 the cream  just fruit for me then until my hols  x
+8839,1,Sentiment140,# @DeliciousLunch ... dark chocolate cookies? oh you tease! I'm writing to day n dipping into twitter for company 
+8840,1,Sentiment140,# followfriday @mstuyvenberg @feb_unsw @hazelmail @beckescreet - all almost as cool as he-man and she-ra 
+8841,1,Sentiment140,# followfriday @presentsqueen because she talks sense 
+8842,1,Sentiment140,# New York is the most amazing city i've ever been to 
+8843,0,Sentiment140,# number times I bottomed out just in our driveway = 4... a 6.5 hour trip to mass.. I'm scared 
+8844,0,Sentiment140,# of NYC celebrity street vendors &gt; # of POA celebrities  http://streetvendor.org/media/pdfs/Side2.pdf
+8845,1,Sentiment140,###### yay ##### thanks @matclayton ##### 
+8846,0,Sentiment140,#$%#$^#%@ I HATE THE DENTIST
+
+
+We encountered these unhandled words: ['\n8838', 'sentiment140', 'x\n8839', 'sentiment140', '\n8840', 'sentiment140', '\n8841', 'sentiment140', '\n8842', 'sentiment140', '\n8843', 'sentiment140', '\n8844', 'sentiment140', 'place0holder0token0with0id0url0link\n8845', 'sentiment140', '\n8846', 'sentiment140']
+
+==============================================================================================
+'''
     normalized_text_string = text_string
     normalized_text_string = html.unescape(normalized_text_string)
     normalized_text_string = replace_tagged_users_with_placeholder_token(normalized_text_string)
