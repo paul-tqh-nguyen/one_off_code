@@ -334,7 +334,7 @@ def word_number_concatenation_expand(text_string: str) -> str:
     matches = re.findall(r"\b[a-z]+[0-9]+\b", text_string, re.IGNORECASE)
     for match in matches:
         if unknown_word_worth_dwimming(match):
-            numeric_half_matches = re.findall(r"\b[0-9]+", match)
+            numeric_half_matches = re.findall(r"[0-9]+", match)
             assert len(numeric_half_matches) == 1
             numeric_half_match = numeric_half_matches[0]
             alphabetic_half = match.replace(numeric_half_match, "")
@@ -451,6 +451,7 @@ SLANG_WORD_DICTIONARY = {
     "inorite" : "I know right",
     "lmbo" : "lmao",
     "luvly" : "lovely",
+    "muah" : "me",
     "smthg" : "something",
     "sowwy" : "sorry",
     "woots" : "woot",
@@ -482,6 +483,7 @@ def ee_y_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ee', 'y')
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ie', 'y')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ey', 'y')
     return corrected_text_string
 
 def z_s_slang_correction_expand(text_string: str) -> bool:
@@ -505,7 +507,7 @@ def oo_u_slang_correction_expand(text_string: str) -> bool:
 
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
     updated_text_string = text_string
-    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed')
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed', lambda word_string: len(word_string)>2 and word_string[-2:].lower() != 'tt')
     updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'ed', 't')
     return updated_text_string
 
@@ -541,9 +543,10 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
         expanded_result = expand_function(updated_text_string)
         if expanded_result != updated_text_string:
-            print()
-            print("old : {}".format(updated_text_string))
-            print("new : {}".format(expanded_result))
+            # print()
+            # print("expand_function : {}".format(expand_function))
+            # print("old : {}".format(updated_text_string))
+            # print("new : {}".format(expanded_result))
             updated_text_string = expanded_result
             break
     return updated_text_string
@@ -643,6 +646,7 @@ def separate_punctuation(text_string: str) -> str:
 def normalized_words_from_text_string(text_string: str) -> List[str]:
     # @todo handle camel cased "words", e.g. "crystalmarieDONTluvSpiteAnymore"
     # @todo handle "toooooootally"
+    # @todo handle 'homiee'
     '''# @todo handle this error
 ==============================================================================================
 Current Iteration: 2548
