@@ -47,8 +47,10 @@ def _execute_async_task(task):
         pass
     finally:
         event_loop.close()
-    assert len(results) == 1
-    result = results[0]
+    # assert len(results) == 1
+    # result = results[0]
+    if len(results) == 1:
+        result = results[0]
     return result
 
 #############################
@@ -121,8 +123,12 @@ def _string_corresponding_commonly_known_entities(input_string: str) -> List[str
     print()
     print("_string_corresponding_commonly_known_entities")
     print("input_string {}".format(input_string))
-    task = _most_relevant_wikidata_entities_corresponding_to_string(input_string)
-    result = _execute_async_task(task)
+    result = None
+    while result is None:
+        task = _most_relevant_wikidata_entities_corresponding_to_string(input_string)
+        result = _execute_async_task(task)
+        if result == None:
+            print("fail!")
     return result
 
 ####################################
@@ -212,8 +218,12 @@ def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
     print()
     print("execute_sparql_query_via_wikidata")
     print("sparql_query {}".format(sparql_query))
-    task = _query_wikidata_via_web_scraper(sparql_query)
-    result = _execute_async_task(task)
+    result = None
+    while result is None:
+        task = _query_wikidata_via_web_scraper(sparql_query)
+        result = _execute_async_task(task)
+        if result == None:
+            print("fail!")
     return result
 
 def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tuple[str, str]]:

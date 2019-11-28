@@ -120,13 +120,13 @@ def sentiment_result_to_string(sentiment_result_0):
 TRAINING_DATA_LOCATION = "./data/train.csv"
 TEST_DATA_LOCATION = "./data/test.csv"
 
-VALIDATION_DATA_PORTION = 0.10
+VALIDATION_DATA_PORTION = 0.0000001
 
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = {} # @todo do something with this
 
-PORTION_OF_TRAINING_DATA_TO_USE = 1
+PORTION_OF_TRAINING_DATA_TO_USE = 1.0
 
 with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
