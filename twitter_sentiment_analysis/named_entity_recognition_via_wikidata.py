@@ -211,8 +211,8 @@ def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
     return result
 
 def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tuple[str, str]]:
-   term_type_pairs = set()
-   if len(term_ids_without_item_prefix) != 0:
+    term_type_pairs = set()
+    if len(term_ids_without_item_prefix) != 0:
         term_ids = map(lambda raw_term_id: 'wd:'+raw_term_id, term_ids_without_item_prefix)
         space_separated_term_ids = ' '.join(term_ids)
         sparql_query = QUERY_TEMPLATE_FOR_ENTITY_COMMONLY_KNOWN_ISAS.format(space_separated_term_ids=space_separated_term_ids)

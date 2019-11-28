@@ -54,10 +54,6 @@ def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     unknown_words_worth_mentioning = filter(lambda word: unknown_word_worth_dwimming(word), unknown_words_worth_mentioning)
     return list(unknown_words_worth_mentioning)
 
-def failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map: dict) -> None:
-    return '\n'+''.join(['"{0}" : {1}\n'.format(sentiment_text, questionable_normalized_words)
-                         for sentiment_text, questionable_normalized_words in failed_string_to_questionable_normalized_words_map.items()])
-
 #########
 # Tests #
 #########
@@ -68,7 +64,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
         training_set, validation_set = determine_training_and_validation_datasets()
         training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False)
         validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
-        failed_string_to_questionable_normalized_words_map = dict()
+        latest_failed_string = None
         log_progress = False
         possibly_tqdm = tqdm.tqdm if log_progress else identity
         for iteration_index, (input_batch, _) in possibly_tqdm(enumerate(training_generator)):
@@ -87,7 +83,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             #         questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
             #         sentiment_text=sentiment_text))
             if len(questionable_normalized_words)!=0:
-                failed_string_to_questionable_normalized_words_map[sentiment_text] = questionable_normalized_words
+                latest_failed_string = sentiment_text
                 notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                 notes_worth_printing.append("")
             if len(notes_worth_printing) != 0:
@@ -99,9 +95,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     print(note)
                 print("==============================================================================================")
                 print()
-        self.assertTrue(len(failed_string_to_questionable_normalized_words_map)==0,
-                        msg="We failed to process the following: \n{bad_pairs_printout}".format(
-                            bad_pairs_printout=failed_string_to_questionable_normalized_words_map_repr(failed_string_to_questionable_normalized_words_map)))
+        self.assertTrue(latest_failed_string is None, msg="We failed to process the following string (among possibly many): \n{bad_string}".format(bad_string=latest_failed_string)
             
 def run_all_tests():
     print()
