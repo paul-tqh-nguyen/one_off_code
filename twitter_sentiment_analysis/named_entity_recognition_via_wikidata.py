@@ -118,6 +118,9 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
     return wikidata_entities_corresponding_to_string
 
 def _string_corresponding_commonly_known_entities(input_string: str) -> List[str]:
+    print()
+    print("_string_corresponding_commonly_known_entities")
+    print("input_string {}".format(input_string))
     task = _most_relevant_wikidata_entities_corresponding_to_string(input_string)
     result = _execute_async_task(task)
     return result
@@ -206,6 +209,9 @@ async def _query_wikidata_via_web_scraper(sparql_query:str) -> List[dict]:
 ###########################
 
 def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
+    print()
+    print("execute_sparql_query_via_wikidata")
+    print("sparql_query {}".format(sparql_query))
     task = _query_wikidata_via_web_scraper(sparql_query)
     result = _execute_async_task(task)
     return result
@@ -226,7 +232,9 @@ def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tu
 
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
     term_ids = _string_corresponding_commonly_known_entities(input_string)
-    print("input_string {}".format(input_string)) if term_ids else None
+    print()
+    print("input_string {}".format(input_string))
+    print("term_ids {}".format(term_ids))
     term_type_pairs = _find_commonly_known_isas(term_ids)
     term_type_pairs = [(term, TYPE_TO_ID_MAPPING.inverse[type_id]) for term, type_id in term_type_pairs]
     return term_type_pairs
