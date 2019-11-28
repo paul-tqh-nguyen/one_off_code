@@ -32,17 +32,18 @@ import re
 import bidict
 import string
 import time
+import warnings
 from typing import List, Tuple, Set
 
 ######################
 # Async IO Utilities #
 ######################
 
-BOGUS_RESULT = (lambda x: x) # unique identifier
+UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
 
 def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
-    result = BOGUS_RESULT
-    while result == BOGUS_RESULT:
+    result = UNIQUE_BOGUS_RESULT_IDENTIFIER
+    while result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
         task = coroutine(*coroutine_args)
         event_loop = asyncio.new_event_loop()
         try:
@@ -54,8 +55,8 @@ def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
             pass
         finally:
             event_loop.close()
-        if result == BOGUS_RESULT:
-            print("Attempting to execute {coroutine} on {coroutine_args} failed.".format(coroutine=coroutine, coroutine_args=coroutine_args))
+        if result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
+            warnings.warn("Attempting to execute {coroutine} on {coroutine_args} failed.".format(coroutine=coroutine, coroutine_args=coroutine_args))
             time.sleep(1)
     return result
 
