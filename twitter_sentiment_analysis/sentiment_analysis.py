@@ -120,7 +120,7 @@ def sentiment_result_to_string(sentiment_result_0):
 TRAINING_DATA_LOCATION = "./data/train.csv"
 TEST_DATA_LOCATION = "./data/test.csv"
 
-VALIDATION_DATA_PORTION = 0.0000001
+VALIDATION_DATA_PORTION = 0.00
 
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TRAINING_DATA_ID_TO_DATA_MAP = {}
