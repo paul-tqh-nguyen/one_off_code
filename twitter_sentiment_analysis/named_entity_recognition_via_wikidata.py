@@ -31,26 +31,32 @@ import unicodedata
 import re
 import bidict
 import string
+import time
 from typing import List, Tuple, Set
 
 ######################
 # Async IO Utilities #
 ######################
 
-def _execute_async_task(task):
-    event_loop = asyncio.new_event_loop()
-    results = None
-    try:
-        asyncio.set_event_loop(event_loop)
-        results = event_loop.run_until_complete(asyncio.gather(task))
-    except Exception as err:
-        pass
-    finally:
-        event_loop.close()
-    # assert len(results) == 1
-    # result = results[0]
-    if len(results) == 1:
-        result = results[0]
+BOGUS_RESULT = (lambda x: x) # unique identifier
+
+def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
+    result = BOGUS_RESULT
+    while result == BOGUS_RESULT:
+        task = coroutine(*coroutine_args)
+        event_loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(event_loop)
+            results = event_loop.run_until_complete(asyncio.gather(task))
+            if isinstance(results, list) and len(results) == 1:
+                result = results[0]
+        except Exception as err:
+            pass
+        finally:
+            event_loop.close()
+        if result == BOGUS_RESULT:
+            print("Attempting to execute {coroutine} on {coroutine_args} failed.".format(coroutine=coroutine, coroutine_args=coroutine_args))
+            time.sleep(1)
     return result
 
 #############################
@@ -123,12 +129,7 @@ def _string_corresponding_commonly_known_entities(input_string: str) -> List[str
     print()
     print("_string_corresponding_commonly_known_entities")
     print("input_string {}".format(input_string))
-    result = None
-    while result is None:
-        task = _most_relevant_wikidata_entities_corresponding_to_string(input_string)
-        result = _execute_async_task(task)
-        if result == None:
-            print("fail!")
+    result = _indefinitely_attempt_task_until_success(_most_relevant_wikidata_entities_corresponding_to_string, [input_string])
     return result
 
 ####################################
@@ -218,12 +219,7 @@ def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
     print()
     print("execute_sparql_query_via_wikidata")
     print("sparql_query {}".format(sparql_query))
-    result = None
-    while result is None:
-        task = _query_wikidata_via_web_scraper(sparql_query)
-        result = _execute_async_task(task)
-        if result == None:
-            print("fail!")
+    result = _indefinitely_attempt_task_until_success(_query_wikidata_via_web_scraper, [sparql_query])
     return result
 
 def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tuple[str, str]]:
