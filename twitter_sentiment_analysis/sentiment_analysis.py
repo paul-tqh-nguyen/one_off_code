@@ -120,9 +120,8 @@ def sentiment_result_to_string(sentiment_result_0):
 TRAINING_DATA_LOCATION = "./data/train.csv"
 TEST_DATA_LOCATION = "./data/test.csv"
 
-VALIDATION_DATA_PORTION = 0.00
+VALIDATION_DATA_PORTION = 0.001
 
-TRAINING_DATA_ID_TO_DATA_MAP = {}
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = {} # @todo do something with this
 
@@ -162,7 +161,7 @@ class SentimentLabelledDataset(data.Dataset):
 
 def determine_training_and_validation_datasets():
     data_dictionaries = list(TRAINING_DATA_ID_TO_DATA_MAP.values())
-    random.shuffle(data_dictionaries)
+    # random.shuffle(data_dictionaries)
     number_of_validation_data_points = round(VALIDATION_DATA_PORTION*len(data_dictionaries))
     training_inputs = []
     training_labels = []

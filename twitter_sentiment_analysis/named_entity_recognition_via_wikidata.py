@@ -41,6 +41,7 @@ from typing import List, Tuple, Set
 
 UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
 
+@profile
 def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
     result = UNIQUE_BOGUS_RESULT_IDENTIFIER
     while result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
@@ -52,8 +53,11 @@ def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
             if isinstance(results, list) and len(results) == 1:
                 result = results[0]
         except Exception as err:
+            print("err :: {}".format(err))
             pass
         finally:
+            pending_tasks = asyncio.Task.all_tasks()
+            print("len(pending_tasks) {}".format(len(pending_tasks)))
             event_loop.close()
         if result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
             warnings.warn("Attempting to execute {coroutine} on {coroutine_args} failed.".format(coroutine=coroutine, coroutine_args=coroutine_args))
@@ -79,21 +83,32 @@ def _normalize_string_for_wikidata_entity_label_comparison(input_string: str) ->
     normalized_string = normalized_string.translate(PUNUCTION_REMOVING_TRANSLATION_TABLE)
     return normalized_string
 
+@profile
 async def _most_relevant_wikidata_entities_corresponding_to_string(input_string: str) -> str:
+    print("_most_relevant_wikidata_entities_corresponding_to_string 1")
     wikidata_entities_corresponding_to_string = []
-    browser = await pyppeteer.launch({'headless': True})
+    print("_most_relevant_wikidata_entities_corresponding_to_string 1.1")
+    browser = await pyppeteer.launch({'headless': True}) # we're getting problems here
+    print("_most_relevant_wikidata_entities_corresponding_to_string 1.2")
     page = await browser.newPage()
+    print("_most_relevant_wikidata_entities_corresponding_to_string 2")
     input_string_encoded = urllib.parse.quote(input_string)
     uri = WIKIDATA_SEARCH_URI_TEMPLATE.format(encoded_string=input_string_encoded)
     try:
+        print("_most_relevant_wikidata_entities_corresponding_to_string 3")
+        print("uri {}".format(uri))
         await page.goto(uri)
+        print("_most_relevant_wikidata_entities_corresponding_to_string 3.5")
         await page.waitForSelector('div#mw-content-text')
         search_results_div = await page.waitForSelector('div.searchresults')
+        print("_most_relevant_wikidata_entities_corresponding_to_string 4")
         search_results_paragraph_elements = await search_results_div.querySelectorAll('p')
         search_results_have_shown_up = None
         for paragraph_element in search_results_paragraph_elements:
+            print("_most_relevant_wikidata_entities_corresponding_to_string 5")
             paragraph_element_classname_string = await page.evaluate('(p) => p.className', paragraph_element)
             paragraph_element_classnames = paragraph_element_classname_string.split(' ')
+            print("_most_relevant_wikidata_entities_corresponding_to_string 6")
             for paragraph_element_classname in paragraph_element_classnames:
                 if paragraph_element_classname == 'mw-search-nonefound':
                     search_results_have_shown_up = False
@@ -101,31 +116,44 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
                     search_results_have_shown_up = True
                 if search_results_have_shown_up is not None:
                     break
+            print("_most_relevant_wikidata_entities_corresponding_to_string 7")
             if search_results_have_shown_up is not None:
                 break
+        print("_most_relevant_wikidata_entities_corresponding_to_string 8")
         if search_results_have_shown_up:
             search_results_divs = await page.querySelectorAll('div.mw-search-result-heading')
+            # print("_most_relevant_wikidata_entities_corresponding_to_string 9")
             for search_results_div in search_results_divs:
                 search_results_div_text_content = await page.evaluate('(search_results_div) => search_results_div.textContent', search_results_div)
                 parsable_text_match = re.match(r'^.+\(Q[0-9]+\) +$', search_results_div_text_content)
+                # print("_most_relevant_wikidata_entities_corresponding_to_string 10")
                 if parsable_text_match:
                     parsable_text = parsable_text_match.group()
                     parsable_text = parsable_text.replace(')','')
                     parsable_text_parts = parsable_text.split('(')
+                    # print("_most_relevant_wikidata_entities_corresponding_to_string 11")
                     if len(parsable_text_parts)==2:
                         (label, term_id) = parsable_text_parts
                         label = label.strip()
                         term_id = term_id.strip()
+                        # print("_most_relevant_wikidata_entities_corresponding_to_string 12")
                         if _normalize_string_for_wikidata_entity_label_comparison(label) == _normalize_string_for_wikidata_entity_label_comparison(input_string):
                             wikidata_entities_corresponding_to_string.append(term_id)
                             if len(wikidata_entities_corresponding_to_string)>5:
                                 break
+        print("_most_relevant_wikidata_entities_corresponding_to_string 13")
     except pyppeteer.errors.NetworkError:
         pass
     finally:
         await browser.close()
+        print("browser.process {}".format(browser.process))
+        outs, errs = browser.process.communicate()
+        print("outs {}".format(outs))
+        print("errs {}".format(errs))
+    print("_most_relevant_wikidata_entities_corresponding_to_string 14")
     return wikidata_entities_corresponding_to_string
 
+@profile
 def _string_corresponding_commonly_known_entities(input_string: str) -> List[str]:
     print()
     print("_string_corresponding_commonly_known_entities")
@@ -171,6 +199,7 @@ def _sparql_query_queried_variables(sparql_query:str) -> List[str]:
             break
     return queried_variables
 
+@profile
 async def _query_wikidata_via_web_scraper(sparql_query:str) -> List[dict]:
     results = []
     sparql_query_encoded = urllib.parse.quote(sparql_query)
@@ -216,6 +245,7 @@ async def _query_wikidata_via_web_scraper(sparql_query:str) -> List[dict]:
 # Most Abstract Interface #
 ###########################
 
+@profile
 def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
     print()
     print("execute_sparql_query_via_wikidata")
@@ -223,6 +253,7 @@ def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
     result = _indefinitely_attempt_task_until_success(_query_wikidata_via_web_scraper, [sparql_query])
     return result
 
+@profile
 def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tuple[str, str]]:
     term_type_pairs = set()
     if len(term_ids_without_item_prefix) != 0:
@@ -237,9 +268,11 @@ def _find_commonly_known_isas(term_ids_without_item_prefix: List[str]) -> Set[Tu
             term_type_pairs.add(term_type_pair)
     return term_type_pairs
 
+@profile
 def string_corresponding_wikidata_term_type_pairs(input_string: str) -> Set[Tuple[str, str]]:
     term_ids = _string_corresponding_commonly_known_entities(input_string)
     print()
+    print("string_corresponding_wikidata_term_type_pairs")
     print("input_string {}".format(input_string))
     print("term_ids {}".format(term_ids))
     term_type_pairs = _find_commonly_known_isas(term_ids)
