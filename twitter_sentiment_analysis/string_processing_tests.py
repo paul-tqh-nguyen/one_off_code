@@ -70,6 +70,8 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             log_progress = False
             possibly_tqdm = tqdm.tqdm if log_progress else identity
             for iteration_index, (input_batch, _) in possibly_tqdm(enumerate(generator)):
+                # if iteration_index > 100:
+                #     break
                 notes_worth_printing = []
                 assert len(input_batch)==1
                 sentiment_text = input_batch[0]
@@ -88,6 +90,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     latest_failed_string = sentiment_text
                     notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                     notes_worth_printing.append("")
+                # for i in {1..1500}; do top -b -n 1 > ~/Desktop/top_$i_$(date +%s).txt ; sleep 60 ; done
                 # with open("/home/pnguyen/Desktop/top_iteration_"+str(iteration_index)+".txt","w") as f:
                 #     f.write("\n")
                 #     f.write("sentiment_text")
