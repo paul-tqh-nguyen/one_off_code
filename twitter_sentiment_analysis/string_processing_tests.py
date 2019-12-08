@@ -108,6 +108,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                 if len(notes_worth_printing) != 0:
                     print()
                     print("==============================================================================================")
+                    from datetime import datetime; print(datetime.now())
                     print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
                     print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
                     for note in notes_worth_printing:
