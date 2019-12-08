@@ -47,7 +47,7 @@ def _logging_print(input_string: str) -> None:
 @profile
 def _print_all_gnome_shell_processes() -> None:
     ps_e_process = subprocess.Popen("ps -e", shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    ps_e_stdout_string, _ = process.communicate()
+    ps_e_stdout_string, _ = ps_e_process.communicate()
     list(map(_logging_print, filter(lambda line: 'chrom' in line or 'gnome-shell' in line, ps_e_stdout_string.decode("utf-8").split('\n'))))
     return None
 
