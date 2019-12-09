@@ -43,13 +43,15 @@ LOGGING_FILE = "/home/pnguyen/Desktop/log.txt"
 def _logging_print(input_string: str) -> None:
     with open(LOGGING_FILE, 'a') as f:
         f.write(input_string+'\n')
+    print(input_string)
     return None
 
 #@profile
 def _print_all_gnome_shell_processes() -> None:
-    ps_e_process = subprocess.Popen("ps -e", shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    ps_e_process = subprocess.Popen("top -b -n 1", shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     ps_e_stdout_string, _ = ps_e_process.communicate()
-    list(map(_logging_print, filter(lambda line: 'chrom' in line or 'gnome-shell' in line, ps_e_stdout_string.decode("utf-8").split('\n'))))
+    _logging_print("number of chrome processes {}".format(len(list(filter(lambda line: 'chrom' in line, ps_e_stdout_string.decode("utf-8").split('\n'))))))
+    list(map(_logging_print, filter(lambda line: 'gnome-shell' in line, ps_e_stdout_string.decode("utf-8").split('\n'))))
     return None
 
 ######################
@@ -58,18 +60,19 @@ def _print_all_gnome_shell_processes() -> None:
 
 UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
 
+EVENT_LOOP = asyncio.new_event_loop()
+asyncio.set_event_loop(EVENT_LOOP)
+
 #@profile
 def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
     result = UNIQUE_BOGUS_RESULT_IDENTIFIER
     while result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
         task = coroutine(*coroutine_args)
-        event_loop = asyncio.new_event_loop()
         from datetime import datetime; _logging_print("_indefinitely_attempt_task_until_success attempt start time {}".format(datetime.now()))
         _logging_print("All shell processes 1")
         _print_all_gnome_shell_processes()
         try:
-            asyncio.set_event_loop(event_loop)
-            results = event_loop.run_until_complete(asyncio.gather(task))
+            results = EVENT_LOOP.run_until_complete(asyncio.gather(task))
             if isinstance(results, list) and len(results) == 1:
                 result = results[0]
         except Exception as err:
@@ -82,7 +85,6 @@ def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
             _logging_print("len(pending_tasks) {}".format(len(pending_tasks)))
             for pending_task in pending_tasks:
                 _logging_print("pending_task {}".format(pending_task))
-            event_loop.close()
             _logging_print("All shell processes 3")
             _print_all_gnome_shell_processes()
         if result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
@@ -94,11 +96,12 @@ def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
 # Web Scraping Utilities #
 ##########################
 
-async def _launch_browser():
+async def _launch_browser_page():
     browser = await pyppeteer.launch({'headless': True})
-    return browser
+    page = await browser.newPage()
+    return page
 
-BROWSER = _indefinitely_attempt_task_until_success(_launch_browser, [])
+BROWSER_PAGE = _indefinitely_attempt_task_until_success(_launch_browser_page, [])
 
 #############################
 # Wikidata Search Utilities #
@@ -128,9 +131,7 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
     _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 1")
     wikidata_entities_corresponding_to_string = []
     _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 1.1")
-    browser = await pyppeteer.launch({'headless': True})
-    _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 1.2")
-    page = await browser.newPage()
+    page = BROWSER_PAGE
     _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 2")
     input_string_encoded = urllib.parse.quote(input_string)
     uri = WIKIDATA_SEARCH_URI_TEMPLATE.format(encoded_string=input_string_encoded)
@@ -189,7 +190,7 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
     finally:
         _logging_print("_most_relevant_wikidata_entities_corresponding_to_string All shell processes 3")
         _print_all_gnome_shell_processes()
-        await page.close()
+        # await page.close()
         # await browser.close()
         # _logging_print("_most_relevant_wikidata_entities_corresponding_to_string All shell processes 4")
         # _print_all_gnome_shell_processes()
@@ -262,8 +263,7 @@ async def _query_wikidata_via_web_scraper(sparql_query:str) -> List[dict]:
     results = []
     sparql_query_encoded = urllib.parse.quote(sparql_query)
     uri = WIKI_DATA_QUERY_SERVICE_URI+'/#'+sparql_query_encoded
-    browser = await pyppeteer.launch({'headless': True})
-    page = await browser.newPage()
+    page = BROWSER_PAGE
     sparql_query_queried_variables = _sparql_query_queried_variables(sparql_query)
     number_of_variables_queried = len(sparql_query_queried_variables)
     _logging_print("_query_wikidata_via_web_scraper All shell processes 2")
@@ -300,7 +300,7 @@ async def _query_wikidata_via_web_scraper(sparql_query:str) -> List[dict]:
     finally:
         _logging_print("_query_wikidata_via_web_scraper All shell processes 3")
         _print_all_gnome_shell_processes()
-        await page.close()
+        # await page.close()
         # await browser.close()
         # _logging_print("_query_wikidata_via_web_scraper All shell processes 4")
         # _print_all_gnome_shell_processes()
