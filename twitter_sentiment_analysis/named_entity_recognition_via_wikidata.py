@@ -50,7 +50,9 @@ def _logging_print(input_string: str) -> None:
 def _print_all_gnome_shell_processes() -> None:
     ps_e_process = subprocess.Popen("top -b -n 1", shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     ps_e_stdout_string, _ = ps_e_process.communicate()
-    _logging_print("number of chrome processes {}".format(len(list(filter(lambda line: 'chrom' in line, ps_e_stdout_string.decode("utf-8").split('\n'))))))
+    stdout_lines = ps_e_stdout_string.decode("utf-8").split('\n')
+    _logging_print("number of chrome processes {}".format(len(list(filter(lambda line: 'chrome' in line, stdout_lines)))))
+    _logging_print(stdout_lines[0])
     list(map(_logging_print, filter(lambda line: 'gnome-shell' in line, ps_e_stdout_string.decode("utf-8").split('\n'))))
     return None
 
@@ -97,7 +99,7 @@ def _indefinitely_attempt_task_until_success(coroutine, coroutine_args):
 ##########################
 
 async def _launch_browser_page():
-    browser = await pyppeteer.launch({'headless': True})
+    browser = await pyppeteer.launch({'headless': False})
     page = await browser.newPage()
     return page
 
@@ -140,17 +142,25 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
     try:
         _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 3")
         _logging_print("uri {}".format(uri))
-        await page.goto(uri)
+        try:
+            await page.goto(uri)
+        except Exception as err:
+            _logging_print("page.goto(uri) err {}".format(err))
+            exit()
         _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 3.5")
         await page.waitForSelector('div#mw-content-text')
         search_results_div = await page.waitForSelector('div.searchresults')
+        _logging_print("search_results_div {}".format(search_results_div))
         _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 4")
         search_results_paragraph_elements = await search_results_div.querySelectorAll('p')
+        _logging_print("len(search_results_paragraph_elements) {}".format(len(search_results_paragraph_elements)))
         search_results_have_shown_up = None
         for paragraph_element in search_results_paragraph_elements:
             _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 5")
             paragraph_element_classname_string = await page.evaluate('(p) => p.className', paragraph_element)
+            _logging_print("paragraph_element_classname_string {}".format(paragraph_element_classname_string))
             paragraph_element_classnames = paragraph_element_classname_string.split(' ')
+            _logging_print("paragraph_element_classnames {}".format(paragraph_element_classnames))
             _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 6")
             for paragraph_element_classname in paragraph_element_classnames:
                 if paragraph_element_classname == 'mw-search-nonefound':
@@ -162,13 +172,17 @@ async def _most_relevant_wikidata_entities_corresponding_to_string(input_string:
             _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 7")
             if search_results_have_shown_up is not None:
                 break
+        _logging_print("search_results_have_shown_up {}".format(search_results_have_shown_up))
         _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 8")
         if search_results_have_shown_up:
             search_results_divs = await page.querySelectorAll('div.mw-search-result-heading')
+            _logging_print("len(search_results_divs) {}".format(len(search_results_divs)))
             # _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 9")
             for search_results_div in search_results_divs:
                 search_results_div_text_content = await page.evaluate('(search_results_div) => search_results_div.textContent', search_results_div)
+                _logging_print("search_results_div_text_content {}".format(search_results_div_text_content))
                 parsable_text_match = re.match(r'^.+\(Q[0-9]+\) +$', search_results_div_text_content)
+                _logging_print("parsable_text_match {}".format(parsable_text_match))
                 # _logging_print("_most_relevant_wikidata_entities_corresponding_to_string 10")
                 if parsable_text_match:
                     parsable_text = parsable_text_match.group()
