@@ -14,7 +14,6 @@ File Organization:
 * Imports
 * Misc. Utilities
 * Meaningful Character Sequence Utilities
-* Named Entity Handling
 * Contraction Expansion
 * Unknown Word DWIMming Utilities
 * Misc. String Utilities
@@ -34,7 +33,6 @@ import time
 from contextlib import contextmanager
 from functools import lru_cache
 from word2vec_utilities import WORD2VEC_MODEL
-from named_entity_recognition_via_wikidata import string_corresponding_wikidata_term_type_pairs
 from typing import List, Tuple, Callable
 
 ###################
@@ -145,22 +143,6 @@ def replace_meaningful_special_character_sequence_with_placeholder_token(text_st
     for emoticon, placeholder in EMOTICON_TO_PLACEHOLDER_MAP.items():
         text_string_with_replacements = re.sub(r"\b"+re.escape(emoticon)+r"\b", placeholder, text_string_with_replacements, 0)
     text_string_with_replacements = text_string_with_replacements.replace('...', ' '+ELIPSIS_PLACEHOLDER+' ')
-    return text_string_with_replacements
-
-#########################
-# Named Entity Handling #
-#########################
-
-NAMED_ENTITY_PLACEHOLDER = PLACEHOLDER_PREFIX+"0named0entity"
-
-def replace_well_known_named_entities_with_placeholder_token(text_string: str) -> str:
-    text_string_with_replacements = text_string
-    word_strings = re.findall(r"\b\w+\b", text_string)
-    for word_string in word_strings:
-        if unknown_word_worth_dwimming(word_string):
-            word_string_is_well_known_named_entity_via_wikidata = bool(string_corresponding_wikidata_term_type_pairs(word_string))
-            if word_string_is_well_known_named_entity_via_wikidata:
-                text_string_with_replacements = re.sub(r"\b"+word_string+r"\b", NAMED_ENTITY_PLACEHOLDER, text_string_with_replacements, 1)
     return text_string_with_replacements
 
 #########################
@@ -677,7 +659,6 @@ We encountered these unhandled words: ['\n8838', 'sentiment140', 'x\n8839', 'sen
     normalized_text_string = expand_contractions(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
     normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
-    normalized_text_string = replace_well_known_named_entities_with_placeholder_token(normalized_text_string)
     normalized_text_string = lower_case_unknown_words(normalized_text_string)
     normalized_words = normalized_text_string.split(' ')
     return normalized_words

@@ -27,6 +27,7 @@ import re
 import tqdm
 from contextlib import contextmanager
 from torch.utils import data
+from datetime import datetime
 from word2vec_utilities import WORD2VEC_MODEL
 from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
 from sentiment_analysis import determine_training_and_validation_datasets
@@ -59,7 +60,6 @@ def questionable_normalized_words_from_text_string(text_string: str) -> bool:
 #########
 
 class testTextStringNormalizationViaData(unittest.TestCase):
-    @profile
     def testTextStringNormalizationViaData(self):
         print()
         training_set, validation_set = determine_training_and_validation_datasets()
@@ -70,8 +70,6 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             log_progress = False
             possibly_tqdm = tqdm.tqdm if log_progress else identity
             for iteration_index, (input_batch, _) in possibly_tqdm(enumerate(generator)):
-                # if iteration_index > 100:
-                #     break
                 notes_worth_printing = []
                 assert len(input_batch)==1
                 sentiment_text = input_batch[0]
@@ -82,33 +80,18 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
                 questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
                 max_tolerable_number_of_seconds_for_processing = 0.01
-                # if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
-                #     notes_worth_printing.append("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
-                #         questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
-                #         sentiment_text=sentiment_text))
+                if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
+                    notes_worth_printing.append("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
+                        questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
+                        sentiment_text=sentiment_text))
                 if len(questionable_normalized_words)!=0:
                     latest_failed_string = sentiment_text
                     notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                     notes_worth_printing.append("")
-                # for i in {1..1500}; do top -b -n 1 > ~/Desktop/top_$i_$(date +%s).txt ; sleep 60 ; done
-                # with open("/home/pnguyen/Desktop/top_iteration_"+str(iteration_index)+".txt","w") as f:
-                #     f.write("\n")
-                #     f.write("sentiment_text")
-                #     f.write("\n")
-                #     f.write(sentiment_text)
-                #     f.write("\n")
-                #     f.write("questionable_normalized_words_determination_time {}".format(questionable_normalized_words_determination_time))
-                #     f.write("\n")
-                #     f.write("questionable_normalized_words {}".format(questionable_normalized_words))
-                #     f.write("\n")
-                #     f.write("\n")
-                #     f.write("\n")
-                #     import subprocess
-                #     f.write(subprocess.run(["top", "-b", "-n1"], capture_output=True, text=True).stdout)
                 if len(notes_worth_printing) != 0:
                     print()
                     print("==============================================================================================")
-                    from datetime import datetime; print(datetime.now())
+                    print("Timestamp: {timestamp}".format(timestamp=datetime.now()))
                     print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
                     print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
                     for note in notes_worth_printing:
@@ -117,7 +100,6 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     print()
         self.assertTrue(latest_failed_string is None, msg="We failed to process the following string (among possibly many): \n{bad_string}".format(bad_string=latest_failed_string))
 
-@profile
 def run_all_tests():
     print()
     print("Running our test suite.")
