@@ -27,7 +27,7 @@ File Organization:
 import string
 import html
 import re
-import spellchecker
+from spellchecker import SpellChecker
 import unicodedata
 import time
 from contextlib import contextmanager
@@ -97,7 +97,7 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
     return updated_text_string
 
-SPELL_CHECKER = spellchecker.SpellChecker()
+SPELL_CHECKER = SpellChecker()
 
 def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
     corrected_word = word_string
