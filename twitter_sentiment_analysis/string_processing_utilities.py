@@ -141,7 +141,7 @@ def replace_meaningful_special_character_sequence_with_placeholder_token(text_st
     text_string_with_replacements = text_string
     text_string_with_replacements = simplify_elipsis_sequences(text_string_with_replacements)
     for emoticon, placeholder in EMOTICON_TO_PLACEHOLDER_MAP.items():
-        text_string_with_replacements = re.sub(r"\b"+re.escape(emoticon)+r"\b", placeholder, text_string_with_replacements, 0)
+        text_string_with_replacements = re.sub(r"\b"+re.escape(emoticon)+r"\b", ' '+placeholder+' ', text_string_with_replacements, 0)
     text_string_with_replacements = text_string_with_replacements.replace('...', ' '+ELIPSIS_PLACEHOLDER+' ')
     return text_string_with_replacements
 
@@ -408,6 +408,9 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                 if no_change_happened or reduced_word_is_known:
                     break
             if not reduced_word_is_known:
+                if len(reduced_word)>20:
+                    print("reduced_word {}".format(reduced_word))
+                    exit()
                 candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
                 candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
                 for candidate_word in candidate_words_that_dont_introduce_new_characters:
@@ -525,10 +528,6 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
         expanded_result = expand_function(updated_text_string)
         if expanded_result != updated_text_string:
-            # print()
-            # print("expand_function : {}".format(expand_function))
-            # print("old : {}".format(updated_text_string))
-            # print("new : {}".format(expanded_result))
             updated_text_string = expanded_result
             break
     return updated_text_string
@@ -577,16 +576,17 @@ def replace_urls_with_placeholder_token(text_string: str) -> str:
     updated_text_string = text_string
     urls = re.findall(URL_REGEX_PATTERN, text_string)
     for url in urls:
-        updated_text_string = updated_text_string.replace(url, URL_PLACEHOLDER)
+        updated_text_string = updated_text_string.replace(url, ' '+URL_PLACEHOLDER+' ')
     return updated_text_string
 
 HASH_TAG_REGEX_PATTERN = "#\w+"
+HASH_TAG_PLACEHOLDER = PLACEHOLDER_PREFIX+'0hash0tag'
 
 def replace_hash_tags_with_placeholder_token(text_string: str) -> str:
     updated_text_string = text_string
     hash_tags = re.findall(HASH_TAG_REGEX_PATTERN, text_string)
     for hash_tag in hash_tags:
-        updated_text_string = updated_text_string.replace(hash_tag, PLACEHOLDER_PREFIX+'0hash0tag')
+        updated_text_string = updated_text_string.replace(hash_tag, ' '+HASH_TAG_PLACEHOLDER+' ')
     return updated_text_string
 
 def lower_case_unknown_words(text_string: str) -> str:
