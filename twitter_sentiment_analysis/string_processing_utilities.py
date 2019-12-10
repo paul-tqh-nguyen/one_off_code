@@ -30,14 +30,22 @@ import re
 import spellchecker
 import unicodedata
 import time
+import warnings
+from itertools import chain, combinations
 from contextlib import contextmanager
 from functools import lru_cache
-from word2vec_utilities import WORD2VEC_MODEL
 from typing import List, Tuple, Callable
+from word2vec_utilities import WORD2VEC_MODEL
 
 ###################
 # Misc. Utilities #
 ###################
+
+def powerset(iterable):
+    items = list(iterable)
+    number_of_items = len(items)
+    subset_iterable = chain.from_iterable(combinations(items, length) for length in range(1, number_of_items+1))
+    return subset_iterable
 
 @contextmanager
 def timeout(time, functionToExecuteOnTimeout=None):
@@ -83,7 +91,9 @@ def unknown_word_worth_dwimming(word_string: str) -> bool:
         not word_string_resembles_meaningful_special_character_sequence_placeholder(word_string) and \
         word_string not in WORD2VEC_MODEL
 
-def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequence: str, new_subsequence: str, word_exception_checker: Callable[[str], bool]=false) -> str:
+def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequence_0: str, new_subsequence_0: str, word_exception_checker: Callable[[str], bool]=false) -> str:
+    old_subsequence = old_subsequence_0.lower()
+    new_subsequence = new_subsequence_0.lower()
     updated_text_string = text_string
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
     for word_match in word_match_iterator:
@@ -91,10 +101,26 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
         if not word_exception_checker(word_string):
             if unknown_word_worth_dwimming(word_string):
                 word_string_normalized = word_string.lower()
-                if old_subsequence in word_string_normalized:
+                old_subsequence_match_iterator = re.finditer(old_subsequence, word_string)
+                old_subsequence_span_specifications = list(map(lambda match: match.span(), old_subsequence_match_iterator))
+                assert old_subsequence_span_specifications == sorted(old_subsequence_span_specifications, key=lambda pair: pair[0])
+                corrected_words = []
+                if len(old_subsequence_span_specifications) < 10:
+                    for old_subsequence_span_specifications_subset in powerset(old_subsequence_span_specifications):
+                        corrected_word = word_string
+                        character_offset_count_per_span = len(new_subsequence)-len(old_subsequence)
+                        for span_index, (start_index, end_index) in enumerate(old_subsequence_span_specifications_subset):
+                            offset = character_offset_count_per_span*(1+span_index)
+                            corrected_word = corrected_word[:start_index+offset]+new_subsequence+corrected_word[end_index+offset:]
+                        corrected_words.append(corrected_word)
+                else:
+                    warnings.warn("Got an explosive number of subsequences to try")
                     corrected_word = word_string_normalized.replace(old_subsequence, new_subsequence)
+                    corrected_words.append(corrected_word)
+                for corrected_word in corrected_words:
                     if corrected_word in WORD2VEC_MODEL:
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
+                        break
     return updated_text_string
 
 SPELL_CHECKER = spellchecker.SpellChecker()
@@ -444,7 +470,6 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                     break
             if not reduced_word_is_known:
                 if len(reduced_word)>40:
-                    print("reduced_word {}".format(reduced_word))
                     if 'pneumonoultramicroscopicsilicovolcanoconiosis' in reduced_word:
                         break
                     else:
@@ -498,22 +523,22 @@ def f_ph_slang_correction_expand(text_string: str) -> bool:
 
 def ee_y_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ee', 'y')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ie', 'y')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ey', 'y')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'i', 'y')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ee', 'y')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ie', 'y')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ey', 'y')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'i', 'y')
     return corrected_text_string
 
 def z_s_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 's', 'z')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'z', 's')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 's', 'z')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'z', 's')
     return corrected_text_string
 
 def ce_se_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ce', 'se')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'se', 'ce')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ce', 'se')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'se', 'ce')
     return corrected_text_string
 
 def f_th_slang_correction_expand(text_string: str) -> bool:
@@ -527,15 +552,15 @@ def zero_o_slang_correction_expand(text_string: str) -> bool:
 
 def eight_ate_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'at')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'ate')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'eight')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, '8', 'at')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, '8', 'ate')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, '8', 'eight')
     return corrected_text_string
 
 def oo_u_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'oo', 'u')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'u', 'oo')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'oo', 'u')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'u', 'oo')
     return corrected_text_string
 
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
