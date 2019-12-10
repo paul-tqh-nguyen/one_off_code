@@ -23,19 +23,16 @@ File Organization:
 ###########
 
 import unittest
-import re
 import tqdm
 from contextlib import contextmanager
-from torch.utils import data
 from datetime import datetime
-from word2vec_utilities import WORD2VEC_MODEL
 from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
-from sentiment_analysis import determine_training_and_validation_datasets
 
 ###################
 # Misc. Utilities #
 ###################
 
+@profile
 def identity(args):
     return args
 
@@ -48,6 +45,7 @@ COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
     'a', 'to', 'and', 'of',
 ]
 
+@profile
 def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     normalized_words = normalized_words_from_text_string(text_string)
     unknown_words_worth_mentioning = normalized_words
@@ -60,19 +58,17 @@ def questionable_normalized_words_from_text_string(text_string: str) -> bool:
 #########
 
 class testTextStringNormalizationViaData(unittest.TestCase):
+    @profile
     def testTextStringNormalizationViaData(self):
         print()
-        training_set, validation_set = determine_training_and_validation_datasets()
-        training_generator = data.DataLoader(training_set, batch_size=1, shuffle=False)
-        validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         latest_failed_string = None
-        for generator in (training_generator, validation_generator):
+        with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
+            training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
             log_progress = False
             possibly_tqdm = tqdm.tqdm if log_progress else identity
-            for iteration_index, (input_batch, _) in possibly_tqdm(enumerate(generator)):
+            for iteration_index, row_dict in possibly_tqdm(enumerate(training_data_csv_reader)):
+                sentiment_text = row_dict['SentimentText']
                 notes_worth_printing = []
-                assert len(input_batch)==1
-                sentiment_text = input_batch[0]
                 questionable_normalized_words_determination_timing_results = dict()
                 def note_questionable_normalized_words_determination_timing_results(time):
                     questionable_normalized_words_determination_timing_results['total_time'] = time
@@ -84,7 +80,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     notes_worth_printing.append("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
                         questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
                         sentiment_text=sentiment_text))
-                if len(questionable_normalized_words)!=0:
+                if len(questionable_normalized_words) != 0:
                     latest_failed_string = sentiment_text
                     notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                     notes_worth_printing.append("")
@@ -100,6 +96,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     print()
         self.assertTrue(latest_failed_string is None, msg="We failed to process the following string (among possibly many): \n{bad_string}".format(bad_string=latest_failed_string))
 
+@profile
 def run_all_tests():
     print()
     print("Running our test suite.")
