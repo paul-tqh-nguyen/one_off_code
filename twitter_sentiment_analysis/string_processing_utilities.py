@@ -361,7 +361,7 @@ def two_word_concatenation_expand(text_string: str) -> str:
         word = word_match.group()
         if unknown_word_worth_dwimming(word):
             word_length = len(word)
-            min_first_word_length = 5
+            min_first_word_length = 4
             min_second_word_length = 3
             if word_length > min_first_word_length+min_second_word_length:
                 split_index_supremum = word_length-(min_second_word_length-1)
