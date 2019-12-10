@@ -642,29 +642,6 @@ def separate_punctuation(text_string: str) -> str:
 
 @profile
 def normalized_words_from_text_string(text_string: str) -> List[str]:
-    # @todo handle camel cased "words", e.g. "crystalmarieDONTluvSpiteAnymore"
-    # @todo handle "toooooootally"
-    # @todo handle 'homiee'
-    '''# @todo handle this error
-==============================================================================================
-Current Iteration: 2548
-Current Sentence Being Processed:
- brokeback mountain was terrible.
-8838,0,Sentiment140,# @Catherine42 I wouldn't mind but I only had 1/2 a portion &amp; then left 1/2 the cream  just fruit for me then until my hols  x
-8839,1,Sentiment140,# @DeliciousLunch ... dark chocolate cookies? oh you tease! I'm writing to day n dipping into twitter for company 
-8840,1,Sentiment140,# followfriday @mstuyvenberg @feb_unsw @hazelmail @beckescreet - all almost as cool as he-man and she-ra 
-8841,1,Sentiment140,# followfriday @presentsqueen because she talks sense 
-8842,1,Sentiment140,# New York is the most amazing city i've ever been to 
-8843,0,Sentiment140,# number times I bottomed out just in our driveway = 4... a 6.5 hour trip to mass.. I'm scared 
-8844,0,Sentiment140,# of NYC celebrity street vendors &gt; # of POA celebrities  http://streetvendor.org/media/pdfs/Side2.pdf
-8845,1,Sentiment140,###### yay ##### thanks @matclayton ##### 
-8846,0,Sentiment140,#$%#$^#%@ I HATE THE DENTIST
-
-
-We encountered these unhandled words: ['\n8838', 'sentiment140', 'x\n8839', 'sentiment140', '\n8840', 'sentiment140', '\n8841', 'sentiment140', '\n8842', 'sentiment140', '\n8843', 'sentiment140', '\n8844', 'sentiment140', 'place0holder0token0with0id0url0link\n8845', 'sentiment140', '\n8846', 'sentiment140']
-
-==============================================================================================
-'''
     normalized_text_string = text_string
     normalized_text_string = html.unescape(normalized_text_string)
     normalized_text_string = replace_tagged_users_with_placeholder_token(normalized_text_string)
