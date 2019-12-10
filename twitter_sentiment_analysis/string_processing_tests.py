@@ -28,7 +28,7 @@ from contextlib import contextmanager
 import csv
 from datetime import datetime
 from sentiment_analysis import TRAINING_DATA_LOCATION
-from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
+from string_processing_utilities import unknown_word_worth_dwimming, common_word_missing_from_word2vec_model, normalized_words_from_text_string, PUNCTUATION_SET, timer
 
 ###################
 # Misc. Utilities #
@@ -42,16 +42,11 @@ def identity(args):
 # Testing Utilities #
 #####################
 
-COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
-    # stop words
-    'a', 'to', 'and', 'of',
-]
-
 #@profile
 def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     normalized_words = normalized_words_from_text_string(text_string)
     unknown_words_worth_mentioning = normalized_words
-    unknown_words_worth_mentioning = filter(lambda word: word not in COMMONLY_USED_MISSING_WORD2VEC_WORDS, unknown_words_worth_mentioning)
+    unknown_words_worth_mentioning = filter(lambda word: not common_word_missing_from_word2vec_model(word), unknown_words_worth_mentioning)
     unknown_words_worth_mentioning = filter(lambda word: unknown_word_worth_dwimming(word), unknown_words_worth_mentioning)
     return list(unknown_words_worth_mentioning)
 
@@ -77,8 +72,8 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             log_progress = False
             possibly_tqdm = tqdm.tqdm if log_progress else identity
             for iteration_index, row_dict in possibly_tqdm(enumerate(training_data_csv_reader)):
-                if iteration_index < 50197:
-                    continue
+                # if iteration_index < 85063:
+                #     continue
                 sentiment_text = row_dict['SentimentText']
                 notes_worth_printing = []
                 questionable_normalized_words_determination_timing_results = dict()

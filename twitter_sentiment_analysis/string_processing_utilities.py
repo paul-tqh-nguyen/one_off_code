@@ -98,6 +98,11 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
     return updated_text_string
 
 SPELL_CHECKER = spellchecker.SpellChecker()
+SPELL_CHECKER.word_frequency.load_words([
+    'devo',
+    'hashtag',
+    'stipple',
+])
 
 def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
     corrected_word = word_string
@@ -108,10 +113,19 @@ def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
         if sole_candidate in WORD2VEC_MODEL:
             corrected_word = sole_candidate
     else:
-        corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word).issubset(relevant_characters), corrected_word_candidates)
-        for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
-            if corrected_word_candidate in WORD2VEC_MODEL:
-                corrected_word = corrected_word_candidate
+        filter_functions = [
+            lambda word: set(word) == relevant_characters,
+            lambda word: set(word).issubset(relevant_characters),
+        ]
+        valid_corrected_word_found = False
+        for filter_function in filter_functions:
+            corrected_word_candidates_that_dont_introduce_new_characters = filter(filter_function, corrected_word_candidates)
+            for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
+                if corrected_word_candidate in WORD2VEC_MODEL:
+                    corrected_word = corrected_word_candidate
+                    valid_corrected_word_found = True
+                    break
+            if valid_corrected_word_found:
                 break
     return corrected_word
 
@@ -361,7 +375,7 @@ def two_word_concatenation_expand(text_string: str) -> str:
         word = word_match.group()
         if unknown_word_worth_dwimming(word):
             word_length = len(word)
-            min_first_word_length = 4
+            min_first_word_length = 3
             min_second_word_length = 3
             if word_length > min_first_word_length+min_second_word_length:
                 split_index_supremum = word_length-(min_second_word_length-1)
@@ -381,7 +395,7 @@ def _starts_with(big: str, small: str) -> bool:
 def _word_string_corresponds_to_laugh(word_string: str) -> bool:
     word_string_corresponds_to_laugh = False
     word_string = word_string.lower()
-    acceptable_prefixes = "mw", "mu", "muw", "h", "g", "b", "bw", 
+    acceptable_prefixes = "mw", "mu", "muw", "h", "g", "b", "bw", "ahah",
     prefix_starts_word_string_test = lambda acceptable_starting_string: _starts_with(word_string, acceptable_starting_string)
     relevant_prefixes = list(filter(prefix_starts_word_string_test, acceptable_prefixes))
     if len(relevant_prefixes) != 0:
@@ -431,7 +445,10 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
             if not reduced_word_is_known:
                 if len(reduced_word)>40:
                     print("reduced_word {}".format(reduced_word))
-                    exit()
+                    if 'pneumonoultramicroscopicsilicovolcanoconiosis' in reduced_word:
+                        break
+                    else:
+                        exit()
                 reduced_word = _possibly_correct_word_via_spell_checker(reduced_word)
                 if reduced_word in WORD2VEC_MODEL:
                     reduced_word_is_known = True
@@ -454,6 +471,7 @@ SLANG_WORD_DICTIONARY = {
     "smthg" : "something",
     "sowwy" : "sorry",
     "woots" : "woot",
+    "yestie" : "yesterday",
 }
 
 def slang_word_expand(text_string: str) -> str:
@@ -483,13 +501,26 @@ def ee_y_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ee', 'y')
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ie', 'y')
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ey', 'y')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'i', 'y')
     return corrected_text_string
 
 def z_s_slang_correction_expand(text_string: str) -> bool:
-    return _correct_words_via_subsequence_substitutions(text_string, 'z', 's')
+    corrected_text_string = text_string
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 's', 'z')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'z', 's')
+    return corrected_text_string
+
+def ce_se_slang_correction_expand(text_string: str) -> bool:
+    corrected_text_string = text_string
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'ce', 'se')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, 'se', 'ce')
+    return corrected_text_string
 
 def f_th_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'f', 'th')
+
+def d_t_slang_correction_expand(text_string: str) -> bool:
+    return _correct_words_via_subsequence_substitutions(text_string, 'd', 't')
 
 def zero_o_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, '0', 'o')
@@ -518,27 +549,61 @@ def ies_suffix_expand(text_string: str) -> bool:
     updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'ies', 's')
     return updated_text_string
 
+def a_er_suffix_expand(text_string: str) -> bool:
+    updated_text_string = text_string
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'ah', 'er')
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'a', 'er')
+    return updated_text_string
+
+def r_er_suffix_expand(text_string: str) -> bool:
+    updated_text_string = text_string
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'r', 'er')
+    return updated_text_string
+
+def y_suffix_removal_expand(text_string: str) -> bool:
+    updated_text_string = text_string
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'y', '')
+    return updated_text_string
+
+def g_dropping_suffix_expand(text_string: str) -> bool:
+    updated_text_string = text_string
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'in', 'ing')
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'n', 'ing')
+    return updated_text_string
+
 DWIMMING_EXPAND_FUNCTIONS = [
     omg_star_expand,
     ugh_star_expand,
     mhm_expand,
-    number_word_concatenation_expand,
-    word_number_concatenation_expand,
     aw_star_expand,
-    two_word_concatenation_expand,
+    laughing_expand,
+    
+    
     irregular_past_tense_dwimming_expand,
     ies_suffix_expand,
+    a_er_suffix_expand,
+    r_er_suffix_expand,
+    g_dropping_suffix_expand,
+    y_suffix_removal_expand,
+    
     q_g_slang_correction_expand,
     f_ph_slang_correction_expand,
     ee_y_slang_correction_expand,
     z_s_slang_correction_expand,
+    ce_se_slang_correction_expand,
     f_th_slang_correction_expand,
+    d_t_slang_correction_expand,
     zero_o_slang_correction_expand,
     eight_ate_slang_correction_expand,
     oo_u_slang_correction_expand,
     our_or_british_sland_correction_expand,
-    laughing_expand,
+    
     slang_word_expand,
+    
+    number_word_concatenation_expand,
+    word_number_concatenation_expand,
+    two_word_concatenation_expand,
+    
     duplicate_letters_exaggeration_expand,
 ]
 
@@ -644,6 +709,12 @@ def separate_punctuation(text_string: str) -> str:
     final_text_string = simplify_spaces(final_text_string)
     return final_text_string
 
+def correct_words_via_spell_checker(text_string: str) -> str:
+    word_strings = text_string.split()
+    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else _possibly_correct_word_via_spell_checker(word_string), word_strings)
+    updated_text_string = ' '.join(possibly_corrected_word_strings)
+    return updated_text_string
+
 #@profile
 def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = text_string
@@ -656,6 +727,7 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = expand_contractions(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
     normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
+    normalized_text_string = correct_words_via_spell_checker(normalized_text_string)
     normalized_text_string = lower_case_unknown_words(normalized_text_string)
     normalized_words = normalized_text_string.split(' ')
     return normalized_words
