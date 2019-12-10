@@ -99,6 +99,17 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
 
 SPELL_CHECKER = spellchecker.SpellChecker()
 
+def _possibly_correct_word_via_spell_checker(word_string: str): -> List[str]:
+    corrected_word = word_string
+    relevant_characters = set(word_string)
+    corrected_word_candidates = SPELL_CHECKER.candidates(corrected_word)
+    corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word).issubset(relevant_characters), corrected_word_candidates)
+    for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
+        if corrected_word_candidate in WORD2VEC_MODEL:
+            corrected_word = corrected_word_candidate
+            break
+    return corrected_word
+
 def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
     updated_text_string = text_string
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
@@ -114,13 +125,10 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
                     if corrected_word in WORD2VEC_MODEL:
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                     else:
-                        base_word_plus_suffix_characters = set(corrected_word)
-                        corrected_word_candidates = SPELL_CHECKER.candidates(corrected_word)
-                        corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word)==base_word_plus_suffix_characters, corrected_word_candidates)
-                        for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
-                            if corrected_word_candidate in WORD2VEC_MODEL:
-                                updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word_candidate, updated_text_string, 1)
-                                break
+                        corrected_word = _possibly_correct_word_via_spell_checker(corrected_word)
+                        if corrected_word in WORD2VEC_MODEL:
+                            updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
+                            break
     return updated_text_string
 
 ###########################################
@@ -290,6 +298,13 @@ def omg_star_expand(text_string: str) -> str:
     expanded_text_string = re.sub(r"\bomg\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
     return expanded_text_string
 
+def ugh_star_expand(text_string: str) -> str:
+    expanded_text_string = text_string
+    word_replacement = "ugh"
+    assert word_replacement in WORD2VEC_MODEL
+    expanded_text_string = re.sub(r"\bugh\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
+    return expanded_text_string
+
 def mhm_expand(text_string: str) -> str:
     expanded_text_string = text_string
     word_replacement = "sure"
@@ -384,6 +399,7 @@ def laughing_expand(text_string: str) -> str:
 
 VOWELS = {'a','e','i','o','u'}
 
+@profile
 def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     updated_text_string = text_string
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
@@ -408,16 +424,13 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                 if no_change_happened or reduced_word_is_known:
                     break
             if not reduced_word_is_known:
-                if len(reduced_word)>20:
+                if len(reduced_word)>40:
                     print("reduced_word {}".format(reduced_word))
                     exit()
-                candidate_words_via_spell_checker = SPELL_CHECKER.candidates(reduced_word)
-                candidate_words_that_dont_introduce_new_characters = filter(lambda word: set(word)==letters, candidate_words_via_spell_checker)
-                for candidate_word in candidate_words_that_dont_introduce_new_characters:
-                    if candidate_word in WORD2VEC_MODEL:
-                        reduced_word = candidate_word
-                        reduced_word_is_known = True
-                        break
+                reduced_word = _possibly_correct_word_via_spell_checker(reduced_word)
+                if reduced_word in WORD2VEC_MODEL:
+                    reduced_word_is_known = True
+                    break
             if not reduced_word_is_known:
                 if len(candidate_words_via_spell_checker) == 1:
                     reduced_word = tuple(candidate_words_via_spell_checker)[0]
@@ -503,6 +516,7 @@ def ies_suffix_expand(text_string: str) -> bool:
 
 DWIMMING_EXPAND_FUNCTIONS = [
     omg_star_expand,
+    ugh_star_expand,
     mhm_expand,
     number_word_concatenation_expand,
     word_number_concatenation_expand,
@@ -625,6 +639,7 @@ def separate_punctuation(text_string: str) -> str:
     final_text_string = simplify_spaces(final_text_string)
     return final_text_string
 
+@profile
 def normalized_words_from_text_string(text_string: str) -> List[str]:
     # @todo handle camel cased "words", e.g. "crystalmarieDONTluvSpiteAnymore"
     # @todo handle "toooooootally"

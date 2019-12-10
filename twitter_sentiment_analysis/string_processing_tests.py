@@ -34,7 +34,7 @@ from string_processing_utilities import unknown_word_worth_dwimming, normalized_
 # Misc. Utilities #
 ###################
 
-#@profile
+@profile
 def identity(args):
     return args
 
@@ -47,7 +47,7 @@ COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
     'a', 'to', 'and', 'of',
 ]
 
-#@profile
+@profile
 def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     normalized_words = normalized_words_from_text_string(text_string)
     unknown_words_worth_mentioning = normalized_words
@@ -59,17 +59,25 @@ def questionable_normalized_words_from_text_string(text_string: str) -> bool:
 # Tests #
 #########
 
+LOGGING_FILE = "/home/pnguyen/Desktop/log_from_tests.txt"
+
+def _logging_print(input_string='') -> None:
+    with open(LOGGING_FILE, 'a') as f:
+        f.write(input_string+'\n')
+    print(input_string)
+    return None
+
 class testTextStringNormalizationViaData(unittest.TestCase):
-    #@profile
+    @profile
     def testTextStringNormalizationViaData(self):
-        print()
+        _logging_print()
         latest_failed_string = None
         with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
             training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
             log_progress = False
             possibly_tqdm = tqdm.tqdm if log_progress else identity
             for iteration_index, row_dict in possibly_tqdm(enumerate(training_data_csv_reader)):
-                if iteration_index < 10436:
+                if iteration_index < 50169:
                     continue
                 sentiment_text = row_dict['SentimentText']
                 notes_worth_printing = []
@@ -89,18 +97,18 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                     notes_worth_printing.append("")
                 if len(notes_worth_printing) != 0 or True:
-                    print()
-                    print("==============================================================================================")
-                    print("Timestamp: {timestamp}".format(timestamp=datetime.now()))
-                    print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
-                    print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
+                    _logging_print()
+                    _logging_print("==============================================================================================")
+                    _logging_print("Timestamp: {timestamp}".format(timestamp=datetime.now()))
+                    _logging_print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
+                    _logging_print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
                     for note in notes_worth_printing:
-                        print(note)
-                    print("==============================================================================================")
-                    print()
+                        _logging_print(note)
+                    _logging_print("==============================================================================================")
+                    _logging_print()
         self.assertTrue(latest_failed_string is None, msg="We failed to process the following string (among possibly many): \n{bad_string}".format(bad_string=latest_failed_string))
 
-#@profile
+@profile
 def run_all_tests():
     print()
     print("Running our test suite.")
