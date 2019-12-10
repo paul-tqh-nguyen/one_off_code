@@ -35,7 +35,7 @@ from itertools import chain, combinations
 from contextlib import contextmanager
 from functools import lru_cache
 from typing import List, Tuple, Callable
-from word2vec_utilities import WORD2VEC_MODEL
+from word2vec_utilities import WORD2VEC_MODEL, common_word_missing_from_word2vec_model
 
 ###################
 # Misc. Utilities #
@@ -80,9 +80,6 @@ PLACEHOLDER_PREFIX = "place0holder0token0with0id"
 
 def word_string_resembles_meaningful_special_character_sequence_placeholder(word_string: str) -> bool:
     return bool(re.findall(r"^"+PLACEHOLDER_PREFIX+r".+$", word_string))
-
-def common_word_missing_from_word2vec_model(word_string: str) -> bool:
-    return word_string.lower() in ['a','to', 'and', 'of']
 
 def unknown_word_worth_dwimming(word_string: str) -> bool:
     return not word_string.isnumeric() and \
@@ -349,7 +346,10 @@ def expand_contractions_and_shorthand_words_with_special_characters(text_string:
 def omg_star_expand(text_string: str) -> str:
     expanded_text_string = text_string
     word_replacement = "omg"
+    print(1)
+    print(word_replacement)
     assert word_replacement in WORD2VEC_MODEL
+    print(2)
     expanded_text_string = re.sub(r"\bomg\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
     return expanded_text_string
 
@@ -410,14 +410,19 @@ def two_word_concatenation_expand(text_string: str) -> str:
     for word_match in word_match_iterator:
         word = word_match.group()
         if unknown_word_worth_dwimming(word):
+            print("word {}".format(word))
             word_length = len(word)
             min_first_word_length = 3
             min_second_word_length = 3
             if word_length > min_first_word_length+min_second_word_length:
                 split_index_supremum = word_length-(min_second_word_length-1)
+                print("split_index_supremum {}".format(split_index_supremum))
                 for split_index in range(min_first_word_length, split_index_supremum):
                     first_sub_word = word[:split_index]
                     second_sub_word = word[split_index:]
+                    print()
+                    print("first_sub_word {}".format(first_sub_word))
+                    print("second_sub_word {}".format(second_sub_word))
                     if first_sub_word in WORD2VEC_MODEL and second_sub_word in WORD2VEC_MODEL:
                         split_words_combined = first_sub_word+' '+second_sub_word
                         updated_text_string = re.sub(r"\b"+word+r"\b", split_words_combined, updated_text_string, 1)
@@ -495,6 +500,7 @@ SLANG_WORD_DICTIONARY = {
     "bday" : "birthday",
     "fu2" : "fuck you too",
     "hungy" : "hungry",
+    "hvnt" : "have not",
     "idunno" : "I do not know",
     "ilysfm" : "I love you so fucking much",
     "ily2" : "I love you too",
@@ -503,6 +509,7 @@ SLANG_WORD_DICTIONARY = {
     "lul" : "lol",
     "luvly" : "lovely",
     "muah" : "me",
+    "nvmd" : "nevermind",
     "smthg" : "something",
     "sowwy" : "sorry",
     "woots" : "woot",
@@ -620,14 +627,12 @@ DWIMMING_EXPAND_FUNCTIONS = [
     mhm_expand,
     aw_star_expand,
     laughing_expand,
-    
     irregular_past_tense_dwimming_expand,
     ies_suffix_expand,
     a_er_suffix_expand,
     r_er_suffix_expand,
     g_dropping_suffix_expand,
     y_suffix_removal_expand,
-    
     q_g_slang_correction_expand,
     f_ph_slang_correction_expand,
     ee_y_slang_correction_expand,
@@ -640,13 +645,10 @@ DWIMMING_EXPAND_FUNCTIONS = [
     oo_u_slang_correction_expand,
     ya_you_slang_correction_expand,
     our_or_british_sland_correction_expand,
-    
     slang_word_expand,
-    
     number_word_concatenation_expand,
     word_number_concatenation_expand,
     two_word_concatenation_expand,
-    
     duplicate_letters_exaggeration_expand,
 ]
 

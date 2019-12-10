@@ -28,7 +28,8 @@ from contextlib import contextmanager
 import csv
 from datetime import datetime
 from sentiment_analysis import TRAINING_DATA_LOCATION
-from string_processing_utilities import unknown_word_worth_dwimming, common_word_missing_from_word2vec_model, normalized_words_from_text_string, PUNCTUATION_SET, timer
+from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
+from word2vec_utilities import common_word_missing_from_word2vec_model
 
 ###################
 # Misc. Utilities #
