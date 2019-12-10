@@ -110,7 +110,7 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
                         corrected_word = word_string
                         character_offset_count_per_span = len(new_subsequence)-len(old_subsequence)
                         for span_index, (start_index, end_index) in enumerate(old_subsequence_span_specifications_subset):
-                            offset = character_offset_count_per_span*(1+span_index)
+                            offset = character_offset_count_per_span*span_index
                             corrected_word = corrected_word[:start_index+offset]+new_subsequence+corrected_word[end_index+offset:]
                         corrected_words.append(corrected_word)
                 else:
@@ -573,6 +573,14 @@ def oo_u_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'u', 'oo')
     return corrected_text_string
 
+def ya_you_slang_correction_expand(text_string: str) -> bool:
+    corrected_text_string = text_string
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ya', 'you')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ya', 'your')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'cha', 'you')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'cha', 'your')
+    return corrected_text_string
+
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
     updated_text_string = text_string
     updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed', lambda word_string: len(word_string)>2 and word_string[-2:].lower() != 'tt')
@@ -613,7 +621,6 @@ DWIMMING_EXPAND_FUNCTIONS = [
     aw_star_expand,
     laughing_expand,
     
-    
     irregular_past_tense_dwimming_expand,
     ies_suffix_expand,
     a_er_suffix_expand,
@@ -631,6 +638,7 @@ DWIMMING_EXPAND_FUNCTIONS = [
     zero_o_slang_correction_expand,
     eight_ate_slang_correction_expand,
     oo_u_slang_correction_expand,
+    ya_you_slang_correction_expand,
     our_or_british_sland_correction_expand,
     
     slang_word_expand,
