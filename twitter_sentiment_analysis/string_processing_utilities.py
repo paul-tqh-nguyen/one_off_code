@@ -497,8 +497,8 @@ def zero_o_slang_correction_expand(text_string: str) -> bool:
 def eight_ate_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'at')
-    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'eight')
     corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'ate')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(text_string, '8', 'eight')
     return corrected_text_string
 
 def oo_u_slang_correction_expand(text_string: str) -> bool:
