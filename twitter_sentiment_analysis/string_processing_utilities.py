@@ -99,15 +99,18 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
 
 SPELL_CHECKER = spellchecker.SpellChecker()
 
-def _possibly_correct_word_via_spell_checker(word_string: str): -> List[str]:
+def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
     corrected_word = word_string
     relevant_characters = set(word_string)
     corrected_word_candidates = SPELL_CHECKER.candidates(corrected_word)
-    corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word).issubset(relevant_characters), corrected_word_candidates)
-    for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
-        if corrected_word_candidate in WORD2VEC_MODEL:
-            corrected_word = corrected_word_candidate
-            break
+    if len(corrected_word_candidates) == 1 and corrected_word_candidates[0] in WORD2VEC_MODEL:
+        corrected_word = corrected_word_candidates[0]
+    else:
+        corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word).issubset(relevant_characters), corrected_word_candidates)
+        for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
+            if corrected_word_candidate in WORD2VEC_MODEL:
+                corrected_word = corrected_word_candidate
+                break
     return corrected_word
 
 def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
@@ -431,10 +434,6 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                 if reduced_word in WORD2VEC_MODEL:
                     reduced_word_is_known = True
                     break
-            if not reduced_word_is_known:
-                if len(candidate_words_via_spell_checker) == 1:
-                    reduced_word = tuple(candidate_words_via_spell_checker)[0]
-                    reduced_word_is_known = reduced_word in WORD2VEC_MODEL
             if reduced_word_is_known:
                 updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
     return updated_text_string
