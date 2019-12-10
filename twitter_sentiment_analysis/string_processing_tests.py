@@ -34,7 +34,7 @@ from string_processing_utilities import unknown_word_worth_dwimming, normalized_
 # Misc. Utilities #
 ###################
 
-@profile
+#@profile
 def identity(args):
     return args
 
@@ -47,7 +47,7 @@ COMMONLY_USED_MISSING_WORD2VEC_WORDS = [
     'a', 'to', 'and', 'of',
 ]
 
-@profile
+#@profile
 def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     normalized_words = normalized_words_from_text_string(text_string)
     unknown_words_worth_mentioning = normalized_words
@@ -68,7 +68,7 @@ def _logging_print(input_string='') -> None:
     return None
 
 class testTextStringNormalizationViaData(unittest.TestCase):
-    @profile
+    #@profile
     def testTextStringNormalizationViaData(self):
         _logging_print()
         latest_failed_string = None
@@ -108,7 +108,7 @@ class testTextStringNormalizationViaData(unittest.TestCase):
                     _logging_print()
         self.assertTrue(latest_failed_string is None, msg="We failed to process the following string (among possibly many): \n{bad_string}".format(bad_string=latest_failed_string))
 
-@profile
+#@profile
 def run_all_tests():
     print()
     print("Running our test suite.")

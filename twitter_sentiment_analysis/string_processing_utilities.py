@@ -27,7 +27,7 @@ File Organization:
 import string
 import html
 import re
-from spellchecker import SpellChecker
+import spellchecker
 import unicodedata
 import time
 from contextlib import contextmanager
@@ -97,7 +97,7 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
     return updated_text_string
 
-SPELL_CHECKER = SpellChecker()
+SPELL_CHECKER = spellchecker.SpellChecker()
 
 def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
     corrected_word = word_string
@@ -404,7 +404,7 @@ def laughing_expand(text_string: str) -> str:
 
 VOWELS = {'a','e','i','o','u'}
 
-@profile
+#@profile
 def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     updated_text_string = text_string
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
@@ -488,6 +488,9 @@ def ee_y_slang_correction_expand(text_string: str) -> bool:
 def z_s_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'z', 's')
 
+def f_th_slang_correction_expand(text_string: str) -> bool:
+    return _correct_words_via_subsequence_substitutions(text_string, 'f', 'th')
+
 def zero_o_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, '0', 'o')
 
@@ -529,6 +532,7 @@ DWIMMING_EXPAND_FUNCTIONS = [
     f_ph_slang_correction_expand,
     ee_y_slang_correction_expand,
     z_s_slang_correction_expand,
+    f_th_slang_correction_expand,
     zero_o_slang_correction_expand,
     eight_ate_slang_correction_expand,
     oo_u_slang_correction_expand,
@@ -640,7 +644,7 @@ def separate_punctuation(text_string: str) -> str:
     final_text_string = simplify_spaces(final_text_string)
     return final_text_string
 
-@profile
+#@profile
 def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = text_string
     normalized_text_string = html.unescape(normalized_text_string)
