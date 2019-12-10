@@ -72,8 +72,8 @@ class testTextStringNormalizationViaData(unittest.TestCase):
             log_progress = False
             possibly_tqdm = tqdm.tqdm if log_progress else identity
             for iteration_index, row_dict in possibly_tqdm(enumerate(training_data_csv_reader)):
-                # if iteration_index < 85063:
-                #     continue
+                if iteration_index < 37255:
+                    continue
                 sentiment_text = row_dict['SentimentText']
                 notes_worth_printing = []
                 questionable_normalized_words_determination_timing_results = dict()
