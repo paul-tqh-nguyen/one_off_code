@@ -106,7 +106,7 @@ def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
     if len(corrected_word_candidates) == 1:
         (sole_candidate, ) = corrected_word_candidates
         if sole_candidate in WORD2VEC_MODEL:
-            corrected_word = corrected_word_candidates[0]
+            corrected_word = sole_candidate
     else:
         corrected_word_candidates_that_dont_introduce_new_characters = filter(lambda word: set(word).issubset(relevant_characters), corrected_word_candidates)
         for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
