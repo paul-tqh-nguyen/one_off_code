@@ -50,21 +50,36 @@ class SupplementedWord2VecModel():
     def __init__(self):
         self.word2vec_model_from_file = WORD2VEC_MODEL_FROM_FILE
         self.supplemental_word2vec_dwimmed_entries_via_synonyms = SUPPLEMENTAL_WORD2VEC_DWIMMED_ENTRIES_VIA_SYNONYMS
-    
-    def __contains__(self, word: str):
-        return word in self.word2vec_model_from_file or word in self.supplemental_word2vec_dwimmed_entries_via_synonyms
+        self.dwimming_methods = [
+            lambda text_string: text_string,
+            lambda text_string: text_string.capitalize(),
+        ]
 
-    def lookup_raw_word(self, word: str):
+    def lookup_word(self, word: str):
+        item = None
         if word in self.word2vec_model_from_file:
             item = self.word2vec_model_from_file[word]
-        elif word in self.supplemental_word2vec_dwimmed_entries_via_synonyms:
-            item = self.supplemental_word2vec_dwimmed_entries_via_synonyms[word]
+        if item is None:
+            if word in self.supplemental_word2vec_dwimmed_entries_via_synonyms:
+                item = self.supplemental_word2vec_dwimmed_entries_via_synonyms[word]
+        return item
+    
+    def __contains__(self, word: str):
+        word_found = False
+        for dwimming_method in self.dwimming_methods:
+            dwimmed_word = dwimming_method(word)
+            word_found = dwimmed_word in self.word2vec_model_from_file or dwimmed_word in self.supplemental_word2vec_dwimmed_entries_via_synonyms
+            if word_found:
+                break
+        return word_found
     
     def __getitem__(self, word: str):
         item = None
-        item = lookup_raw_word(word)
-        if item is None:
-            item = lookup_raw_word(word.capitalize())
+        for dwimming_method in self.dwimming_methods:
+            dwimmed_word = dwimming_method(word)
+            item = self.lookup_word(dwimmed_word)
+            if item is not None:
+                break
         if item is None:
             raise AttributeError('{word} is not in the vocabulary.'.format(word=word))
         return item
