@@ -50,14 +50,12 @@ class SupplementedWord2VecModel():
     def __init__(self):
         self.word2vec_model_from_file = WORD2VEC_MODEL_FROM_FILE
         self.supplemental_word2vec_dwimmed_entries_via_synonyms = SUPPLEMENTAL_WORD2VEC_DWIMMED_ENTRIES_VIA_SYNONYMS
-        
-    def __getattr__(self, word: str):
+    
+    def __contains__(self, word: str):
+        return word in self.word2vec_model_from_file or word in self.supplemental_word2vec_dwimmed_entries_via_synonyms
+    
+    def __getitem__(self, word: str):
         item = None
-        print("word {}".format(word))
-        print("self.word2vec_model_from_file {}".format(self.word2vec_model_from_file))
-        print("word in self.word2vec_model_from_file {}".format(word in self.word2vec_model_from_file))
-        print("self.supplemental_word2vec_dwimmed_entries_via_synonyms {}".format(self.supplemental_word2vec_dwimmed_entries_via_synonyms))
-        print("word in self.supplemental_word2vec_dwimmed_entries_via_synonyms {}".format(word in self.supplemental_word2vec_dwimmed_entries_via_synonyms))
         if word in self.word2vec_model_from_file:
             item = self.word2vec_model_from_file[word]
         elif word in self.supplemental_word2vec_dwimmed_entries_via_synonyms:

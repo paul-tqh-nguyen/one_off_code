@@ -346,10 +346,7 @@ def expand_contractions_and_shorthand_words_with_special_characters(text_string:
 def omg_star_expand(text_string: str) -> str:
     expanded_text_string = text_string
     word_replacement = "omg"
-    print(1)
-    print(word_replacement)
     assert word_replacement in WORD2VEC_MODEL
-    print(2)
     expanded_text_string = re.sub(r"\bomg\w+\b", word_replacement, expanded_text_string, 0, re.IGNORECASE)
     return expanded_text_string
 
@@ -410,19 +407,14 @@ def two_word_concatenation_expand(text_string: str) -> str:
     for word_match in word_match_iterator:
         word = word_match.group()
         if unknown_word_worth_dwimming(word):
-            print("word {}".format(word))
             word_length = len(word)
             min_first_word_length = 3
             min_second_word_length = 3
             if word_length > min_first_word_length+min_second_word_length:
                 split_index_supremum = word_length-(min_second_word_length-1)
-                print("split_index_supremum {}".format(split_index_supremum))
                 for split_index in range(min_first_word_length, split_index_supremum):
                     first_sub_word = word[:split_index]
                     second_sub_word = word[split_index:]
-                    print()
-                    print("first_sub_word {}".format(first_sub_word))
-                    print("second_sub_word {}".format(second_sub_word))
                     if first_sub_word in WORD2VEC_MODEL and second_sub_word in WORD2VEC_MODEL:
                         split_words_combined = first_sub_word+' '+second_sub_word
                         updated_text_string = re.sub(r"\b"+word+r"\b", split_words_combined, updated_text_string, 1)
