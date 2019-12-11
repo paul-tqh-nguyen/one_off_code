@@ -51,7 +51,7 @@ class SupplementedWord2VecModel():
         self.word2vec_model_from_file = WORD2VEC_MODEL_FROM_FILE
         self.supplemental_word2vec_dwimmed_entries_via_synonyms = SUPPLEMENTAL_WORD2VEC_DWIMMED_ENTRIES_VIA_SYNONYMS
         
-    def __getitem__(self, word: str):
+    def __getattr__(self, word: str):
         item = None
         print("word {}".format(word))
         print("self.word2vec_model_from_file {}".format(self.word2vec_model_from_file))
@@ -63,7 +63,7 @@ class SupplementedWord2VecModel():
         elif word in self.supplemental_word2vec_dwimmed_entries_via_synonyms:
             item = self.supplemental_word2vec_dwimmed_entries_via_synonyms[word]
         else:
-            raise KeyError('{word} is not in the vocabulary.'.format(word=word))
+            raise AttributeError('{word} is not in the vocabulary.'.format(word=word))
         return item
 
 WORD2VEC_MODEL = SupplementedWord2VecModel()
