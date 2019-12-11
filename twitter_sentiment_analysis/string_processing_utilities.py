@@ -2,7 +2,7 @@
 
 """
 
-String processsing utilities for text processing.
+String processing utilities for text processing.
 
 Owner : paul-tqh-nguyen
 
@@ -27,20 +27,20 @@ File Organization:
 import string
 import html
 import re
-import spellchecker
 import unicodedata
 import time
 import warnings
 from itertools import chain, combinations
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import List, Tuple, Callable
+from typing import List, Tuple, Callable, Generator
 from word2vec_utilities import WORD2VEC_MODEL, common_word_missing_from_word2vec_model
 
 ###################
 # Misc. Utilities #
 ###################
 
+# @todo use pervasively
 def quiescently_replace_subsequence(old_subsequence: str, new_subsequence: str, text_string: str) -> str:
     updated_text_string = text_string
     for _ in text_string:
@@ -49,6 +49,15 @@ def quiescently_replace_subsequence(old_subsequence: str, new_subsequence: str, 
         else:
             break
     return updated_text_string
+
+UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
+
+def uniq(iterator):
+    previous = UNIQUE_BOGUS_RESULT_IDENTIFIER
+    for value in iterator:
+        if previous != value:
+            yield value
+            previous = value
 
 def powerset(iterable):
     items = list(iterable)
@@ -129,52 +138,50 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
                         break
     return updated_text_string
 
-SPELL_CHECKER = spellchecker.SpellChecker()
-SPELL_CHECKER.word_frequency.load_words([
-    'devo',
-    'hashtag',
-    'stipple',
-    'womp',
-])
+ALPHABETIC_CHARACTERS = set('abcdefghijklmnopqrstuvwxyz') # @todo do we use this?
+VOWELS = {'a','e','i','o','u'}
+
+def _word_splits(word_string: str) -> List[Tuple[str,str]]:
+    return [(word[:i], word[i:]) for i in range(len(word) + 1)]
+
+def _words_with_distance_1(word_string: str, character_set: Set[str]) -> Generator[str, None, None]:
+    '''Can yield duplicates.'''
+    splits = _word_splits(word_string)
+    deletes = (L + R[1:] for L, R in splits if R)
+    transposes = (L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1)
+    replaces = (L + c + R[1:] for L, R in splits if R for c in character_set)
+    inserts = (L + c + R for L, R in splits for c in character_set)
+    return chain(deletes, transposes, replaces, inserts)
+
+def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: int, word_validity_checkers_sorted_by_importance: List[Callable[[str], bool]]) -> str:
+    for word_validity_checker in word_validity_checkers_sorted_by_importance:
+        if word_validity_checker(word_string):
+            return word_string
+    words_yielded_from_most_recently_completed_n = set([word_string])
+    for i in range(n):
+        words_yielded_from_current_n = set()
+        for word_yielded_from_most_recently_completed_n in words_yielded_from_most_recently_completed_n:
+            words_1_distance_from_word_yielded_from_most_recently_completed_n = _words_with_distance_1(word_yielded_from_most_recently_completed_n, character_set)
+            words_yielded_from_current_n.update(words_1_distance_from_word_yielded_from_most_recently_completed_n)
+            for word_validity_checker in word_validity_checkers_sorted_by_importance:
+                for word_yielded_from_current_n in words_1_distance_from_word_yielded_from_most_recently_completed_n:
+                    if word_validity_checker(word_yielded_from_current_n):
+                        return word_yielded_from_current_n
+        words_yielded_from_most_recently_completed_n = words_yielded_from_current_n
+    return word_string
 
 def _remove_consecutive_duplciate_characters(text_string: str) -> str:
-    final_text_string = text_string.lower()
-    characters = set(final_text_string)
-    for _ in text_string:
-        updated_text_string = final_text_string
-        for character in characters:
-            updated_text_string = updated_text_string.replace(character+character,character)
-        if updated_text_string == final_text_string:
-            break
-        else:
-            final_text_string = updated_text_string
+    final_text_string = ''.join(uniq(text_string))
     return final_text_string
 
-def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
-    corrected_word = word_string
+def _possibly_correct_word_via_edit_distance_search(word_string: str) -> str:
     relevant_characters = set(word_string)
-    corrected_word_candidates = SPELL_CHECKER.candidates(corrected_word)
-    if len(corrected_word_candidates) == 1:
-        (sole_candidate, ) = corrected_word_candidates
-        if sole_candidate in WORD2VEC_MODEL:
-            corrected_word = sole_candidate
-    else:
-        word_string_without_consecutive_duplciate_characters = _remove_consecutive_duplciate_characters(word_string)
-        filter_functions = [
-            lambda candidate_word: _remove_consecutive_duplciate_characters(candidate_word) == word_string_without_consecutive_duplciate_characters,
-            lambda candidate_word: set(candidate_word) == relevant_characters,
-            lambda candidate_word: set(candidate_word).issubset(relevant_characters),
-        ]
-        valid_corrected_word_found = False
-        for filter_function in filter_functions:
-            current_word_candidates_for_closeness_tier = filter(filter_function, corrected_word_candidates)
-            for corrected_word_candidate in current_word_candidates_for_closeness_tier:
-                if corrected_word_candidate in WORD2VEC_MODEL:
-                    corrected_word = corrected_word_candidate
-                    valid_corrected_word_found = True
-                    break
-            if valid_corrected_word_found:
-                break
+    word_validity_checkers_sorted_by_importance = [
+        lambda candidate_word: candidate_word in WORD2VEC_MODEL and _remove_consecutive_duplciate_characters(candidate_word) == word_string_without_consecutive_duplciate_characters,
+        lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word) == relevant_characters,
+        lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word).issubset(relevant_characters),
+    ]
+    corrected_word = _search_words_with_distance_n(word_string, relevant_characters, 3, word_validity_checkers_sorted_by_importance)
     return corrected_word
 
 def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
@@ -193,7 +200,7 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
                     if corrected_word in WORD2VEC_MODEL:
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                     else:
-                        corrected_word = _possibly_correct_word_via_spell_checker(corrected_word)
+                        corrected_word = _possibly_correct_word_via_edit_distance_search(corrected_word)
                         if corrected_word in WORD2VEC_MODEL:
                             updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                             break
@@ -489,8 +496,6 @@ def yay_star_expand(text_string: str) -> str:
                 text_string_with_replacements = re.sub(r"\b"+word+r"\b", corrected_word, text_string_with_replacements, 0, re.IGNORECASE)
     return text_string_with_replacements
 
-VOWELS = {'a','e','i','o','u'}
-
 #@profile
 def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     updated_text_string = text_string
@@ -517,11 +522,11 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                     break
             if not reduced_word_is_known:
                 if len(reduced_word)>40:
-                    if 'pneumonoultramicroscopicsilicovolcanoconiosis' in reduced_word:
+                    if 'pneumonoultramicroscopicsilicovolcanoconiosis' in reduced_word: # @todo handle this case
                         break
                     else:
                         exit()
-                reduced_word = _possibly_correct_word_via_spell_checker(reduced_word)
+                reduced_word = _possibly_correct_word_via_edit_distance_search(reduced_word)
                 reduced_word_is_known = reduced_word in WORD2VEC_MODEL
                 if reduced_word_is_known:
                     break
@@ -802,7 +807,8 @@ def separate_punctuation(text_string: str) -> str:
 
 def correct_words_via_spell_checker(text_string: str) -> str:
     word_strings = text_string.split()
-    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else _possibly_correct_word_via_spell_checker(word_string), word_strings)
+    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else
+                                          _possibly_correct_word_via_edit_distance_search(word_string), word_strings)
     updated_text_string = ' '.join(possibly_corrected_word_strings)
     return updated_text_string
 
