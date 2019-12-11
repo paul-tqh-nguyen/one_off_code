@@ -476,13 +476,15 @@ def laughing_expand(text_string: str) -> str:
 def yay_star_expand(text_string: str) -> str:
     text_string_with_replacements = text_string
     word_match_iterator = re.finditer(r"\b\w+\b", text_string, re.IGNORECASE)
+    corrected_word = 'yay'
+    assert corrected_word in WORD2VEC_MODEL
     for word_match in word_match_iterator:
         word = word_match.group()
         if unknown_word_worth_dwimming(word):
-            corrected_word = word
-            corrected_word = quiescently_replace_subsequence('aa', 'a', corrected_word)
-            corrected_word = quiescently_replace_subsequence('yy', 'y', corrected_word)
-            if re.findall('^yay.*$',corrected_word, re.IGNORECASE):
+            dwimmed_word = word
+            dwimmed_word = quiescently_replace_subsequence('aa', 'a', dwimmed_word)
+            dwimmed_word = quiescently_replace_subsequence('yy', 'y', dwimmed_word)
+            if re.findall('^yay.*$',dwimmed_word, re.IGNORECASE):
                 text_string_with_replacements = re.sub(r"\b"+word+r"\b", corrected_word, text_string_with_replacements, 0, re.IGNORECASE)
     return text_string_with_replacements
 
