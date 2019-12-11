@@ -2,7 +2,7 @@
 
 """
 
-This is a module to that imports the WROD2VEC model.
+This is a module to that imports the WORD2VEC model.
 
 Owner : paul-tqh-nguyen
 
