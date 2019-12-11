@@ -183,7 +183,8 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
     old_suffix_len = len(old_suffix)
     for word_match in word_match_iterator:
         word_string = word_match.group()
-        if not word_exception_checker(word_string):
+        word_is_an_exception_and_should_not_be_corrected = word_exception_checker(word_string)
+        if not word_is_an_exception_and_should_not_be_corrected:
             if unknown_word_worth_dwimming(word_string):
                 word_string_normalized = word_string.lower()
                 if re.match(r'^\w+'+re.escape(old_suffix)+r'$', word_string_normalized):
@@ -623,7 +624,7 @@ def ya_you_slang_correction_expand(text_string: str) -> bool:
 
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
     updated_text_string = text_string
-    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed', lambda word_string: len(word_string)>2 and word_string[-2:].lower() != 'tt')
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed', lambda word_string: len(word_string)>2 and word_string[-2:].lower() == 'tt')
     updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'ed', 't')
     return updated_text_string
 
