@@ -111,7 +111,7 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
                             corrected_word = corrected_word[:start_index+offset]+new_subsequence+corrected_word[end_index+offset:]
                         corrected_words.append(corrected_word)
                 else:
-                    warnings.warn("Got an explosive number of subsequences to try")
+                    warnings.warn("Got an explosive number of correction to try when replacing '{old_subsequence}' with '{new_subsequence}' in '{word_string}'.".format(old_subsequence=old_subsequence, new_subsequence=new_subsequence, word_string=word_string))
                     corrected_word = word_string_normalized.replace(old_subsequence, new_subsequence)
                     corrected_words.append(corrected_word)
                 for corrected_word in corrected_words:
@@ -499,8 +499,9 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                 reduced_word = _possibly_correct_word_via_spell_checker(reduced_word)
                 reduced_word_is_known = reduced_word in WORD2VEC_MODEL
                 if reduced_word_is_known:
-                    updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
                     break
+            if reduced_word_is_known:
+                updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
     return updated_text_string
 
 SLANG_WORD_DICTIONARY = {
@@ -517,6 +518,7 @@ SLANG_WORD_DICTIONARY = {
     "luvly" : "lovely",
     "muah" : "me",
     "nvmd" : "nevermind",
+    "rlly" : "really",
     "smthg" : "something",
     "sowwy" : "sorry",
     "woots" : "woot",
@@ -629,17 +631,22 @@ def g_dropping_suffix_expand(text_string: str) -> bool:
     return updated_text_string
 
 DWIMMING_EXPAND_FUNCTIONS = [
+    # Simple Duplicate Letter Corection
     omg_star_expand,
     ugh_star_expand,
     mhm_expand,
     aw_star_expand,
     laughing_expand,
+    
+    # Suffix Correction
     irregular_past_tense_dwimming_expand,
     ies_suffix_expand,
     a_er_suffix_expand,
     r_er_suffix_expand,
     g_dropping_suffix_expand,
     y_suffix_removal_expand,
+    
+    # Subsequence Correction
     q_g_slang_correction_expand,
     f_ph_slang_correction_expand,
     ee_y_slang_correction_expand,
@@ -652,10 +659,16 @@ DWIMMING_EXPAND_FUNCTIONS = [
     oo_u_slang_correction_expand,
     ya_you_slang_correction_expand,
     our_or_british_sland_correction_expand,
+    
+    # Dictionary Based Correction
     slang_word_expand,
+    
+    # Word Splitting Correction
     number_word_concatenation_expand,
     word_number_concatenation_expand,
     two_word_concatenation_expand,
+    
+    # Complex Dupplicate Letter Correction
     duplicate_letters_exaggeration_expand,
 ]
 
