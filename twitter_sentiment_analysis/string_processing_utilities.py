@@ -128,6 +128,19 @@ SPELL_CHECKER.word_frequency.load_words([
     'womp',
 ])
 
+def _remove_consecutive_duplciate_characters(text_string: str) -> str:
+    final_text_string = text_string.lower()
+    characters = set(final_text_string)
+    for _ in text_string:
+        updated_text_string = final_text_string
+        for character in characters:
+            updated_text_string = updated_text_string.replace(character+character,character)
+        if updated_text_string == final_text_string:
+            break
+        else:
+            final_text_string = updated_text_string
+    return final_text_string
+
 def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
     corrected_word = word_string
     relevant_characters = set(word_string)
@@ -137,14 +150,16 @@ def _possibly_correct_word_via_spell_checker(word_string: str) -> str:
         if sole_candidate in WORD2VEC_MODEL:
             corrected_word = sole_candidate
     else:
+        word_string_without_consecutive_duplciate_characters = _remove_consecutive_duplciate_characters(word_string)
         filter_functions = [
-            lambda word: set(word) == relevant_characters,
-            lambda word: set(word).issubset(relevant_characters),
+            lambda candidate_word: _remove_consecutive_duplciate_characters(candidate_word) == word_string_without_consecutive_duplciate_characters,
+            lambda candidate_word: set(candidate_word) == relevant_characters,
+            lambda candidate_word: set(candidate_word).issubset(relevant_characters),
         ]
         valid_corrected_word_found = False
         for filter_function in filter_functions:
-            corrected_word_candidates_that_dont_introduce_new_characters = filter(filter_function, corrected_word_candidates)
-            for corrected_word_candidate in corrected_word_candidates_that_dont_introduce_new_characters:
+            current_word_candidates_for_closeness_tier = filter(filter_function, corrected_word_candidates)
+            for corrected_word_candidate in current_word_candidates_for_closeness_tier:
                 if corrected_word_candidate in WORD2VEC_MODEL:
                     corrected_word = corrected_word_candidate
                     valid_corrected_word_found = True

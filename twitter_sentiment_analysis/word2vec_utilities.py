@@ -26,6 +26,11 @@ COMMON_WORDS_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP = {
     'of': ['about', 'concerning', 'regarding', 'containing', 'wrt', 'referencing', 'like', 'from'],
 }
 
+NAMES_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP = {
+    'alisha': ['alicia'],
+    'elisha': ['alicia'],
+}
+
 MISC_WORDS_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP = {
 }
 
