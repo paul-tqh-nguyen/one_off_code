@@ -26,11 +26,6 @@ COMMON_WORDS_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP = {
     'of': ['about', 'concerning', 'regarding', 'containing', 'wrt', 'referencing', 'like', 'from'],
 }
 
-NAMES_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP = {
-    'alisha': ['alicia'],
-    'elisha': ['alicia'],
-}
-
 MISC_WORDS_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP = {
 }
 
@@ -38,7 +33,6 @@ SUPPLEMENTAL_WORD2VEC_DWIMMED_ENTRIES_VIA_SYNONYMS = dict()
 
 WORD_TO_SYNONYMS_MAPS = (
     COMMON_WORDS_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP,
-    NAMES_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP,
     MISC_WORDS_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP,
 )
 
@@ -59,14 +53,19 @@ class SupplementedWord2VecModel():
     
     def __contains__(self, word: str):
         return word in self.word2vec_model_from_file or word in self.supplemental_word2vec_dwimmed_entries_via_synonyms
-    
-    def __getitem__(self, word: str):
-        item = None
+
+    def lookup_raw_word(self, word: str):
         if word in self.word2vec_model_from_file:
             item = self.word2vec_model_from_file[word]
         elif word in self.supplemental_word2vec_dwimmed_entries_via_synonyms:
             item = self.supplemental_word2vec_dwimmed_entries_via_synonyms[word]
-        else:
+    
+    def __getitem__(self, word: str):
+        item = None
+        item = lookup_raw_word(word)
+        if item is None:
+            item = lookup_raw_word(word.capitalize())
+        if item is None:
             raise AttributeError('{word} is not in the vocabulary.'.format(word=word))
         return item
 

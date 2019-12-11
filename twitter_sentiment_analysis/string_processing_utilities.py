@@ -41,6 +41,15 @@ from word2vec_utilities import WORD2VEC_MODEL, common_word_missing_from_word2vec
 # Misc. Utilities #
 ###################
 
+def quiescently_replace_subsequence(old_subsequence: str, new_subsequence: str, text_string: str) -> str:
+    updated_text_string = text_string
+    for _ in text_string:
+        if old_subsequence in updated_text_string:
+            updated_text_string = updated_text_string.replace(old_subsequence, new_subsequence)
+        else:
+            break
+    return updated_text_string
+
 def powerset(iterable):
     items = list(iterable)
     number_of_items = len(items)
@@ -464,6 +473,19 @@ def laughing_expand(text_string: str) -> str:
                 text_string_with_replacements = re.sub(r"\b"+word+r"\b", 'haha', text_string_with_replacements, 1)
     return text_string_with_replacements
 
+def yay_star_expand(text_string: str) -> str:
+    text_string_with_replacements = text_string
+    word_match_iterator = re.finditer(r"\b\w+\b", text_string, re.IGNORECASE)
+    for word_match in word_match_iterator:
+        word = word_match.group()
+        if unknown_word_worth_dwimming(word):
+            corrected_word = word
+            corrected_word = quiescently_replace_subsequence('aa', 'a', corrected_word)
+            corrected_word = quiescently_replace_subsequence('yy', 'y', corrected_word)
+            if re.findall('^yay.*$',corrected_word, re.IGNORECASE):
+                text_string_with_replacements = re.sub(r"\b"+word+r"\b", corrected_word, text_string_with_replacements, 0, re.IGNORECASE)
+    return text_string_with_replacements
+
 VOWELS = {'a','e','i','o','u'}
 
 #@profile
@@ -637,6 +659,7 @@ DWIMMING_EXPAND_FUNCTIONS = [
     mhm_expand,
     aw_star_expand,
     laughing_expand,
+    yay_star_expand,
     
     # Suffix Correction
     irregular_past_tense_dwimming_expand,
