@@ -16,9 +16,19 @@ my friends can get with ur friends and we can all b friends , shit , we could do
 'Aiight': ['Aii ght'],
 '2at': ['at2'],
 'rinitis': ['rin itis'],
+'400th': ['40th'],
 'Mmyeah': ['myer'],
 'bestttttttttttttttttttt': ['best'],
 'fucccckkkkkkkkkk': ['fuck'],
+'blankeys': ['blan keys'],
+'echolink': ['ech olink'],
+'Fawken': ['fawning'],
+'nausia': ['nasier'],
+'TOTALY': ['TOATLeY'],
+'SQUEEEEE': ['SQUEo'],
+'Pinochio': ['Pino chio'],
+place0holder0token0with0id0tagged0user greaaat , do minee now pleaseeeeee
+place0holder0token0with0id0tagged0user Just Wanted to say " Hi " . I am on the Kitten board as Pinocchio1940 .
 
 Hospitol
 rtannabelle417is
@@ -1732,3 +1742,13 @@ yayayayayyy
 assshooolllleee
 easyer
 glich
+
+
+exec("""
+
+with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
+    training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
+    for iteration_index, row_dict in enumerate(training_data_csv_reader):
+        sentiment_text = row_dict['SentimentText']
+        normalized_words_from_text_string(sentiment_text)
+""")

@@ -50,6 +50,7 @@ class SupplementedWord2VecModel():
         self.dwimming_methods = [
             lambda text_string: text_string,
             lambda text_string: text_string.capitalize(),
+            lambda text_string: text_string.lower(),
         ]
 
     def lookup_word(self, word: str):

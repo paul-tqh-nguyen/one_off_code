@@ -34,7 +34,7 @@ from itertools import chain, combinations
 from contextlib import contextmanager
 from functools import lru_cache
 from typing import List, Tuple, Callable, Generator, Set
-from word2vec_utilities import WORD2VEC_MODEL, common_word_missing_from_word2vec_model
+from word2vec_utilities import WORD2VEC_MODEL
 
 ###################
 # Misc. Utilities #

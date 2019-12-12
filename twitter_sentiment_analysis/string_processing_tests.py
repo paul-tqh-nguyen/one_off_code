@@ -178,14 +178,31 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'UGHHHHHHHHHHHHHHHHHHHHHHHHHHHHH': ['UGH'],
             'realy2': ['realy 2'],
             'GRRRRRRRRREAT': ['GREAT'],
+            'mcnuggets': ['mcnugets'],
+            'Kateyy': ['Katey'],
+            'hahahahahahahahaha': ['haha'],
+            'TWATLIGHT': ['TWAT LIGHT'],
+            'woooohooo': ['woohoo'],
+            'WOOOOOOOOOOOOOOOOOOOOOO': ['WOO'],
+            'PrintChick': ['Print Chick'],
+            'Headbangin': ['headbanging'],
+            'tweetaholics': ['tweet aholics'],
+            'softsynths': ['soft synths'],
+            'wellll': ['wel'],
+            'wazzza': ['waza'],
+            'yoooou': ['yoou'],
+            'yoou': ['yuu'],
             #'': [''],
         }
         for word, acceptable_corrections in word_to_acceptable_corrections_map.items():
             normalized_words = normalized_words_from_text_string(word)
-            self.assertTrue(' '.join(normalized_words) in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections}".format(
-                word=word, acceptable_corrections=acceptable_corrections))
-            self.assertTrue(' '.join(normalized_words) in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections}".format(
-                word=word, acceptable_corrections=acceptable_corrections))
+            for normalized_word in normalized_words:
+                self.assertFalse(unknown_word_worth_dwimming(normalized_word),msg="{normalized_word} is not known.".format(normalized_word=normalized_word))
+            normalized_string = ' '.join(normalized_words)
+            self.assertTrue(normalized_string in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections} but was normalized to '{normalized_string}'".format(
+                word=word,
+                acceptable_corrections=acceptable_corrections,
+                normalized_string=normalized_string))
 
 class testTextStringNormalizationViaTrainingData(unittest.TestCase):
     #@profile
@@ -234,7 +251,7 @@ def run_all_tests():
     loader = unittest.TestLoader()
     tests = [
         loader.loadTestsFromTestCase(testTextStringNormalizationTestCases),
-        loader.loadTestsFromTestCase(testTextStringNormalizationViaTrainingData),
+        # loader.loadTestsFromTestCase(testTextStringNormalizationViaTrainingData),
     ]
     suite = unittest.TestSuite(tests)
     runner = unittest.TextTestRunner(verbosity=2)
