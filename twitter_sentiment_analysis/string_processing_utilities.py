@@ -104,7 +104,6 @@ def word_string_resembles_meaningful_special_character_sequence_placeholder(word
 
 def unknown_word_worth_dwimming(word_string: str) -> bool:
     return not word_string.isnumeric() and \
-        not common_word_missing_from_word2vec_model(word_string) and \
         word_string not in PUNCTUATION_SET and \
         not word_string_resembles_meaningful_special_character_sequence_placeholder(word_string) and \
         word_string not in WORD2VEC_MODEL
@@ -185,25 +184,42 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
         words_yielded_from_most_recently_completed_n = words_yielded_from_current_n
     return word_string
 
+def _word_string_minimized_for_search(word_string: str) -> str:
+    word_string_minimized_for_search = ''
+    most_recent_duplicated_vowel = UNIQUE_BOGUS_RESULT_IDENTIFIER
+    previous_character = UNIQUE_BOGUS_RESULT_IDENTIFIER
+    for character in word_string:
+        if previous_character != character:
+            word_string_minimized_for_search += character
+            previous_character = character
+            most_recent_duplicated_vowel = UNIQUE_BOGUS_RESULT_IDENTIFIER
+        elif character in VOWELS and most_recent_duplicated_vowel != character:
+            word_string_minimized_for_search += character
+            previous_character = character
+            most_recent_duplicated_vowel = character
+    return word_string_minimized_for_search
+
 def _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes(word_string: str) -> str:
     relevant_characters = VOWELS
-    word_string_without_consecutive_duplciate_characters = _remove_consecutive_duplciate_characters(word_string)
+    word_string_without_consecutive_duplicate_characters = _remove_consecutive_duplciate_characters(word_string)
     word_validity_checkers_sorted_by_importance = [
         lambda candidate_word: candidate_word in WORD2VEC_MODEL
     ]
-    corrected_word = _search_words_with_distance_n(word_string_without_consecutive_duplciate_characters, relevant_characters, 2, word_validity_checkers_sorted_by_importance,
+    word_string_minimized_for_search = _word_string_minimized_for_search(word_string)
+    corrected_word = _search_words_with_distance_n(word_string_minimized_for_search, relevant_characters, 2, word_validity_checkers_sorted_by_importance,
                                                    allow_deletes=False, allow_replacement=False)
     return corrected_word
 
 def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word_string: str) -> str:
     relevant_characters = set(word_string)
-    word_string_without_consecutive_duplciate_characters = _remove_consecutive_duplciate_characters(word_string)
+    word_string_without_consecutive_duplicate_characters = _remove_consecutive_duplciate_characters(word_string)
     word_validity_checkers_sorted_by_importance = [
-        lambda candidate_word: candidate_word in WORD2VEC_MODEL and _remove_consecutive_duplciate_characters(candidate_word) == word_string_without_consecutive_duplciate_characters,
+        lambda candidate_word: candidate_word in WORD2VEC_MODEL and _remove_consecutive_duplciate_characters(candidate_word) == word_string_without_consecutive_duplicate_characters,
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word) == relevant_characters,
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word).issubset(relevant_characters),
     ]
-    corrected_word = _search_words_with_distance_n(word_string_without_consecutive_duplciate_characters, relevant_characters, 2, word_validity_checkers_sorted_by_importance)
+    word_string_minimized_for_search = _word_string_minimized_for_search(word_string)
+    corrected_word = _search_words_with_distance_n(word_string_minimized_for_search, relevant_characters, 2, word_validity_checkers_sorted_by_importance)
     return corrected_word
 
 def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
@@ -543,6 +559,7 @@ SLANG_WORD_DICTIONARY = {
     "hungy" : "hungry",
     "hvnt" : "have not",
     "idunno" : "I do not know",
+    "ilym" : "I love you more",
     "ilysfm" : "I love you so fucking much",
     "ily2" : "I love you too",
     "inorite" : "I know right",
@@ -665,6 +682,9 @@ def g_dropping_suffix_expand(text_string: str) -> bool:
     return updated_text_string
 
 DWIMMING_EXPAND_FUNCTIONS = [
+    # Dictionary Based Correction
+    slang_word_expand,
+    
     # Missing Vowel Injection
     correct_words_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes,
     
@@ -698,9 +718,6 @@ DWIMMING_EXPAND_FUNCTIONS = [
     ya_you_slang_correction_expand,
     our_or_british_sland_correction_expand,
     
-    # Dictionary Based Correction
-    slang_word_expand,
-    
     # Word Splitting Correction
     number_word_concatenation_expand,
     word_number_concatenation_expand,
@@ -718,6 +735,28 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
         # print("expand_function {}".format(expand_function))
         expanded_result = expand_function(updated_text_string)
         # print("expanded_result {}".format(expanded_result))
+        if expanded_result != updated_text_string:
+            before = updated_text_string.split()
+            after = expanded_result.split()
+            start_diff_index = None
+            for i,e in enumerate(before):
+                if i<len(after):
+                    if e != after[i]:
+                        start_diff_index = i
+                        break
+            end_diff_index = None
+            for i in range(len(before)):
+                index_from_end = -(i+1)
+                if abs(index_from_end)<=len(after):
+                    if before[index_from_end] != after[index_from_end]:
+                        end_diff_index = index_from_end
+                        break
+            inclusive_end_diff_index = None if end_diff_index == -1 else end_diff_index+1
+            before_string = ' '.join(before[start_diff_index:inclusive_end_diff_index])
+            after_string = ' '.join(after[start_diff_index:inclusive_end_diff_index])
+            print()
+            print(text_string)
+            print("""'{before_string}': ['{after_string}'],""".format(before_string=before_string, after_string=after_string))
         if expanded_result != updated_text_string:
             updated_text_string = expanded_result
             break

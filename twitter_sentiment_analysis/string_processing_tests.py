@@ -29,7 +29,6 @@ import csv
 from datetime import datetime
 from sentiment_analysis import TRAINING_DATA_LOCATION
 from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
-from word2vec_utilities import common_word_missing_from_word2vec_model
 
 ###################
 # Misc. Utilities #
@@ -47,7 +46,6 @@ def identity(args):
 def questionable_normalized_words_from_text_string(text_string: str) -> bool:
     normalized_words = normalized_words_from_text_string(text_string)
     unknown_words_worth_mentioning = normalized_words
-    unknown_words_worth_mentioning = filter(lambda word: not common_word_missing_from_word2vec_model(word), unknown_words_worth_mentioning)
     unknown_words_worth_mentioning = filter(lambda word: unknown_word_worth_dwimming(word), unknown_words_worth_mentioning)
     return list(unknown_words_worth_mentioning)
 
@@ -96,7 +94,7 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'tonighttttt': ['tonight'],
             'looooooooooooooooove': ['loooooove'],
             'bdayyyyyy': ['bday'],
-            'sweeeeeeeet': ['sweeeet'],
+            'sweeeeeeeet': ['sweeeet', 'swete'],
             'arrghh': ['arrgh'],
             'heyyyyyy': ['hey'],
             'wompppppp': ['womp'],
@@ -106,13 +104,87 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'yepyep': ['yep yep'],
             'zelwegger': ['zellwegger'],
             'huhuhu': ['huhu'],
-            'ooooppsss': ['ooops'],
+            'ooooppsss': ['ooops', 'ops'],
             'isumthing': ['sumthing'],
             'drewww': ['drew'],
+            'unforcenatly': ['unfortunatly'],
+            'wehehehehe': ['wehe hehehe'],
+            'annnddd': ['and'],
+            'wutsupppppp': ['wut sup'],
+            'urrrghhhh': ['urgh'],
+            'rref': ['ref'],
+            'yeahhhhhh': ['yeah'],
+            'loool': ['lol'],
+            'hiiiiiiiiiii': ['hi'],
+            'aghhh': ['agh'],
+            'wrks': ['works'],
+            'realllllly': ['realy'],
+            'ppppppplease': ['please'],
+            'wwwwwwhhatt': ['what'],
+            'brkfast': ['breakfast'],
+            'eeeeeekkkkkkkk': ['ek'],
+            'sooooooooooooooooooooooooooooooooooooo': ['so'],
+            'againnnnnnnnnnnn': ['again'],
+            'yaywyyyyyy': ['yay'],
+            'nawwww': ['naw'],
+            'iloveyou': ['ilove you'],
+            'loooooooooove': ['love'],
+            'bleehh': ['bleh'],
+            'amazinggggggggggg': ['amazing'],
+            'luhhh': ['luh'],
+            'ppffttt': ['pft'],
+            'yooooo': ['yo'],
+            'tehehehe': ['hehehehe'],
+            'outtttt': ['out'],
+            'rahaa': ['raha'],
+            'ppppppfffffftttttttt': ['pft'],
+            'suuuxxx': ['sux'],
+            'bestiee': ['bestie'],
+            'eddipuss': ['oedipus'],
+            'Omgaga': ['omg'],
+            '30mins': ['30 mins'],
+            'Juuuuuuuuuuuuuuuuussssst': ['Just'],
+            'wompppp wompp': ['womp womp'],
+            'Waiit': ['Wait'],
+            'Fightiin Wiit': ['Fightin Wit'],
+            'eveer': ['ever'],
+            '120gb': ['120 gb'],
+            'Tigersfan': ['Tigers fan'],
+            'Aww': ['aw'],
+            'Winona4ever': ['Winona 4ever'],
+            'whyy': ['why'],
+            'waahhh': ['waah'],
+            'mmmaybe': ['maybe'],
+            'timessss': ['times'],
+            'Goodniqht': ['Goodnight'],
+            'wantt': ['want'],
+            'celulite': ['cellulite'],
+            'Uprizing': ['Uprising'],
+            'Grac': ['Grace'],
+            'rooooooooomies': ['roomies'],
+            'LMBO': ['lmao'],
+            'sowwy': ['sorry'],
+            'fuuuuck': ['fuuck'],
+            'fuuck': ['fuck'],
+            'Awwwwwh': ['Awh'],
+            'Awh': ['aw'],
+            'mowin': ['mowing'],
+            'Aiigght': ['Aiight'],
+            '18th': ['18 th'],
+            'lazzzzyyyy': ['lazy'],
+            'Huhuhu': ['Huhu'],
+            'NOOOOOOOOOO': ['NO'],
+            'yippeeeee': ['yipee'],
+            'UGHHHHHHHHHHHHHHHHHHHHHHHHHHHHH': ['UGH'],
+            'realy2': ['realy 2'],
+            'GRRRRRRRRREAT': ['GREAT'],
             #'': [''],
         }
         for word, acceptable_corrections in word_to_acceptable_corrections_map.items():
-            self.assertTrue(' '.join(normalized_words_from_text_string(word)) in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections}".format(
+            normalized_words = normalized_words_from_text_string(word)
+            self.assertTrue(' '.join(normalized_words) in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections}".format(
+                word=word, acceptable_corrections=acceptable_corrections))
+            self.assertTrue(' '.join(normalized_words) in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections}".format(
                 word=word, acceptable_corrections=acceptable_corrections))
 
 class testTextStringNormalizationViaTrainingData(unittest.TestCase):
@@ -125,8 +197,6 @@ class testTextStringNormalizationViaTrainingData(unittest.TestCase):
             log_progress = False
             possibly_tqdm = tqdm.tqdm if log_progress else identity
             for iteration_index, row_dict in possibly_tqdm(enumerate(training_data_csv_reader)):
-                if iteration_index < 37255:
-                    continue
                 sentiment_text = row_dict['SentimentText']
                 notes_worth_printing = []
                 questionable_normalized_words_determination_timing_results = dict()
@@ -144,7 +214,7 @@ class testTextStringNormalizationViaTrainingData(unittest.TestCase):
                     latest_failed_string = sentiment_text
                     notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                     notes_worth_printing.append("")
-                if len(notes_worth_printing) != 0 or True:
+                if len(notes_worth_printing) != 0:
                     _logging_print()
                     _logging_print("==============================================================================================")
                     _logging_print("Timestamp: {timestamp}".format(timestamp=datetime.now()))

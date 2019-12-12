@@ -43,9 +43,6 @@ for word_to_synonyms_map in WORD_TO_SYNONYMS_MAPS:
         mean_vector = np.mean(vectors_for_synonyms_as_array, axis=0)
         SUPPLEMENTAL_WORD2VEC_DWIMMED_ENTRIES_VIA_SYNONYMS[word] = mean_vector
 
-def common_word_missing_from_word2vec_model(word_string: str) -> bool:
-    return word_string.lower() in COMMON_WORDS_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP
-
 class SupplementedWord2VecModel():
     def __init__(self):
         self.word2vec_model_from_file = WORD2VEC_MODEL_FROM_FILE
