@@ -40,6 +40,9 @@ from word2vec_utilities import WORD2VEC_MODEL, common_word_missing_from_word2vec
 # Misc. Utilities #
 ###################
 
+def implies(antecedent, consequent) -> bool:
+    return not antecedent or consequent
+
 # @todo use pervasively
 def quiescently_replace_subsequence(old_subsequence: str, new_subsequence: str, text_string: str) -> str:
     updated_text_string = text_string
@@ -767,7 +770,7 @@ def possibly_dwim_unknown_words(text_string: str) -> str:
             break
         else:
             current_text_string = updated_text_string
-    assert premature_exit, "Unknown word DWIMming did not process until quiescence as we processed \"{text_string}\" into \"{current_text_string}\".".format(
+    assert implies(text_string, premature_exit), "Unknown word DWIMming did not process until quiescence as we processed \"{text_string}\" into \"{current_text_string}\".".format(
         text_string=text_string, 
         current_text_string=current_text_string)
     return current_text_string
