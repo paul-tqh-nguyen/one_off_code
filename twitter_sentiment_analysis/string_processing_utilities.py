@@ -464,7 +464,7 @@ def two_word_concatenation_expand(text_string: str) -> str:
             word_length = len(word)
             min_first_word_length = 3
             min_second_word_length = 3
-            if word_length > min_first_word_length+min_second_word_length:
+            if word_length >= min_first_word_length+min_second_word_length:
                 split_index_supremum = word_length-(min_second_word_length-1)
                 for split_index in range(min_first_word_length, split_index_supremum):
                     first_sub_word = word[:split_index]
@@ -747,7 +747,11 @@ DWIMMING_EXPAND_FUNCTIONS = [
 def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
+        # print()
+        # print("updated_text_string {}".format(updated_text_string))
+        # print("expand_function {}".format(expand_function))
         expanded_result = expand_function(updated_text_string)
+        # print("expanded_result {}".format(expanded_result))
         if expanded_result != updated_text_string:
             updated_text_string = expanded_result
             break
@@ -763,7 +767,9 @@ def possibly_dwim_unknown_words(text_string: str) -> str:
             break
         else:
             current_text_string = updated_text_string
-    assert premature_exit, "Unknown word DWIMming did not process until quiescence."
+    assert premature_exit, "Unknown word DWIMming did not process until quiescence as we processed \"{text_string}\" into \"{current_text_string}\".".format(
+        text_string=text_string, 
+        current_text_string=current_text_string)
     return current_text_string
 
 ##########################
