@@ -180,6 +180,7 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
             for word_validity_checker in word_validity_checkers_sorted_by_importance:
                 for word_yielded_from_current_n in words_1_distance_from_word_yielded_from_most_recently_completed_n:
                     if word_validity_checker(word_yielded_from_current_n):
+                        print("word_yielded_from_current_n {}".format(word_yielded_from_current_n))
                         return word_yielded_from_current_n
         words_yielded_from_most_recently_completed_n = words_yielded_from_current_n
     return word_string
@@ -208,6 +209,8 @@ def _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_inserti
     word_string_minimized_for_search = _word_string_minimized_for_search(word_string)
     corrected_word = _search_words_with_distance_n(word_string_minimized_for_search, relevant_characters, 2, word_validity_checkers_sorted_by_importance,
                                                    allow_deletes=False, allow_replacement=False)
+    if not corrected_word in WORD2VEC_MODEL:
+        corrected_word = word_string
     return corrected_word
 
 def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word_string: str) -> str:
@@ -220,6 +223,8 @@ def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word
     ]
     word_string_minimized_for_search = _word_string_minimized_for_search(word_string)
     corrected_word = _search_words_with_distance_n(word_string_minimized_for_search, relevant_characters, 2, word_validity_checkers_sorted_by_importance)
+    if not corrected_word in WORD2VEC_MODEL:
+        corrected_word = word_string
     return corrected_word
 
 def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
@@ -730,12 +735,13 @@ DWIMMING_EXPAND_FUNCTIONS = [
 def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
-        # print()
-        # print("updated_text_string {}".format(updated_text_string))
-        # print("expand_function {}".format(expand_function))
+        print()
+        print("updated_text_string {}".format(updated_text_string))
+        print("expand_function {}".format(expand_function))
         expanded_result = expand_function(updated_text_string)
-        # print("expanded_result {}".format(expanded_result))
-        if expanded_result != updated_text_string:
+        print("expanded_result {}".format(expanded_result))
+        
+        if False: #expanded_result != updated_text_string:
             before = updated_text_string.split()
             after = expanded_result.split()
             start_diff_index = None
