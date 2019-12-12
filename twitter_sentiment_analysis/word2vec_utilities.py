@@ -22,7 +22,7 @@ WORD2VEC_VECTOR_LENGTH = len(WORD2VEC_MODEL_FROM_FILE['queen'])
 COMMON_WORDS_MISSING_FROM_WORD2VEC_MODEL_TO_KNOWN_SYNONYMS_MAP = {
     'a': ['an',],
     'to': ['into', 'toward', 'before', 'on', 'over', 'upon', 'till', 'until', 'so'],
-    'and': ['also', 'furthermore', 'including', 'moreover', 'plus', 'et', 'additionally'],
+    'and': ['andd','also', 'furthermore', 'including', 'moreover', 'plus', 'et', 'additionally'],
     'of': ['about', 'concerning', 'regarding', 'containing', 'wrt', 'referencing', 'like', 'from'],
 }
 

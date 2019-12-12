@@ -191,7 +191,8 @@ def _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_inserti
     word_validity_checkers_sorted_by_importance = [
         lambda candidate_word: candidate_word in WORD2VEC_MODEL
     ]
-    corrected_word = _search_words_with_distance_n(word_string, relevant_characters, 3, word_validity_checkers_sorted_by_importance, allow_deletes=False, allow_replacement=False)
+    corrected_word = _search_words_with_distance_n(word_string_without_consecutive_duplciate_characters, relevant_characters, 2, word_validity_checkers_sorted_by_importance,
+                                                   allow_deletes=False, allow_replacement=False)
     return corrected_word
 
 def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word_string: str) -> str:
@@ -202,7 +203,7 @@ def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word) == relevant_characters,
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word).issubset(relevant_characters),
     ]
-    corrected_word = _search_words_with_distance_n(word_string, relevant_characters, 3, word_validity_checkers_sorted_by_importance)
+    corrected_word = _search_words_with_distance_n(word_string_without_consecutive_duplciate_characters, relevant_characters, 2, word_validity_checkers_sorted_by_importance)
     return corrected_word
 
 def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
@@ -535,44 +536,9 @@ def correct_words_via_edit_distance_search_using_strictly_vowel_insertion_or_tra
     updated_text_string = ' '.join(possibly_corrected_word_strings)
     return updated_text_string
 
-#@profile
-def duplicate_letters_exaggeration_expand(text_string: str) -> str:
-    updated_text_string = text_string
-    word_match_iterator = re.finditer(r"\b\w+\b", text_string)
-    for word_match in word_match_iterator:
-        word_string = word_match.group()
-        if unknown_word_worth_dwimming(word_string):
-            reduced_word = word_string.lower()
-            reduced_word_is_known = False
-            letters = set(reduced_word)
-            for _ in word_string:
-                no_change_happened = True
-                for letter in letters:
-                    letter_probable_upper_limit = 2 if letter in VOWELS else 1
-                    disallowed_letter_duplicate_sequence = letter*(letter_probable_upper_limit+1)
-                    disallowed_letter_duplicate_sequence_replacement = letter*letter_probable_upper_limit
-                    if disallowed_letter_duplicate_sequence in reduced_word:
-                        no_change_happened = False
-                        reduced_word = reduced_word.replace(disallowed_letter_duplicate_sequence, disallowed_letter_duplicate_sequence_replacement)
-                        reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-                        if reduced_word_is_known:
-                            break
-                if no_change_happened or reduced_word_is_known:
-                    break
-            if not reduced_word_is_known:
-                if len(reduced_word)>40:
-                    if 'pneumonoultramicroscopicsilicovolcanoconiosis' in reduced_word: # @todo handle this case
-                        break
-                    else:
-                        exit()
-                reduced_word = _possibly_correct_word_via_edit_distance_search_using_no_new_characters(reduced_word)
-                reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-            if reduced_word_is_known:
-                updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
-    return updated_text_string
-
 SLANG_WORD_DICTIONARY = {
     "bday" : "birthday",
+    "beeyatch" : "biatch",
     "fu2" : "fuck you too",
     "hungy" : "hungry",
     "hvnt" : "have not",
@@ -739,9 +705,6 @@ DWIMMING_EXPAND_FUNCTIONS = [
     number_word_concatenation_expand,
     word_number_concatenation_expand,
     two_word_concatenation_expand,
-    
-    # Complex Dupplicate Letter Correction
-    duplicate_letters_exaggeration_expand,
 
     # Spell Correction via Character Edits
     correct_words_via_edit_distance_search_using_no_new_characters_expand,

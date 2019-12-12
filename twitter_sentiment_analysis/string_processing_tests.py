@@ -84,12 +84,32 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'loooool': ['lol', 'lool'],
             'iiiiittt': ['it', 'iit'],
             'wrkshp': ['workshop'],
-            '': [''],
-            '': [''],
-            '': [''],
-            '': [''],
-            '': [''],
-            '': [''],
+            'heheeheh': ['hehehehe'],
+            'hotellllll': ['hotell'],
+            'yeyyyyyyyy': ['yey'],
+            'thnkz': ['thanks', 'thnks'],
+            'thnkx': ['thanks', 'thnk'],
+            'tomrowo': ['tomorrow', 'tomorow'],
+            'meannnnn': ['mean'],
+            'youuuu': ['you'],
+            'ayoyo': ['ayoo'],
+            'tonighttttt': ['tonight'],
+            'looooooooooooooooove': ['loooooove'],
+            'bdayyyyyy': ['bday'],
+            'sweeeeeeeet': ['sweeeet'],
+            'arrghh': ['arrgh'],
+            'heyyyyyy': ['hey'],
+            'wompppppp': ['womp'],
+            'huhuh': ['zakat'],
+            'yezzzz': ['yessss'],
+            'hinnnnt': ['hint'],
+            'yepyep': ['yep yep'],
+            'zelwegger': ['zellwegger'],
+            'huhuhu': ['huhu'],
+            'ooooppsss': ['ooops'],
+            'isumthing': ['sumthing'],
+            'drewww': ['drew'],
+            #'': [''],
         }
         for word, acceptable_corrections in word_to_acceptable_corrections_map.items():
             self.assertTrue(' '.join(normalized_words_from_text_string(word)) in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections}".format(
@@ -144,7 +164,7 @@ def run_all_tests():
     loader = unittest.TestLoader()
     tests = [
         loader.loadTestsFromTestCase(testTextStringNormalizationTestCases),
-        #loader.loadTestsFromTestCase(testTextStringNormalizationViaTrainingData),
+        loader.loadTestsFromTestCase(testTextStringNormalizationViaTrainingData),
     ]
     suite = unittest.TestSuite(tests)
     runner = unittest.TextTestRunner(verbosity=2)
