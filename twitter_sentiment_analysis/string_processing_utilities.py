@@ -169,7 +169,11 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
     for i in range(n):
         words_yielded_from_current_n = set()
         for word_yielded_from_most_recently_completed_n in words_yielded_from_most_recently_completed_n:
-            words_1_distance_from_word_yielded_from_most_recently_completed_n = set(_words_with_distance_1(word_yielded_from_most_recently_completed_n, character_set))
+            words_1_distance_from_word_yielded_from_most_recently_completed_n = set(_words_with_distance_1(word_yielded_from_most_recently_completed_n, character_set,
+                                                                                                           allow_deletes,
+                                                                                                           allow_transposes,
+                                                                                                           allow_replacement,
+                                                                                                           allow_inserts))
             words_yielded_from_current_n.update(words_1_distance_from_word_yielded_from_most_recently_completed_n)
             for word_validity_checker in word_validity_checkers_sorted_by_importance:
                 for word_yielded_from_current_n in words_1_distance_from_word_yielded_from_most_recently_completed_n:
@@ -198,21 +202,6 @@ def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word
     corrected_word = _search_words_with_distance_n(word_string, relevant_characters, 3, word_validity_checkers_sorted_by_importance)
     return corrected_word
 
-def _possibly_correct_word_via_edit_distance_search(word_string: str) -> str:
-    sorted_correction_methods = [
-        _possibly_correct_word_via_edit_distance_search_using_no_new_characters,
-        _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes,
-    ]
-    number_of_vowels = len([character for character in word_string if character in VOWELS])
-    if number_of_vowels == 0:
-        sorted_correction_methods.reverse()
-    corrected_word = word_string
-    for correction_method in sorted_correction_methods:
-        corrected_word = correction_method(word_string)
-        if corrected_word != word_string:
-            break
-    return corrected_word
-
 def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
     updated_text_string = text_string
     word_match_iterator = re.finditer(r"\b\w+\b", text_string)
@@ -222,7 +211,6 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
         word_is_an_exception_and_should_not_be_corrected = word_exception_checker(word_string)
         if not word_is_an_exception_and_should_not_be_corrected:
             if unknown_word_worth_dwimming(word_string):
-                print("word_string {}".format(word_string))
                 word_string_normalized = word_string.lower()
                 if re.match(r'^\w+'+re.escape(old_suffix)+r'$', word_string_normalized):
                     base_word = word_string_normalized[:-old_suffix_len]
@@ -530,10 +518,17 @@ def yay_star_expand(text_string: str) -> str:
                 text_string_with_replacements = re.sub(r"\b"+word+r"\b", corrected_word, text_string_with_replacements, 0, re.IGNORECASE)
     return text_string_with_replacements
 
-def correct_words_via_spell_checker_expand(text_string: str) -> str:
+def correct_words_via_edit_distance_search_using_no_new_characters_expand(text_string: str) -> str:
     word_strings = text_string.split(' ')
     possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else
-                                          _possibly_correct_word_via_edit_distance_search(word_string), word_strings)
+                                          _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word_string), word_strings)
+    updated_text_string = ' '.join(possibly_corrected_word_strings)
+    return updated_text_string
+
+def correct_words_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes(text_string: str) -> str:
+    word_strings = text_string.split(' ')
+    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else
+                                          _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes(word_string), word_strings)
     updated_text_string = ' '.join(possibly_corrected_word_strings)
     return updated_text_string
 
@@ -701,6 +696,9 @@ def g_dropping_suffix_expand(text_string: str) -> bool:
     return updated_text_string
 
 DWIMMING_EXPAND_FUNCTIONS = [
+    # Missing Vowel Injection
+    correct_words_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes,
+    
     # Simple Duplicate Letter Corection
     omg_star_expand,
     ugh_star_expand,
@@ -739,19 +737,17 @@ DWIMMING_EXPAND_FUNCTIONS = [
     word_number_concatenation_expand,
     two_word_concatenation_expand,
     
-    # Possibly Slow & Explosive Methods
+    # Complex Dupplicate Letter Correction
     duplicate_letters_exaggeration_expand,
-    correct_words_via_spell_checker_expand,
+
+    # Spell Correction via Character Edits
+    correct_words_via_edit_distance_search_using_no_new_characters_expand,
 ]
 
 def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
-        print()
-        print("updated_text_string {}".format(updated_text_string))
-        print("expand_function {}".format(expand_function))
         expanded_result = expand_function(updated_text_string)
-        print("expanded_result {}".format(expanded_result))
         if expanded_result != updated_text_string:
             updated_text_string = expanded_result
             break

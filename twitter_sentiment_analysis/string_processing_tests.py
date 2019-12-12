@@ -70,7 +70,7 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'youget': ['you get'],
             'yesssssssssssssssssssss': ['yes','yesss'],
             'woooooooooooooooooooooo': ['woo','woooooooooo'],
-            '': [''],
+            'rlly': ['rly', 'really', 'rolly',],
             '': [''],
             '': [''],
             '': [''],
