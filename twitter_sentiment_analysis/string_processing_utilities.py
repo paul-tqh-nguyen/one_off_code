@@ -33,7 +33,7 @@ import warnings
 from itertools import chain, combinations
 from contextlib import contextmanager
 from functools import lru_cache
-from typing import List, Tuple, Callable, Generator
+from typing import List, Tuple, Callable, Generator, Set
 from word2vec_utilities import WORD2VEC_MODEL, common_word_missing_from_word2vec_model
 
 ###################
@@ -142,7 +142,7 @@ ALPHABETIC_CHARACTERS = set('abcdefghijklmnopqrstuvwxyz') # @todo do we use this
 VOWELS = {'a','e','i','o','u'}
 
 def _word_splits(word_string: str) -> List[Tuple[str,str]]:
-    return [(word[:i], word[i:]) for i in range(len(word) + 1)]
+    return [(word_string[:i], word_string[i:]) for i in range(len(word_string) + 1)]
 
 def _words_with_distance_1(word_string: str, character_set: Set[str]) -> Generator[str, None, None]:
     '''Can yield duplicates.'''
@@ -161,7 +161,7 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
     for i in range(n):
         words_yielded_from_current_n = set()
         for word_yielded_from_most_recently_completed_n in words_yielded_from_most_recently_completed_n:
-            words_1_distance_from_word_yielded_from_most_recently_completed_n = _words_with_distance_1(word_yielded_from_most_recently_completed_n, character_set)
+            words_1_distance_from_word_yielded_from_most_recently_completed_n = set(_words_with_distance_1(word_yielded_from_most_recently_completed_n, character_set))
             words_yielded_from_current_n.update(words_1_distance_from_word_yielded_from_most_recently_completed_n)
             for word_validity_checker in word_validity_checkers_sorted_by_importance:
                 for word_yielded_from_current_n in words_1_distance_from_word_yielded_from_most_recently_completed_n:
@@ -176,6 +176,7 @@ def _remove_consecutive_duplciate_characters(text_string: str) -> str:
 
 def _possibly_correct_word_via_edit_distance_search(word_string: str) -> str:
     relevant_characters = set(word_string)
+    word_string_without_consecutive_duplciate_characters = _remove_consecutive_duplciate_characters(word_string)
     word_validity_checkers_sorted_by_importance = [
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and _remove_consecutive_duplciate_characters(candidate_word) == word_string_without_consecutive_duplciate_characters,
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word) == relevant_characters,
@@ -528,8 +529,6 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                         exit()
                 reduced_word = _possibly_correct_word_via_edit_distance_search(reduced_word)
                 reduced_word_is_known = reduced_word in WORD2VEC_MODEL
-                if reduced_word_is_known:
-                    break
             if reduced_word_is_known:
                 updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
     return updated_text_string
