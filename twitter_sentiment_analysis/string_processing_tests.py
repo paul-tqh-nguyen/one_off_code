@@ -63,9 +63,29 @@ def _logging_print(input_string='') -> None:
     print(input_string)
     return None
 
-class testTextStringNormalizationViaData(unittest.TestCase):
+class testTextStringNormalizationTestCases(unittest.TestCase):
+    def testTextStringNormalizationTestCases(self):
+        word_to_acceptable_corrections_map = {
+            'yayayayayayayay': ['yay'],
+            'youget': ['you get'],
+            'yesssssssssssssssssssss': ['yes','yesss'],
+            'woooooooooooooooooooooo': ['woo','woooooooooo'],
+            '': [''],
+            '': [''],
+            '': [''],
+            '': [''],
+            '': [''],
+            '': [''],
+            '': [''],
+            '': [''],
+        }
+        for word, acceptable_corrections in word_to_acceptable_corrections_map.items():
+            self.assertTrue(normalized_words_from_text_string(word) in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections}".format(
+                word=word, acceptable_corrections=acceptable_corrections))
+
+class testTextStringNormalizationViaTrainingData(unittest.TestCase):
     #@profile
-    def testTextStringNormalizationViaData(self):
+    def testTextStringNormalizationViaTrainingData(self):
         _logging_print()
         latest_failed_string = None
         with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
@@ -111,7 +131,8 @@ def run_all_tests():
     print()
     loader = unittest.TestLoader()
     tests = [
-        loader.loadTestsFromTestCase(testTextStringNormalizationViaData),
+        loader.loadTestsFromTestCase(testTextStringNormalizationTestCases),
+        loader.loadTestsFromTestCase(testTextStringNormalizationViaTrainingData),
     ]
     suite = unittest.TestSuite(tests)
     runner = unittest.TextTestRunner(verbosity=2)

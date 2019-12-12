@@ -144,16 +144,24 @@ VOWELS = {'a','e','i','o','u'}
 def _word_splits(word_string: str) -> List[Tuple[str,str]]:
     return [(word_string[:i], word_string[i:]) for i in range(len(word_string) + 1)]
 
-def _words_with_distance_1(word_string: str, character_set: Set[str]) -> Generator[str, None, None]:
+def _words_with_distance_1(word_string: str, character_set: Set[str],
+                           allow_deletes: bool=True,
+                           allow_transposes: bool=True,
+                           allow_replacement: bool=True,
+                           allow_inserts: bool=True) -> Generator[str, None, None]:
     '''Can yield duplicates.'''
     splits = _word_splits(word_string)
-    deletes = (L + R[1:] for L, R in splits if R)
-    transposes = (L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1)
-    replaces = (L + c + R[1:] for L, R in splits if R for c in character_set)
-    inserts = (L + c + R for L, R in splits for c in character_set)
+    deletes = (L + R[1:] for L, R in splits if R) if allow_deletes else []
+    transposes = (L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1) if allow_transposes else []
+    replaces = (L + c + R[1:] for L, R in splits if R for c in character_set) if allow_replacement else []
+    inserts = (L + c + R for L, R in splits for c in character_set) if allow_inserts else []
     return chain(deletes, transposes, replaces, inserts)
 
-def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: int, word_validity_checkers_sorted_by_importance: List[Callable[[str], bool]]) -> str:
+def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: int, word_validity_checkers_sorted_by_importance: List[Callable[[str], bool]],
+                                  allow_deletes: bool=True,
+                                  allow_transposes: bool=True,
+                                  allow_replacement: bool=True,
+                                  allow_inserts: bool=True) -> str:
     for word_validity_checker in word_validity_checkers_sorted_by_importance:
         if word_validity_checker(word_string):
             return word_string
@@ -170,11 +178,16 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
         words_yielded_from_most_recently_completed_n = words_yielded_from_current_n
     return word_string
 
-def _remove_consecutive_duplciate_characters(text_string: str) -> str:
-    final_text_string = ''.join(uniq(text_string))
-    return final_text_string
+def _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes(word_string: str) -> str:
+    relevant_characters = VOWELS
+    word_string_without_consecutive_duplciate_characters = _remove_consecutive_duplciate_characters(word_string)
+    word_validity_checkers_sorted_by_importance = [
+        lambda candidate_word: candidate_word in WORD2VEC_MODEL
+    ]
+    corrected_word = _search_words_with_distance_n(word_string, relevant_characters, 3, word_validity_checkers_sorted_by_importance, allow_deletes=False, allow_replacement=False)
+    return corrected_word
 
-def _possibly_correct_word_via_edit_distance_search(word_string: str) -> str:
+def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word_string: str) -> str:
     relevant_characters = set(word_string)
     word_string_without_consecutive_duplciate_characters = _remove_consecutive_duplciate_characters(word_string)
     word_validity_checkers_sorted_by_importance = [
@@ -183,6 +196,21 @@ def _possibly_correct_word_via_edit_distance_search(word_string: str) -> str:
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word).issubset(relevant_characters),
     ]
     corrected_word = _search_words_with_distance_n(word_string, relevant_characters, 3, word_validity_checkers_sorted_by_importance)
+    return corrected_word
+
+def _possibly_correct_word_via_edit_distance_search(word_string: str) -> str:
+    sorted_correction_methods = [
+        _possibly_correct_word_via_edit_distance_search_using_no_new_characters,
+        _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes,
+    ]
+    number_of_vowels = len([character for character in word_string if character in VOWELS])
+    if number_of_vowels == 0:
+        sorted_correction_methods.reverse()
+    corrected_word = word_string
+    for correction_method in sorted_correction_methods:
+        corrected_word = correction_method(word_string)
+        if corrected_word != word_string:
+            break
     return corrected_word
 
 def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, new_suffix: str, word_exception_checker: Callable[[str], bool]=false) -> str:
@@ -194,6 +222,7 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
         word_is_an_exception_and_should_not_be_corrected = word_exception_checker(word_string)
         if not word_is_an_exception_and_should_not_be_corrected:
             if unknown_word_worth_dwimming(word_string):
+                print("word_string {}".format(word_string))
                 word_string_normalized = word_string.lower()
                 if re.match(r'^\w+'+re.escape(old_suffix)+r'$', word_string_normalized):
                     base_word = word_string_normalized[:-old_suffix_len]
@@ -201,11 +230,15 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
                     if corrected_word in WORD2VEC_MODEL:
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                     else:
-                        corrected_word = _possibly_correct_word_via_edit_distance_search(corrected_word)
+                        corrected_word = _possibly_correct_word_via_edit_distance_search_using_no_new_characters(corrected_word)
                         if corrected_word in WORD2VEC_MODEL:
                             updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                             break
     return updated_text_string
+
+def _remove_consecutive_duplciate_characters(text_string: str) -> str:
+    final_text_string = ''.join(uniq(text_string))
+    return final_text_string
 
 ###########################################
 # Meaningful Character Sequence Utilities #
@@ -497,6 +530,13 @@ def yay_star_expand(text_string: str) -> str:
                 text_string_with_replacements = re.sub(r"\b"+word+r"\b", corrected_word, text_string_with_replacements, 0, re.IGNORECASE)
     return text_string_with_replacements
 
+def correct_words_via_spell_checker_expand(text_string: str) -> str:
+    word_strings = text_string.split(' ')
+    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else
+                                          _possibly_correct_word_via_edit_distance_search(word_string), word_strings)
+    updated_text_string = ' '.join(possibly_corrected_word_strings)
+    return updated_text_string
+
 #@profile
 def duplicate_letters_exaggeration_expand(text_string: str) -> str:
     updated_text_string = text_string
@@ -527,7 +567,7 @@ def duplicate_letters_exaggeration_expand(text_string: str) -> str:
                         break
                     else:
                         exit()
-                reduced_word = _possibly_correct_word_via_edit_distance_search(reduced_word)
+                reduced_word = _possibly_correct_word_via_edit_distance_search_using_no_new_characters(reduced_word)
                 reduced_word_is_known = reduced_word in WORD2VEC_MODEL
             if reduced_word_is_known:
                 updated_text_string = re.sub(r"\b"+word_string+r"\b", reduced_word, updated_text_string, 1)
@@ -628,7 +668,8 @@ def ya_you_slang_correction_expand(text_string: str) -> bool:
 
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:
     updated_text_string = text_string
-    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed', lambda word_string: len(word_string)>2 and word_string[-2:].lower() == 'tt')
+    updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 't', 'ed',
+                                                                  lambda word_string: len(word_string)>2 and word_string[-1].lower() == 't' and word_string[-2].lower() in VOWELS.union({'t'}))
     updated_text_string = _correct_words_via_suffix_substitutions(updated_text_string, 'ed', 't')
     return updated_text_string
 
@@ -698,14 +739,19 @@ DWIMMING_EXPAND_FUNCTIONS = [
     word_number_concatenation_expand,
     two_word_concatenation_expand,
     
-    # Complex Dupplicate Letter Correction
+    # Possibly Slow & Explosive Methods
     duplicate_letters_exaggeration_expand,
+    correct_words_via_spell_checker_expand,
 ]
 
 def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
+        print()
+        print("updated_text_string {}".format(updated_text_string))
+        print("expand_function {}".format(expand_function))
         expanded_result = expand_function(updated_text_string)
+        print("expanded_result {}".format(expanded_result))
         if expanded_result != updated_text_string:
             updated_text_string = expanded_result
             break
@@ -804,13 +850,6 @@ def separate_punctuation(text_string: str) -> str:
     final_text_string = simplify_spaces(final_text_string)
     return final_text_string
 
-def correct_words_via_spell_checker(text_string: str) -> str:
-    word_strings = text_string.split()
-    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else
-                                          _possibly_correct_word_via_edit_distance_search(word_string), word_strings)
-    updated_text_string = ' '.join(possibly_corrected_word_strings)
-    return updated_text_string
-
 #@profile
 def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = text_string
@@ -823,7 +862,6 @@ def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = expand_contractions_and_shorthand_words_with_special_characters(normalized_text_string)
     normalized_text_string = separate_punctuation(normalized_text_string)
     normalized_text_string = possibly_dwim_unknown_words(normalized_text_string)
-    normalized_text_string = correct_words_via_spell_checker(normalized_text_string)
     normalized_text_string = lower_case_unknown_words(normalized_text_string)
     normalized_words = normalized_text_string.split(' ')
     return normalized_words
