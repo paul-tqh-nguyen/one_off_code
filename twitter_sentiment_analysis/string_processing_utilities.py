@@ -180,7 +180,6 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
             for word_validity_checker in word_validity_checkers_sorted_by_importance:
                 for word_yielded_from_current_n in words_1_distance_from_word_yielded_from_most_recently_completed_n:
                     if word_validity_checker(word_yielded_from_current_n):
-                        print("word_yielded_from_current_n {}".format(word_yielded_from_current_n))
                         return word_yielded_from_current_n
         words_yielded_from_most_recently_completed_n = words_yielded_from_current_n
     return word_string
@@ -735,12 +734,7 @@ DWIMMING_EXPAND_FUNCTIONS = [
 def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
-        print()
-        print("updated_text_string {}".format(updated_text_string))
-        print("expand_function {}".format(expand_function))
         expanded_result = expand_function(updated_text_string)
-        print("expanded_result {}".format(expanded_result))
-        
         if False: #expanded_result != updated_text_string:
             before = updated_text_string.split()
             after = expanded_result.split()
