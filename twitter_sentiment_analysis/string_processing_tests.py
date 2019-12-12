@@ -86,7 +86,7 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'hotellllll': ['hotell'],
             'yeyyyyyyyy': ['yey'],
             'thnkz': ['thanks', 'thnks'],
-            'thnkx': ['thanks', 'thnk'],
+            'thnkx': ['thanks', 'thnk', 'thnx'],
             'tomrowo': ['tomorrow', 'tomorow'],
             'meannnnn': ['mean'],
             'youuuu': ['you'],
@@ -194,7 +194,13 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'yoou': ['yuu'],
             #'': [''],
         }
+        bad_results = dict()
         for word, acceptable_corrections in word_to_acceptable_corrections_map.items():
+            normalized_words = normalized_words_from_text_string(word)
+            normalized_string = ' '.join(normalized_words)
+            if any(map(unknown_word_worth_dwimming, normalized_words)) or not normalized_string in acceptable_corrections:
+                bad_results[word] = acceptable_corrections
+        for word, acceptable_corrections in bad_results.items():
             normalized_words = normalized_words_from_text_string(word)
             for normalized_word in normalized_words:
                 self.assertFalse(unknown_word_worth_dwimming(normalized_word),msg="{normalized_word} is not known.".format(normalized_word=normalized_word))
