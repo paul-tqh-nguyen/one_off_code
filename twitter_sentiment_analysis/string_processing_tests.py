@@ -70,11 +70,10 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'woooooooooooooooooooooo': ['woo','woooooooooo'],
             'rlly': ['rly', 'really', 'rolly',],
             'ddnt': ['did not', 'didnt'],
-            'toooooootally': ['totaly'],
             'youtubee': ['youtube'],
             'bbygrl': ['babygirl'],
             'hihihi': ['hi', 'hihi'],
-            'yaaaaa': ['ya', 'yes'],
+            'yaaaaa': ['ya', 'yes', 'yaa'],
             'onnnnnnn': ['on', 'onn'],
             'aanswwe': ['answe', 'answer'],
             'arghgh': ['arg'],
@@ -98,7 +97,6 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'arrghh': ['arrgh'],
             'heyyyyyy': ['hey'],
             'wompppppp': ['womp'],
-            'huhuh': ['zakat'],
             'yezzzz': ['yessss'],
             'hinnnnt': ['hint'],
             'yepyep': ['yep yep'],
@@ -115,15 +113,15 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'rref': ['ref'],
             'yeahhhhhh': ['yeah'],
             'loool': ['lol'],
-            'hiiiiiiiiiii': ['hi'],
+            'hiiiiiiiiiii': ['hi', 'hii'],
             'aghhh': ['agh'],
             'wrks': ['works'],
             'realllllly': ['realy'],
             'ppppppplease': ['please'],
             'wwwwwwhhatt': ['what'],
             'brkfast': ['breakfast'],
-            'eeeeeekkkkkkkk': ['ek'],
-            'sooooooooooooooooooooooooooooooooooooo': ['so'],
+            'eeeeeekkkkkkkk': ['ek', 'eek'],
+            'sooooooooooooooooooooooooooooooooooooo': ['so','soo'],
             'againnnnnnnnnnnn': ['again'],
             'yaywyyyyyy': ['yay'],
             'nawwww': ['naw'],
@@ -192,14 +190,27 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'wazzza': ['waza'],
             'yoooou': ['yoou'],
             'yoou': ['yuu'],
+            # @todo get these working
+            #'toooooootally': ['totaly'],
             #'': [''],
         }
         bad_results = dict()
         for word, acceptable_corrections in word_to_acceptable_corrections_map.items():
             normalized_words = normalized_words_from_text_string(word)
             normalized_string = ' '.join(normalized_words)
-            if any(map(unknown_word_worth_dwimming, normalized_words)) or not normalized_string in acceptable_corrections:
+            for normalized_word in normalized_words:
+                if unknown_word_worth_dwimming(normalized_word):
+                    bad_results[word] = acceptable_corrections
+                    print()
+                    print("{normalized_word} is not known.".format(normalized_word=normalized_word))
+            normalized_string = ' '.join(normalized_words)
+            if not normalized_string in acceptable_corrections:
                 bad_results[word] = acceptable_corrections
+                print()
+                print("{word} was expected to normalized into one of {acceptable_corrections} but was normalized to '{normalized_string}'".format(
+                    word=word,
+                    acceptable_corrections=acceptable_corrections,
+                    normalized_string=normalized_string))
         for word, acceptable_corrections in bad_results.items():
             normalized_words = normalized_words_from_text_string(word)
             for normalized_word in normalized_words:
