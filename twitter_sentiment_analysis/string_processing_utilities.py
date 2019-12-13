@@ -576,7 +576,7 @@ def correct_words_via_edit_distance_search_using_no_new_characters_expand(text_s
 
 def correct_words_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes(text_string: str) -> str:
     word_strings = text_string.split(' ')
-    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) or len(set(word_string).intersection(VOWELS)) != 0 else
+    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else
                                           _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes(word_string), word_strings)
     updated_text_string = ' '.join(possibly_corrected_word_strings)
     return updated_text_string
@@ -584,6 +584,7 @@ def correct_words_via_edit_distance_search_using_strictly_vowel_insertion_or_tra
 SLANG_WORD_DICTIONARY = {
     "bday" : "birthday",
     "beeyatch" : "biatch",
+    "fasho" : "for sure", 
     "fu2" : "fuck you too",
     "hungy" : "hungry",
     "hvnt" : "have not",
@@ -763,7 +764,7 @@ DWIMMING_EXPAND_FUNCTIONS = [
     number_word_concatenation_expand,
     word_number_concatenation_expand,
     two_word_concatenation_expand,
-
+    
     # Spell Correction via Character Edits
     correct_words_via_edit_distance_search_using_no_new_characters_expand,
 ]
@@ -798,6 +799,7 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
             before_string = ' '.join(before[start_diff_index:inclusive_end_diff_index])
             after_string = ' '.join(after[start_diff_index:inclusive_end_diff_index])
             print()
+            import os; os.system('cat /home/pnguyen/code/one_off_code/twitter_sentiment_analysis/data/train.csv | grep -i {text_string}'.format(text_string=text_string))
             print(text_string)
             print("""'{before_string}': ['{after_string}'],""".format(before_string=before_string, after_string=after_string))
         if expanded_result != updated_text_string:
