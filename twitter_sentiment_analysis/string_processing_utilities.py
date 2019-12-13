@@ -164,6 +164,13 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
                                   allow_transposes: bool=True,
                                   allow_replacement: bool=True,
                                   allow_inserts: bool=True) -> str:
+    '''
+    print("_search_words_with_distance_n")
+    print("allow_deletes {}".format(allow_deletes))
+    print("allow_transposes {}".format(allow_transposes))
+    print("allow_replacement {}".format(allow_replacement))
+    print("allow_inserts {}".format(allow_inserts))
+    #'''
     for word_validity_checker in word_validity_checkers_sorted_by_importance:
         if word_validity_checker(word_string):
             return word_string
@@ -179,7 +186,12 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
             words_yielded_from_current_n.update(words_1_distance_from_word_yielded_from_most_recently_completed_n)
             for word_validity_checker in word_validity_checkers_sorted_by_importance:
                 for word_yielded_from_current_n in words_1_distance_from_word_yielded_from_most_recently_completed_n:
+                    #print("word_yielded_from_current_n {}".format(word_yielded_from_current_n))
                     if word_validity_checker(word_yielded_from_current_n):
+                        '''
+                        print("i {}".format(i))
+                        print("word_yielded_from_current_n {}".format(word_yielded_from_current_n))
+                        #'''
                         return word_yielded_from_current_n
         words_yielded_from_most_recently_completed_n = words_yielded_from_current_n
     return word_string
@@ -206,6 +218,7 @@ def _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_inserti
         lambda candidate_word: candidate_word in WORD2VEC_MODEL
     ]
     word_string_minimized_for_search = _word_string_minimized_for_search(word_string)
+    #print("_possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes")
     corrected_word = _search_words_with_distance_n(word_string_minimized_for_search, relevant_characters, 2, word_validity_checkers_sorted_by_importance,
                                                    allow_deletes=False, allow_replacement=False)
     if not corrected_word in WORD2VEC_MODEL:
@@ -221,6 +234,10 @@ def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word).issubset(relevant_characters),
     ]
     word_string_minimized_for_search = _word_string_minimized_for_search(word_string)
+    '''
+    print("_possibly_correct_word_via_edit_distance_search_using_no_new_characters")
+    print("word_string {}".format(word_string))
+    #'''
     corrected_word = _search_words_with_distance_n(word_string_minimized_for_search, relevant_characters, 2, word_validity_checkers_sorted_by_importance)
     if not corrected_word in WORD2VEC_MODEL:
         corrected_word = word_string
@@ -242,6 +259,11 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
                     if corrected_word in WORD2VEC_MODEL:
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                     else:
+                        '''
+                        print("_correct_words_via_suffix_substitutions")
+                        print("old_suffix {}".format(old_suffix))
+                        print("new_suffix {}".format(new_suffix))
+                        #'''
                         corrected_word = _possibly_correct_word_via_edit_distance_search_using_no_new_characters(corrected_word)
                         if corrected_word in WORD2VEC_MODEL:
                             updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
@@ -607,6 +629,10 @@ def ee_y_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ie', 'y')
     corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ey', 'y')
     corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'i', 'y')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'y', 'ee')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'y', 'ie')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'y', 'ey')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'y', 'i')
     return corrected_text_string
 
 def z_s_slang_correction_expand(text_string: str) -> bool:
@@ -627,8 +653,12 @@ def f_th_slang_correction_expand(text_string: str) -> bool:
 def d_t_slang_correction_expand(text_string: str) -> bool:
     return _correct_words_via_subsequence_substitutions(text_string, 'd', 't')
 
-def zero_o_slang_correction_expand(text_string: str) -> bool:
-    return _correct_words_via_subsequence_substitutions(text_string, '0', 'o')
+def leet_slang_correction_expand(text_string: str) -> bool:
+    corrected_text_string = text_string
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, '0', 'o')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, '1', 'i')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, '1', 'l')
+    return corrected_text_string
 
 def eight_ate_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = text_string
@@ -700,14 +730,6 @@ DWIMMING_EXPAND_FUNCTIONS = [
     laughing_expand,
     yay_star_expand,
     
-    # Suffix Correction
-    irregular_past_tense_dwimming_expand,
-    ies_suffix_expand,
-    a_er_suffix_expand,
-    r_er_suffix_expand,
-    g_dropping_suffix_expand,
-    y_suffix_removal_expand,
-    
     # Subsequence Correction
     q_g_slang_correction_expand,
     f_ph_slang_correction_expand,
@@ -716,11 +738,19 @@ DWIMMING_EXPAND_FUNCTIONS = [
     ce_se_slang_correction_expand,
     f_th_slang_correction_expand,
     d_t_slang_correction_expand,
-    zero_o_slang_correction_expand,
+    leet_slang_correction_expand,
     eight_ate_slang_correction_expand,
     oo_u_slang_correction_expand,
     ya_you_slang_correction_expand,
     our_or_british_sland_correction_expand,
+    
+    # Suffix Correction
+    irregular_past_tense_dwimming_expand,
+    ies_suffix_expand,
+    a_er_suffix_expand,
+    y_suffix_removal_expand,
+    r_er_suffix_expand,
+    g_dropping_suffix_expand,
     
     # Word Splitting Correction
     number_word_concatenation_expand,
@@ -735,7 +765,13 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
         expanded_result = expand_function(updated_text_string)
-        if False: #expanded_result != updated_text_string:
+        '''
+        print()
+        print("expand_function {}".format(expand_function))
+        print("updated_text_string {}".format(updated_text_string))
+        print("expanded_result {}".format(expanded_result))
+        #'''
+        if expanded_result != updated_text_string:
             before = updated_text_string.split()
             after = expanded_result.split()
             start_diff_index = None

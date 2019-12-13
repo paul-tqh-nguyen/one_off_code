@@ -107,7 +107,6 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'unforcenatly': ['unfortunatly'],
             'wehehehehe': ['wehe hehehe'],
             'annnddd': ['and'],
-            'wutsupppppp': ['wut sup'],
             'urrrghhhh': ['urgh'],
             'rref': ['ref'],
             'yeahhhhhh': ['yeah'],
@@ -184,6 +183,8 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'wazzza': ['waza'],
             'yoooou': ['yoou', 'you'],
             'yoou': ['yuu'],
+            'easyer': ['easier'],
+            'wutsupppppp': ['wut sup'],
             # @todo get these working
             #'arghgh': ['arg'],
             #'toooooootally': ['totaly'],
