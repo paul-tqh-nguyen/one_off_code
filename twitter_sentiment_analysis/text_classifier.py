@@ -32,6 +32,8 @@ import torch.nn.functional as F
 from torch.utils import data
 import csv
 import random
+import time
+import pickle
 from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
@@ -275,9 +277,15 @@ class SentimentAnalysisNetwork(nn.Module):
 # Classifier Definitions #
 ##########################
 
+def get_new_checkpoint_directory():
+    return "/tmp/sentiment_classifier_{timestamp}".format(timestamp=time.strftime("%Y%m%d-%H%M%S"))
+
+UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME = "unseen_word_to_tensor_map.pickle"
+
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
-                 embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=241
+                 embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=241,
+                 checkpoint_directory=get_new_checkpoint_directory(),
     ):
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
@@ -292,24 +300,29 @@ class SentimentAnalysisClassifier():
         training_set, validation_set = determine_training_and_validation_datasets()
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
         self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
+        self.checkpoint_directory = checkpoint_directory
         
-    def print_dataset_stats(self):
+    def print_static_information(self):
+        logging_print("Checkpoint Directory: {checkpoint_directory}".format(checkpoint_directory=self.checkpoint_directory))
         logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
         logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
         
-    def train(self, number_of_epochs_to_train, number_of_iterations_per_status_update=None):
+    def train(self, number_of_epochs_to_train, number_of_iterations_between_checkpoints=None):
         self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
             epoch_loss = 0
             total_number_of_iterations = len(self.training_generator.dataset)
             for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
-                if number_of_iterations_per_status_update is not None:
-                    if (iteration_index != 0) and (iteration_index % number_of_iterations_per_status_update) == 0:
+                if number_of_iterations_between_checkpoints is not None:
+                    if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
                         current_global_epoch=self.number_of_completed_epochs+new_epoch_index
                         logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
                             iteration_index=iteration_index,
                             total_number_of_iterations=total_number_of_iterations,
                             current_global_epoch=current_global_epoch))
+                        sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
+                            timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
+                        self.save(sub_directory_to_checkpoint_in)
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
@@ -325,8 +338,7 @@ class SentimentAnalysisClassifier():
     
     def print_current_state(self, verbose=False):
         logging_print()
-        if verbose:
-            logging_print("===================================================================")
+        logging_print("===================================================================")
         correct_result_number = 0
         for x_batch, y_batch in self.validation_generator:
             assert isinstance(x_batch, tuple)
@@ -351,9 +363,22 @@ class SentimentAnalysisClassifier():
         logging_print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=total_result_number))
         logging_print("Loss per datapoint for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
         logging_print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
-        if verbose:
-            logging_print("===================================================================")
-            
+        logging_print("===================================================================")
+    
+    def save(self, sub_directory_name):
+        directory_to_save_in = os.path.join(self.checkpoint_directory,checkpoint_directory)
+        torch.save(self.model.state_dict(), directory_to_save_in)
+        unseen_word_to_tensor_map_pickled_file_to_be_saved_name = os.path.join(directory_to_save_in, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
+        with open(unseen_word_to_tensor_map_pickled_file_to_be_saved_name, 'wb') as handle:
+            pickle.dump(UNSEEN_WORD_TO_TENSOR_MAP, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    def load(self, saved_directory_name):
+        self.model = SentimentAnalysisNetwork()
+        self.model.load_state_dict(torch.load(saved_directory_name))
+        unseen_word_to_tensor_map_pickled_file_name = os.path.join(saved_directory_name, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
+        with open(unseen_word_to_tensor_map_pickled_file_name, 'rb') as handle:
+            UNSEEN_WORD_TO_TENSOR_MAP = pickle.load(handle)
+
 ###############
 # Main Runner #
 ###############
@@ -366,6 +391,8 @@ def train_classifier(batch_size=1,
                      number_of_attention_heads=2,
                      attention_hidden_size=24,
                      print_verbosely = False,
+                     checkpoint_directory=get_new_checkpoint_directory(),
+                     number_of_epochs = 8,
 ):
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
@@ -374,15 +401,16 @@ def train_classifier(batch_size=1,
         embedding_hidden_size=embedding_hidden_size,
         lstm_dropout_prob=lstm_dropout_prob,
         number_of_attention_heads=number_of_attention_heads,
-        attention_hidden_size=attention_hidden_size)
-    number_of_epochs = 9000
+        attention_hidden_size=attention_hidden_size,
+        checkpoint_directory=checkpoint_directory,
+        number_of_iterations_between_checkpoints = 500,
+    )
     number_of_epochs_between_updates = 1
-    number_of_iterations_between_updates = 500
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
     print()
     print("Starting Training.")
     print()
-    classifier.print_dataset_stats()
+    classifier.print_static_information()
     classifier.print_current_state(print_verbosely)
     for update_index in range(number_of_updates):
         with timer(exitCallback=lambda number_of_seconds: print("Time for epochs {start_epoch_index} to {end_epoch_index}: {time_for_epochs} seconds".format(
@@ -390,7 +418,7 @@ def train_classifier(batch_size=1,
                 end_epoch_index=(update_index+1)*number_of_epochs_between_updates-1,
                 time_for_epochs=number_of_seconds,
         ))):
-            classifier.train(number_of_epochs_between_updates, number_of_iterations_between_updates)
+            classifier.train(number_of_epochs_between_updates, number_of_iterations_between_checkpoints)
             classifier.print_current_state(print_verbosely)
     classifier.print_current_state(print_verbosely)
     print("Training Complete.")

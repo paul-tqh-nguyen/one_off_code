@@ -25,7 +25,7 @@ import unittest
 import tqdm
 import csv
 from datetime import datetime
-from sentiment_analysis import RAW_TRAINING_DATA_LOCATION, RAW_TEST_DATA_LOCATION
+from text_classifier import RAW_TRAINING_DATA_LOCATION, RAW_TEST_DATA_LOCATION
 from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
 from unit_test_data import WORD_TO_ACCEPTABLE_CORRECTIONS_MAP
 from misc_utilities import *
