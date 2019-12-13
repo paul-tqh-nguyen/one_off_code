@@ -12,7 +12,6 @@ File Name : string_processing_utilities.py
 
 File Organization:
 * Imports
-* Misc. Utilities
 * Meaningful Character Sequence Utilities
 * Shorthand with Special Characters & Contraction Expansion
 * Unknown Word DWIMming Utilities
@@ -28,20 +27,15 @@ import string
 import html
 import re
 import unicodedata
-import time
 import warnings
-from itertools import chain, combinations
-from contextlib import contextmanager
-from functools import lru_cache
+from itertools import chain
 from typing import List, Tuple, Callable, Generator, Set
 from word2vec_utilities import WORD2VEC_MODEL
+from misc_utilities import *
 
 ###################
 # Misc. Utilities #
 ###################
-
-def implies(antecedent, consequent) -> bool:
-    return not antecedent or consequent
 
 # @todo use pervasively
 def quiescently_replace_subsequence(old_subsequence: str, new_subsequence: str, text_string: str) -> str:
@@ -52,50 +46,6 @@ def quiescently_replace_subsequence(old_subsequence: str, new_subsequence: str, 
         else:
             break
     return updated_text_string
-
-UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
-
-def uniq(iterator):
-    previous = UNIQUE_BOGUS_RESULT_IDENTIFIER
-    for value in iterator:
-        if previous != value:
-            yield value
-            previous = value
-
-def powerset(iterable):
-    items = list(iterable)
-    number_of_items = len(items)
-    subset_iterable = chain.from_iterable(combinations(items, length) for length in range(1, number_of_items+1))
-    return subset_iterable
-
-@contextmanager
-def timeout(time, functionToExecuteOnTimeout=None):
-    """NB: This cannot be nested."""
-    signal.signal(signal.SIGALRM, _raise_timeout)
-    signal.alarm(time)
-    try:
-        yield
-    except TimeoutError:
-        if functionToExecuteOnTimeout is not None:
-            functionToExecuteOnTimeout()
-    finally:
-        signal.signal(signal.SIGALRM, signal.SIG_IGN)
-
-@contextmanager
-def timer(section_name=None, exitCallback=None):
-    start_time = time.time()
-    yield
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    if exitCallback != None:
-        exitCallback(elapsed_time)
-    elif section_name:
-        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
-    else:
-        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
-
-def false(*args, **kwargs):
-    return False
 
 PLACEHOLDER_PREFIX = "place0holder0token0with0id"
 

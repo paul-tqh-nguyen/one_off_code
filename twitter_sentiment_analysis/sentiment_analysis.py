@@ -35,15 +35,9 @@ import csv
 import random
 from string_processing_utilities import timeout, timer, normalized_words_from_text_string
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
+from misc_utilities import *
 
 UNSEEN_WORD_TO_TENSOR_MAP = {}
-
-###################
-# Misc. Utilities #
-###################
- 
-def dt(var_name_string):
-    return 'print("{{variable}} : {{value}}".format(variable="{var_name_string}", value=locals()["{var_name_string}"]))'.format(var_name_string=var_name_string)
 
 ###############################
 # String <-> Tensor Utilities #
@@ -370,6 +364,7 @@ def main(batch_size=1,
          number_of_attention_heads=2,
          attention_hidden_size=24
 ):
+    exit()
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
         learning_rate=learning_rate,

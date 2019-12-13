@@ -24,18 +24,11 @@ File Organization:
 
 import unittest
 import tqdm
-from contextlib import contextmanager
 import csv
 from datetime import datetime
 from sentiment_analysis import TRAINING_DATA_LOCATION
 from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
-
-###################
-# Misc. Utilities #
-###################
-
-def identity(args):
-    return args
+from misc_utilities import *
 
 #####################
 # Testing Utilities #
@@ -50,14 +43,6 @@ def questionable_normalized_words_from_text_string(text_string: str) -> bool:
 #########
 # Tests #
 #########
-
-LOGGING_FILE = "/home/pnguyen/Desktop/log_from_tests.txt"
-
-def _logging_print(input_string='') -> None:
-    with open(LOGGING_FILE, 'a') as f:
-        f.write(input_string+'\n')
-    print(input_string)
-    return None
 
 WORD_TO_ACCEPTABLE_CORRECTIONS_MAP = {
     'yayayayayayayay': ['yay'],
@@ -327,25 +312,25 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             for normalized_word in normalized_words:
                 if unknown_word_worth_dwimming(normalized_word):
                     bad_results[word] = acceptable_corrections
-                    _logging_print()
-                    _logging_print("{normalized_word} is not known.".format(normalized_word=normalized_word))
+                    logging_print()
+                    logging_print("{normalized_word} is not known.".format(normalized_word=normalized_word))
                     normalized_string = ' '.join(normalized_words)
             if not normalized_string in acceptable_corrections:
                 bad_results[word] = acceptable_corrections
-                _logging_print()
-                _logging_print("{word} was expected to normalized into one of {acceptable_corrections} but was normalized to '{normalized_string}'".format(
+                logging_print()
+                logging_print("{word} was expected to normalized into one of {acceptable_corrections} but was normalized to '{normalized_string}'".format(
                     word=word,
                     acceptable_corrections=acceptable_corrections,
                     normalized_string=normalized_string))
         total_number_of_cases = len(WORD_TO_ACCEPTABLE_CORRECTIONS_MAP)
         number_of_base_cases = len(bad_results)
         percent_of_bad_cases = 100*number_of_base_cases/total_number_of_cases
-        _logging_print("Percent of failure cases is {percent_of_bad_cases}%.".format(percent_of_bad_cases=percent_of_bad_cases))
+        logging_print("Percent of failure cases is {percent_of_bad_cases}%.".format(percent_of_bad_cases=percent_of_bad_cases))
         self.assertTrue(percent_of_bad_cases<10, msg="Percent of failure cases is too high at {percent_of_bad_cases}%.".format(percent_of_bad_cases=percent_of_bad_cases))
 
 class testTextStringNormalizationViaTrainingData(unittest.TestCase):
     def testTextStringNormalizationViaTrainingData(self):
-        _logging_print()
+        logging_print()
         latest_failed_string = None
         with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
             training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
@@ -370,15 +355,15 @@ class testTextStringNormalizationViaTrainingData(unittest.TestCase):
                     notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
                     notes_worth_printing.append("")
                 if len(notes_worth_printing) != 0:
-                    _logging_print()
-                    _logging_print("==============================================================================================")
-                    _logging_print("Timestamp: {timestamp}".format(timestamp=datetime.now()))
-                    _logging_print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
-                    _logging_print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
+                    logging_print()
+                    logging_print("==============================================================================================")
+                    logging_print("Timestamp: {timestamp}".format(timestamp=datetime.now()))
+                    logging_print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
+                    logging_print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
                     for note in notes_worth_printing:
-                        _logging_print(note)
-                    _logging_print("==============================================================================================")
-                    _logging_print()
+                        logging_print(note)
+                    logging_print("==============================================================================================")
+                    logging_print()
         self.assertTrue(latest_failed_string is None, msg="We failed to process the following string (among possibly many): \n{bad_string}".format(bad_string=latest_failed_string))
 
 def run_all_tests():
