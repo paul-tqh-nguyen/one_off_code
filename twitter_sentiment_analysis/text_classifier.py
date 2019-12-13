@@ -53,36 +53,23 @@ UNSEEN_WORD_TO_TENSOR_MAP = {}
 
 def tensor_from_normalized_word(word: str):
     tensor = None
-    print("tensor_from_normalized_word")
-    print("word {}".format(word))
     if word in WORD2VEC_MODEL:
-        print(1)
         tensor = torch.from_numpy(WORD2VEC_MODEL[word])
     elif word in UNSEEN_WORD_TO_TENSOR_MAP:
-        print(2)
         tensor = UNSEEN_WORD_TO_TENSOR_MAP[word]
     elif word_string_resembles_meaningful_special_character_sequence_placeholder(word) or word in PUNCTUATION_SET:
-        print(3)
         tensor = random_word_vector()
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
     else:
-        print(4)
         tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
-    print("tensor.shape {}".format(tensor.shape))
-    print("done")
     return tensor
 
 def tensors_from_text_string(text_string: str):
-    print("tensors_from_text_string")
-    print("text_string {}".format(text_string))
     normalized_words = normalized_words_from_text_string(text_string)
-    print("normalized_words {}".format(normalized_words))
     tensors = map(tensor_from_normalized_word, normalized_words)
     return tensors
 
 def text_string_matrix_from_text_string(text_string: str):
-    print("text_string_matrix_from_text_string")
-    print("text_string {}".format(text_string))
     word_tensors = tuple(tensors_from_text_string(text_string))
     text_string_matrix = torch.stack(word_tensors)
     return text_string_matrix
@@ -269,7 +256,6 @@ class SentimentAnalysisNetwork(nn.Module):
         self.prediction_layers.to(self.device)
         
     def forward(self, text_strings: Iterable[str]):
-        print("text_strings {}".format(text_strings))
         batch_size = len(text_strings)
         text_string_matrices_unpadded = [text_string_matrix_from_text_string(text_string) for text_string in text_strings]
         text_string_batch_matrix = torch.nn.utils.rnn.pad_sequence(text_string_matrices_unpadded)
@@ -293,6 +279,7 @@ class SentimentAnalysisNetwork(nn.Module):
 def get_new_checkpoint_directory():
     return "/tmp/sentiment_classifier_{timestamp}".format(timestamp=time.strftime("%Y%m%d-%H%M%S"))
 
+STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME = "state_dict.pth"
 UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME = "unseen_word_to_tensor_map.pickle"
 
 class SentimentAnalysisClassifier():
@@ -335,8 +322,8 @@ class SentimentAnalysisClassifier():
                             iteration_index=iteration_index,
                             total_number_of_iterations=total_number_of_iterations,
                             current_global_epoch=current_global_epoch))
-                        sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
-                            timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
+                        sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
+                            timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         self.save(sub_directory_to_checkpoint_in)
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
@@ -346,6 +333,9 @@ class SentimentAnalysisClassifier():
                 self.optimizer.step()
             self.most_recent_epoch_loss = epoch_loss
             self.number_of_completed_epochs += 1
+            sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
+                timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
+            self.save(sub_directory_to_checkpoint_in)
             
     def evaluate(self, strings: List[str]):
         self.model.eval()
@@ -382,15 +372,19 @@ class SentimentAnalysisClassifier():
         logging_print("===================================================================")
     
     def save(self, sub_directory_name):
-        directory_to_save_in = os.path.join(self.checkpoint_directory,checkpoint_directory)
-        torch.save(self.model.state_dict(), directory_to_save_in)
+        directory_to_save_in = os.path.join(self.checkpoint_directory, sub_directory_name)
+        if not os.path.exists(directory_to_save_in):
+            os.makedirs(directory_to_save_in)
+        state_dict_file_location = os.path.join(directory_to_save_in, STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME)
+        torch.save(self.model.state_dict(), state_dict_file_location)
         unseen_word_to_tensor_map_pickled_file_to_be_saved_name = os.path.join(directory_to_save_in, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
         with open(unseen_word_to_tensor_map_pickled_file_to_be_saved_name, 'wb') as handle:
             pickle.dump(UNSEEN_WORD_TO_TENSOR_MAP, handle, protocol=pickle.HIGHEST_PROTOCOL)
     
     def load(self, saved_directory_name):
         self.model = SentimentAnalysisNetwork()
-        self.model.load_state_dict(torch.load(saved_directory_name))
+        state_dict_file_location = os.path.join(saved_directory_name, STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME)
+        self.model.load_state_dict(torch.load(state_dict_file_location))
         unseen_word_to_tensor_map_pickled_file_name = os.path.join(saved_directory_name, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
         with open(unseen_word_to_tensor_map_pickled_file_name, 'rb') as handle:
             UNSEEN_WORD_TO_TENSOR_MAP = pickle.load(handle)
@@ -406,9 +400,9 @@ def train_classifier(batch_size=1,
                      lstm_dropout_prob=0.2,
                      number_of_attention_heads=2,
                      attention_hidden_size=24,
-                     print_verbosely = False,
+                     print_verbosely=False,
                      checkpoint_directory=get_new_checkpoint_directory(),
-                     number_of_epochs = 8,
+                     number_of_epochs=8,
                      number_of_iterations_between_checkpoints=1000, 
                      loading_directory=None,
 ):
