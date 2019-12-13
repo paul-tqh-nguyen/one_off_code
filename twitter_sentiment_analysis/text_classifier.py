@@ -121,7 +121,7 @@ RAW_TEST_DATA_LOCATION = "./data/test.csv"
 VALIDATION_DATA_PORTION = 0.001
 
 TRAINING_DATA_ID_TO_DATA_MAP = {}
-TEST_DATA_ID_TO_TEXT_MAP = {} # @todo do something with this
+TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
 PORTION_OF_TRAINING_DATA_TO_USE = 1.0
 
@@ -285,7 +285,7 @@ UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME = "unseen_word_to_tensor_map.p
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=241,
-                 checkpoint_directory=get_new_checkpoint_directory(),
+                 checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None,
     ):
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
@@ -301,6 +301,8 @@ class SentimentAnalysisClassifier():
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
         self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         self.checkpoint_directory = checkpoint_directory
+        if loading_directory is not None:
+            self.load(loading_directory)
         
     def print_static_information(self):
         logging_print("Checkpoint Directory: {checkpoint_directory}".format(checkpoint_directory=self.checkpoint_directory))
@@ -360,7 +362,8 @@ class SentimentAnalysisClassifier():
             if actual_result == expected_result:
                 correct_result_number += 1
         total_result_number = len(self.validation_generator.dataset)
-        logging_print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=total_result_number))
+        logging_print("Truncated Validation Set Correctness Portion: {correct_result_number} / {total_result_number}".format(
+            correct_result_number=correct_result_number, total_result_number=total_result_number))
         logging_print("Loss per datapoint for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
         logging_print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
         logging_print("===================================================================")
@@ -393,6 +396,7 @@ def train_classifier(batch_size=1,
                      print_verbosely = False,
                      checkpoint_directory=get_new_checkpoint_directory(),
                      number_of_epochs = 8,
+                     loading_directory=None:
 ):
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
@@ -404,12 +408,13 @@ def train_classifier(batch_size=1,
         attention_hidden_size=attention_hidden_size,
         checkpoint_directory=checkpoint_directory,
         number_of_iterations_between_checkpoints = 500,
+        loading_directory=loading_directory,
     )
     number_of_epochs_between_updates = 1
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
-    print()
-    print("Starting Training.")
-    print()
+    logging_print()
+    logging_print("Starting Training.")
+    logging_print()
     classifier.print_static_information()
     classifier.print_current_state(print_verbosely)
     for update_index in range(number_of_updates):
@@ -422,6 +427,21 @@ def train_classifier(batch_size=1,
             classifier.print_current_state(print_verbosely)
     classifier.print_current_state(print_verbosely)
     print("Training Complete.")
+
+def test_classifier(loading_directory):
+    classifier = SentimentAnalysisClassifier(loading_directory=loading_directory)
+    logging_print()
+    logging_print("Starting Testing.")
+    logging_print()
+    sentiment_texts = TEST_DATA_ID_TO_TEXT_MAP.values()
+    results, _ = classifier.evaluate(sentiment_texts)
+    for (id, sentiment_text), result in zip(TEST_DATA_ID_TO_TEXT_MAP, results):
+        logging_print("ID: {id}".format(id=id))
+        logging_print("Sentiment Text: {sentiment_text}".format(sentiment_text=sentiment_text))
+        result_as_string = sentiment_result_to_string(result)
+        logging_print("Result: {result_as_string}".format(result_as_string=result_as_string))
+        logging_print()
+    logging_print("Testing Complete.")
 
 def main():
     print("This module contains utilities for sentiment analysis for Twitter data via neural network based text classification.")
