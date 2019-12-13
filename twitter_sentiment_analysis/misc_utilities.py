@@ -19,15 +19,16 @@ File Organization:
 # Imports #
 ###########
 
+import time
+import os
 from contextlib import contextmanager
 from itertools import chain, combinations
-import time
 
 ###################
 # Misc. Utilities #
 ###################
 
-LOGGING_FILE = "~/Desktop/log_from_tests.txt"
+LOGGING_FILE = os.path.expanduser("~/Desktop/log_from_tests.txt")
 
 def logging_print(input_string='') -> None:
     with open(LOGGING_FILE, 'a') as f:
