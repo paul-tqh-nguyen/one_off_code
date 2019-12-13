@@ -584,6 +584,8 @@ def correct_words_via_edit_distance_search_using_strictly_vowel_insertion_or_tra
 SLANG_WORD_DICTIONARY = {
     "bday" : "birthday",
     "beeyatch" : "biatch",
+    "bffl" : "best friend for life",
+    "brb" : "be right back",
     "fasho" : "for sure", 
     "fu2" : "fuck you too",
     "hungy" : "hungry",
@@ -593,6 +595,7 @@ SLANG_WORD_DICTIONARY = {
     "ilysfm" : "I love you so fucking much",
     "ily2" : "I love you too",
     "inorite" : "I know right",
+    'kbye' : "okay bye",
     "lmbo" : "lmao",
     "lul" : "lol",
     "luvly" : "lovely",
@@ -686,6 +689,8 @@ def ya_you_slang_correction_expand(text_string: str) -> bool:
     corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'ya', 'your')
     corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'cha', 'you')
     corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'cha', 'your')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'cho', 'you')
+    corrected_text_string = _correct_words_via_subsequence_substitutions(corrected_text_string, 'cho', 'your')
     return corrected_text_string
 
 def irregular_past_tense_dwimming_expand(text_string: str) -> bool:

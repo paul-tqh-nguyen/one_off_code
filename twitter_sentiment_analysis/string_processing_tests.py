@@ -172,6 +172,13 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'GRRRRRRRRREAT': ['GREAT'],
             'Kateyy': ['Katey'],
             'hahahahahahahahaha': ['haha'],
+            'gentalmen': ['gentlemen'],
+            'suicidle': ['suicidal'],
+            'BB10': ['BB 10'],
+            'daaaark': ['dark'],
+            'AHAHA': ['haha'],
+            'couteract': ['counteract'],
+            'brokeded': ['broked'],
             'TWATLIGHT': ['TWAT LIGHT'],
             'woooohooo': ['woohoo'],
             'WOOOOOOOOOOOOOOOOOOOOOO': ['WOO', 'WO'],
@@ -179,9 +186,21 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'Headbangin': ['headbanging'],
             'tweetaholics': ['tweet aholics'],
             'softsynths': ['soft synths'],
+            'wannaget': ['wanna get'],
+            'Adamz': ['Adams'],
+            'uuuuuuuugh': ['uggh'],
+            'lifeeee': ['life eee', 'life'],
+            'COLORADOOOO': ['COLORADO'],
+            'ooooon': ['oon'],
             'wellll': ['wel'],
+            'forrrrreal': ['foreal'],
+            'heeaad': ['headd'],
+            'starss': ['stars'],
+            'Day26': ['Day 26'],
+            'anymorrrrrrrree': ['anymore'],
             'wazzza': ['waza'],
             'yoooou': ['yoou', 'you', 'youu'],
+            '30th': ['30 th'],
             'yoou': ['you', 'yuu'],
             'Feeeling': ['Feeling'],
             'foreverr': ['forever'],
@@ -256,10 +275,20 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'akkkkk': ['ak'],
             'twavatar': ['avatar'],
             'mcflys': ['mcfly'],
+            'congrates': ['congrats'],
+            '41st': ['41 st'],
+            'Brb': ['be right back'],
             'summerrrrrrr': ['sumer', 'summer'],
+            'WHAHHH': ['WHAH'],
+            'wanaget': ['wana get'],
+            'picturee': ['picture'],
+            'Adamzz': ['Adams'],
+            'Boored': ['bored'],
             'lmao0o': ['lmao'],
             'sko0l': ['skool'],
             'yuuuuus': ['yus'],
+            'thtink': ['think'],
+            'difficults': ['difficult'],
             'helaas': ['hellas'],
             'sorrrrrry': ['sorry'],
             'twiiterific': ['twiiter ific'],
@@ -277,7 +306,16 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'tenticle': ['tentacle'],
             'thans': ['thanks'],
             'heehee': ['haha'],
+            'waaahh': ['waah'],
             'luuuuuh': ['luh'],
+            'getcho': ['get yo', 'get ya', 'getcha'],
+            'wtff': ['wtf'],
+            'shittee': ['shitty'],
+            'Mat1234': ['Mat 1234'],
+            'hooome': ['home'],
+            '10am': ['10 am'],
+            'EPICCC': ['EPIC'],
+            'saadd': ['saad'],
             #'': [''],
         }
         bad_results = dict()
@@ -347,14 +385,22 @@ def run_all_tests():
     print()
     print("Running our test suite.")
     print()
-    loader = unittest.TestLoader()
-    tests = [
-        loader.loadTestsFromTestCase(testTextStringNormalizationTestCases),
-        # loader.loadTestsFromTestCase(testTextStringNormalizationViaTrainingData),
-    ]
-    suite = unittest.TestSuite(tests)
-    runner = unittest.TextTestRunner(verbosity=2)
-    runner.run(suite)
+    while True:
+        loader = unittest.TestLoader()
+        tests = [
+            loader.loadTestsFromTestCase(testTextStringNormalizationTestCases),
+            # loader.loadTestsFromTestCase(testTextStringNormalizationViaTrainingData),
+        ]
+        suite = unittest.TestSuite(tests)
+        runner = unittest.TextTestRunner(verbosity=2)
+        runner.run(suite)
+        try:
+            from importlib import reload ; import string_processing_utilities; reload(string_processing_utilities)
+        except Exception as err:
+            print("err {}".format(err))
+            input("Press [Enter] to continue.")
+            pass
+        input("Press [Enter] to run tests again.")
     print()
     print("Test run complete.")
     print()
