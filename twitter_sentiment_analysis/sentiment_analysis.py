@@ -292,8 +292,8 @@ class SentimentAnalysisClassifier():
         self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         
     def print_dataset_stats(self):
-        print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
-        print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
+        logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
+        logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
         
     def train(self, number_of_epochs_to_train, number_of_iterations_per_status_update=None):
         self.model.train()
@@ -304,7 +304,7 @@ class SentimentAnalysisClassifier():
                 if number_of_iterations_per_status_update is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_per_status_update) == 0:
                         current_global_epoch=self.number_of_completed_epochs+new_epoch_index
-                        print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
+                        logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
                             iteration_index=iteration_index,
                             total_number_of_iterations=total_number_of_iterations,
                             current_global_epoch=current_global_epoch))
@@ -322,9 +322,9 @@ class SentimentAnalysisClassifier():
         return self.model(strings)
     
     def print_current_state(self, verbose=False):
-        print()
+        logging_print()
         if verbose:
-            print("===================================================================")
+            logging_print("===================================================================")
         correct_result_number = 0
         for x_batch, y_batch in self.validation_generator:
             assert isinstance(x_batch, tuple)
@@ -337,20 +337,20 @@ class SentimentAnalysisClassifier():
             actual_result = sentiment_result_to_string(y_batch_predicted[0])
             if verbose:
                 input_string = x_batch[0]
-                print("Input: {x}".format(x=input_string))
-                print("Expected Output: {x}".format(x=expected_result))
-                print("Actual Output: {x}".format(x=actual_result))
-                print("Raw Expected Output: {x}".format(x=y_datum))
-                print("Raw Actual Output: {x}".format(x=y_batch_predicted))
-                print("\n")
+                logging_print("Input: {x}".format(x=input_string))
+                logging_print("Expected Output: {x}".format(x=expected_result))
+                logging_print("Actual Output: {x}".format(x=actual_result))
+                logging_print("Raw Expected Output: {x}".format(x=y_datum))
+                logging_print("Raw Actual Output: {x}".format(x=y_batch_predicted))
+                logging_print("\n")
             if actual_result == expected_result:
                 correct_result_number += 1
         total_result_number = len(self.validation_generator.dataset)
-        print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=total_result_number))
-        print("Loss per datapoint for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
-        print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
+        logging_print("Truncated Correctness Portion: {correct_result_number} / {total_result_number}".format(correct_result_number=correct_result_number, total_result_number=total_result_number))
+        logging_print("Loss per datapoint for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
+        logging_print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
         if verbose:
-            print("===================================================================")
+            logging_print("===================================================================")
             
 ###############
 # Main Runner #
