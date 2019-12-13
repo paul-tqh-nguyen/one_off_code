@@ -71,7 +71,6 @@ def tensors_from_text_string(text_string: str):
 
 def text_string_matrix_from_text_string(text_string: str):
     word_tensors = tuple(tensors_from_text_string(text_string))
-    print("word_tensors {}".format(word_tensors))
     text_string_matrix = torch.stack(word_tensors)
     return text_string_matrix
 
@@ -188,8 +187,7 @@ def determine_training_and_validation_datasets():
 class SelfAttentionLayers(nn.Module):
     def __init__(self, input_size=400, number_of_attention_heads=2, hidden_size=None):
         super().__init__()
-        if __debug__: # only used for assertion checking
-            self.number_of_attention_heads = number_of_attention_heads
+        self.number_of_attention_heads = number_of_attention_heads
         if hidden_size == None:
             hidden_size = input_size // 2
         self.attention_layers = nn.Sequential(OrderedDict([
@@ -258,7 +256,6 @@ class SentimentAnalysisNetwork(nn.Module):
         self.prediction_layers.to(self.device)
         
     def forward(self, text_strings: Iterable[str]):
-        print("text_strings {}".format(text_strings))
         batch_size = len(text_strings)
         text_string_matrices_unpadded = [text_string_matrix_from_text_string(text_string) for text_string in text_strings]
         text_string_batch_matrix = torch.nn.utils.rnn.pad_sequence(text_string_matrices_unpadded)
@@ -350,7 +347,6 @@ class SentimentAnalysisClassifier():
             assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
             y_datum = y_batch[0]
             expected_result = sentiment_result_to_string(y_datum)
-            print("x_batch {}".format(x_batch))
             y_batch_predicted, _ = self.evaluate(x_batch)
             assert y_batch_predicted.shape == (1,NUMBER_OF_SENTIMENTS)
             actual_result = sentiment_result_to_string(y_batch_predicted[0])
@@ -421,7 +417,7 @@ def train_classifier(batch_size=1,
     classifier.print_static_information()
     classifier.print_current_state(print_verbosely)
     for update_index in range(number_of_updates):
-        with timer(exitCallback=lambda number_of_seconds: print("Time for epochs {start_epoch_index} to {end_epoch_index}: {time_for_epochs} seconds".format(
+        with timer(exitCallback=lambda number_of_seconds: logging_print("Time for epochs {start_epoch_index} to {end_epoch_index}: {time_for_epochs} seconds".format(
                 start_epoch_index=update_index*number_of_epochs_between_updates,
                 end_epoch_index=(update_index+1)*number_of_epochs_between_updates-1,
                 time_for_epochs=number_of_seconds,
@@ -429,7 +425,7 @@ def train_classifier(batch_size=1,
             classifier.train(number_of_epochs_between_updates, number_of_iterations_between_checkpoints)
             classifier.print_current_state(print_verbosely)
     classifier.print_current_state(print_verbosely)
-    print("Training Complete.")
+    logging_print("Training Complete.")
 
 def test_classifier(loading_directory):
     classifier = SentimentAnalysisClassifier(loading_directory=loading_directory)
