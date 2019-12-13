@@ -58,7 +58,7 @@ def tensor_from_normalized_word(word: str):
     elif word in UNSEEN_WORD_TO_TENSOR_MAP:
         tensor = UNSEEN_WORD_TO_TENSOR_MAP[word]
     elif word_string_resembles_meaningful_special_character_sequence_placeholder(word):
-        tensor = random_word_vector
+        tensor = random_word_vector()
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
     else:
         tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
