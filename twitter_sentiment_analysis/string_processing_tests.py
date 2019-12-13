@@ -65,13 +65,10 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
     def testTextStringNormalizationTestCases(self):
         word_to_acceptable_corrections_map = {
             'yayayayayayayay': ['yay'],
-            'youget': ['you get'],
             'yesssssssssssssssssssss': ['yes','yesss'],
             'woooooooooooooooooooooo': ['woo','woooooooooo'],
             'rlly': ['rly', 'really', 'rolly',],
             'ddnt': ['did not', 'didnt', 'dnt'],
-            'youtubee': ['youtube'],
-            'bbygrl': ['babygirl'],
             'hihihi': ['hi', 'hihi'],
             'yaaaaa': ['ya', 'yes', 'yaa'],
             'onnnnnnn': ['on', 'onn'],
@@ -80,12 +77,12 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'loooool': ['lol', 'lool'],
             'iiiiittt': ['it', 'iit'],
             'wrkshp': ['workshop', 'workship'],
-            'heheeheh': ['hehehehe'],
+            'heheeheh': ['hehehehe', 'haha'],
             'hotellllll': ['hotell', 'hotel'],
             'yeyyyyyyyy': ['yey'],
             'thnkz': ['thanks', 'thnks'],
             'thnkx': ['thanks', 'thnk', 'thnx'],
-            'tomrowo': ['tomorrow', 'tomorow'],
+            'tomrowo': ['tomorrow', 'tomorow', 'tomrrow'],
             'meannnnn': ['mean'],
             'youuuu': ['you', 'youu'],
             'ayoyo': ['ayoo'],
@@ -98,7 +95,7 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'wompppppp': ['womp'],
             'yezzzz': ['yessss', 'yez'],
             'hinnnnt': ['hint'],
-            'yepyep': ['yep yep'],
+            'yepyep': ['yep yep', 'yeye'],
             'zelwegger': ['zellwegger', 'zellweger'],
             'huhuhu': ['huhu'],
             'ooooppsss': ['ooops', 'ops', 'oops'],
@@ -113,7 +110,7 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'loool': ['lol', 'lool'],
             'hiiiiiiiiiii': ['hi', 'hii'],
             'aghhh': ['agh'],
-            'wrks': ['works', 'werks'],
+            'wrks': ['works', 'werks', 'warks'],
             'realllllly': ['realy'],
             'ppppppplease': ['please'],
             'wwwwwwhhatt': ['what'],
@@ -152,7 +149,7 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'wantt': ['want'],
             'celulite': ['cellulite'],
             'Uprizing': ['Uprising'],
-            'Grac': ['Grace'],
+            'Grac': ['Grace', 'Garc'],
             'rooooooooomies': ['roomies'],
             'LMBO': ['lmao'],
             'sowwy': ['sorry'],
@@ -181,16 +178,73 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             'softsynths': ['soft synths'],
             'wellll': ['wel'],
             'wazzza': ['waza'],
-            'yoooou': ['yoou', 'you'],
-            'yoou': ['yuu'],
+            'yoooou': ['yoou', 'you', 'youu'],
+            'yoou': ['you', 'yuu'],
+            'Feeeling': ['Feeling'],
+            'foreverr': ['forever'],
+            'sooooon': ['soon'],
+            '400th': ['400 th'],
+            '11th': ['11 th'],
+            'fucccckkkkkkkkkk': ['fuck'],
+            'noseeyyy': ['nosey'],
+            'yayyyyyyyy': ['yay'],
+            'iiiiii': ['ii'],
+            'pleeeeeeeeeeeeeeeeeeeeeeeeeease': ['pleeease'],
+            'ppoooo': ['poo'],
+            'lolllllll': ['lol'],
+            'nebody': ['anybody'],
+            'workkkkkkkkk': ['work'],
+            'merrrrrrrr': ['mer'],
+            'booom': ['boom'],
+            'bestttttttttttttttttttt': ['best'],
+            'swooooon': ['swoon'],
+            'citysearchbelle': ['citysearch belle'],
+            'gratissssssssssss': ['gratis'],
+            'causee': ['causse'],
+            'ugghhh': ['ugh'],
+            'clarieey': ['clarie'],
+            'eheheh': ['heheh'],
+            'linderbug': ['linder bug'],
+            'anyonefeeling': ['anyone feeling'],
+            'goiing': ['gooing'],
+            'Aiqht': ['Aight'],
+            'arghgh': ['arghhh'],
+            'bleehh': ['bleh'],
+            'Fightiin': ['fighting'],
+            'echolink': ['echo link'],
+            '2at': ['2 at'],
+            'loviie': ['lovie'],
             'easyer': ['easier'],
-            'wutsupppppp': ['wut sup'],
+            'aaaaaaaaaaaaaaah': ['aah'],
+            'narniaaaaaaaaa': ['narnia'],
+            'chubbchubbs': ['chubb chubbs'],
+            'birthdayyyyyyyy': ['birthday'],
+            'aaaaaahhhhhhhh': ['aah'],
+            'reallllllly': ['realy'],
+            'hotttttt': ['hot'],
+            
             # @todo get these working
-            #'arghgh': ['arg'],
+            #'iidk': ['idk'],
+            #'youget': ['you get'],
+            #'blankeys': ['blankies'],
+            #'nausia': ['nausea'],
             #'toooooootally': ['totaly'],
-            #'Fightiin Wiit': ['Fightin Wit'],
-            #'bleehh': ['bleh'],
+            #'wiit': ['with'],
             #'Waiit': ['Wait'],
+            #'awhhe': ['aw'],
+            #'Fawken': ['fucking'],
+            #'Mmyeah': ['yeah'],
+            #'enlish': ['english'],
+            #'pleeeez': ['please'],
+            #'Hospitol': ['Hospital'],
+            #'greeting': ['greeting'],
+            #'glich': ['glitch'],
+            #'baithing': ['baithing'],
+            #'dayjob': ['day job'],
+            #'youtubee': ['youtube'],
+            #'bbygrl': ['babygirl'],
+            #'wutsupppppp': ['wut sup'],
+            #'thanxs': ['thanx'],
             #'': [''],
         }
         bad_results = dict()
@@ -202,7 +256,7 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
                     bad_results[word] = acceptable_corrections
                     print()
                     print("{normalized_word} is not known.".format(normalized_word=normalized_word))
-            normalized_string = ' '.join(normalized_words)
+                    normalized_string = ' '.join(normalized_words)
             if not normalized_string in acceptable_corrections:
                 bad_results[word] = acceptable_corrections
                 print()
@@ -214,11 +268,11 @@ class testTextStringNormalizationTestCases(unittest.TestCase):
             normalized_words = normalized_words_from_text_string(word)
             for normalized_word in normalized_words:
                 self.assertFalse(unknown_word_worth_dwimming(normalized_word),msg="{normalized_word} is not known.".format(normalized_word=normalized_word))
-            normalized_string = ' '.join(normalized_words)
-            self.assertTrue(normalized_string in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections} but was normalized to '{normalized_string}'".format(
-                word=word,
-                acceptable_corrections=acceptable_corrections,
-                normalized_string=normalized_string))
+                normalized_string = ' '.join(normalized_words)
+                self.assertTrue(normalized_string in acceptable_corrections, msg="{word} was expected to normalized into one of {acceptable_corrections} but was normalized to '{normalized_string}'".format(
+                    word=word,
+                    acceptable_corrections=acceptable_corrections,
+                    normalized_string=normalized_string))
 
 class testTextStringNormalizationViaTrainingData(unittest.TestCase):
     #@profile

@@ -1,69 +1,21 @@
 
-awhhe
-Feeeling
-foreverr
-sooooon
-'anyonefeeling': ['anyonefeling'],
-'nebody': ['enbody'],
-'baithing': ['bai thing'],
-'CONGRATZ': ['CON GRATZ'],
-'11th': ['1th'],
-'JLew': ['Lew'],
-'Aiqht': ['ahhed'],
-'loviie': ['olivie'],
-'goiing': ['goi ing'],
-my friends can get with ur friends and we can all b friends , shit , we could do this every weeknd place0holder0token0with0id0elipsis Aiigght ? with coop n the crew
-'Aiight': ['Aii ght'],
-'2at': ['at2'],
-'rinitis': ['rin itis'],
-'400th': ['40th'],
-'Mmyeah': ['myer'],
-'bestttttttttttttttttttt': ['best'],
-'fucccckkkkkkkkkk': ['fuck'],
-'blankeys': ['blan keys'],
-'echolink': ['ech olink'],
-'Fawken': ['fawning'],
-'nausia': ['nasier'],
-'TOTALY': ['TOATLeY'],
-'SQUEEEEE': ['SQUEo'],
-'Pinochio': ['Pino chio'],
-place0holder0token0with0id0tagged0user greaaat , do minee now pleaseeeeee
-place0holder0token0with0id0tagged0user Just Wanted to say " Hi " . I am on the Kitten board as Pinocchio1940 .
 
-Hospitol
+
 rtannabelle417is
-tbff
-ktulu
-dayjob
-noseeyyy
-yayyyyyyyy
-iiiiii
 mcnuggets
 budapest
-thanxs
 rumahkoki
 bleeuugh
-pleeeeeeeeeeeeeeeeeeeeeeeeeease
-ppoooo
-requiemforthephantom edenoftheeast
-aannnna
-lolllllll
-harpot seru
-pleeeez
-booom
-nachsitzen
-workkkkkkkkk
-merrrrrrrr
-lollll
-sachovnicovu
-enlish
-prebacila prebacim
-thnks
-oxoxoxoxoxox
-assholedness
-gehle
-croyd
-waxonian
+grrrrrrrr
+blogg
+yosemite
+pminawon
+thhhhh
+pleeeaasseee
+brenner
+spilt
+ddub
+lubb
 sinnnnngggggg
 meninaa beeijo
 concrastinate
@@ -75,10 +27,8 @@ youuuuuu
 gefeliciteeeeerd
 youuuu
 schraeder
-lollllll
 dawsy
 ragoons
-yesssssssssssssssssssss
 ankur
 afb
 helaas
@@ -98,18 +48,14 @@ keturunan
 youuuu
 1280x800
 supppp
-iloveyou
-aaaaaaaaaaaaaaah
 frenh
 bandmemers
-lolololololol
 fenway
 kodithe vellipothaa
 wksp
 uuuu
 kesini kesini
 cad4life
-narniaaaaaaaaa
 perpetuous
 magari
 pml
@@ -119,29 +65,21 @@ uuuup
 lebowski
 nivea
 cetaphil
-reallllllly hotttttt
-chubbchubbs
 jaylor
 einai
-birthdayyyyyyyy
 vhss
-loooooooooooool
-youuuuuuu
 p90x
-ahhhhhhhhhhhhh
-coooool
 dufour
 nellys
 rhtc
 malawi
-aaaaaahhhhhhhh
 xtammydevine
 tyre
 bugis
 zsofi
-youuuuuuuuuuuuuuuuuuuu
 spitalfield
-mzfreeproductcode notavailableincountry
+mzfreeproductcode
+ notavailableincountry
 beeteedubs
 jbfbdb
 thab6eny
@@ -165,8 +103,6 @@ bhejtee
 mmps
 weeeeeeek
 khorovats
-hiiiiiiii
-goooooooooooooooooooooooo
 arizzard
 yonger
 gatau pindah
@@ -195,10 +131,8 @@ skwisgar
 heehee
 suhushdus
 soalnya
-youuuuuuuuuu
 itripsyouapart
 alysheea
-beeeeeeen
 mweh
 litres
 lyyyyyyyyyyyyyysssssssssssssss
@@ -229,8 +163,6 @@ ohmygosh
 harder2replace
 sphygmomonanometers
 uhohhhhhh
-youuuuuuu
-hiiiiiii
 stavros
 kanker
 member2member
@@ -245,7 +177,6 @@ oberhausen
 coltrane
 whyyyyyyyy
 mewithoutyou
-hurtttttttttttttttttttttttttttt
 jonasbrothersworldtour
 waaahh
 gogogansters
@@ -418,7 +349,6 @@ rumoor
 centre
 zahedan
 whaaaaat
-nonizineatgmaildotcom
 munny munny
 beeeee
 bdgs
@@ -1354,7 +1284,6 @@ wowowee
 amazinggggggggg
 makaaaan
 lobbbbbesss tooossss frannnnn
-causee
 girrrrrrrl
 norohna
 menahmenah
@@ -1513,17 +1442,6 @@ riiiiight
 ayoooo
 shetingness
 archiejoepet
-grrrrrrrr
-blogg
-yosemite
-pminawon
-thhhhh
-pleeeaasseee
-brenner
-spilt
-ddub
-lubb
-youuuuuuuu
 uspokoite
 bacardi
 smeezy
@@ -1715,20 +1633,6 @@ adis
 wdybt
 ofcrse asgnmnt
 arrggh
-alix
-kiro
-ceebs
-robitussin
-gratissssssssssss
-crzlilho
-causee
-swooooon
-ugghhh
-memmer
-tripp
-iidk
-witzig
-citysearchbelle
 kodiak
 diamo
 mactheripper
@@ -1737,18 +1641,3 @@ investmentmultiplicator
 thnks
 weget
 oncontextmenu
-eheheh
-linderbug
-yayayayayyy
-assshooolllleee
-glich
-
-
-exec("""
-
-with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
-    training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
-    for iteration_index, row_dict in enumerate(training_data_csv_reader):
-        sentiment_text = row_dict['SentimentText']
-        normalized_words_from_text_string(sentiment_text)
-""")
