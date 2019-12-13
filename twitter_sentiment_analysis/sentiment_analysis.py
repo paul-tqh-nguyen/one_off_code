@@ -27,6 +27,10 @@ import argparse
 ###############
 
 def main():
+    '''
+    Example Use:
+        ./sentiment_analysis.py -train-sentiment-analyzer -number-of-epochs 3 -batch-size  1 -learning-rate 1e-2 -attenion-regularization-penalty-multiplicative-factor 0.1 -embedding-hidden-size 200 -lstm-dropout-prob 0.2 -number-of-attention-heads 2 -attention-hidden-size 24 -number-of-iterations-between-checkpoints 1 -checkpoint-directory /tmp/checkpoint_dir
+    '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-run-tests', action='store_true', help="To run all of the tests.")
     parser.add_argument('-train-sentiment-analyzer', action='store_true', help="To run the training process for the sentiment analyzer.")
@@ -39,9 +43,9 @@ def main():
     parser.add_argument('-lstm-dropout-prob', help="Sentiment analyzer LSTM dropout probability.")
     parser.add_argument('-number-of-attention-heads', help="Sentiment analyzer number of attention heads.")
     parser.add_argument('-attention-hidden-size', help="Sentiment analyzer attention hidden size.")
+    parser.add_argument('-number-of-iterations-between-checkpoints', help="Sentiment analyzer number of iterations between checkpoints.")
     parser.add_argument('-checkpoint-directory', help="Sentiment analyzer checkpoint directory for saving intermediate results.")
     parser.add_argument('-loading-directory', help="Sentiment analyzer directory for loading a model.")
-    parser.add_argument('-number-of-iterations-between-checkpoints', help="Sentiment analyzer number of iterations between checkpoints.")
     args = parser.parse_args()
     arg_to_value_map = vars(args)
     test_run_requested = arg_to_value_map['run_tests']
@@ -69,7 +73,7 @@ def main():
         if arg_to_value_map['embedding_hidden_size'] is not None:
             keyword_args['embedding_hidden_size'] = int(arg_to_value_map['embedding_hidden_size'])
         if arg_to_value_map['attenion_regularization_penalty_multiplicative_factor'] is not None:
-            keyword_args['attenion_regularization_penalty_multiplicative_factor'] = int(arg_to_value_map['attenion_regularization_penalty_multiplicative_factor'])
+            keyword_args['attenion_regularization_penalty_multiplicative_factor'] = float(arg_to_value_map['attenion_regularization_penalty_multiplicative_factor'])
         if arg_to_value_map['lstm_dropout_prob'] is not None:
             keyword_args['lstm_dropout_prob'] = float(arg_to_value_map['lstm_dropout_prob'])
         if arg_to_value_map['batch_size'] is not None:
