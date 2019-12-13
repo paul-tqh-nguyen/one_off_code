@@ -71,6 +71,7 @@ def tensors_from_text_string(text_string: str):
 
 def text_string_matrix_from_text_string(text_string: str):
     word_tensors = tuple(tensors_from_text_string(text_string))
+    print("word_tensors {}".format(word_tensors))
     text_string_matrix = torch.stack(word_tensors)
     return text_string_matrix
 
@@ -257,6 +258,7 @@ class SentimentAnalysisNetwork(nn.Module):
         self.prediction_layers.to(self.device)
         
     def forward(self, text_strings: Iterable[str]):
+        print("text_strings {}".format(text_strings))
         batch_size = len(text_strings)
         text_string_matrices_unpadded = [text_string_matrix_from_text_string(text_string) for text_string in text_strings]
         text_string_batch_matrix = torch.nn.utils.rnn.pad_sequence(text_string_matrices_unpadded)
@@ -348,6 +350,7 @@ class SentimentAnalysisClassifier():
             assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
             y_datum = y_batch[0]
             expected_result = sentiment_result_to_string(y_datum)
+            print("x_batch {}".format(x_batch))
             y_batch_predicted, _ = self.evaluate(x_batch)
             assert y_batch_predicted.shape == (1,NUMBER_OF_SENTIMENTS)
             actual_result = sentiment_result_to_string(y_batch_predicted[0])
@@ -396,7 +399,8 @@ def train_classifier(batch_size=1,
                      print_verbosely = False,
                      checkpoint_directory=get_new_checkpoint_directory(),
                      number_of_epochs = 8,
-                     loading_directory=None:
+                     number_of_iterations_between_checkpoints=1000, 
+                     loading_directory=None,
 ):
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
@@ -407,7 +411,6 @@ def train_classifier(batch_size=1,
         number_of_attention_heads=number_of_attention_heads,
         attention_hidden_size=attention_hidden_size,
         checkpoint_directory=checkpoint_directory,
-        number_of_iterations_between_checkpoints = 500,
         loading_directory=loading_directory,
     )
     number_of_epochs_between_updates = 1
