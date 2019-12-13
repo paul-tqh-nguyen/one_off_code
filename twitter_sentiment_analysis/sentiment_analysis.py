@@ -12,7 +12,6 @@ File Name : sentiment_analysis.py
 
 File Organization:
 * Imports
-* Misc. Utilities
 * String <-> Tensor Utilities
 * Model Definitions
 * Dataset Definitions
@@ -37,27 +36,23 @@ from string_processing_utilities import timeout, timer, normalized_words_from_te
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
 
-UNSEEN_WORD_TO_TENSOR_MAP = {}
-
 ###############################
 # String <-> Tensor Utilities #
 ###############################
 
-def random_vector_for_unseen_word():
-    """Similar to Parikh et al. 2016"""
+def random_word_vector():
     random_vector = torch.randn(WORD2VEC_VECTOR_LENGTH)
     normalized_vector = F.normalize(random_vector, dim=0)
     return normalized_vector
+
+WORD_VECTOR_FOR_UNKNOWN_WORD = random_word_vector()
 
 def tensor_from_normalized_word(word: str):
     tensor = None
     if word in WORD2VEC_MODEL:
         tensor = torch.from_numpy(WORD2VEC_MODEL[word])
-    elif word in UNSEEN_WORD_TO_TENSOR_MAP:
-        tensor = UNSEEN_WORD_TO_TENSOR_MAP[word]
     else:
-        tensor = random_vector_for_unseen_word()
-        UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
+        tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
     return tensor
 
 def tensors_from_text_string(text_string: str):

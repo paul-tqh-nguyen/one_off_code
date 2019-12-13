@@ -37,7 +37,6 @@ from misc_utilities import *
 # Misc. Utilities #
 ###################
 
-# @todo use pervasively
 def quiescently_replace_subsequence(old_subsequence: str, new_subsequence: str, text_string: str) -> str:
     updated_text_string = text_string
     for _ in text_string:
@@ -90,7 +89,6 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
                         break
     return updated_text_string
 
-ALPHABETIC_CHARACTERS = set('abcdefghijklmnopqrstuvwxyz') # @todo do we use this?
 VOWELS = {'a','e','i','o','u'}
 NUMERIC_CHARACTERS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 
@@ -406,7 +404,6 @@ def number_word_concatenation_expand(text_string: str) -> str:
             replacement = numeric_half_match+' '+alphabetic_half
             expanded_text_string = re.sub(r"\b"+match+r"\b", replacement, expanded_text_string, 1)
     return expanded_text_string
-
 
 def word_number_concatenation_expand(text_string: str) -> str:
     expanded_text_string = text_string
