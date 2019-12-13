@@ -25,7 +25,7 @@ import unittest
 import tqdm
 import csv
 from datetime import datetime
-from sentiment_analysis import TRAINING_DATA_LOCATION
+from sentiment_analysis import RAW_TRAINING_DATA_LOCATION, RAW_TEST_DATA_LOCATION
 from string_processing_utilities import unknown_word_worth_dwimming, normalized_words_from_text_string, PUNCTUATION_SET, timer
 from unit_test_data import WORD_TO_ACCEPTABLE_CORRECTIONS_MAP
 from misc_utilities import *
@@ -73,38 +73,39 @@ class testTextStringNormalizationViaTrainingData(unittest.TestCase):
     def testTextStringNormalizationViaTrainingData(self):
         logging_print()
         latest_failed_string = None
-        with open(TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
-            training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
-            log_progress = False
-            possibly_tqdm = tqdm.tqdm if log_progress else identity
-            for iteration_index, row_dict in possibly_tqdm(enumerate(training_data_csv_reader)):
-                sentiment_text = row_dict['SentimentText']
-                notes_worth_printing = []
-                questionable_normalized_words_determination_timing_results = dict()
-                def note_questionable_normalized_words_determination_timing_results(time):
-                    questionable_normalized_words_determination_timing_results['total_time'] = time
-                with timer(exitCallback=note_questionable_normalized_words_determination_timing_results):
-                    questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
-                questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
-                max_tolerable_number_of_seconds_for_processing = 1.0 
-                if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
-                    notes_worth_printing.append("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
-                        questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
-                        sentiment_text=sentiment_text))
-                if len(questionable_normalized_words) != 0:
-                    latest_failed_string = sentiment_text
-                    notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
-                    notes_worth_printing.append("")
-                if len(notes_worth_printing) != 0:
-                    logging_print()
-                    logging_print("==============================================================================================")
-                    logging_print("Timestamp: {timestamp}".format(timestamp=datetime.now()))
-                    logging_print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
-                    logging_print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
-                    for note in notes_worth_printing:
-                        logging_print(note)
-                    logging_print("==============================================================================================")
-                    logging_print()
+        for csv_file_location in (RAW_TRAINING_DATA_LOCATION, RAW_TEST_DATA_LOCATION):
+            with open(csv_file_location, encoding='ISO-8859-1') as csv_file:
+                training_data_csv_reader = csv.DictReader(csv_file, delimiter=',')
+                log_progress = False
+                possibly_tqdm = tqdm.tqdm if log_progress else identity
+                for iteration_index, row_dict in possibly_tqdm(enumerate(training_data_csv_reader)):
+                    sentiment_text = row_dict['SentimentText']
+                    notes_worth_printing = []
+                    questionable_normalized_words_determination_timing_results = dict()
+                    def note_questionable_normalized_words_determination_timing_results(time):
+                        questionable_normalized_words_determination_timing_results['total_time'] = time
+                    with timer(exitCallback=note_questionable_normalized_words_determination_timing_results):
+                        questionable_normalized_words = questionable_normalized_words_from_text_string(sentiment_text)
+                    questionable_normalized_words_determination_time = questionable_normalized_words_determination_timing_results['total_time']
+                    max_tolerable_number_of_seconds_for_processing = 1.0 
+                    if questionable_normalized_words_determination_time > max_tolerable_number_of_seconds_for_processing:
+                        notes_worth_printing.append("Processing the following string took {questionable_normalized_words_determination_time} to process:\n{sentiment_text}\n".format(
+                            questionable_normalized_words_determination_time=questionable_normalized_words_determination_time,
+                            sentiment_text=sentiment_text))
+                    if len(questionable_normalized_words) != 0:
+                        latest_failed_string = sentiment_text
+                        notes_worth_printing.append("\nWe encountered these unhandled words: {questionable_normalized_words}".format(questionable_normalized_words=questionable_normalized_words))
+                        notes_worth_printing.append("")
+                    if len(notes_worth_printing) != 0:
+                        logging_print()
+                        logging_print("==============================================================================================")
+                        logging_print("Timestamp: {timestamp}".format(timestamp=datetime.now()))
+                        logging_print("Current Iteration: {iteration_index}".format(iteration_index=iteration_index))
+                        logging_print("Current Sentence Being Processed:\n{sentiment_text}\n".format(sentiment_text=sentiment_text))
+                        for note in notes_worth_printing:
+                            logging_print(note)
+                        logging_print("==============================================================================================")
+                        logging_print()
         self.assertTrue(latest_failed_string is None, msg="We failed to process the following string (among possibly many): \n{bad_string}".format(bad_string=latest_failed_string))
 
 def run_all_tests():
