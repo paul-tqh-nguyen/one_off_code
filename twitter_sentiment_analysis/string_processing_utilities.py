@@ -576,7 +576,7 @@ def correct_words_via_edit_distance_search_using_no_new_characters_expand(text_s
 
 def correct_words_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes(text_string: str) -> str:
     word_strings = text_string.split(' ')
-    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) else
+    possibly_corrected_word_strings = map(lambda word_string: word_string if not unknown_word_worth_dwimming(word_string) or len(set(word_string).intersection(VOWELS)) != 0 else
                                           _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes(word_string), word_strings)
     updated_text_string = ' '.join(possibly_corrected_word_strings)
     return updated_text_string
