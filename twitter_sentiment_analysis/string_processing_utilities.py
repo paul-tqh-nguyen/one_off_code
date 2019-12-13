@@ -165,14 +165,6 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
                                   allow_transposes: bool=True,
                                   allow_replacement: bool=True,
                                   allow_inserts: bool=True) -> str:
-    '''
-    print("_search_words_with_distance_n")
-    print("word_string {}".format(word_string))
-    print("allow_deletes {}".format(allow_deletes))
-    print("allow_transposes {}".format(allow_transposes))
-    print("allow_replacement {}".format(allow_replacement))
-    print("allow_inserts {}".format(allow_inserts))
-    #'''
     for word_validity_checker in word_validity_checkers_sorted_by_importance:
         if word_validity_checker(word_string):
             return word_string
@@ -188,12 +180,7 @@ def _search_words_with_distance_n(word_string: str, character_set: Set[str], n: 
             words_yielded_from_current_n.update(words_1_distance_from_word_yielded_from_most_recently_completed_n)
             for word_validity_checker in word_validity_checkers_sorted_by_importance:
                 for word_yielded_from_current_n in words_1_distance_from_word_yielded_from_most_recently_completed_n:
-                    #print("word_yielded_from_current_n {}".format(word_yielded_from_current_n))
                     if word_validity_checker(word_yielded_from_current_n):
-                        '''
-                        print("i {}".format(i))
-                        print("word_yielded_from_current_n {}".format(word_yielded_from_current_n))
-                        #'''
                         return word_yielded_from_current_n
         words_yielded_from_most_recently_completed_n = words_yielded_from_current_n
     return word_string
@@ -221,7 +208,6 @@ def _possibly_correct_word_via_edit_distance_search_using_strictly_vowel_inserti
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and sorted(word_string.lower()) != sorted(candidate_word.lower())
     ]
     word_string_minimized_for_search = _word_string_minimized_for_search(word_string)
-    #print("_possibly_correct_word_via_edit_distance_search_using_strictly_vowel_insertion_or_transposes")
     corrected_word = _search_words_with_distance_n(word_string_minimized_for_search, relevant_characters, 2, word_validity_checkers_sorted_by_importance,
                                                    allow_deletes=False, allow_replacement=False)
     if not corrected_word in WORD2VEC_MODEL:
@@ -237,10 +223,6 @@ def _possibly_correct_word_via_edit_distance_search_using_no_new_characters(word
         lambda candidate_word: candidate_word in WORD2VEC_MODEL and set(candidate_word).issubset(relevant_characters),
     ]
     word_string_minimized_for_search = _word_string_minimized_for_search(word_string)
-    '''
-    print("_possibly_correct_word_via_edit_distance_search_using_no_new_characters")
-    print("word_string {}".format(word_string))
-    #'''
     corrected_word = _search_words_with_distance_n(word_string_minimized_for_search, relevant_characters, edit_distance, word_validity_checkers_sorted_by_importance)
     if not corrected_word in WORD2VEC_MODEL:
         corrected_word = word_string
@@ -262,11 +244,6 @@ def _correct_words_via_suffix_substitutions(text_string: str, old_suffix: str, n
                     if corrected_word in WORD2VEC_MODEL:
                         updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
                     else:
-                        '''
-                        print("_correct_words_via_suffix_substitutions")
-                        print("old_suffix {}".format(old_suffix))
-                        print("new_suffix {}".format(new_suffix))
-                        #'''
                         corrected_word = _possibly_correct_word_via_edit_distance_search_using_no_new_characters(corrected_word, 1)
                         if corrected_word in WORD2VEC_MODEL:
                             updated_text_string = re.sub(r"\b"+word_string+r"\b", corrected_word, updated_text_string, 1)
@@ -778,12 +755,6 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
     updated_text_string = text_string
     for expand_function in DWIMMING_EXPAND_FUNCTIONS:
         expanded_result = expand_function(updated_text_string)
-        '''
-        print()
-        print("expand_function {}".format(expand_function))
-        print("updated_text_string {}".format(updated_text_string))
-        print("expanded_result {}".format(expanded_result))
-        #'''
         if expanded_result != updated_text_string:
             before = updated_text_string.split()
             after = expanded_result.split()
@@ -803,10 +774,6 @@ def perform_single_pass_to_dwim_unknown_words(text_string: str) -> str:
             inclusive_end_diff_index = None if end_diff_index == -1 else end_diff_index+1
             before_string = ' '.join(before[start_diff_index:inclusive_end_diff_index])
             after_string = ' '.join(after[start_diff_index:inclusive_end_diff_index])
-            print()
-            import os; os.system('cat /home/pnguyen/code/one_off_code/twitter_sentiment_analysis/data/train.csv | grep -i {text_string}'.format(text_string=text_string))
-            print(text_string)
-            print("""'{before_string}': ['{after_string}'],""".format(before_string=before_string, after_string=after_string))
         if expanded_result != updated_text_string:
             updated_text_string = expanded_result
             break
@@ -907,7 +874,6 @@ def separate_punctuation(text_string: str) -> str:
     final_text_string = simplify_spaces(final_text_string)
     return final_text_string
 
-#@profile
 def normalized_words_from_text_string(text_string: str) -> List[str]:
     normalized_text_string = text_string
     normalized_text_string = html.unescape(normalized_text_string)
