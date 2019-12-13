@@ -34,7 +34,7 @@ import csv
 import random
 import time
 import pickle
-from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder
+from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
 
@@ -53,23 +53,36 @@ UNSEEN_WORD_TO_TENSOR_MAP = {}
 
 def tensor_from_normalized_word(word: str):
     tensor = None
+    print("tensor_from_normalized_word")
+    print("word {}".format(word))
     if word in WORD2VEC_MODEL:
+        print(1)
         tensor = torch.from_numpy(WORD2VEC_MODEL[word])
     elif word in UNSEEN_WORD_TO_TENSOR_MAP:
+        print(2)
         tensor = UNSEEN_WORD_TO_TENSOR_MAP[word]
-    elif word_string_resembles_meaningful_special_character_sequence_placeholder(word):
+    elif word_string_resembles_meaningful_special_character_sequence_placeholder(word) or word in PUNCTUATION_SET:
+        print(3)
         tensor = random_word_vector()
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
     else:
+        print(4)
         tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
+    print("tensor.shape {}".format(tensor.shape))
+    print("done")
     return tensor
 
 def tensors_from_text_string(text_string: str):
+    print("tensors_from_text_string")
+    print("text_string {}".format(text_string))
     normalized_words = normalized_words_from_text_string(text_string)
+    print("normalized_words {}".format(normalized_words))
     tensors = map(tensor_from_normalized_word, normalized_words)
     return tensors
 
 def text_string_matrix_from_text_string(text_string: str):
+    print("text_string_matrix_from_text_string")
+    print("text_string {}".format(text_string))
     word_tensors = tuple(tensors_from_text_string(text_string))
     text_string_matrix = torch.stack(word_tensors)
     return text_string_matrix
@@ -256,6 +269,7 @@ class SentimentAnalysisNetwork(nn.Module):
         self.prediction_layers.to(self.device)
         
     def forward(self, text_strings: Iterable[str]):
+        print("text_strings {}".format(text_strings))
         batch_size = len(text_strings)
         text_string_matrices_unpadded = [text_string_matrix_from_text_string(text_string) for text_string in text_strings]
         text_string_batch_matrix = torch.nn.utils.rnn.pad_sequence(text_string_matrices_unpadded)

@@ -38,10 +38,11 @@ WORD_TO_SYNONYMS_MAPS = (
 
 for word_to_synonyms_map in WORD_TO_SYNONYMS_MAPS:
     for word, synonyms in word_to_synonyms_map.items():
-        vectors_for_synonyms = [WORD2VEC_MODEL_FROM_FILE[synonyms] for synonym in synonyms]
+        vectors_for_synonyms = [WORD2VEC_MODEL_FROM_FILE[synonym] for synonym in synonyms]
         vectors_for_synonyms_as_array = np.array(vectors_for_synonyms)
         mean_vector = np.mean(vectors_for_synonyms_as_array, axis=0)
         SUPPLEMENTAL_WORD2VEC_DWIMMED_ENTRIES_VIA_SYNONYMS[word] = mean_vector
+        assert tuple(mean_vector.shape) == (300,)
 
 class SupplementedWord2VecModel():
     def __init__(self):
