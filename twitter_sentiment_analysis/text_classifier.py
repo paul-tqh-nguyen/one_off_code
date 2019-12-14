@@ -118,12 +118,12 @@ def sentiment_result_to_string(sentiment_result_0):
 RAW_TRAINING_DATA_LOCATION = "./data/train.csv"
 RAW_TEST_DATA_LOCATION = "./data/test.csv"
 
-VALIDATION_DATA_PORTION = 0.001
+VALIDATION_DATA_PORTION = 0.01 #0.001
 
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-PORTION_OF_TRAINING_DATA_TO_USE = 1.0
+PORTION_OF_TRAINING_DATA_TO_USE = 0.01 #1.0
 
 with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
@@ -285,8 +285,9 @@ UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME = "unseen_word_to_tensor_map.p
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=241,
-                 checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None,
+                 checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, print_verbosely=False, 
     ):
+        self.print_verbosely = print_verbosely
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
         self.most_recent_epoch_loss = 0
@@ -325,6 +326,7 @@ class SentimentAnalysisClassifier():
                         sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         self.save(sub_directory_to_checkpoint_in)
+                        self.print_current_state()
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
@@ -336,12 +338,13 @@ class SentimentAnalysisClassifier():
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
             self.save(sub_directory_to_checkpoint_in)
+            self.print_current_state()
             
     def evaluate(self, strings: List[str]):
         self.model.eval()
         return self.model(strings)
     
-    def print_current_state(self, verbose=False):
+    def print_current_state(self):
         logging_print()
         logging_print("===================================================================")
         correct_result_number = 0
@@ -354,7 +357,7 @@ class SentimentAnalysisClassifier():
             y_batch_predicted, _ = self.evaluate(x_batch)
             assert y_batch_predicted.shape == (1,NUMBER_OF_SENTIMENTS)
             actual_result = sentiment_result_to_string(y_batch_predicted[0])
-            if verbose:
+            if self.print_verbosely:
                 input_string = x_batch[0]
                 logging_print("Input: {x}".format(x=input_string))
                 logging_print("Expected Output: {x}".format(x=expected_result))
@@ -369,6 +372,9 @@ class SentimentAnalysisClassifier():
             correct_result_number=correct_result_number, total_result_number=total_result_number))
         logging_print("Loss per datapoint for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
         logging_print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
+        assert implies(most_recent_epoch_loss==0, epoch_index==0)
+        if most_recent_epoch_loss == 0:
+            logging_print("    NB: Loss has not yet been calculated for epoch {epoch_index}.".format(epoch_index=self.number_of_completed_epochs))
         logging_print("===================================================================")
     
     def save(self, sub_directory_name):
@@ -400,10 +406,10 @@ def train_classifier(batch_size=1,
                      lstm_dropout_prob=0.2,
                      number_of_attention_heads=2,
                      attention_hidden_size=24,
-                     print_verbosely=False,
                      checkpoint_directory=get_new_checkpoint_directory(),
                      number_of_epochs=8,
-                     number_of_iterations_between_checkpoints=1000, 
+                     number_of_iterations_between_checkpoints=1000,
+                     print_verbosely=True,
                      loading_directory=None,
 ):
     classifier = SentimentAnalysisClassifier(
@@ -416,6 +422,7 @@ def train_classifier(batch_size=1,
         attention_hidden_size=attention_hidden_size,
         checkpoint_directory=checkpoint_directory,
         loading_directory=loading_directory,
+        print_verbosely=print_verbosely,
     )
     number_of_epochs_between_updates = 1
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
@@ -423,16 +430,14 @@ def train_classifier(batch_size=1,
     logging_print("Starting Training.")
     logging_print()
     classifier.print_static_information()
-    classifier.print_current_state(print_verbosely)
+    classifier.print_current_state()
     for update_index in range(number_of_updates):
-        with timer(exitCallback=lambda number_of_seconds: logging_print("Time for epochs {start_epoch_index} to {end_epoch_index}: {time_for_epochs} seconds".format(
+        with timer(exitCallback=lambda number_of_seconds: logging_print("Time for epochs {start_epoch_index} to {end_epoch_index} (inclusive): {time_for_epochs} seconds".format(
                 start_epoch_index=update_index*number_of_epochs_between_updates,
                 end_epoch_index=(update_index+1)*number_of_epochs_between_updates-1,
                 time_for_epochs=number_of_seconds,
         ))):
             classifier.train(number_of_epochs_between_updates, number_of_iterations_between_checkpoints)
-            classifier.print_current_state(print_verbosely)
-    classifier.print_current_state(print_verbosely)
     logging_print("Training Complete.")
 
 def test_classifier(loading_directory):
