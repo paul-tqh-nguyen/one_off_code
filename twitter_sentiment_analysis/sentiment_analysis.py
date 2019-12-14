@@ -46,6 +46,18 @@ def possibly_print_complaint_strings_and_exit(complaint_strings: List[str]) -> N
         sys.exit(1)
     return None
 
+def validate_cli_args_for_hyper_parameter_grid_search(arg_to_value_map: dict) -> None:
+    complaint_strings = []
+    output_directory = arg_to_value_map['perform_hyper_parameter_grid_search_in_directory']
+    if output_directory is None:
+        complaint_strings.append("No output directory specified.")
+    else:
+        assert isinstance(output_directory, str)
+        if not os.path.exists(output_directory):
+            complaint_strings.append("Output directory does not exist.")
+    possibly_print_complaint_strings_and_exit(complaint_strings)
+    return None
+
 def validate_cli_args_for_training(arg_to_value_map: dict) -> None:
     complaint_strings = []
     loading_directory = arg_to_value_map['loading_directory']
@@ -65,8 +77,7 @@ def validate_cli_args_for_training(arg_to_value_map: dict) -> None:
             complaint_strings.append("Loading directory does not exist.")
     if checkpoint_directory is not None:
         assert isinstance(checkpoint_directory, str)
-        if not os.path.exists(checkpoint_directory):
-            complaint_strings.append("Checkpoint directory does not exist.")
+        pass
     if number_of_epochs is not None:
         if not number_of_epochs.isdigit():
             complaint_strings.append("Number of epochs must be an integer.")
@@ -141,7 +152,7 @@ def main():
         string_processing_tests.run_all_tests()
     hyper_parameter_grid_search_specified = bool(arg_to_value_map['perform_hyper_parameter_grid_search_in_directory'])
     if hyper_parameter_grid_search_specified:
-        # @todo validate inputs
+        validate_cli_args_for_hyper_parameter_grid_search(arg_to_value_map)
         result_directory = arg_to_value_map['perform_hyper_parameter_grid_search_in_directory']
         perform_distributed_hyper_parameter_grid_search(result_directory)
     training_requested = arg_to_value_map['train_sentiment_analyzer']
