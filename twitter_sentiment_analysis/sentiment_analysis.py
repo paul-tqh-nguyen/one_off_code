@@ -103,7 +103,7 @@ HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = [
     'montesquieu',
     'nietzsche',
     'parmenides',
-    # 'pierece',
+    'pierce',
     'plato',
     'popper',
     'putnam',
