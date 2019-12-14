@@ -24,6 +24,7 @@ File Organization:
 import os
 import sys
 import argparse
+import random
 from pssh.clients import ParallelSSHClient
 from typing import List
 
@@ -34,14 +35,14 @@ from typing import List
 def determine_training_commands_for_distributed_grid_search(result_directory: str) -> List[str]:
     training_commands = []
     number_of_iterations_between_checkpoints = 20000
-    number_of_epochs = 10
-    options_for_batch_size = [1,2,4,8,16]
+    number_of_epochs = 8
+    options_for_batch_size = [1]
     options_for_learning_rate = [1e-1, 1e-2, 1e-3, 1e-4]
-    options_for_attenion_regularization_penalty_multiplicative_factor = [100, 10, 1, 1e-2, 1e-4]
-    options_for_embedding_hidden_size = [200, 100]
-    options_for_lstm_dropout_prob = [0.1, 0.2, 0.3]
-    options_for_number_of_attention_heads = [1,2,4]
-    options_for_attention_hidden_size = [32, 16, 8, 4]
+    options_for_attenion_regularization_penalty_multiplicative_factor = [100, 1, 1e-2]
+    options_for_embedding_hidden_size = [200]
+    options_for_lstm_dropout_prob = [0.2]
+    options_for_number_of_attention_heads = [2, 4]
+    options_for_attention_hidden_size = [32, 16]
     for batch_size in options_for_batch_size:
         for learning_rate in options_for_learning_rate:
             for attenion_regularization_penalty_multiplicative_factor in options_for_attenion_regularization_penalty_multiplicative_factor:
@@ -123,7 +124,10 @@ HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = [
 
 def perform_distributed_hyperparameter_grid_search(result_directory: str) -> None:
     training_commands = determine_training_commands_for_distributed_grid_search(result_directory)
-    training_commands = training_commands[:44]; [print(e) for e in training_commands]
+    random.shuffle(training_commands)
+    training_commands = training_commands[:len(HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH)] # @todo remove this
+    number_of_training_commands = len(training_commands)
+    print("{number_of_training_commands} jobs to run.".format(number_of_training_commands=number_of_training_commands))
     hosts = HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH
     host_to_training_commands_map = {host:[] for host in hosts}
     while len(training_commands)!=0:
@@ -261,10 +265,12 @@ def main():
     parser.add_argument('-perform-hyperparameter-grid-search-in-directory', help="Perform grid search and save results in specified directory via distributed search on hard-coded set of machines.")
     args = parser.parse_args()
     arg_to_value_map = vars(args)
+    '''
     import socket;
     if socket.gethostname() != 'phact':
         print(arg_to_value_map)
         exit(1)
+    '''
     no_args_specified = not any(arg_to_value_map.values())
     if no_args_specified:
         parser.print_help()
