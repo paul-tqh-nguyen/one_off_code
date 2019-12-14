@@ -20,11 +20,33 @@ File Organization:
 # Imports #
 ###########
 
+import os
+import sys
 import argparse
+from typing import List
 
 ###############
 # Main Runner #
 ###############
+
+def possibly_print_complaint_strings_and_exit(complaint_strings: List[str]) -> None:
+    if len(complaint_strings) != 0:
+        print("We encountered the following issues:")
+        for complaint_string in complaint_strings:
+            print("    {complaint_string}".format(complaint_string=complaint_string))
+        sys.exit(1)
+    return None
+
+def validate_cli_args_for_testing(arg_to_value_map: dict) -> None:
+    complaint_strings = []
+    if 'loading_directory' not in arg_to_value_map:
+        complaint_strings.append("No loading directory specified.")
+    elif not isinstance(arg_to_value_map['loading_directory'], str):
+        assert isinstance(arg_to_value_map['loading_directory'], str)
+        complaint_strings.append("")
+        os.path.exists(directory_to_save_in)
+    possibly_print_complaint_strings_and_exit(complaint_strings)
+    return None
 
 def main():
     '''
@@ -57,6 +79,7 @@ def main():
         string_processing_tests.run_all_tests()
     training_requested = arg_to_value_map['train_sentiment_analyzer']
     if training_requested:
+        # @todo validate inputs
         keyword_args = dict()
         if arg_to_value_map['loading_directory'] is not None:
             keyword_args['loading_directory'] = arg_to_value_map['loading_directory']
@@ -84,8 +107,10 @@ def main():
         text_classifier.train_classifier(**keyword_args)
     testing_requested = arg_to_value_map['test_sentiment_analyzer']
     if testing_requested:
+        # For example:
+        # ./sentiment_analysis.py -test-sentiment-analyzer -loading-directory /tmp/checkpoint_dir/checkpoint_for_epoch_1234567890
+        validate_cli_args_for_testing(arg_to_value_map)
         import text_classifier
-        keyword_args = dict()
         loading_directory = arg_to_value_map['loading_directory']
         text_classifier.test_classifier(loading_directory=loading_directory)
 

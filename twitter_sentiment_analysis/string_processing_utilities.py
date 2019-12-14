@@ -66,10 +66,19 @@ def _correct_words_via_subsequence_substitutions(text_string: str, old_subsequen
         word_string = word_match.group()
         if not word_exception_checker(word_string):
             if unknown_word_worth_dwimming(word_string):
-                word_string_normalized = word_string.lower()
-                old_subsequence_match_iterator = re.finditer(old_subsequence, word_string)
-                old_subsequence_span_specifications = list(map(lambda match: match.span(), old_subsequence_match_iterator))
-                assert old_subsequence_span_specifications == sorted(old_subsequence_span_specifications, key=lambda pair: pair[0])
+                dwimming_methods = [
+                    lambda input_string: input_string.lower(),
+                    _word_string_minimized_for_search,
+                ]
+                old_subsequence_span_specifications = None
+                for dwimming_method in dwimming_methods:
+                    word_string_dwimmed = dwimming_method(word_string)
+                    old_subsequence_match_iterator = re.finditer(old_subsequence, word_string_dwimmed)
+                    old_subsequence_span_specifications = list(map(lambda match: match.span(), old_subsequence_match_iterator))
+                    assert old_subsequence_span_specifications == sorted(old_subsequence_span_specifications, key=lambda pair: pair[0])
+                    if len(old_subsequence_span_specifications) < 10:
+                        break
+                assert old_subsequence_span_specifications is not None
                 corrected_words = []
                 if len(old_subsequence_span_specifications) < 10:
                     for old_subsequence_span_specifications_subset in powerset(old_subsequence_span_specifications):

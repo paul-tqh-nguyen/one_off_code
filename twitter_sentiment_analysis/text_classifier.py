@@ -118,12 +118,12 @@ def sentiment_result_to_string(sentiment_result_0):
 RAW_TRAINING_DATA_LOCATION = "./data/train.csv"
 RAW_TEST_DATA_LOCATION = "./data/test.csv"
 
-VALIDATION_DATA_PORTION = 0.01 #0.001
-
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-PORTION_OF_TRAINING_DATA_TO_USE = 0.01 #1.0
+VALIDATION_DATA_PORTION = 0.5 #0.001
+PORTION_OF_TRAINING_DATA_TO_USE = 0.002 #1.0
+PORTION_OF_TESTING_DATA_TO_USE = 0.002 #1.0
 
 with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
@@ -137,7 +137,11 @@ with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_cs
 
 with open(RAW_TEST_DATA_LOCATION, encoding='ISO-8859-1') as test_data_csv_file:
     test_data_csv_reader = csv.DictReader(test_data_csv_file, delimiter=',')
-    for row_dict in test_data_csv_reader:
+    row_dicts = list(test_data_csv_reader)
+    number_of_row_dicts = len(row_dicts)
+    for row_dict_index, row_dict in enumerate(row_dicts):
+        if row_dict_index/number_of_row_dicts >= PORTION_OF_TESTING_DATA_TO_USE:
+            break
         id = row_dict['ItemID']
         text = row_dict['SentimentText']
         TEST_DATA_ID_TO_TEXT_MAP[id]=text
@@ -326,7 +330,6 @@ class SentimentAnalysisClassifier():
                         sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         self.save(sub_directory_to_checkpoint_in)
-                        self.print_current_state()
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
@@ -370,11 +373,12 @@ class SentimentAnalysisClassifier():
         total_result_number = len(self.validation_generator.dataset)
         logging_print("Truncated Validation Set Correctness Portion: {correct_result_number} / {total_result_number}".format(
             correct_result_number=correct_result_number, total_result_number=total_result_number))
-        logging_print("Loss per datapoint for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
-        logging_print("Total loss for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
-        assert implies(most_recent_epoch_loss==0, epoch_index==0)
-        if most_recent_epoch_loss == 0:
-            logging_print("    NB: Loss has not yet been calculated for epoch {epoch_index}.".format(epoch_index=self.number_of_completed_epochs))
+        logging_print("Loss per datapoint for model prior to training for epoch {epoch_index} is {loss}".format(
+            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
+        logging_print("Total loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
+        assert implies(self.most_recent_epoch_loss==0, epoch_index==0)
+        if self.most_recent_epoch_loss == 0:
+            logging_print("    NB: Loss has not yet been calculated for model prior to training for epoch {epoch_index}.".format(epoch_index=self.number_of_completed_epochs))
         logging_print("===================================================================")
     
     def save(self, sub_directory_name):
@@ -386,6 +390,7 @@ class SentimentAnalysisClassifier():
         unseen_word_to_tensor_map_pickled_file_to_be_saved_name = os.path.join(directory_to_save_in, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
         with open(unseen_word_to_tensor_map_pickled_file_to_be_saved_name, 'wb') as handle:
             pickle.dump(UNSEEN_WORD_TO_TENSOR_MAP, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        logging_print("Saved checkpoint to {directory_to_save_in}".format(directory_to_save_in=directory_to_save_in))
     
     def load(self, saved_directory_name):
         self.model = SentimentAnalysisNetwork()
@@ -394,6 +399,7 @@ class SentimentAnalysisClassifier():
         unseen_word_to_tensor_map_pickled_file_name = os.path.join(saved_directory_name, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
         with open(unseen_word_to_tensor_map_pickled_file_name, 'rb') as handle:
             UNSEEN_WORD_TO_TENSOR_MAP = pickle.load(handle)
+        logging_print("Loaded checkpoint from {saved_directory_name}".format(saved_directory_name=saved_directory_name))
 
 ###############
 # Main Runner #
@@ -409,7 +415,7 @@ def train_classifier(batch_size=1,
                      checkpoint_directory=get_new_checkpoint_directory(),
                      number_of_epochs=8,
                      number_of_iterations_between_checkpoints=1000,
-                     print_verbosely=True,
+                     print_verbosely=False,
                      loading_directory=None,
 ):
     classifier = SentimentAnalysisClassifier(
@@ -432,7 +438,7 @@ def train_classifier(batch_size=1,
     classifier.print_static_information()
     classifier.print_current_state()
     for update_index in range(number_of_updates):
-        with timer(exitCallback=lambda number_of_seconds: logging_print("Time for epochs {start_epoch_index} to {end_epoch_index} (inclusive): {time_for_epochs} seconds".format(
+        with timer(exitCallback=lambda number_of_seconds: logging_print("\nTime for epochs {start_epoch_index} to {end_epoch_index} (inclusive): {time_for_epochs} seconds".format(
                 start_epoch_index=update_index*number_of_epochs_between_updates,
                 end_epoch_index=(update_index+1)*number_of_epochs_between_updates-1,
                 time_for_epochs=number_of_seconds,
@@ -446,11 +452,13 @@ def test_classifier(loading_directory):
     logging_print("Starting Testing.")
     logging_print()
     sentiment_texts = TEST_DATA_ID_TO_TEXT_MAP.values()
+    print("Number of Sentiment Texts for Testing: {sentiment_texts_len}".format(sentiment_texts_len=len(sentiment_texts)))
     results, _ = classifier.evaluate(sentiment_texts)
     for (id, sentiment_text), result in zip(TEST_DATA_ID_TO_TEXT_MAP, results):
         logging_print("ID: {id}".format(id=id))
         logging_print("Sentiment Text: {sentiment_text}".format(sentiment_text=sentiment_text))
         result_as_string = sentiment_result_to_string(result)
+        logging_print("Raw Result: {result}".format(result=result))
         logging_print("Result: {result_as_string}".format(result_as_string=result_as_string))
         logging_print()
     logging_print("Testing Complete.")
