@@ -60,6 +60,8 @@ def tensor_from_normalized_word(word: str):
     elif word_string_resembles_meaningful_special_character_sequence_placeholder(word) or word in PUNCTUATION_SET:
         tensor = random_word_vector()
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
+        if word == 'place0holder0token0with0id0elipsis':
+            print("place0holder0token0with0id0elipsis tensor {}".format(tensor))
     else:
         tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
     return tensor
@@ -330,11 +332,14 @@ class SentimentAnalysisClassifier():
                         sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         self.save(sub_directory_to_checkpoint_in)
-                        print(self.evaluate(['I love happiness']))
+                        print(self.evaluate(['     handed in my uniform today . i miss you already']))
+                        print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
                         self.load("/tmp/checkpoint_dir/checkpoint_20191214-095100_for_epoch_2")
-                        print(self.evaluate(['I love happiness']))
+                        print(self.evaluate(['     handed in my uniform today . i miss you already']))
+                        print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
                         self.load(sub_directory_to_checkpoint_in)
-                        print(self.evaluate(['I love happiness']))
+                        print(self.evaluate(['     handed in my uniform today . i miss you already']))
+                        print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
