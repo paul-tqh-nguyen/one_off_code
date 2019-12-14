@@ -31,7 +31,7 @@ from typing import List
 # Hyperparameter Grid Search Utilities #
 ########################################
 
-def determine_training_commands_for_distributed_grid_search() -> List[str]:
+def determine_training_commands_for_distributed_grid_search(result_directory: str) -> List[str]:
     training_commands = []
     number_of_iterations_between_checkpoints = 20000
     number_of_epochs = 10
@@ -49,16 +49,17 @@ def determine_training_commands_for_distributed_grid_search() -> List[str]:
                     for lstm_dropout_prob in options_for_lstm_dropout_prob:
                         for number_of_attention_heads in options_for_number_of_attention_heads:
                             for attention_hidden_size in options_for_attention_hidden_size:
-                                checkpoint_directory = os.path.expanduser(
-                                    "~/public/public/deep_learning_results/batch_size{batch_size}__learning_rate{learning_rate}__attenion_regularization_penalty_multiplicative_factor{attenion_regularization_penalty_multiplicative_factor}__embedding_hidden_size{embedding_hidden_size}__lstm_dropout_prob{lstm_dropout_prob}__number_of_attention_heads{number_of_attention_heads}/".format(
+                                checkpoint_directory = os.path.expanduser("{result_directory}/batch_size_{batch_size}__learning_rate_{learning_rate}__attention_hidden_size_{attention_hidden_size}__attenion_regularization_penalty_multiplicative_factor_{attenion_regularization_penalty_multiplicative_factor}__embedding_hidden_size_{embedding_hidden_size}__lstm_dropout_prob_{lstm_dropout_prob}__number_of_attention_heads_{number_of_attention_heads}/".format(
+                                    result_directory=result_directory,
                                     batch_size=batch_size,
                                     learning_rate=learning_rate,
+                                    attention_hidden_size=attention_hidden_size,
                                     attenion_regularization_penalty_multiplicative_factor=attenion_regularization_penalty_multiplicative_factor,
                                     embedding_hidden_size=embedding_hidden_size,
                                     lstm_dropout_prob=lstm_dropout_prob,
                                     number_of_attention_heads=number_of_attention_heads,
                                 ))
-                                training_command = "/home/pnguyen/code/one_off_code/twitter_sentiment_analysis/sentiment_analysis.py -train-sentiment-analyzer -number-of-epochs {number_of_epochs} -batch-size {batch_size} -learning-rate {learning_rate} -attenion-regularization-penalty-multiplicative-factor {attenion_regularization_penalty_multiplicative_factor} -embedding-hidden-size {embedding_hidden_size} -lstm-dropout-prob {lstm_dropout_prob} -number-of-attention-heads {number_of_attention_heads} -attention-hidden-size {attention_hidden_size} -number-of-iterations-between-checkpoints {number_of_iterations_between_checkpoints} -checkpoint-directory {checkpoint_directory}".format(
+                                training_command = os.path.expanduser("~/code/one_off_code/twitter_sentiment_analysis/sentiment_analysis.py -train-sentiment-analyzer -number-of-epochs {number_of_epochs} -batch-size {batch_size} -learning-rate {learning_rate} -attenion-regularization-penalty-multiplicative-factor {attenion_regularization_penalty_multiplicative_factor} -embedding-hidden-size {embedding_hidden_size} -lstm-dropout-prob {lstm_dropout_prob} -number-of-attention-heads {number_of_attention_heads} -attention-hidden-size {attention_hidden_size} -number-of-iterations-between-checkpoints {number_of_iterations_between_checkpoints} -checkpoint-directory {checkpoint_directory}".format(
                                     number_of_epochs=number_of_epochs,
                                     batch_size=batch_size,
                                     learning_rate=learning_rate,
@@ -66,17 +67,63 @@ def determine_training_commands_for_distributed_grid_search() -> List[str]:
                                     embedding_hidden_size=embedding_hidden_size,
                                     lstm_dropout_prob=lstm_dropout_prob,
                                     number_of_attention_heads=number_of_attention_heads,
+                                    attention_hidden_size=attention_hidden_size,
                                     number_of_iterations_between_checkpoints=number_of_iterations_between_checkpoints,
                                     checkpoint_directory=checkpoint_directory,
-                                )
+                                ))
                                 training_commands.append(training_command)
     return training_commands
 
-HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = ['locke', 'kant', 'zeno', 'carnap']
+HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = [
+    'anscombe',
+    'aquinas',
+    'arendt',
+    # 'aristotle',
+    'aurelius',
+    'bentham',
+    'berkeley',
+    'carnap',
+    'chisholm',
+    'davidson',
+    'descartes',
+    'emerson',
+    'foot',
+    'frege',
+    'gettier',
+    'hegel',
+    'heidegger',
+    'hobbes',
+    'hume',
+    'james',
+    'kant',
+    'kuhn',
+    'leibniz',
+    'locke',
+    'mill',
+    'montesquieu',
+    'nietzsche',
+    'parmenides',
+    'pierece',
+    'plato',
+    'popper',
+    'putnam',
+    'quine',
+    'rawls',
+    'rousseau',
+    'russel',
+    'seneca',
+    'socrates',
+    'sperber',
+    'spinoza',
+    'thoreau',
+    'wilkson',
+    'wittgenstein',
+    'zeno',
+]
 
 def perform_distributed_hyperparameter_grid_search(result_directory: str) -> None:
-    training_commands = determine_training_commands_for_distributed_grid_search()
-    
+    training_commands = determine_training_commands_for_distributed_grid_search(result_directory)
+    training_commands = training_commands[:44]; [print(e) for e in training_commands]
     hosts = HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH
     host_to_training_commands_map = {host:[] for host in hosts}
     while len(training_commands)!=0:
@@ -87,7 +134,7 @@ def perform_distributed_hyperparameter_grid_search(result_directory: str) -> Non
     host_args = []
     for host in hosts:
         training_commands = host_to_training_commands_map[host]
-        whole_command_for_host = ' ; '.join(training_commands)
+        whole_command_for_host = ' ; '.join(training_commands) if len(training_commands)>0 else ":"
         host_arg = (whole_command_for_host,)
         host_args.append(host_arg)
     client = ParallelSSHClient(hosts, user="pnguyen", password="fridaywinner")
@@ -214,10 +261,14 @@ def main():
     parser.add_argument('-perform-hyperparameter-grid-search-in-directory', help="Perform grid search and save results in specified directory via distributed search on hard-coded set of machines.")
     args = parser.parse_args()
     arg_to_value_map = vars(args)
-    test_run_requested = arg_to_value_map['run_tests']
+    import socket;
+    if socket.gethostname() != 'phact':
+        print(arg_to_value_map)
+        exit(1)
     no_args_specified = not any(arg_to_value_map.values())
     if no_args_specified:
         parser.print_help()
+    test_run_requested = arg_to_value_map['run_tests']
     if test_run_requested:
         import string_processing_tests
         string_processing_tests.run_all_tests()

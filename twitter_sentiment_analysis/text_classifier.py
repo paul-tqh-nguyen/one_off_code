@@ -321,10 +321,10 @@ class SentimentAnalysisClassifier():
         for new_epoch_index in range(number_of_epochs_to_train):
             epoch_loss = 0
             total_number_of_iterations = len(self.training_generator.dataset)
+            current_global_epoch=self.number_of_completed_epochs+new_epoch_index
             for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
                 if number_of_iterations_between_checkpoints is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
-                        current_global_epoch=self.number_of_completed_epochs+new_epoch_index
                         logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
                             iteration_index=iteration_index,
                             total_number_of_iterations=total_number_of_iterations,
