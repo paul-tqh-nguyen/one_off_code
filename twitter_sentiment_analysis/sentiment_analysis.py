@@ -12,6 +12,7 @@ File Name : sentiment_analysis.py
 
 File Organization:
 * Imports
+* Hyperparameter Grid Search Utilities
 * Main Runner
 
 """
@@ -23,7 +24,27 @@ File Organization:
 import os
 import sys
 import argparse
+import paramiko
 from typing import List
+
+########################################
+# Hyperparameter Grid Search Utilities #
+########################################
+
+HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = ['locke']
+
+def perform_distributed_hyperparameter_grid_search(result_directory: str) -> None:
+    ssh = paramiko.SSHClient()
+    ssh.load_system_host_keys()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname='locke', username='pnguyen', password='fridaywinner', timeout=2)
+    cmd = "ls"
+    stdin, stdout, stderr = ssh.exec_command(cmd)
+    [print(line) for line in stdout.readlines()]
+    ssh.close()
+
+    
+    return None
 
 ###############
 # Main Runner #
@@ -46,15 +67,13 @@ def possibly_print_complaint_strings_and_exit(complaint_strings: List[str]) -> N
         sys.exit(1)
     return None
 
-def validate_cli_args_for_hyper_parameter_grid_search(arg_to_value_map: dict) -> None:
+def validate_cli_args_for_hyperparameter_grid_search(arg_to_value_map: dict) -> None:
     complaint_strings = []
-    output_directory = arg_to_value_map['perform_hyper_parameter_grid_search_in_directory']
+    output_directory = arg_to_value_map['perform_hyperparameter_grid_search_in_directory']
     if output_directory is None:
         complaint_strings.append("No output directory specified.")
     else:
         assert isinstance(output_directory, str)
-        if not os.path.exists(output_directory):
-            complaint_strings.append("Output directory does not exist.")
     possibly_print_complaint_strings_and_exit(complaint_strings)
     return None
 
@@ -140,7 +159,7 @@ def main():
     parser.add_argument('-number-of-iterations-between-checkpoints', help="Sentiment analyzer number of iterations between checkpoints.")
     parser.add_argument('-checkpoint-directory', help="Sentiment analyzer checkpoint directory for saving intermediate results.")
     parser.add_argument('-loading-directory', help="Sentiment analyzer directory for loading a model.")
-    parser.add_argument('-perform-hyper-parameter-grid-search-in-directory', help="Perform grid search and save results in specified directory via distributed search on hard-coded set of machines.")
+    parser.add_argument('-perform-hyperparameter-grid-search-in-directory', help="Perform grid search and save results in specified directory via distributed search on hard-coded set of machines.")
     args = parser.parse_args()
     arg_to_value_map = vars(args)
     test_run_requested = arg_to_value_map['run_tests']
@@ -150,11 +169,11 @@ def main():
     if test_run_requested:
         import string_processing_tests
         string_processing_tests.run_all_tests()
-    hyper_parameter_grid_search_specified = bool(arg_to_value_map['perform_hyper_parameter_grid_search_in_directory'])
-    if hyper_parameter_grid_search_specified:
-        validate_cli_args_for_hyper_parameter_grid_search(arg_to_value_map)
-        result_directory = arg_to_value_map['perform_hyper_parameter_grid_search_in_directory']
-        perform_distributed_hyper_parameter_grid_search(result_directory)
+    hyperparameter_grid_search_specified = bool(arg_to_value_map['perform_hyperparameter_grid_search_in_directory'])
+    if hyperparameter_grid_search_specified:
+        validate_cli_args_for_hyperparameter_grid_search(arg_to_value_map)
+        result_directory = arg_to_value_map['perform_hyperparameter_grid_search_in_directory']
+        perform_distributed_hyperparameter_grid_search(result_directory)
     training_requested = arg_to_value_map['train_sentiment_analyzer']
     if training_requested:
         validate_cli_args_for_training(arg_to_value_map)
