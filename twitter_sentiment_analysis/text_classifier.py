@@ -454,12 +454,12 @@ def test_classifier(loading_directory):
     sentiment_texts = TEST_DATA_ID_TO_TEXT_MAP.values()
     print("Number of Sentiment Texts for Testing: {sentiment_texts_len}".format(sentiment_texts_len=len(sentiment_texts)))
     results, _ = classifier.evaluate(sentiment_texts)
-    for (id, sentiment_text), result in zip(TEST_DATA_ID_TO_TEXT_MAP, results):
+    for (id, sentiment_text), result in zip(TEST_DATA_ID_TO_TEXT_MAP.items(), results):
         logging_print("ID: {id}".format(id=id))
         logging_print("Sentiment Text: {sentiment_text}".format(sentiment_text=sentiment_text))
         result_as_string = sentiment_result_to_string(result)
-        logging_print("Raw Result: {result}".format(result=result))
         logging_print("Result: {result_as_string}".format(result_as_string=result_as_string))
+        logging_print("Raw Result: {result}".format(result=result))
         logging_print()
     logging_print("Testing Complete.")
 
