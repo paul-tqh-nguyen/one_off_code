@@ -330,6 +330,11 @@ class SentimentAnalysisClassifier():
                         sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         self.save(sub_directory_to_checkpoint_in)
+                        print(self.evaluate(['I love happiness']))
+                        self.load("/tmp/checkpoint_dir/checkpoint_20191214-095100_for_epoch_2")
+                        print(self.evaluate(['I love happiness']))
+                        self.load(sub_directory_to_checkpoint_in)
+                        print(self.evaluate(['I love happiness']))
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
