@@ -24,26 +24,28 @@ File Organization:
 import os
 import sys
 import argparse
-import paramiko
+from pssh.clients import ParallelSSHClient
 from typing import List
 
 ########################################
 # Hyperparameter Grid Search Utilities #
 ########################################
 
-HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = ['locke']
+HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = ['locke', 'kant', 'zeno', 'carnap']
 
 def perform_distributed_hyperparameter_grid_search(result_directory: str) -> None:
-    ssh = paramiko.SSHClient()
-    ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname='locke', username='pnguyen', password='fridaywinner', timeout=2)
-    cmd = "ls"
-    stdin, stdout, stderr = ssh.exec_command(cmd)
-    [print(line) for line in stdout.readlines()]
-    ssh.close()
-
-    
+    hosts = HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH
+    host_args = (('echo 4'),
+                 ('echo 3'),
+                 ('echo 2'),
+                 ('echo 1'),)
+    assert len(host_args) == len(hosts)
+    client = ParallelSSHClient(hosts, user="pnguyen", password="fridaywinner")
+    output = client.run_command('%s', host_args=host_args)
+    for host, host_output in output.items():
+        print("host {}".format(host))
+        for line in host_output.stdout:
+            print(line)
     return None
 
 ###############
