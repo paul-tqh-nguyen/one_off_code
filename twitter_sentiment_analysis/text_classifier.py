@@ -136,7 +136,7 @@ TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
 VALIDATION_DATA_PORTION = 0.1 #0.001 # @todo fix this
-PORTION_OF_TRAINING_DATA_TO_USE = 0.0005 #1.0 # @todo fix this
+PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 PORTION_OF_TESTING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 
 with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
@@ -362,6 +362,10 @@ class SentimentAnalysisClassifier():
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.correctness_loss, label="Correctness Loss")
             loss_per_epoch_png_location = os.path.join(self.checkpoint_directory, PROGRESS_PNG_LOCAL_NAME)
             plt.savefig(loss_per_epoch_png_location)
+            print("updated_csv_dataframe.total_loss {}".format(updated_csv_dataframe.total_loss))
+            print("updated_csv_dataframe.attention_regularization_loss {}".format(updated_csv_dataframe.attention_regularization_loss))
+            print("updated_csv_dataframe.correctness_loss {}".format(updated_csv_dataframe.correctness_loss))
+            print("loss_per_epoch_png_location {}".format(loss_per_epoch_png_location))
         
     def train(self, number_of_epochs_to_train, number_of_iterations_between_checkpoints=None):
         self.model.train()
