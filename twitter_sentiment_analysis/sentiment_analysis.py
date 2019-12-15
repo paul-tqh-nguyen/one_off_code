@@ -35,14 +35,14 @@ from misc_utilities import logging_print
 
 def determine_training_commands_for_distributed_grid_search(result_directory: str) -> List[str]:
     training_commands = []
-    number_of_iterations_between_checkpoints = 1 #20000 # @todo fix this
-    number_of_epochs = 1 #8 # @todo fix this
+    number_of_iterations_between_checkpoints = 20000
+    number_of_epochs = 300 #8 # @todo fix this
     options_for_batch_size = [1]
-    options_for_learning_rate = [1e-1, 1e-2, 1e-3, 1e-4]
-    options_for_attenion_regularization_penalty_multiplicative_factor = [100, 1, 1e-2]
+    options_for_learning_rate = [1e-1, 1e-2, 1e-3]
+    options_for_attenion_regularization_penalty_multiplicative_factor = [1e-4, 1e-2, 1]
     options_for_embedding_hidden_size = [200]
     options_for_lstm_dropout_prob = [0.2]
-    options_for_number_of_attention_heads = [2, 4]
+    options_for_number_of_attention_heads = [1, 2]
     options_for_attention_hidden_size = [32, 16]
     for batch_size in options_for_batch_size:
         for learning_rate in options_for_learning_rate:
@@ -127,10 +127,12 @@ def perform_distributed_hyperparameter_grid_search(result_directory: str) -> Non
     training_commands = determine_training_commands_for_distributed_grid_search(result_directory)
     random.shuffle(training_commands)
     if True: # @todo remove this
+        '''
         num_jobs = 2
         training_commands = training_commands[:num_jobs]
         global HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH
         HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH[:num_jobs]
+        #'''
     number_of_training_commands = len(training_commands)
     logging_print()
     logging_print("{number_of_training_commands} jobs to run.".format(number_of_training_commands=number_of_training_commands))
