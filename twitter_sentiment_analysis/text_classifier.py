@@ -355,6 +355,7 @@ class SentimentAnalysisClassifier():
             self.number_of_completed_epochs += 1
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
+            self.print_current_state
             self.save(sub_directory_to_checkpoint_in)
             
     def evaluate(self, strings: List[str]):
