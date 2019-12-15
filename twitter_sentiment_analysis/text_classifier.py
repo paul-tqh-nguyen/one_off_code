@@ -55,6 +55,7 @@ UNSEEN_WORD_TO_TENSOR_MAP = {}
 
 def tensor_from_normalized_word(word: str):
     global UNSEEN_WORD_TO_TENSOR_MAP
+    global WORD_VECTOR_FOR_UNKNOWN_WORD
     tensor = None
     if word in WORD2VEC_MODEL:
         tensor = torch.from_numpy(WORD2VEC_MODEL[word])
@@ -96,6 +97,9 @@ SENTIMENT_INDEX_TO_SENTIMENT_MAP = {index:sentiment for index, sentiment in enum
 SENTIMENT_TO_SENTIMENT_INDEX_MAP = {sentiment:index for index, sentiment in enumerate(SENTIMENTS)}
 
 def sentiment_to_one_hot_vector(sentiment):
+    global SENTIMENTS
+    global SENTIMENT_TO_SENTIMENT_INDEX_MAP
+    global NUMBER_OF_SENTIMENTS
     assert sentiment in SENTIMENTS
     sentiment_index = SENTIMENT_TO_SENTIMENT_INDEX_MAP[sentiment]
     one_hot_vector = torch.zeros(NUMBER_OF_SENTIMENTS)
@@ -110,6 +114,8 @@ def truncate_sentiment_result(sentiment_result):
 TORCH_ARANGE_NUMBER_OF_SENTIMENTS = torch.arange(NUMBER_OF_SENTIMENTS, dtype=torch.float32)
 
 def sentiment_result_to_string(sentiment_result_0):
+    global TORCH_ARANGE_NUMBER_OF_SENTIMENTS
+    global SENTIMENT_INDEX_TO_SENTIMENT_MAP
     sentiment_result = truncate_sentiment_result(sentiment_result_0)
     sentiment_result_string = None
     assert tuple(sentiment_result.shape) == (NUMBER_OF_SENTIMENTS,)
@@ -167,6 +173,9 @@ class SentimentLabelledDataset(data.Dataset):
         return x_datum, y_datum
 
 def determine_training_and_validation_datasets():
+    global TRAINING_DATA_ID_TO_DATA_MAP
+    global VALIDATION_DATA_PORTION
+    global RAW_VALUE_TO_SENTIMENT_MAP
     data_dictionaries = list(TRAINING_DATA_ID_TO_DATA_MAP.values())
     # random.shuffle(data_dictionaries)
     number_of_validation_data_points = round(VALIDATION_DATA_PORTION*len(data_dictionaries))
@@ -388,6 +397,9 @@ class SentimentAnalysisClassifier():
     
     def save(self, sub_directory_name):
         global UNSEEN_WORD_TO_TENSOR_MAP
+        global STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME
+        global UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME
+        global VALIDATION_RESULTS_LOCAL_NAME
         directory_to_save_in = os.path.join(self.checkpoint_directory, sub_directory_name)
         if not os.path.exists(directory_to_save_in):
             os.makedirs(directory_to_save_in)
@@ -404,6 +416,8 @@ class SentimentAnalysisClassifier():
     
     def load(self, saved_directory_name):
         global UNSEEN_WORD_TO_TENSOR_MAP
+        global STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME
+        global UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME
         state_dict_file_location = os.path.join(saved_directory_name, STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME)
         self.model.load_state_dict(torch.load(state_dict_file_location))
         unseen_word_to_tensor_map_pickled_file_name = os.path.join(saved_directory_name, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
