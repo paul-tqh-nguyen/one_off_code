@@ -328,6 +328,8 @@ class SentimentAnalysisClassifier():
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
         self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         self.checkpoint_directory = checkpoint_directory
+        if not os.path.exists(self.checkpoint_directory):
+            os.makedirs(self.checkpoint_directory)
         csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
         with open(csv_location, 'a') as csvfile:
             headers = ['epoch_index', 'total_loss', 'attention_regularization_loss', 'correctness_loss']
