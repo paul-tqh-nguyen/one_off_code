@@ -340,13 +340,10 @@ class SentimentAnalysisClassifier():
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         #'''
                         self.save(sub_directory_to_checkpoint_in)
-                        print(self.evaluate(['     handed in my uniform today . i miss you already']))
                         logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
                         self.load("/tmp/batch_size_1__learning_rate_0.01__attention_hidden_size_16__attenion_regularization_penalty_multiplicative_factor_1__embedding_hidden_size_200__lstm_dropout_prob_0.2__number_of_attention_heads_4/checkpoint_20191215-135329_for_epoch_0/")
-                        logging_print(self.evaluate(['     handed in my uniform today . i miss you already']))
                         logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
                         self.load(sub_directory_to_checkpoint_in)
-                        logging_print(self.evaluate(['     handed in my uniform today . i miss you already']))
                         logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
                         #'''
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
@@ -419,7 +416,9 @@ class SentimentAnalysisClassifier():
         self.model.load_state_dict(torch.load(state_dict_file_location))
         unseen_word_to_tensor_map_pickled_file_name = os.path.join(saved_directory_name, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
         with open(unseen_word_to_tensor_map_pickled_file_name, 'rb') as handle:
+            global UNSEEN_WORD_TO_TENSOR_MAP
             UNSEEN_WORD_TO_TENSOR_MAP = pickle.load(handle)
+            logging_print("   load UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
         logging_print("Loaded checkpoint from {saved_directory_name}".format(saved_directory_name=saved_directory_name))
 
 ###############
