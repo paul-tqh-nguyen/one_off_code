@@ -406,10 +406,8 @@ class SentimentAnalysisClassifier():
             pickle.dump(UNSEEN_WORD_TO_TENSOR_MAP, handle, protocol=pickle.HIGHEST_PROTOCOL)
         validation_results_file = os.path.join(directory_to_save_in, VALIDATION_RESULTS_LOCAL_NAME)
         with open(validation_results_file, 'w') as f:
-            stream = io.StringIO()
-            with redirect_stdout(stream):
+            with redirect_stdout(f):
                 self.print_current_state()
-            f.write(stream.getvalue())
         logging_print("Saved checkpoint to {directory_to_save_in}".format(directory_to_save_in=directory_to_save_in))
     
     def load(self, saved_directory_name):
@@ -438,7 +436,6 @@ def train_classifier(batch_size=1,
                      print_verbosely=False,
                      loading_directory=None,
 ):
-    print(7)
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
         learning_rate=learning_rate,
@@ -451,10 +448,8 @@ def train_classifier(batch_size=1,
         loading_directory=loading_directory,
         print_verbosely=print_verbosely,
     )
-    print(8)
     number_of_epochs_between_updates = 1
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
-    print(9)
     logging_print()
     logging_print("Starting Training on {machine_name}.".format(machine_name=socket.gethostname()))
     logging_print()

@@ -27,6 +27,7 @@ import argparse
 import random
 from pssh.clients import ParallelSSHClient
 from typing import List
+from misc_utilities import logging_print
 
 ########################################
 # Hyperparameter Grid Search Utilities #
@@ -147,6 +148,7 @@ def perform_distributed_hyperparameter_grid_search(result_directory: str) -> Non
         logging_print("Job commands for {host}: ".format(host=host))
         for training_command in training_commands:
             logging_print("    {training_command}".format(training_command=training_command))
+        logging_print()
         whole_command_for_host = ' ; '.join(training_commands) if len(training_commands)>0 else ":"
         host_arg = (whole_command_for_host,)
         host_args.append(host_arg)
