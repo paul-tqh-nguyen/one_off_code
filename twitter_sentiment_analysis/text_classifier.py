@@ -24,6 +24,7 @@ File Organization:
 # Imports #
 ###########
 
+from contextlib import redirect_stdout
 from typing import Iterable, List
 from collections import OrderedDict
 import torch
@@ -34,6 +35,7 @@ import csv
 import random
 import time
 import pickle
+import socket
 from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
@@ -117,8 +119,10 @@ def sentiment_result_to_string(sentiment_result_0):
     sentiment_string = SENTIMENT_INDEX_TO_SENTIMENT_MAP[sentiment_index]
     return sentiment_string
 
-RAW_TRAINING_DATA_LOCATION = "./data/train.csv"
-RAW_TEST_DATA_LOCATION = "./data/test.csv"
+CURRENT_FILE_PATH = os.path.abspath(os.path.dirname(__file__))
+
+RAW_TRAINING_DATA_LOCATION = os.path.join(CURRENT_FILE_PATH, "data/train.csv")
+RAW_TEST_DATA_LOCATION = os.path.join(CURRENT_FILE_PATH, "data/test.csv")
 
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
@@ -287,6 +291,7 @@ def get_new_checkpoint_directory():
 
 STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME = "state_dict.pth"
 UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME = "unseen_word_to_tensor_map.pickle"
+VALIDATION_RESULTS_LOCAL_NAME = "validation_results.txt"
 
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
@@ -351,7 +356,6 @@ class SentimentAnalysisClassifier():
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
             self.save(sub_directory_to_checkpoint_in)
-            self.print_current_state()
             
     def evaluate(self, strings: List[str]):
         self.model.eval()
@@ -400,6 +404,12 @@ class SentimentAnalysisClassifier():
         unseen_word_to_tensor_map_pickled_file_to_be_saved_name = os.path.join(directory_to_save_in, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
         with open(unseen_word_to_tensor_map_pickled_file_to_be_saved_name, 'wb') as handle:
             pickle.dump(UNSEEN_WORD_TO_TENSOR_MAP, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        validation_results_file = os.path.join(directory_to_save_in, VALIDATION_RESULTS_LOCAL_NAME)
+        with open(validation_results_file, 'w') as f:
+            stream = io.StringIO()
+            with redirect_stdout(stream):
+                self.print_current_state()
+            f.write(stream.getvalue())
         logging_print("Saved checkpoint to {directory_to_save_in}".format(directory_to_save_in=directory_to_save_in))
     
     def load(self, saved_directory_name):
@@ -428,6 +438,7 @@ def train_classifier(batch_size=1,
                      print_verbosely=False,
                      loading_directory=None,
 ):
+    print(7)
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
         learning_rate=learning_rate,
@@ -440,10 +451,12 @@ def train_classifier(batch_size=1,
         loading_directory=loading_directory,
         print_verbosely=print_verbosely,
     )
+    print(8)
     number_of_epochs_between_updates = 1
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
+    print(9)
     logging_print()
-    logging_print("Starting Training.")
+    logging_print("Starting Training on {machine_name}.".format(machine_name=socket.gethostname()))
     logging_print()
     classifier.print_static_information()
     classifier.print_current_state()
@@ -459,7 +472,7 @@ def train_classifier(batch_size=1,
 def test_classifier(loading_directory):
     classifier = SentimentAnalysisClassifier(loading_directory=loading_directory)
     logging_print()
-    logging_print("Starting Testing.")
+    logging_print("Starting Testing on {machine_name}.".format(machine_name=socket.gethostname()))
     logging_print()
     sentiment_texts = TEST_DATA_ID_TO_TEXT_MAP.values()
     print("Number of Sentiment Texts for Testing: {sentiment_texts_len}".format(sentiment_texts_len=len(sentiment_texts)))

@@ -21,6 +21,7 @@ File Organization:
 
 import time
 import os
+import socket
 from contextlib import contextmanager
 from itertools import chain, combinations
 
@@ -28,14 +29,15 @@ from itertools import chain, combinations
 # Misc. Utilities #
 ###################
 
-LOGGING_FILE = os.path.expanduser("~/Desktop/log_from_tests.txt")
+LOGGING_FILE = os.path.expanduser("~/Desktop/log_sentiment_analysis.txt")
 
 def logging_print(input_string='') -> None:
     with open(LOGGING_FILE, 'a') as f:
-        f.write(input_string+'\n')
+        lines = input_string.split('\n')
+        lines_with_machine_name_appended = map(lambda line: socket.gethostname()+' : '+line, lines)
+        f.write('\n'.join(lines_with_machine_name_appended)+'\n')
     print(input_string)
     return None
-
 
 def identity(args):
     return args

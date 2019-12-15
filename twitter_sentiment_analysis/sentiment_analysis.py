@@ -35,7 +35,7 @@ from typing import List
 def determine_training_commands_for_distributed_grid_search(result_directory: str) -> List[str]:
     training_commands = []
     number_of_iterations_between_checkpoints = 20000
-    number_of_epochs = 8
+    number_of_epochs = 2 #8
     options_for_batch_size = [1]
     options_for_learning_rate = [1e-1, 1e-2, 1e-3, 1e-4]
     options_for_attenion_regularization_penalty_multiplicative_factor = [100, 1, 1e-2]
@@ -125,9 +125,15 @@ HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = [
 def perform_distributed_hyperparameter_grid_search(result_directory: str) -> None:
     training_commands = determine_training_commands_for_distributed_grid_search(result_directory)
     random.shuffle(training_commands)
-    training_commands = training_commands[:len(HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH)] # @todo remove this
+    if True: # @todo remove this
+        num_jobs = 2
+        training_commands = training_commands[:num_jobs]
+        global HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH
+        HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH[:num_jobs]
     number_of_training_commands = len(training_commands)
-    print("{number_of_training_commands} jobs to run.".format(number_of_training_commands=number_of_training_commands))
+    logging_print()
+    logging_print("{number_of_training_commands} jobs to run.".format(number_of_training_commands=number_of_training_commands))
+    logging_print()
     hosts = HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH
     host_to_training_commands_map = {host:[] for host in hosts}
     while len(training_commands)!=0:
@@ -138,15 +144,24 @@ def perform_distributed_hyperparameter_grid_search(result_directory: str) -> Non
     host_args = []
     for host in hosts:
         training_commands = host_to_training_commands_map[host]
+        logging_print("Job commands for {host}: ".format(host=host))
+        for training_command in training_commands:
+            logging_print("    {training_command}".format(training_command=training_command))
         whole_command_for_host = ' ; '.join(training_commands) if len(training_commands)>0 else ":"
         host_arg = (whole_command_for_host,)
         host_args.append(host_arg)
     client = ParallelSSHClient(hosts, user="pnguyen", password="fridaywinner")
     output = client.run_command('%s', host_args=host_args)
     for host, host_output in output.items():
-        print("host {}".format(host))
-        for line in host_output.stdout:
-            print(line)
+        logging_print()
+        logging_print("host {}".format(host))
+        logging_print("STDOUT")
+        for stdout_line in host_output.stdout:
+            logging_print(stdout_line)
+        logging_print()
+        logging_print("STDERR")
+        for stderr_line in host_output.stderr:
+            logging_print(stderr_line)
     return None
 
 ###############
@@ -164,9 +179,9 @@ def string_is_float(input_string: str) -> bool:
 
 def possibly_print_complaint_strings_and_exit(complaint_strings: List[str]) -> None:
     if len(complaint_strings) != 0:
-        print("We encountered the following issues:")
+        logging_print("We encountered the following issues:")
         for complaint_string in complaint_strings:
-            print("    {complaint_string}".format(complaint_string=complaint_string))
+            logging_print("    {complaint_string}".format(complaint_string=complaint_string))
         sys.exit(1)
     return None
 
