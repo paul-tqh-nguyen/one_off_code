@@ -338,14 +338,7 @@ class SentimentAnalysisClassifier():
                             current_global_epoch=current_global_epoch))
                         sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
-                        #'''
                         self.save(sub_directory_to_checkpoint_in)
-                        logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
-                        self.load("/tmp/batch_size_1__learning_rate_0.01__attention_hidden_size_16__attenion_regularization_penalty_multiplicative_factor_1__embedding_hidden_size_200__lstm_dropout_prob_0.2__number_of_attention_heads_4/checkpoint_20191215-135329_for_epoch_0/")
-                        logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
-                        self.load(sub_directory_to_checkpoint_in)
-                        logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
-                        #'''
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
