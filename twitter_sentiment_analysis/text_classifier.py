@@ -54,6 +54,7 @@ WORD_VECTOR_FOR_UNKNOWN_WORD = random_word_vector()
 UNSEEN_WORD_TO_TENSOR_MAP = {}
 
 def tensor_from_normalized_word(word: str):
+    global UNSEEN_WORD_TO_TENSOR_MAP
     tensor = None
     if word in WORD2VEC_MODEL:
         tensor = torch.from_numpy(WORD2VEC_MODEL[word])
@@ -62,8 +63,6 @@ def tensor_from_normalized_word(word: str):
     elif word_string_resembles_meaningful_special_character_sequence_placeholder(word) or word in PUNCTUATION_SET:
         tensor = random_word_vector()
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
-        if word == 'place0holder0token0with0id0elipsis':
-            print("place0holder0token0with0id0elipsis tensor {}".format(tensor))
     else:
         tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
     return tensor
@@ -243,7 +242,6 @@ class SelfAttentionLayers(nn.Module):
 
 class SentimentAnalysisNetwork(nn.Module):
     def __init__(self, embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24):
-        print("1 attention_hidden_size {}".format(attention_hidden_size))
         super().__init__()
         if __debug__: # only used for assertion checking
             self.embedding_hidden_size = embedding_hidden_size
@@ -299,7 +297,6 @@ class SentimentAnalysisClassifier():
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
                  checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, print_verbosely=False, 
     ):
-        print("2 attention_hidden_size {}".format(attention_hidden_size))
         self.print_verbosely = print_verbosely
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
@@ -390,6 +387,7 @@ class SentimentAnalysisClassifier():
         logging_print("===================================================================")
     
     def save(self, sub_directory_name):
+        global UNSEEN_WORD_TO_TENSOR_MAP
         directory_to_save_in = os.path.join(self.checkpoint_directory, sub_directory_name)
         if not os.path.exists(directory_to_save_in):
             os.makedirs(directory_to_save_in)
@@ -405,13 +403,12 @@ class SentimentAnalysisClassifier():
         logging_print("Saved checkpoint to {directory_to_save_in}".format(directory_to_save_in=directory_to_save_in))
     
     def load(self, saved_directory_name):
+        global UNSEEN_WORD_TO_TENSOR_MAP
         state_dict_file_location = os.path.join(saved_directory_name, STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME)
         self.model.load_state_dict(torch.load(state_dict_file_location))
         unseen_word_to_tensor_map_pickled_file_name = os.path.join(saved_directory_name, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
         with open(unseen_word_to_tensor_map_pickled_file_name, 'rb') as handle:
-            global UNSEEN_WORD_TO_TENSOR_MAP
             UNSEEN_WORD_TO_TENSOR_MAP = pickle.load(handle)
-            logging_print("   load UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
         logging_print("Loaded checkpoint from {saved_directory_name}".format(saved_directory_name=saved_directory_name))
 
 ###############
@@ -431,7 +428,6 @@ def train_classifier(batch_size=1,
                      print_verbosely=False,
                      loading_directory=None,
 ):
-    print("3 attention_hidden_size {}".format(attention_hidden_size))
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
         learning_rate=learning_rate,

@@ -156,7 +156,7 @@ def perform_distributed_hyperparameter_grid_search(result_directory: str) -> Non
     output = client.run_command('%s', host_args=host_args)
     for host, host_output in output.items():
         logging_print()
-        logging_print("host {}".format(host))
+        logging_print("host {host}".format(host=host))
         logging_print("STDOUT")
         for stdout_line in host_output.stdout:
             logging_print(stdout_line)
@@ -164,6 +164,7 @@ def perform_distributed_hyperparameter_grid_search(result_directory: str) -> Non
         logging_print("STDERR")
         for stderr_line in host_output.stderr:
             logging_print(stderr_line)
+        logging_print()
     return None
 
 ###############
@@ -282,13 +283,6 @@ def main():
     parser.add_argument('-perform-hyperparameter-grid-search-in-directory', help="Perform grid search and save results in specified directory via distributed search on hard-coded set of machines.")
     args = parser.parse_args()
     arg_to_value_map = vars(args)
-    '''
-    import socket;
-    if socket.gethostname() != 'phact':
-        print(arg_to_value_map)
-        exit(1)
-    '''
-    print("arg_to_value_map {}".format(arg_to_value_map))
     no_args_specified = not any(arg_to_value_map.values())
     if no_args_specified:
         parser.print_help()

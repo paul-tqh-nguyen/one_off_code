@@ -109,9 +109,9 @@ class testTextStringNormalizationViaTrainingData(unittest.TestCase):
         self.assertTrue(latest_failed_string is None, msg="We failed to process the following string (among possibly many): \n{bad_string}".format(bad_string=latest_failed_string))
 
 def run_all_tests():
-    print()
-    print("Running our test suite.")
-    print()
+    logging_print()
+    logging_print("Running our test suite.")
+    logging_print()
     loader = unittest.TestLoader()
     tests = [
         loader.loadTestsFromTestCase(testTextStringNormalizationTestCases),
@@ -120,9 +120,9 @@ def run_all_tests():
     suite = unittest.TestSuite(tests)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
-    print()
-    print("Test run complete.")
-    print()
+    logging_print()
+    logging_print("Test run complete.")
+    logging_print()
 
 if __name__ == '__main__':
     run_all_tests()

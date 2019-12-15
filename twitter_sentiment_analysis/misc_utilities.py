@@ -83,9 +83,9 @@ def timer(section_name=None, exitCallback=None):
     if exitCallback != None:
         exitCallback(elapsed_time)
     elif section_name:
-        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
+        logging_print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
     else:
-        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
+        logging_print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
 def false(*args, **kwargs):
     return False
