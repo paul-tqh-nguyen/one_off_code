@@ -35,8 +35,8 @@ from misc_utilities import logging_print
 
 def determine_training_commands_for_distributed_grid_search(result_directory: str) -> List[str]:
     training_commands = []
-    number_of_iterations_between_checkpoints = 20000
-    number_of_epochs = 2 #8
+    number_of_iterations_between_checkpoints = 1 #20000
+    number_of_epochs = 1 #8
     options_for_batch_size = [1]
     options_for_learning_rate = [1e-1, 1e-2, 1e-3, 1e-4]
     options_for_attenion_regularization_penalty_multiplicative_factor = [100, 1, 1e-2]
