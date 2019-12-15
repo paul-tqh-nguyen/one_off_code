@@ -331,11 +331,10 @@ class SentimentAnalysisClassifier():
         if not os.path.exists(self.checkpoint_directory):
             os.makedirs(self.checkpoint_directory)
         csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
-        with open(csv_location, 'a') as csvfile:
+        with open(csv_location, 'w') as csvfile:
             headers = ['epoch_index', 'total_loss', 'attention_regularization_loss', 'correctness_loss']
             writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n', fieldnames=headers)
-            if not file_exists:
-                writer.writeheader()
+            writer.writeheader()
         if loading_directory is not None:
             self.load(loading_directory)
         
