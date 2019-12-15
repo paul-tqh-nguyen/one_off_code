@@ -37,7 +37,8 @@ import time
 import pickle
 import socket
 import pandas as pd
-from matplotlib import pyplot as plt
+if socket.gethostname() != 'phact': # @todo get rid of this
+    from matplotlib import pyplot as plt
 from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
@@ -343,11 +344,11 @@ class SentimentAnalysisClassifier():
         logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
         logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
 
-    def update_loss_per_epoch_logs(self):
+    def _update_loss_per_epoch_logs(self, current_global_epoch):
         global PROGRESS_CSV_LOCAL_NAME
         global PROGRESS_PNG_LOCAL_NAME 
         loss_per_epoch_csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
-        current_csv_dataframe = pd.read_csv(loss_per_epoch_csv_location='csv_data', index_col='epoch_index')
+        current_csv_dataframe = pd.read_csv(loss_per_epoch_csv_location, index_col='epoch_index')
         updated_csv_dataframe = current_csv_dataframe.append({
             'epoch_index': current_global_epoch,
             'total_loss': self.most_recent_epoch_loss,
@@ -355,10 +356,12 @@ class SentimentAnalysisClassifier():
             'correctness_loss': self.most_recent_epoch_loss_via_correctness,
         }, ignore_index=True)
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location)
-        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.total_loss, label="Total Loss")
-        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.attention_regularization_loss, label="Attention Regularization Loss")
-        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.correctness_loss, label="Correctness Loss")
-        plt.savefig(PROGRESS_PNG_LOCAL_NAME)
+        if socket.gethostname() != 'phact': # @todo get rid of this
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.total_loss, label="Total Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.attention_regularization_loss, label="Attention Regularization Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.correctness_loss, label="Correctness Loss")
+            loss_per_epoch_png_location = os.path.join(self.checkpoint_directory, PROGRESS_PNG_LOCAL_NAME)
+            plt.savefig(loss_per_epoch_png_location)
         
     def train(self, number_of_epochs_to_train, number_of_iterations_between_checkpoints=None):
         self.model.train()
@@ -393,7 +396,7 @@ class SentimentAnalysisClassifier():
             self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
-            self.update_loss_per_epoch_logs()
+            self._update_loss_per_epoch_logs(current_global_epoch)
             self.print_current_state()
             self.save(sub_directory_to_checkpoint_in)
             self.number_of_completed_epochs += 1
