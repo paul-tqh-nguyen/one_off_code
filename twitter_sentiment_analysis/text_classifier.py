@@ -310,6 +310,8 @@ class SentimentAnalysisClassifier():
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
         self.most_recent_epoch_loss = 0
+        self.most_recent_epoch_loss_via_correctness = 0
+        self.most_recent_epoch_loss_via_attention_regularization = 0
         self.loss_function = nn.BCELoss()
         self.model = SentimentAnalysisNetwork(
             embedding_hidden_size=embedding_hidden_size,
@@ -332,7 +334,9 @@ class SentimentAnalysisClassifier():
     def train(self, number_of_epochs_to_train, number_of_iterations_between_checkpoints=None):
         self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
-            epoch_loss = 0
+            total_epoch_loss = 0
+            epoch_loss_via_correctness = 0
+            epoch_loss_via_attention_regularization = 0
             total_number_of_iterations = len(self.training_generator.dataset)
             current_global_epoch=self.number_of_completed_epochs+new_epoch_index
             for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
@@ -346,16 +350,22 @@ class SentimentAnalysisClassifier():
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         self.save(sub_directory_to_checkpoint_in)
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
-                batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
+                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
+                loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
+                batch_loss = loss_via_correctness + loss_via_attention_regularization
                 self.optimizer.zero_grad()
                 batch_loss.backward()
-                epoch_loss += float(batch_loss)
+                total_epoch_loss += float(batch_loss)
+                epoch_loss_via_correctness += float(loss_via_correctness)
+                epoch_loss_via_attention_regularization += float(loss_via_attention_regularization)
                 self.optimizer.step()
-            self.most_recent_epoch_loss = epoch_loss
+            self.most_recent_epoch_loss = total_epoch_loss
+            self.most_recent_epoch_loss_via_correctness = epoch_loss_via_correctness
+            self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
             self.number_of_completed_epochs += 1
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
-            self.print_current_state
+            self.print_current_state()
             self.save(sub_directory_to_checkpoint_in)
             
     def evaluate(self, strings: List[str]):
@@ -388,9 +398,11 @@ class SentimentAnalysisClassifier():
         total_result_number = len(self.validation_generator.dataset)
         logging_print("Truncated Validation Set Correctness Portion: {correct_result_number} / {total_result_number}".format(
             correct_result_number=correct_result_number, total_result_number=total_result_number))
-        logging_print("Loss per datapoint for model prior to training for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss/total_result_number))
-        logging_print("Total loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
+        logging_print("Total training loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
+        logging_print("Training loss via correctness for model prior to training for epoch {epoch_index} is {loss}".format(
+            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss_via_correctness))
+        logging_print("Training loss via attention regularization for model prior to training for epoch {epoch_index} is {loss}".format(
+            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss_via_attention_regularization))
         assert implies(self.most_recent_epoch_loss==0, epoch_index==0)
         if self.most_recent_epoch_loss == 0:
             logging_print("    NB: Loss has not yet been calculated for model prior to training for epoch {epoch_index}.".format(epoch_index=self.number_of_completed_epochs))
