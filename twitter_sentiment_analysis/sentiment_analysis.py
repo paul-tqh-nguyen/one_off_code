@@ -288,6 +288,7 @@ def main():
         print(arg_to_value_map)
         exit(1)
     '''
+    print("arg_to_value_map {}".format(arg_to_value_map))
     no_args_specified = not any(arg_to_value_map.values())
     if no_args_specified:
         parser.print_help()

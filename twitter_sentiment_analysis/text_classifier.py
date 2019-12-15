@@ -243,6 +243,7 @@ class SelfAttentionLayers(nn.Module):
 
 class SentimentAnalysisNetwork(nn.Module):
     def __init__(self, embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24):
+        print("1 attention_hidden_size {}".format(attention_hidden_size))
         super().__init__()
         if __debug__: # only used for assertion checking
             self.embedding_hidden_size = embedding_hidden_size
@@ -298,6 +299,7 @@ class SentimentAnalysisClassifier():
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
                  checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, print_verbosely=False, 
     ):
+        print("2 attention_hidden_size {}".format(attention_hidden_size))
         self.print_verbosely = print_verbosely
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
@@ -336,15 +338,17 @@ class SentimentAnalysisClassifier():
                             current_global_epoch=current_global_epoch))
                         sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
+                        #'''
                         self.save(sub_directory_to_checkpoint_in)
-                        logging_print(self.evaluate(['     handed in my uniform today . i miss you already']))
+                        print(self.evaluate(['     handed in my uniform today . i miss you already']))
                         logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
-                        self.load("/tmp/checkpoint_dir/checkpoint_20191214-095100_for_epoch_2")
+                        self.load("/tmp/batch_size_1__learning_rate_0.01__attention_hidden_size_16__attenion_regularization_penalty_multiplicative_factor_1__embedding_hidden_size_200__lstm_dropout_prob_0.2__number_of_attention_heads_4/checkpoint_20191215-135329_for_epoch_0/")
                         logging_print(self.evaluate(['     handed in my uniform today . i miss you already']))
                         logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
                         self.load(sub_directory_to_checkpoint_in)
                         logging_print(self.evaluate(['     handed in my uniform today . i miss you already']))
                         logging_print("UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'] {}".format(list(UNSEEN_WORD_TO_TENSOR_MAP['place0holder0token0with0id0elipsis'])[:5]))
+                        #'''
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 batch_loss = self.loss_function(y_batch_predicted, y_batch) + attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.optimizer.zero_grad()
@@ -411,7 +415,6 @@ class SentimentAnalysisClassifier():
         logging_print("Saved checkpoint to {directory_to_save_in}".format(directory_to_save_in=directory_to_save_in))
     
     def load(self, saved_directory_name):
-        self.model = SentimentAnalysisNetwork()
         state_dict_file_location = os.path.join(saved_directory_name, STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME)
         self.model.load_state_dict(torch.load(state_dict_file_location))
         unseen_word_to_tensor_map_pickled_file_name = os.path.join(saved_directory_name, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
@@ -436,6 +439,7 @@ def train_classifier(batch_size=1,
                      print_verbosely=False,
                      loading_directory=None,
 ):
+    print("3 attention_hidden_size {}".format(attention_hidden_size))
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
         learning_rate=learning_rate,
