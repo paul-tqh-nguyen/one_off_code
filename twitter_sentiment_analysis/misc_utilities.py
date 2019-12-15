@@ -31,7 +31,8 @@ from itertools import chain, combinations
 
 LOGGING_FILE = os.path.expanduser("~/Desktop/log_sentiment_analysis.txt")
 
-def logging_print(input_string='') -> None:
+def logging_print(input='') -> None:
+    input_string = str(input)
     with open(LOGGING_FILE, 'a') as f:
         lines = input_string.split('\n')
         lines_with_machine_name_appended = map(lambda line: socket.gethostname()+': '+line, lines)
