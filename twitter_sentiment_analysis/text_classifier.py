@@ -132,9 +132,9 @@ RAW_TEST_DATA_LOCATION = os.path.join(CURRENT_FILE_PATH, "data/test.csv")
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-VALIDATION_DATA_PORTION = 0.5 #0.001
-PORTION_OF_TRAINING_DATA_TO_USE = 0.002 #1.0
-PORTION_OF_TESTING_DATA_TO_USE = 0.002 #1.0
+VALIDATION_DATA_PORTION = 0.1 #0.001 # @todo fix this
+PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
+PORTION_OF_TESTING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 
 with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
