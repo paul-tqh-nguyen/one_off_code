@@ -412,7 +412,9 @@ class SentimentAnalysisClassifier():
         with open(validation_results_file, 'w') as f:
             with redirect_stdout(f):
                 self.print_current_state()
+        logging_print()
         logging_print("Saved checkpoint to {directory_to_save_in}".format(directory_to_save_in=directory_to_save_in))
+        logging_print()
     
     def load(self, saved_directory_name):
         global UNSEEN_WORD_TO_TENSOR_MAP
@@ -423,7 +425,9 @@ class SentimentAnalysisClassifier():
         unseen_word_to_tensor_map_pickled_file_name = os.path.join(saved_directory_name, UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME)
         with open(unseen_word_to_tensor_map_pickled_file_name, 'rb') as handle:
             UNSEEN_WORD_TO_TENSOR_MAP = pickle.load(handle)
+        logging_print()
         logging_print("Loaded checkpoint from {saved_directory_name}".format(saved_directory_name=saved_directory_name))
+        logging_print()
 
 ###############
 # Main Runner #
