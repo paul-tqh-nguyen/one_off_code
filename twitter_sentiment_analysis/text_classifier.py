@@ -36,6 +36,8 @@ import random
 import time
 import pickle
 import socket
+import pandas as pd
+from matplotlib import pyplot as plt
 from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
@@ -133,7 +135,7 @@ TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
 VALIDATION_DATA_PORTION = 0.1 #0.001 # @todo fix this
-PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
+PORTION_OF_TRAINING_DATA_TO_USE = 0.0005 #1.0 # @todo fix this
 PORTION_OF_TESTING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 
 with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
@@ -300,12 +302,15 @@ def get_new_checkpoint_directory():
 STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME = "state_dict.pth"
 UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME = "unseen_word_to_tensor_map.pickle"
 VALIDATION_RESULTS_LOCAL_NAME = "validation_results.txt"
+PROGRESS_CSV_LOCAL_NAME = "loss_per_epoch.csv"
+PROGRESS_PNG_LOCAL_NAME = "loss_per_epoch.png"
 
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
                  checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, print_verbosely=False, 
     ):
+        global PROGRESS_CSV_LOCAL_NAME
         self.print_verbosely = print_verbosely
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
@@ -323,6 +328,12 @@ class SentimentAnalysisClassifier():
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
         self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
         self.checkpoint_directory = checkpoint_directory
+        csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
+        with open (csv_location, 'a') as csvfile:
+            headers = ['epoch_index', 'total_loss', 'attention_regularization_loss', 'correctness_loss']
+            writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n', fieldnames=headers)
+            if not file_exists:
+                writer.writeheader()
         if loading_directory is not None:
             self.load(loading_directory)
         
@@ -330,7 +341,24 @@ class SentimentAnalysisClassifier():
         logging_print("Checkpoint Directory: {checkpoint_directory}".format(checkpoint_directory=self.checkpoint_directory))
         logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
         logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
-    
+
+    def update_loss_per_epoch_logs(self):
+        global PROGRESS_CSV_LOCAL_NAME
+        global PROGRESS_PNG_LOCAL_NAME 
+        loss_per_epoch_csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
+        current_csv_dataframe = pd.read_csv(loss_per_epoch_csv_location='csv_data', index_col='epoch_index')
+        updated_csv_dataframe = current_csv_dataframe.append({
+            'epoch_index': current_global_epoch,
+            'total_loss': self.most_recent_epoch_loss,
+            'attention_regularization_loss': self.most_recent_epoch_loss_via_attention_regularization,
+            'correctness_loss': self.most_recent_epoch_loss_via_correctness,
+        }, ignore_index=True)
+        updated_csv_dataframe.to_csv(loss_per_epoch_csv_location)
+        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.total_loss, label="Total Loss")
+        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.attention_regularization_loss, label="Attention Regularization Loss")
+        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.correctness_loss, label="Correctness Loss")
+        plt.savefig(PROGRESS_PNG_LOCAL_NAME)
+        
     def train(self, number_of_epochs_to_train, number_of_iterations_between_checkpoints=None):
         self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
@@ -362,11 +390,12 @@ class SentimentAnalysisClassifier():
             self.most_recent_epoch_loss = total_epoch_loss
             self.most_recent_epoch_loss_via_correctness = epoch_loss_via_correctness
             self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
-            self.number_of_completed_epochs += 1
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
+            self.update_loss_per_epoch_logs()
             self.print_current_state()
             self.save(sub_directory_to_checkpoint_in)
+            self.number_of_completed_epochs += 1
             
     def evaluate(self, strings: List[str]):
         self.model.eval()
