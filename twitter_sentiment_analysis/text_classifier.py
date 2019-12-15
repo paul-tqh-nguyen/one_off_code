@@ -471,6 +471,7 @@ def train_classifier(batch_size=1,
     logging_print("Training Complete.")
 
 def test_classifier(loading_directory):
+    global TEST_DATA_ID_TO_TEXT_MAP
     classifier = SentimentAnalysisClassifier(loading_directory=loading_directory)
     logging_print()
     logging_print("Starting Testing on {machine_name}.".format(machine_name=socket.gethostname()))
