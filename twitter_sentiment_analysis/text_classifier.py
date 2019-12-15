@@ -355,7 +355,7 @@ class SentimentAnalysisClassifier():
             'attention_regularization_loss': self.most_recent_epoch_loss_via_attention_regularization,
             'correctness_loss': self.most_recent_epoch_loss_via_correctness,
         }, ignore_index=True)
-        updated_csv_dataframe.to_csv(loss_per_epoch_csv_location)
+        updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
         if socket.gethostname() != 'phact': # @todo get rid of this
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.total_loss, label="Total Loss")
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.attention_regularization_loss, label="Attention Regularization Loss")
