@@ -468,6 +468,7 @@ class SentimentAnalysisClassifier():
     def print_current_state(self) -> None:
         logging_print()
         logging_print("===================================================================")
+        logging_print("Timestamp: {timestamp}".format(timestamp=time.strftime("%Y%m%d-%H%M%S")))
         logging_print("Total validation loss for model prior to validation for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss))
         logging_print("Validation loss via correctness for model prior to validation for epoch {epoch_index} is {loss}".format(
             epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss_via_correctness))
