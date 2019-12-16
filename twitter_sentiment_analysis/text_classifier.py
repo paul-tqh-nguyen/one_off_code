@@ -394,13 +394,20 @@ class SentimentAnalysisClassifier():
         updated_csv_dataframe.loc[:, 'epoch_index'] = updated_csv_dataframe['epoch_index'].apply(int)
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
         if socket.gethostname() != 'phact': # @todo remove this exception
+            logging_print('updated_csv_dataframe_epoch_index = {}'.format(list(updated_csv_dataframe.epoch_index)))
+            logging_print('updated_csv_dataframe_training_total_loss = {}'.format(list(updated_csv_dataframe.training_total_loss)))
+            logging_print('updated_csv_dataframe_training_attention_regularization_loss = {}'.format(list(updated_csv_dataframe.training_attention_regularization_loss)))
+            logging_print('updated_csv_dataframe_training_correctness_loss = {}'.format(list(updated_csv_dataframe.training_correctness_loss)))
+            logging_print('updated_csv_dataframe_validation_total_loss = {}'.format(list(updated_csv_dataframe.validation_total_loss)))
+            logging_print('updated_csv_dataframe_validation_attention_regularization_loss = {}'.format(list(updated_csv_dataframe.validation_attention_regularization_loss)))
+            logging_print('updated_csv_dataframe_validation_correctness_loss = {}'.format(list(updated_csv_dataframe.validation_correctness_loss)))
             plt.grid()
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_total_loss, label="Training Total Loss")
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_attention_regularization_loss, label="Training Attention Regularization Loss")
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_correctness_loss, label="Training Correctness Loss")
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_total_loss, label="Validation Total Loss")
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_attention_regularization_loss, label="Validation Attention Regularization Loss")
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_correctness_loss, label="Validation Correctness Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_total_loss, label='Training Total Loss')
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_attention_regularization_loss, label='Training Attention Regularization Loss')
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_correctness_loss, label='Training Correctness Loss')
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_total_loss, label='Validation Total Loss')
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_attention_regularization_loss, label='Validation Attention Regularization Loss')
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_correctness_loss, label='Validation Correctness Loss')
             plt.title('Loss Per Epoch')
             plt.ylabel('Loss')
             plt.xlabel('Epoch Index')
@@ -534,17 +541,18 @@ class SentimentAnalysisClassifier():
 # Main Runner #
 ###############
 
-def train_classifier(batch_size=1,
-                     learning_rate=1e-2,
-                     attenion_regularization_penalty_multiplicative_factor=0.1,
-                     embedding_hidden_size=200,
-                     lstm_dropout_prob=0.2,
-                     number_of_attention_heads=2,
-                     attention_hidden_size=24,
-                     checkpoint_directory=get_new_checkpoint_directory(),
-                     number_of_epochs=8,
-                     number_of_iterations_between_checkpoints=1000,
-                     loading_directory=None,
+def train_classifier(
+        batch_size=1,
+        learning_rate=1e-2,
+        attenion_regularization_penalty_multiplicative_factor=0.1,
+        embedding_hidden_size=200,
+        lstm_dropout_prob=0.2,
+        number_of_attention_heads=2,
+        attention_hidden_size=24,
+        checkpoint_directory=get_new_checkpoint_directory(),
+        number_of_epochs=8,
+        number_of_iterations_between_checkpoints=1000,
+        loading_directory=None,
 ):
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
