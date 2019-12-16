@@ -12,9 +12,9 @@ File Name : text_classifier.py
 
 File Organization:
 * Imports
+* Dataset Definitions
 * String <-> Tensor Utilities
 * Model Definitions
-* Dataset Definitions
 * Classifier Definitions
 * Main Runner
 
@@ -43,44 +43,6 @@ if socket.gethostname() != 'phact': # @todo remove this exception
 from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
-
-###############################
-# String <-> Tensor Utilities #
-###############################
-
-def random_word_vector():
-    random_vector = torch.randn(WORD2VEC_VECTOR_LENGTH)
-    normalized_vector = F.normalize(random_vector, dim=0)
-    return normalized_vector
-
-WORD_VECTOR_FOR_UNKNOWN_WORD = random_word_vector()
-
-UNSEEN_WORD_TO_TENSOR_MAP = {}
-
-def tensor_from_normalized_word(word: str):
-    global UNSEEN_WORD_TO_TENSOR_MAP
-    global WORD_VECTOR_FOR_UNKNOWN_WORD
-    tensor = None
-    if word in WORD2VEC_MODEL:
-        tensor = torch.from_numpy(WORD2VEC_MODEL[word])
-    elif word in UNSEEN_WORD_TO_TENSOR_MAP:
-        tensor = UNSEEN_WORD_TO_TENSOR_MAP[word]
-    elif word_string_resembles_meaningful_special_character_sequence_placeholder(word) or word in PUNCTUATION_SET:
-        tensor = random_word_vector()
-        UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
-    else:
-        tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
-    return tensor
-
-def tensors_from_text_string(text_string: str):
-    normalized_words = normalized_words_from_text_string(text_string)
-    tensors = map(tensor_from_normalized_word, normalized_words)
-    return tensors
-
-def text_string_matrix_from_text_string(text_string: str):
-    word_tensors = tuple(tensors_from_text_string(text_string))
-    text_string_matrix = torch.stack(word_tensors)
-    return text_string_matrix
 
 #######################
 # Dataset Definitions #
@@ -138,11 +100,12 @@ NORMALIZED_TEST_DATA_LOCATION = os.path.join(CURRENT_FILE_PATH, "data/test_norma
 
 NORMALIZED_TRAINING_DATA_EXISTS = os.path.isfile(NORMALIZED_TRAINING_DATA_LOCATION)
 NORMALIZED_TEST_DATA_EXISTS = os.path.isfile(NORMALIZED_TEST_DATA_LOCATION)
+NORMALIZED_DATA_EXISTS = NORMALIZED_TRAINING_DATA_EXISTS and NORMALIZED_TEST_DATA_EXISTS
 
 if not NORMALIZED_TRAINING_DATA_EXISTS:
-    warnings.warn("Pre-computed normalized training data does not exist, so data normalization will happen on-demand and will not be stored, which can lead to slow performance via redundant computation.")
+    warnings.warn("Pre-computed normalized training data does not exist, so testing and training data normalization will happen on-demand and will not be stored, which can lead to slow performance via redundant computation.")
 if not NORMALIZED_TEST_DATA_EXISTS:
-    warnings.warn("Pre-computed normalized test data does not exist, so data normalization will happen on-demand and will not be stored, which can lead to slow performance via redundant computation.")
+    warnings.warn("Pre-computed normalized test data does not exist, so testing and training data normalization will happen on-demand and will not be stored, which can lead to slow performance via redundant computation.")
 
 TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TRAINING_DATA_LOCATION if NORMALIZED_TRAINING_DATA_EXISTS else RAW_TRAINING_DATA_LOCATION
 TEST_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TEST_DATA_LOCATION if NORMALIZED_TEST_DATA_EXISTS else RAW_TEST_DATA_LOCATION
@@ -222,6 +185,45 @@ def determine_training_and_validation_datasets():
     training_dataset = SentimentLabelledDataset(training_inputs, training_labels)
     validation_dataset = SentimentLabelledDataset(validation_inputs, validation_labels)
     return training_dataset, validation_dataset
+
+###############################
+# String <-> Tensor Utilities #
+###############################
+
+def random_word_vector():
+    random_vector = torch.randn(WORD2VEC_VECTOR_LENGTH)
+    normalized_vector = F.normalize(random_vector, dim=0)
+    return normalized_vector
+
+WORD_VECTOR_FOR_UNKNOWN_WORD = random_word_vector()
+
+UNSEEN_WORD_TO_TENSOR_MAP = {}
+
+def tensor_from_normalized_word(word: str):
+    global UNSEEN_WORD_TO_TENSOR_MAP
+    global WORD_VECTOR_FOR_UNKNOWN_WORD
+    tensor = None
+    if word in WORD2VEC_MODEL:
+        tensor = torch.from_numpy(WORD2VEC_MODEL[word])
+    elif word in UNSEEN_WORD_TO_TENSOR_MAP:
+        tensor = UNSEEN_WORD_TO_TENSOR_MAP[word]
+    elif word_string_resembles_meaningful_special_character_sequence_placeholder(word) or word in PUNCTUATION_SET:
+        tensor = random_word_vector()
+        UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
+    else:
+        tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
+    return tensor
+
+def tensors_from_text_string(text_string: str):
+    global NORMALIZED_DATA_EXISTS
+    normalized_words = text_string.split(' ') if NORMALIZED_DATA_EXISTS normalized_words_from_text_string(text_string)
+    tensors = map(tensor_from_normalized_word, normalized_words)
+    return tensors
+
+def text_string_matrix_from_text_string(text_string: str):
+    word_tensors = tuple(tensors_from_text_string(text_string))
+    text_string_matrix = torch.stack(word_tensors)
+    return text_string_matrix
 
 #####################
 # Model Definitions #

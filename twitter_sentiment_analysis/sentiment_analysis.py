@@ -12,6 +12,7 @@ File Name : sentiment_analysis.py
 
 File Organization:
 * Imports
+* Data Preprocessing
 * Hyperparameter Grid Search Utilities
 * Main Runner
 
@@ -25,9 +26,47 @@ import os
 import sys
 import argparse
 import random
+import csv
 from pssh.clients import ParallelSSHClient
 from typing import List
 from misc_utilities import logging_print
+
+######################
+# Data Preprocessing #
+######################
+
+def preprocess_data_file(raw_data_csv_location: str, normalized_data_csv_location: str) -> None:
+    from string_processing_utilities import normalized_words_from_text_string
+    with open(raw_data_csv_location, encoding='ISO-8859-1') as raw_data_csv_file:
+        raw_data_csv_reader = csv.DictReader(raw_data_csv_file, delimiter=',')
+        updated_row_dicts = []
+        for row_dict in raw_data_csv_reader:
+            updated_row_dict = row_dict
+            sentiment_text = row_dict['SentimentText']
+            normalized_sentiment_text = ' '.join(normalized_words_from_text_string(sentiment_text))
+            updated_row_dict['SentimentText'] = normalized_sentiment_text
+            updated_row_dicts.append(updated_row_dict)
+            with open(normalized_data_csv_location, mode='w') as normalized_data_csv_file:
+                assert len(updated_row_dicts) > 0, "Data is empty at {raw_data_csv_location}.".format(raw_data_csv_location=raw_data_csv_location)
+                arbitrary_updated_row_dict = updated_row_dicts[0]
+                fieldnames = arbitrary_updated_row_dict.keys()
+                writer = csv.DictWriter(normalized_data_csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+                for updated_row_dict in updated_row_dicts:
+                    writer.writerow(updated_row_dict)
+    return None
+
+def preprocess_data() -> None:
+    import text_classifier
+    raw_training_data_csv_location = text_classifier.RAW_TRAINING_DATA_LOCATION
+    normalized_training_data_csv_location = text_classifier.NORMALIZED_TRAINING_DATA_LOCATION
+    preprocess_data_file(raw_training_data_csv_location, normalized_training_data_csv_location)
+    raw_testing_data_csv_location = text_classifier.RAW_TEST_DATA_LOCATION
+    normalized_testing_data_csv_location = text_classifier.NORMALIZED_TEST_DATA_LOCATION
+    preprocess_data_file(raw_testing_data_csv_location, normalized_testing_data_csv_location)
+    import importlib
+    importlib.reload(text_classifier)
+    return None
 
 ########################################
 # Hyperparameter Grid Search Utilities #
@@ -270,6 +309,7 @@ def main():
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-run-tests', action='store_true', help="To run all of the tests.")
+    parser.add_argument('-preprocess-data', action='store_true', help="To normalize our training and test data so it doesn't have to happen during training or testing.")
     parser.add_argument('-train-sentiment-analyzer', action='store_true', help="To run the training process for the sentiment analyzer.")
     parser.add_argument('-test-sentiment-analyzer', action='store_true', help="To evaluate the sentiment analyzer's performance against the test set.")
     parser.add_argument('-number-of-epochs', help="Number of epochs to train the sentiment analyzer.")
@@ -289,15 +329,18 @@ def main():
     no_args_specified = not any(arg_to_value_map.values())
     if no_args_specified:
         parser.print_help()
-    test_run_requested = arg_to_value_map['run_tests']
-    if test_run_requested:
-        import string_processing_tests
-        string_processing_tests.run_all_tests()
+    data_preprocessing_requested = arg_to_value_map['data_preprocessing']
+    if data_preprocessing_requested:
+        preprocess_data()
     hyperparameter_grid_search_specified = bool(arg_to_value_map['perform_hyperparameter_grid_search_in_directory'])
     if hyperparameter_grid_search_specified:
         validate_cli_args_for_hyperparameter_grid_search(arg_to_value_map)
         result_directory = arg_to_value_map['perform_hyperparameter_grid_search_in_directory']
-        perform_distributed_hyperparameter_grid_search(result_directory)
+        perform_distributed_hyperparameter_grid_search(result_directory) # @todo abstract this out to its own module
+    test_run_requested = arg_to_value_map['run_tests']
+    if test_run_requested:
+        import string_processing_tests
+        string_processing_tests.run_all_tests()
     training_requested = arg_to_value_map['train_sentiment_analyzer']
     if training_requested:
         validate_cli_args_for_training(arg_to_value_map)
