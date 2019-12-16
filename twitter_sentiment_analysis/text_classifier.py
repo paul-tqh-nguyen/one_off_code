@@ -391,6 +391,7 @@ class SentimentAnalysisClassifier():
             'validation_attention_regularization_loss': self.most_recent_epoch_validation_loss_via_attention_regularization,
             'validation_correctness_loss': self.most_recent_epoch_validation_loss_via_correctness,
         }, ignore_index=True)
+        logging_print('updated_csv_dataframe_epoch_index = {}'.format(list(updated_csv_dataframe.epoch_index)))
         updated_csv_dataframe.loc[:, 'epoch_index'] = updated_csv_dataframe['epoch_index'].apply(int)
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
         if socket.gethostname() != 'phact': # @todo remove this exception
@@ -448,7 +449,7 @@ class SentimentAnalysisClassifier():
             epoch_loss_via_correctness = 0
             epoch_loss_via_attention_regularization = 0
             total_number_of_iterations = len(self.training_generator.dataset)
-            current_global_epoch=self.number_of_completed_epochs+new_epoch_index
+            current_global_epoch = self.number_of_completed_epochs
             for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
                 if number_of_iterations_between_checkpoints is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
@@ -472,6 +473,8 @@ class SentimentAnalysisClassifier():
             self.most_recent_epoch_loss = total_epoch_loss
             self.most_recent_epoch_loss_via_correctness = epoch_loss_via_correctness
             self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
+            logging_print("self.number_of_completed_epochs {}".format(self.number_of_completed_epochs))
+            logging_print("new_epoch_index {}".format(new_epoch_index))
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
             self.update_valiation_loss()
