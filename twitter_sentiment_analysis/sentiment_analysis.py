@@ -60,9 +60,15 @@ def preprocess_data() -> None:
     import text_classifier
     raw_training_data_csv_location = text_classifier.RAW_TRAINING_DATA_LOCATION
     normalized_training_data_csv_location = text_classifier.NORMALIZED_TRAINING_DATA_LOCATION
+    logging_print("Storing processed training data from {raw_training_data_csv_location} to {normalized_training_data_csv_location}.".format(
+        raw_training_data_csv_location=raw_training_data_csv_location,
+        normalized_training_data_csv_location=normalized_training_data_csv_location))
     preprocess_data_file(raw_training_data_csv_location, normalized_training_data_csv_location)
     raw_testing_data_csv_location = text_classifier.RAW_TEST_DATA_LOCATION
     normalized_testing_data_csv_location = text_classifier.NORMALIZED_TEST_DATA_LOCATION
+    logging_print("Storing processed test data from {raw_testing_data_csv_location} to {normalized_testing_data_csv_location}.".format(
+        raw_testing_data_csv_location=raw_testing_data_csv_location,
+        normalized_testing_data_csv_location=normalized_testing_data_csv_location)
     preprocess_data_file(raw_testing_data_csv_location, normalized_testing_data_csv_location)
     import importlib
     importlib.reload(text_classifier)
