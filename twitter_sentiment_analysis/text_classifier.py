@@ -423,7 +423,7 @@ class SentimentAnalysisClassifier():
                 assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
                 y_datum = y_batch[0]
                 expected_result = sentiment_result_to_string(y_datum)
-                y_batch_predicted, _ = self.evaluate(x_batch)
+                y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 self.most_recent_epoch_validation_loss_via_correctness += self.loss_function(y_batch_predicted, y_batch)
                 self.most_recent_epoch_validation_loss_via_attention_regularization += attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 self.most_recent_epoch_validation_loss += loss_via_correctness + loss_via_attention_regularization
