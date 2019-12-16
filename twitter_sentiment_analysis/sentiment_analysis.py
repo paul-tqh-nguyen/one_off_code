@@ -46,14 +46,15 @@ def preprocess_data_file(raw_data_csv_location: str, normalized_data_csv_locatio
             normalized_sentiment_text = ' '.join(normalized_words_from_text_string(sentiment_text))
             updated_row_dict['SentimentText'] = normalized_sentiment_text
             updated_row_dicts.append(updated_row_dict)
-            with open(normalized_data_csv_location, mode='w') as normalized_data_csv_file:
-                assert len(updated_row_dicts) > 0, "Data is empty at {raw_data_csv_location}.".format(raw_data_csv_location=raw_data_csv_location)
-                arbitrary_updated_row_dict = updated_row_dicts[0]
-                fieldnames = arbitrary_updated_row_dict.keys()
-                writer = csv.DictWriter(normalized_data_csv_file, fieldnames=fieldnames)
-                writer.writeheader()
-                for updated_row_dict in updated_row_dicts:
-                    writer.writerow(updated_row_dict)
+            break
+        with open(normalized_data_csv_location, mode='w') as normalized_data_csv_file:
+            assert len(updated_row_dicts) > 0, "Data is empty at {raw_data_csv_location}.".format(raw_data_csv_location=raw_data_csv_location)
+            arbitrary_updated_row_dict = updated_row_dicts[0]
+            fieldnames = arbitrary_updated_row_dict.keys()
+            writer = csv.DictWriter(normalized_data_csv_file, fieldnames=fieldnames)
+            writer.writeheader()
+            for updated_row_dict in updated_row_dicts:
+                writer.writerow(updated_row_dict)
     return None
 
 def preprocess_data() -> None:
