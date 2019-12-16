@@ -48,9 +48,8 @@ def preprocess_data_file(raw_data_csv_location: str, normalized_data_csv_locatio
             logging_print("Normalized Text: {normalized_sentiment_text}".format(normalized_sentiment_text=normalized_sentiment_text))
             updated_row_dict['SentimentText'] = normalized_sentiment_text
             updated_row_dicts.append(updated_row_dict)
-            break
         with open(normalized_data_csv_location, mode='w') as normalized_data_csv_file:
-            assert len(updated_row_dicts) > 0, "Data is empty at {raw_data_csv_location}.".format(raw_data_csv_location=raw_data_csv_location)
+            assert len(updated_row_dicts) > 0, "Data at {raw_data_csv_location} is empty.".format(raw_data_csv_location=raw_data_csv_location)
             arbitrary_updated_row_dict = updated_row_dicts[0]
             fieldnames = arbitrary_updated_row_dict.keys()
             writer = csv.DictWriter(normalized_data_csv_file, fieldnames=fieldnames)
@@ -63,13 +62,13 @@ def preprocess_data() -> None:
     import text_classifier
     raw_training_data_csv_location = text_classifier.RAW_TRAINING_DATA_LOCATION
     normalized_training_data_csv_location = text_classifier.NORMALIZED_TRAINING_DATA_LOCATION
-    logging_print("Storing processed training data from {raw_training_data_csv_location} to {normalized_training_data_csv_location}.".format(
+    logging_print("Storing processed training data from {raw_training_data_csv_location} to {normalized_training_data_csv_location}".format(
         raw_training_data_csv_location=raw_training_data_csv_location,
         normalized_training_data_csv_location=normalized_training_data_csv_location))
     preprocess_data_file(raw_training_data_csv_location, normalized_training_data_csv_location)
     raw_testing_data_csv_location = text_classifier.RAW_TEST_DATA_LOCATION
     normalized_testing_data_csv_location = text_classifier.NORMALIZED_TEST_DATA_LOCATION
-    logging_print("Storing processed test data from {raw_testing_data_csv_location} to {normalized_testing_data_csv_location}.".format(
+    logging_print("Storing processed test data from {raw_testing_data_csv_location} to {normalized_testing_data_csv_location}".format(
         raw_testing_data_csv_location=raw_testing_data_csv_location,
         normalized_testing_data_csv_location=normalized_testing_data_csv_location))
     preprocess_data_file(raw_testing_data_csv_location, normalized_testing_data_csv_location)
