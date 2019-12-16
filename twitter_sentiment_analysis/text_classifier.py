@@ -424,9 +424,12 @@ class SentimentAnalysisClassifier():
                 y_datum = y_batch[0]
                 expected_result = sentiment_result_to_string(y_datum)
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
-                self.most_recent_epoch_validation_loss_via_correctness += self.loss_function(y_batch_predicted, y_batch)
-                self.most_recent_epoch_validation_loss_via_attention_regularization += attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
+                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
+                loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
+                self.most_recent_epoch_validation_loss_via_correctness += loss_via_correctness
+                self.most_recent_epoch_validation_loss_via_attention_regularization += loss_via_attention_regularization
                 self.most_recent_epoch_validation_loss += loss_via_correctness + loss_via_attention_regularization
+                assert self.most_recent_epoch_validation_loss == self.most_recent_epoch_validation_loss_via_attention_regularization + self.most_recent_epoch_validation_loss_via_correctness
         return None
         
     def train(self, number_of_epochs_to_train: int, number_of_iterations_between_checkpoints=None) -> None:
