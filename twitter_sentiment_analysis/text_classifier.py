@@ -216,7 +216,7 @@ def tensor_from_normalized_word(word: str):
 
 def tensors_from_text_string(text_string: str):
     global NORMALIZED_DATA_EXISTS
-    normalized_words = text_string.split(' ') if NORMALIZED_DATA_EXISTS normalized_words_from_text_string(text_string)
+    normalized_words = text_string.split(' ') if NORMALIZED_DATA_EXISTS else normalized_words_from_text_string(text_string)
     tensors = map(tensor_from_normalized_word, normalized_words)
     return tensors
 
