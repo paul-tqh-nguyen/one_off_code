@@ -426,6 +426,8 @@ class SentimentAnalysisClassifier():
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
+                loss_via_correctness = float(loss_via_correctness)
+                loss_via_attention_regularization = float(loss_via_attention_regularization)
                 self.most_recent_epoch_validation_loss_via_correctness += loss_via_correctness
                 self.most_recent_epoch_validation_loss_via_attention_regularization += loss_via_attention_regularization
                 self.most_recent_epoch_validation_loss += loss_via_correctness + loss_via_attention_regularization
