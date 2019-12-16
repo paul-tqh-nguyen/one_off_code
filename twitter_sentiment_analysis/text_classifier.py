@@ -341,6 +341,9 @@ class SentimentAnalysisClassifier():
         self.most_recent_epoch_loss = 0
         self.most_recent_epoch_loss_via_correctness = 0
         self.most_recent_epoch_loss_via_attention_regularization = 0
+        self.most_recent_epoch_validation_loss = 0
+        self.most_recent_epoch_validation_loss_via_correctness = 0
+        self.most_recent_epoch_validation_loss_via_attention_regularization = 0
         self.loss_function = nn.BCELoss()
         self.model = SentimentAnalysisNetwork(
             embedding_hidden_size=embedding_hidden_size,
@@ -367,7 +370,7 @@ class SentimentAnalysisClassifier():
         logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
         logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
         
-    def _update_loss_per_epoch_logs(self, current_global_epoch):
+    def _update_loss_per_epoch_logs(self, current_global_epoch: int) -> None::
         global PROGRESS_CSV_LOCAL_NAME
         global PROGRESS_PNG_LOCAL_NAME 
         loss_per_epoch_csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
@@ -395,8 +398,25 @@ class SentimentAnalysisClassifier():
             loss_per_epoch_png_location = os.path.join(self.checkpoint_directory, PROGRESS_PNG_LOCAL_NAME)
             plt.savefig(loss_per_epoch_png_location)
             plt.close()
+    
+    def update_valiation_loss(self) -> None:
+        self.most_recent_epoch_validation_loss = 0
+        self.most_recent_epoch_validation_loss_via_correctness = 0
+        self.most_recent_epoch_validation_loss_via_attention_regularization = 0
+        with torch.no_grad():
+            for x_batch, y_batch in self.validation_generator:
+                assert isinstance(x_batch, tuple)
+                assert len(x_batch) == 1
+                assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
+                y_datum = y_batch[0]
+                expected_result = sentiment_result_to_string(y_datum)
+                y_batch_predicted, _ = self.evaluate(x_batch)
+                self.most_recent_epoch_validation_loss_via_correctness += self.loss_function(y_batch_predicted, y_batch)
+                self.most_recent_epoch_validation_loss_via_attention_regularization += attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
+                self.most_recent_epoch_validation_loss += loss_via_correctness + loss_via_attention_regularization
+        return None
         
-    def train(self, number_of_epochs_to_train, number_of_iterations_between_checkpoints=None):
+    def train(self, number_of_epochs_to_train: int, number_of_iterations_between_checkpoints=None) -> None:
         self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
             total_epoch_loss = 0
@@ -420,15 +440,16 @@ class SentimentAnalysisClassifier():
                 batch_loss = loss_via_correctness + loss_via_attention_regularization
                 self.optimizer.zero_grad()
                 batch_loss.backward()
+                self.optimizer.step()
                 total_epoch_loss += float(batch_loss)
                 epoch_loss_via_correctness += float(loss_via_correctness)
                 epoch_loss_via_attention_regularization += float(loss_via_attention_regularization)
-                self.optimizer.step()
             self.most_recent_epoch_loss = total_epoch_loss
             self.most_recent_epoch_loss_via_correctness = epoch_loss_via_correctness
             self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
+            self.update_valiation_loss()
             self._update_loss_per_epoch_logs(current_global_epoch)
             self.print_current_state()
             self.save(sub_directory_to_checkpoint_in)
@@ -438,32 +459,14 @@ class SentimentAnalysisClassifier():
         self.model.eval()
         return self.model(strings)
     
-    def print_current_state(self, print_verbosely=False):
+    def print_current_state(self) -> None:
         logging_print()
         logging_print("===================================================================")
-        correct_result_number = 0
-        for x_batch, y_batch in self.validation_generator:
-            assert isinstance(x_batch, tuple)
-            assert len(x_batch) == 1
-            assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
-            y_datum = y_batch[0]
-            expected_result = sentiment_result_to_string(y_datum)
-            y_batch_predicted, _ = self.evaluate(x_batch)
-            assert y_batch_predicted.shape == (1,NUMBER_OF_SENTIMENTS)
-            actual_result = sentiment_result_to_string(y_batch_predicted[0])
-            if print_verbosely:
-                input_string = x_batch[0]
-                logging_print("Input: {x}".format(x=input_string))
-                logging_print("Expected Output: {x}".format(x=expected_result))
-                logging_print("Actual Output: {x}".format(x=actual_result))
-                logging_print("Raw Expected Output: {x}".format(x=y_datum))
-                logging_print("Raw Actual Output: {x}".format(x=y_batch_predicted))
-                logging_print("\n")
-            if actual_result == expected_result:
-                correct_result_number += 1
-        total_result_number = len(self.validation_generator.dataset)
-        logging_print("Truncated Validation Set Correctness Portion: {correct_result_number} / {total_result_number}".format(
-            correct_result_number=correct_result_number, total_result_number=total_result_number))
+        logging_print("Total validation loss for model prior to validation for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss))
+        logging_print("Validation loss via correctness for model prior to validation for epoch {epoch_index} is {loss}".format(
+            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss_via_correctness))
+        logging_print("Validation loss via attention regularization for model prior to validation for epoch {epoch_index} is {loss}".format(
+            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss_via_attention_regularization))
         logging_print("Total training loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
         logging_print("Training loss via correctness for model prior to training for epoch {epoch_index} is {loss}".format(
             epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss_via_correctness))
@@ -474,7 +477,7 @@ class SentimentAnalysisClassifier():
             logging_print("    NB: Loss has not yet been calculated for model prior to training for epoch {epoch_index}.".format(epoch_index=self.number_of_completed_epochs))
         logging_print("===================================================================")
     
-    def save(self, sub_directory_name):
+    def save(self, sub_directory_name) -> None:
         global UNSEEN_WORD_TO_TENSOR_MAP
         global STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME
         global UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME
@@ -490,12 +493,12 @@ class SentimentAnalysisClassifier():
         validation_results_file = os.path.join(directory_to_save_in, VALIDATION_RESULTS_LOCAL_NAME)
         with open(validation_results_file, 'w') as f:
             with redirect_stdout(f):
-                self.print_current_state(print_verbosely=True)
+                self.print_current_state()
         logging_print()
         logging_print("Saved checkpoint to {directory_to_save_in}".format(directory_to_save_in=directory_to_save_in))
         logging_print()
     
-    def load(self, saved_directory_name):
+    def load(self, saved_directory_name) -> None:
         global UNSEEN_WORD_TO_TENSOR_MAP
         global STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME
         global UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME
