@@ -491,7 +491,7 @@ class SentimentAnalysisClassifier():
             epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss_via_correctness))
         logging_print("Training loss via attention regularization for model prior to training for epoch {epoch_index} is {loss}".format(
             epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss_via_attention_regularization))
-        assert implies(self.most_recent_epoch_loss==0, epoch_index==0)
+        assert implies(self.most_recent_epoch_loss==0, self.number_of_completed_epochs==0)
         if self.most_recent_epoch_loss == 0:
             logging_print("    NB: Loss has not yet been calculated for model prior to training for epoch {epoch_index}.".format(epoch_index=self.number_of_completed_epochs))
         logging_print("===================================================================")
