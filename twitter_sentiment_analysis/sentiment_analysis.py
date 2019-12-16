@@ -68,7 +68,7 @@ def preprocess_data() -> None:
     normalized_testing_data_csv_location = text_classifier.NORMALIZED_TEST_DATA_LOCATION
     logging_print("Storing processed test data from {raw_testing_data_csv_location} to {normalized_testing_data_csv_location}.".format(
         raw_testing_data_csv_location=raw_testing_data_csv_location,
-        normalized_testing_data_csv_location=normalized_testing_data_csv_location)
+        normalized_testing_data_csv_location=normalized_testing_data_csv_location))
     preprocess_data_file(raw_testing_data_csv_location, normalized_testing_data_csv_location)
     import importlib
     importlib.reload(text_classifier)
