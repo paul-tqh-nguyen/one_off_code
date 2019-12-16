@@ -36,6 +36,7 @@ import random
 import time
 import pickle
 import socket
+import warnings
 import pandas as pd
 if socket.gethostname() != 'phact': # @todo remove this exception
     from matplotlib import pyplot as plt
@@ -132,6 +133,20 @@ CURRENT_FILE_PATH = os.path.abspath(os.path.dirname(__file__))
 RAW_TRAINING_DATA_LOCATION = os.path.join(CURRENT_FILE_PATH, "data/train.csv")
 RAW_TEST_DATA_LOCATION = os.path.join(CURRENT_FILE_PATH, "data/test.csv")
 
+NORMALIZED_TRAINING_DATA_LOCATION = os.path.join(CURRENT_FILE_PATH, "data/train_normalized.csv")
+NORMALIZED_TEST_DATA_LOCATION = os.path.join(CURRENT_FILE_PATH, "data/test_normalized.csv")
+
+NORMALIZED_TRAINING_DATA_EXISTS = os.path.isfile(NORMALIZED_TRAINING_DATA_LOCATION)
+NORMALIZED_TEST_DATA_EXISTS = os.path.isfile(NORMALIZED_TEST_DATA_LOCATION)
+
+if not NORMALIZED_TRAINING_DATA_EXISTS:
+    warnings.warn("Pre-computed normalized training data does not exist, so data normalization will happen on-demand and will not be stored, which can lead to slow performance via redundant computation.")
+if not NORMALIZED_TEST_DATA_EXISTS:
+    warnings.warn("Pre-computed normalized test data does not exist, so data normalization will happen on-demand and will not be stored, which can lead to slow performance via redundant computation.")
+
+TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TRAINING_DATA_LOCATION if NORMALIZED_TRAINING_DATA_EXISTS else RAW_TRAINING_DATA_LOCATION
+TEST_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TEST_DATA_LOCATION if NORMALIZED_TEST_DATA_EXISTS else RAW_TEST_DATA_LOCATION
+
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
@@ -146,7 +161,7 @@ if socket.gethostname() == 'phact': # @todo get rid of this
     PORTION_OF_TESTING_DATA_TO_USE = 1.0
     #'''
 
-with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
+with open(TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
     row_dicts = list(training_data_csv_reader)
     number_of_row_dicts = len(row_dicts)
@@ -156,7 +171,7 @@ with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_cs
         id = row_dict.pop('ItemID')
         TRAINING_DATA_ID_TO_DATA_MAP[id]=row_dict
 
-with open(RAW_TEST_DATA_LOCATION, encoding='ISO-8859-1') as test_data_csv_file:
+with open(TEST_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as test_data_csv_file:
     test_data_csv_reader = csv.DictReader(test_data_csv_file, delimiter=',')
     row_dicts = list(test_data_csv_reader)
     number_of_row_dicts = len(row_dicts)

@@ -124,6 +124,7 @@ HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = [
 ]
 
 def perform_distributed_hyperparameter_grid_search(result_directory: str) -> None:
+    # @todo verify that this works to some extent
     training_commands = determine_training_commands_for_distributed_grid_search(result_directory)
     random.shuffle(training_commands)
     if True: # @todo remove this
