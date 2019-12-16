@@ -333,10 +333,9 @@ PROGRESS_PNG_LOCAL_NAME = "loss_per_epoch.png"
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
-                 checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, print_verbosely=False, 
+                 checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, 
     ):
         global PROGRESS_CSV_LOCAL_NAME
-        self.print_verbosely = print_verbosely
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
         self.most_recent_epoch_loss = 0
@@ -439,7 +438,7 @@ class SentimentAnalysisClassifier():
         self.model.eval()
         return self.model(strings)
     
-    def print_current_state(self):
+    def print_current_state(self, print_verbosely=False):
         logging_print()
         logging_print("===================================================================")
         correct_result_number = 0
@@ -452,7 +451,7 @@ class SentimentAnalysisClassifier():
             y_batch_predicted, _ = self.evaluate(x_batch)
             assert y_batch_predicted.shape == (1,NUMBER_OF_SENTIMENTS)
             actual_result = sentiment_result_to_string(y_batch_predicted[0])
-            if self.print_verbosely:
+            if print_verbosely:
                 input_string = x_batch[0]
                 logging_print("Input: {x}".format(x=input_string))
                 logging_print("Expected Output: {x}".format(x=expected_result))
@@ -491,7 +490,7 @@ class SentimentAnalysisClassifier():
         validation_results_file = os.path.join(directory_to_save_in, VALIDATION_RESULTS_LOCAL_NAME)
         with open(validation_results_file, 'w') as f:
             with redirect_stdout(f):
-                self.print_current_state()
+                self.print_current_state(print_verbosely=True)
         logging_print()
         logging_print("Saved checkpoint to {directory_to_save_in}".format(directory_to_save_in=directory_to_save_in))
         logging_print()
@@ -523,7 +522,6 @@ def train_classifier(batch_size=1,
                      checkpoint_directory=get_new_checkpoint_directory(),
                      number_of_epochs=8,
                      number_of_iterations_between_checkpoints=1000,
-                     print_verbosely=False,
                      loading_directory=None,
 ):
     classifier = SentimentAnalysisClassifier(
@@ -536,7 +534,6 @@ def train_classifier(batch_size=1,
         attention_hidden_size=attention_hidden_size,
         checkpoint_directory=checkpoint_directory,
         loading_directory=loading_directory,
-        print_verbosely=print_verbosely,
     )
     number_of_epochs_between_updates = 1
     number_of_updates = number_of_epochs//number_of_epochs_between_updates
