@@ -37,7 +37,7 @@ import time
 import pickle
 import socket
 import pandas as pd
-if socket.gethostname() != 'phact': # @todo get rid of this
+if socket.gethostname() != 'phact': # @todo remove this exception
     from matplotlib import pyplot as plt
 from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
@@ -138,6 +138,11 @@ TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 VALIDATION_DATA_PORTION = 0.1 #0.001 # @todo fix this
 PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 PORTION_OF_TESTING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
+
+if socket.gethostname() == 'phact': # @todo get rid of this
+    VALIDATION_DATA_PORTION = 0.001
+    PORTION_OF_TRAINING_DATA_TO_USE = 1.0
+    PORTION_OF_TESTING_DATA_TO_USE = 1.0
 
 with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
@@ -343,29 +348,30 @@ class SentimentAnalysisClassifier():
         logging_print("Checkpoint Directory: {checkpoint_directory}".format(checkpoint_directory=self.checkpoint_directory))
         logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
         logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
-
+        
     def _update_loss_per_epoch_logs(self, current_global_epoch):
         global PROGRESS_CSV_LOCAL_NAME
         global PROGRESS_PNG_LOCAL_NAME 
         loss_per_epoch_csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
-        current_csv_dataframe = pd.read_csv(loss_per_epoch_csv_location, index_col='epoch_index')
+        current_csv_dataframe = pd.read_csv(loss_per_epoch_csv_location)
         updated_csv_dataframe = current_csv_dataframe.append({
             'epoch_index': current_global_epoch,
             'total_loss': self.most_recent_epoch_loss,
             'attention_regularization_loss': self.most_recent_epoch_loss_via_attention_regularization,
             'correctness_loss': self.most_recent_epoch_loss_via_correctness,
         }, ignore_index=True)
+        updated_csv_dataframe.loc[:, 'epoch_index'] = updated_csv_dataframe['epoch_index'].apply(int)
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
-        if socket.gethostname() != 'phact': # @todo get rid of this
+        if socket.gethostname() != 'phact': # @todo remove this exception
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.total_loss, label="Total Loss")
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.attention_regularization_loss, label="Attention Regularization Loss")
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.correctness_loss, label="Correctness Loss")
+            plt.title('Loss Per Epoch')
+            plt.ylabel('Loss')
+            plt.xlabel('Epoch Index')
+            plt.legend(loc='lower left')
             loss_per_epoch_png_location = os.path.join(self.checkpoint_directory, PROGRESS_PNG_LOCAL_NAME)
             plt.savefig(loss_per_epoch_png_location)
-            print("updated_csv_dataframe.total_loss {}".format(updated_csv_dataframe.total_loss))
-            print("updated_csv_dataframe.attention_regularization_loss {}".format(updated_csv_dataframe.attention_regularization_loss))
-            print("updated_csv_dataframe.correctness_loss {}".format(updated_csv_dataframe.correctness_loss))
-            print("loss_per_epoch_png_location {}".format(loss_per_epoch_png_location))
         
     def train(self, number_of_epochs_to_train, number_of_iterations_between_checkpoints=None):
         self.model.train()
