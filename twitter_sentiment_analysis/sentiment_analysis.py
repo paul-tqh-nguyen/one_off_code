@@ -335,7 +335,7 @@ def main():
     no_args_specified = not any(arg_to_value_map.values())
     if no_args_specified:
         parser.print_help()
-    data_preprocessing_requested = arg_to_value_map['data_preprocessing']
+    data_preprocessing_requested = arg_to_value_map['preprocess_data']
     if data_preprocessing_requested:
         preprocess_data()
     hyperparameter_grid_search_specified = bool(arg_to_value_map['perform_hyperparameter_grid_search_in_directory'])
