@@ -391,7 +391,6 @@ class SentimentAnalysisClassifier():
             'validation_attention_regularization_loss': self.most_recent_epoch_validation_loss_via_attention_regularization,
             'validation_correctness_loss': self.most_recent_epoch_validation_loss_via_correctness,
         }, ignore_index=True)
-        logging_print('updated_csv_dataframe_epoch_index = {}'.format(list(updated_csv_dataframe.epoch_index)))
         updated_csv_dataframe.loc[:, 'epoch_index'] = updated_csv_dataframe['epoch_index'].apply(int)
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
         if socket.gethostname() != 'phact': # @todo remove this exception
@@ -402,6 +401,7 @@ class SentimentAnalysisClassifier():
             logging_print('updated_csv_dataframe_validation_total_loss = {}'.format(list(updated_csv_dataframe.validation_total_loss)))
             logging_print('updated_csv_dataframe_validation_attention_regularization_loss = {}'.format(list(updated_csv_dataframe.validation_attention_regularization_loss)))
             logging_print('updated_csv_dataframe_validation_correctness_loss = {}'.format(list(updated_csv_dataframe.validation_correctness_loss)))
+            plt.figure(figsize=(20.0,10.0))
             plt.grid()
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_total_loss, label='Training Total Loss')
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_attention_regularization_loss, label='Training Attention Regularization Loss')
@@ -413,7 +413,6 @@ class SentimentAnalysisClassifier():
             plt.ylabel('Loss')
             plt.xlabel('Epoch Index')
             plt.legend(loc='upper right')
-            plt.figure(figsize=(20.0,10.0))
             plt.ylim(bottom=0)
             plt.xlim(left=0)
             loss_per_epoch_png_location = os.path.join(self.checkpoint_directory, PROGRESS_PNG_LOCAL_NAME)
@@ -473,8 +472,6 @@ class SentimentAnalysisClassifier():
             self.most_recent_epoch_loss = total_epoch_loss
             self.most_recent_epoch_loss_via_correctness = epoch_loss_via_correctness
             self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
-            logging_print("self.number_of_completed_epochs {}".format(self.number_of_completed_epochs))
-            logging_print("new_epoch_index {}".format(new_epoch_index))
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
             self.update_valiation_loss()
