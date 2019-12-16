@@ -139,10 +139,12 @@ VALIDATION_DATA_PORTION = 0.1 #0.001 # @todo fix this
 PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 PORTION_OF_TESTING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 
+'''
 if socket.gethostname() == 'phact': # @todo get rid of this
     VALIDATION_DATA_PORTION = 0.001
     PORTION_OF_TRAINING_DATA_TO_USE = 1.0
     PORTION_OF_TESTING_DATA_TO_USE = 1.0
+    #'''
 
 with open(RAW_TRAINING_DATA_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
@@ -363,6 +365,9 @@ class SentimentAnalysisClassifier():
         updated_csv_dataframe.loc[:, 'epoch_index'] = updated_csv_dataframe['epoch_index'].apply(int)
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
         if socket.gethostname() != 'phact': # @todo remove this exception
+            print("updated_csv_dataframe.total_loss {}".format(updated_csv_dataframe.total_loss))
+            print("updated_csv_dataframe.attention_regularization_loss {}".format(updated_csv_dataframe.attention_regularization_loss))
+            print("updated_csv_dataframe.correctness_loss {}".format(updated_csv_dataframe.correctness_loss))
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.total_loss, label="Total Loss")
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.attention_regularization_loss, label="Attention Regularization Loss")
             plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.correctness_loss, label="Correctness Loss")
