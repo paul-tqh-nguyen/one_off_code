@@ -27,6 +27,7 @@ import sys
 import argparse
 import random
 import csv
+import tqdm
 from pssh.clients import ParallelSSHClient
 from typing import List
 from misc_utilities import logging_print
@@ -40,12 +41,12 @@ def preprocess_data_file(raw_data_csv_location: str, normalized_data_csv_locatio
     with open(raw_data_csv_location, encoding='ISO-8859-1') as raw_data_csv_file:
         raw_data_csv_reader = csv.DictReader(raw_data_csv_file, delimiter=',')
         updated_row_dicts = []
-        for row_dict in raw_data_csv_reader:
+        for row_dict in tqdm.tqdm(raw_data_csv_reader):
             updated_row_dict = row_dict
             sentiment_text = row_dict['SentimentText']
-            logging_print("Raw Text: {sentiment_text}".format(sentiment_text=sentiment_text))
             normalized_sentiment_text = ' '.join(normalized_words_from_text_string(sentiment_text))
-            logging_print("Normalized Text: {normalized_sentiment_text}".format(normalized_sentiment_text=normalized_sentiment_text))
+            # logging_print("Raw Text: {sentiment_text}".format(sentiment_text=sentiment_text))
+            # logging_print("Normalized Text: {normalized_sentiment_text}".format(normalized_sentiment_text=normalized_sentiment_text))
             updated_row_dict['SentimentText'] = normalized_sentiment_text
             updated_row_dicts.append(updated_row_dict)
         with open(normalized_data_csv_location, mode='w') as normalized_data_csv_file:
@@ -54,7 +55,7 @@ def preprocess_data_file(raw_data_csv_location: str, normalized_data_csv_locatio
             fieldnames = arbitrary_updated_row_dict.keys()
             writer = csv.DictWriter(normalized_data_csv_file, fieldnames=fieldnames)
             writer.writeheader()
-            for updated_row_dict in updated_row_dicts:
+            for updated_row_dict in tqdm.tqdm(updated_row_dicts):
                 writer.writerow(updated_row_dict)
     return None
 

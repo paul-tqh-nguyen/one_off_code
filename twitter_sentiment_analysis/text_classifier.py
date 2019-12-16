@@ -113,13 +113,13 @@ TEST_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TEST_DATA_LOCATION if NORMALI
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-VALIDATION_DATA_PORTION = 0.1 #0.001 # @todo fix this
+VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.1 #0.001 # @todo fix this
 PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 PORTION_OF_TESTING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 
 '''
 if socket.gethostname() == 'phact': # @todo get rid of this
-    VALIDATION_DATA_PORTION = 0.001
+    VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.001
     PORTION_OF_TRAINING_DATA_TO_USE = 1.0
     PORTION_OF_TESTING_DATA_TO_USE = 1.0
     #'''
@@ -162,11 +162,11 @@ class SentimentLabelledDataset(data.Dataset):
 
 def determine_training_and_validation_datasets():
     global TRAINING_DATA_ID_TO_DATA_MAP
-    global VALIDATION_DATA_PORTION
+    global VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA
     global RAW_VALUE_TO_SENTIMENT_MAP
     data_dictionaries = list(TRAINING_DATA_ID_TO_DATA_MAP.values())
     # random.shuffle(data_dictionaries)
-    number_of_validation_data_points = round(VALIDATION_DATA_PORTION*len(data_dictionaries))
+    number_of_validation_data_points = round(VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA*len(data_dictionaries))
     training_inputs = []
     training_labels = []
     validation_inputs = []
