@@ -370,24 +370,30 @@ class SentimentAnalysisClassifier():
         logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
         logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
         
-    def _update_loss_per_epoch_logs(self, current_global_epoch: int) -> None::
+    def _update_loss_per_epoch_logs(self, current_global_epoch: int) -> None:
         global PROGRESS_CSV_LOCAL_NAME
         global PROGRESS_PNG_LOCAL_NAME 
         loss_per_epoch_csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
         current_csv_dataframe = pd.read_csv(loss_per_epoch_csv_location)
         updated_csv_dataframe = current_csv_dataframe.append({
             'epoch_index': current_global_epoch,
-            'total_loss': self.most_recent_epoch_loss,
-            'attention_regularization_loss': self.most_recent_epoch_loss_via_attention_regularization,
-            'correctness_loss': self.most_recent_epoch_loss_via_correctness,
+            'training_total_loss': self.most_recent_epoch_loss,
+            'training_attention_regularization_loss': self.most_recent_epoch_loss_via_attention_regularization,
+            'training_correctness_loss': self.most_recent_epoch_loss_via_correctness,
+            'validation_total_loss': self.most_recent_epoch_validation_loss,
+            'validation_attention_regularization_loss': self.most_recent_epoch_validation_loss_via_attention_regularization,
+            'validation_correctness_loss': self.most_recent_epoch_validation_loss_via_correctness,
         }, ignore_index=True)
         updated_csv_dataframe.loc[:, 'epoch_index'] = updated_csv_dataframe['epoch_index'].apply(int)
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
         if socket.gethostname() != 'phact': # @todo remove this exception
             plt.grid()
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.total_loss, label="Total Loss")
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.attention_regularization_loss, label="Attention Regularization Loss")
-            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.correctness_loss, label="Correctness Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_total_loss, label="Training Total Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_attention_regularization_loss, label="Training Attention Regularization Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_correctness_loss, label="Training Correctness Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_total_loss, label="Validation Total Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_attention_regularization_loss, label="Validation Attention Regularization Loss")
+            plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_correctness_loss, label="Validation Correctness Loss")
             plt.title('Loss Per Epoch')
             plt.ylabel('Loss')
             plt.xlabel('Epoch Index')
