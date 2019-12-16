@@ -359,7 +359,14 @@ class SentimentAnalysisClassifier():
             os.makedirs(self.checkpoint_directory)
         csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
         with open(csv_location, 'w') as csvfile:
-            headers = ['epoch_index', 'total_loss', 'attention_regularization_loss', 'correctness_loss']
+            headers = [
+                'epoch_index',
+                'training_total_loss',
+                'training_attention_regularization_loss',
+                'training_correctness_loss',
+                'validation_total_loss',
+                'validation_attention_regularization_loss',
+                'validation_correctness_loss',]
             writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n', fieldnames=headers)
             writer.writeheader()
         if loading_directory is not None:
