@@ -44,7 +44,7 @@ def preprocess_data_file(raw_data_csv_location: str, normalized_data_csv_locatio
             updated_row_dict = row_dict
             sentiment_text = row_dict['SentimentText']
             logging_print("Raw Text: {sentiment_text}".format(sentiment_text=sentiment_text))
-            normalized_sentiment_text = ' '.join(normalized_words_from_text_string(sentiment_text=sentiment_text))
+            normalized_sentiment_text = ' '.join(normalized_words_from_text_string(sentiment_text))
             logging_print("Normalized Text: {normalized_sentiment_text}".format(normalized_sentiment_text=normalized_sentiment_text))
             updated_row_dict['SentimentText'] = normalized_sentiment_text
             updated_row_dicts.append(updated_row_dict)
