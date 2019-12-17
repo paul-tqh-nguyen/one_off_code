@@ -376,6 +376,7 @@ def main():
             keyword_args['batch_size'] = int(arg_to_value_map['batch_size'])
         if arg_to_value_map['number_of_iterations_between_checkpoints'] is not None:
             keyword_args['number_of_iterations_between_checkpoints'] = int(arg_to_value_map['number_of_iterations_between_checkpoints'])
+        print("keyword_args {}".format(keyword_args))
         import text_classifier
         text_classifier.train_classifier(**keyword_args)
     testing_requested = arg_to_value_map['test_sentiment_analyzer']

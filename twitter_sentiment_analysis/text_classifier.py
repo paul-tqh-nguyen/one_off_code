@@ -38,8 +38,7 @@ import pickle
 import socket
 import warnings
 import pandas as pd
-if socket.gethostname() != 'phact': # @todo remove this exception
-    from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
@@ -113,16 +112,9 @@ TEST_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TEST_DATA_LOCATION if NORMALI
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.1 #0.001 # @todo fix this
-PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
-PORTION_OF_TESTING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
-
-'''
-if socket.gethostname() == 'phact': # @todo get rid of this
-    VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.001
-    PORTION_OF_TRAINING_DATA_TO_USE = 1.0
-    PORTION_OF_TESTING_DATA_TO_USE = 1.0
-    #'''
+VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.001 # @todo fix this
+PORTION_OF_TRAINING_DATA_TO_USE = 1.0 # @todo fix this
+PORTION_OF_TESTING_DATA_TO_USE = 1.0
 
 with open(TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
     training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
@@ -165,7 +157,7 @@ def determine_training_and_validation_datasets():
     global VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA
     global RAW_VALUE_TO_SENTIMENT_MAP
     data_dictionaries = list(TRAINING_DATA_ID_TO_DATA_MAP.values())
-    # random.shuffle(data_dictionaries)
+    #random.shuffle(data_dictionaries)
     number_of_validation_data_points = round(VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA*len(data_dictionaries))
     training_inputs = []
     training_labels = []
@@ -212,6 +204,7 @@ def tensor_from_normalized_word(word: str):
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
     else:
         tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
+    tensor = tensor[:2] # @todo remove this
     return tensor
 
 def tensors_from_text_string(text_string: str):
@@ -283,7 +276,8 @@ class SentimentAnalysisNetwork(nn.Module):
             self.embedding_hidden_size = embedding_hidden_size
             self.number_of_attention_heads = number_of_attention_heads
         self.embedding_layers = nn.Sequential(OrderedDict([
-            ("reduction_layer", nn.Linear(WORD2VEC_VECTOR_LENGTH, embedding_hidden_size)),
+            # ("reduction_layer", nn.Linear(WORD2VEC_VECTOR_LENGTH, embedding_hidden_size)),
+            ("reduction_layer", nn.Linear(2, embedding_hidden_size)), # @todo remove this
             ("activation", nn.ReLU(True)),
         ]))
         self.encoding_layers = nn.LSTM(embedding_hidden_size, embedding_hidden_size, num_layers=2, dropout=lstm_dropout_prob, bidirectional=True)
@@ -299,6 +293,37 @@ class SentimentAnalysisNetwork(nn.Module):
         self.encoding_layers.to(self.device)
         self.attention_layers.to(self.device)
         self.prediction_layers.to(self.device)
+        if True: # @todo remove this
+            def hook_fn(m, i, o):
+                print("m {}".format(m))
+                print("i {}".format(i))
+                print("o {}".format(o))
+                print(m)
+                print("------------Input Grad------------")
+                
+                for grad in i:
+                    try:
+                        print(grad)
+                        print(grad.shape)
+                    except AttributeError: 
+                        print ("None found for Gradient")
+
+                print("------------Output Grad------------")
+                for grad in o:  
+                    try:
+                        print(grad.shape)
+                    except AttributeError: 
+                        print ("None found for Gradient")
+                print("\n")
+            def get_hook_fn_that_prints_header(header: str):
+                def new_hook_fn(m, i, o):
+                    print(header)
+                    return hook_fn(m, i, o)
+                return new_hook_fn
+            self.embedding_layers.register_backward_hook(get_hook_fn_that_prints_header('embedding'))
+            self.encoding_layers.register_backward_hook(get_hook_fn_that_prints_header('encoding'))
+            self.attention_layers.register_backward_hook(get_hook_fn_that_prints_header('attention'))
+            self.prediction_layers.register_backward_hook(get_hook_fn_that_prints_header('predict'))
         
     def forward(self, text_strings: Iterable[str]):
         batch_size = len(text_strings)
@@ -306,15 +331,22 @@ class SentimentAnalysisNetwork(nn.Module):
         text_string_batch_matrix = torch.nn.utils.rnn.pad_sequence(text_string_matrices_unpadded)
         text_string_batch_matrix = text_string_batch_matrix.to(self.device)
         max_number_of_words = max(map(len, text_string_matrices_unpadded))
-        assert tuple(text_string_batch_matrix.shape) == (max_number_of_words, batch_size, WORD2VEC_VECTOR_LENGTH), "text_string_batch_matrix has unexpected dimensions."
+        # assert tuple(text_string_batch_matrix.shape) == (max_number_of_words, batch_size, WORD2VEC_VECTOR_LENGTH), "text_string_batch_matrix has unexpected dimensions." # @todo put this back in
+        print("\n\n\n\n\n\n\n\n\n\n")
+        print("text_strings {}".format(text_strings))
+        print("text_string_batch_matrix {}".format(text_string_batch_matrix))
         embeddeding_batch_matrix = self.embedding_layers(text_string_batch_matrix)
+        print("embeddeding_batch_matrix {}".format(embeddeding_batch_matrix))
         assert tuple(embeddeding_batch_matrix.shape) == (max_number_of_words, batch_size, self.embedding_hidden_size)
         encoding_batch_matrix, _ = self.encoding_layers(embeddeding_batch_matrix)
+        print("encoding_batch_matrix {}".format(encoding_batch_matrix))
         assert tuple(encoding_batch_matrix.shape) == (max_number_of_words, batch_size, 2*self.embedding_hidden_size)
         attention_matrix, attenion_regularization_penalty = self.attention_layers(encoding_batch_matrix)
+        print("attention_matrix {}".format(attention_matrix))
         assert tuple(attention_matrix.shape) == (batch_size, self.number_of_attention_heads*2*self.embedding_hidden_size)
         prediction_scores = self.prediction_layers(attention_matrix)
         assert tuple(prediction_scores.shape) == (batch_size, NUMBER_OF_SENTIMENTS)
+        print("prediction_scores {}".format(prediction_scores))
         return prediction_scores, attenion_regularization_penalty
 
 ##########################
@@ -335,6 +367,16 @@ class SentimentAnalysisClassifier():
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
                  checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, 
     ):
+        # @todo number_of_attention_heads=1 causes NANs
+        print("batch_size {}".format(batch_size))
+        print("learning_rate {}".format(learning_rate))
+        print("attenion_regularization_penalty_multiplicative_factor {}".format(attenion_regularization_penalty_multiplicative_factor))
+        print("embedding_hidden_size {}".format(embedding_hidden_size))
+        print("lstm_dropout_prob {}".format(lstm_dropout_prob))
+        print("number_of_attention_heads {}".format(number_of_attention_heads))
+        print("attention_hidden_size {}".format(attention_hidden_size))
+        print("checkpoint_directory {}".format(checkpoint_directory))
+        print("loading_directory {}".format(loading_directory))
         global PROGRESS_CSV_LOCAL_NAME
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
@@ -442,6 +484,7 @@ class SentimentAnalysisClassifier():
             total_number_of_iterations = len(self.training_generator.dataset)
             current_global_epoch = self.number_of_completed_epochs
             for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
+                print("iteration_index {}".format(iteration_index))
                 if number_of_iterations_between_checkpoints is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
                         logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
@@ -452,6 +495,8 @@ class SentimentAnalysisClassifier():
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         self.save(sub_directory_to_checkpoint_in)
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
+                print("y_batch_predicted {}".format(y_batch_predicted))
+                print("y_batch {}".format(y_batch))
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 batch_loss = loss_via_correctness + loss_via_attention_regularization
