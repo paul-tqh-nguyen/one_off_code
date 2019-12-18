@@ -462,9 +462,9 @@ class SentimentAnalysisClassifier():
                 assert isinstance(x_batch, tuple)
                 assert len(x_batch) == 1
                 assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
-                y_datum = y_batch[0]
                 expected_result = sentiment_result_to_string(y_datum)
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
+                y_batch.to(self.device)
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 loss_via_correctness = float(loss_via_correctness)
