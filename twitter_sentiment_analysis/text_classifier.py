@@ -39,7 +39,7 @@ import socket
 import warnings
 import pandas as pd
 from matplotlib import pyplot as plt
-from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
+from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET # @todo verify that these are from this file and not indirectly imported
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
 
@@ -204,7 +204,6 @@ def tensor_from_normalized_word(word: str):
         UNSEEN_WORD_TO_TENSOR_MAP[word] = tensor
     else:
         tensor = WORD_VECTOR_FOR_UNKNOWN_WORD
-    tensor = tensor[:2] # @todo remove this
     return tensor
 
 def tensors_from_text_string(text_string: str):
@@ -276,8 +275,7 @@ class SentimentAnalysisNetwork(nn.Module):
             self.embedding_hidden_size = embedding_hidden_size
             self.number_of_attention_heads = number_of_attention_heads
         self.embedding_layers = nn.Sequential(OrderedDict([
-            # ("reduction_layer", nn.Linear(WORD2VEC_VECTOR_LENGTH, embedding_hidden_size)),
-            ("reduction_layer", nn.Linear(2, embedding_hidden_size)), # @todo remove this
+            ("reduction_layer", nn.Linear(WORD2VEC_VECTOR_LENGTH, embedding_hidden_size)),
             ("activation", nn.ReLU(True)),
         ]))
         self.encoding_layers = nn.LSTM(embedding_hidden_size, embedding_hidden_size, num_layers=2, dropout=lstm_dropout_prob, bidirectional=True)
@@ -331,10 +329,10 @@ class SentimentAnalysisNetwork(nn.Module):
         text_string_batch_matrix = torch.nn.utils.rnn.pad_sequence(text_string_matrices_unpadded)
         text_string_batch_matrix = text_string_batch_matrix.to(self.device)
         max_number_of_words = max(map(len, text_string_matrices_unpadded))
-        # assert tuple(text_string_batch_matrix.shape) == (max_number_of_words, batch_size, WORD2VEC_VECTOR_LENGTH), "text_string_batch_matrix has unexpected dimensions." # @todo put this back in
-        print("\n\n\n\n\n\n\n\n\n\n")
+        assert tuple(text_string_batch_matrix.shape) == (max_number_of_words, batch_size, WORD2VEC_VECTOR_LENGTH), "text_string_batch_matrix has unexpected dimensions."
+        print("\n\n\n\n")
         print("text_strings {}".format(text_strings))
-        print("text_string_batch_matrix {}".format(text_string_batch_matrix))
+        # print("text_string_batch_matrix {}".format(text_string_batch_matrix))
         embeddeding_batch_matrix = self.embedding_layers(text_string_batch_matrix)
         print("embeddeding_batch_matrix {}".format(embeddeding_batch_matrix))
         assert tuple(embeddeding_batch_matrix.shape) == (max_number_of_words, batch_size, self.embedding_hidden_size)
@@ -377,6 +375,7 @@ class SentimentAnalysisClassifier():
         print("attention_hidden_size {}".format(attention_hidden_size))
         print("checkpoint_directory {}".format(checkpoint_directory))
         print("loading_directory {}".format(loading_directory))
+        print("\n")
         global PROGRESS_CSV_LOCAL_NAME
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
@@ -462,10 +461,9 @@ class SentimentAnalysisClassifier():
                 assert isinstance(x_batch, tuple)
                 assert len(x_batch) == 1
                 assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
-                expected_result = sentiment_result_to_string(y_datum)
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 y_batch = y_batch.to(self.model.device)
-                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
+                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch) # @todo are these dimensions correct?
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 loss_via_correctness = float(loss_via_correctness)
                 loss_via_attention_regularization = float(loss_via_attention_regularization)
@@ -484,6 +482,9 @@ class SentimentAnalysisClassifier():
             total_number_of_iterations = len(self.training_generator.dataset)
             current_global_epoch = self.number_of_completed_epochs
             for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
+                print("len(x_batch) {}".format(len(x_batch))
+                print("len(x_batch) {}".format(len(x_batch)))
+                print("y_batch.shape {}".format(y_batch.shape))
                 print("iteration_index {}".format(iteration_index))
                 if number_of_iterations_between_checkpoints is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
@@ -498,7 +499,7 @@ class SentimentAnalysisClassifier():
                 print("y_batch_predicted {}".format(y_batch_predicted))
                 print("y_batch {}".format(y_batch))
                 y_batch = y_batch.to(self.model.device)
-                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
+                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch) # @todo are these dimensions correct?
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 batch_loss = loss_via_correctness + loss_via_attention_regularization
                 self.optimizer.zero_grad()
