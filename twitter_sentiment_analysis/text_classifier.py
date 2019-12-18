@@ -464,7 +464,7 @@ class SentimentAnalysisClassifier():
                 assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
                 expected_result = sentiment_result_to_string(y_datum)
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
-                y_batch.to(self.device)
+                y_batch.to(self.model.device)
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 loss_via_correctness = float(loss_via_correctness)
@@ -497,7 +497,7 @@ class SentimentAnalysisClassifier():
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 print("y_batch_predicted {}".format(y_batch_predicted))
                 print("y_batch {}".format(y_batch))
-                y_batch.to(self.device)
+                y_batch.to(self.model.device)
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 batch_loss = loss_via_correctness + loss_via_attention_regularization
