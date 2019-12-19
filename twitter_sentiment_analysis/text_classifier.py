@@ -234,30 +234,31 @@ class SelfAttentionLayers(nn.Module):
         ]))
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-    def to(self, device):
-        self.device = device
-        self.attention_layers.to(device)
-        
     def forward(self, input_matrix):
         max_number_of_words, batch_size, input_size = input_matrix.shape
         attention_weights_pre_softmax = self.attention_layers(input_matrix) 
         assert tuple(attention_weights_pre_softmax.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads), "attention_weights_pre_softmax has unexpected dimensions."
         attention_weights = F.softmax(attention_weights_pre_softmax, dim=0)
         assert tuple(attention_weights.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads), "attention_weights has unexpected dimensions."
-        attention_weights_batch_first = attention_weights.transpose(0,1)
-        assert tuple(attention_weights_batch_first.shape) == (batch_size, max_number_of_words, self.number_of_attention_heads), "attention_weights_batch_first has unexpected dimensions."
-        attention_weights_batch_first_transpose = attention_weights_batch_first.transpose(1,2)
-        assert tuple(attention_weights_batch_first_transpose.shape) == (batch_size, self.number_of_attention_heads, max_number_of_words), \
-            "attention_weights_batch_first_transpose has unexpected dimensions."
-        attention_weights_times_transpose = attention_weights_batch_first.matmul(attention_weights_batch_first_transpose)
-        assert tuple(attention_weights_times_transpose.shape) == (batch_size, max_number_of_words, max_number_of_words), "attention_weights_times_transpose has unexpected dimensions."
-        identity_matrix = torch.eye(max_number_of_words).repeat(batch_size,1,1).to(self.device)
-        assert tuple(identity_matrix.shape) == (batch_size, max_number_of_words, max_number_of_words), "identity_matrix has unexpected dimensions."
-        attenion_regularization_penalty_unnormalized = attention_weights_times_transpose - identity_matrix
-        assert tuple(attenion_regularization_penalty_unnormalized.shape) == (batch_size, max_number_of_words, max_number_of_words), \
-            "attenion_regularization_penalty_unnormalized has unexpected dimensions."
-        attenion_regularization_penalty_per_batch = torch.sqrt((attenion_regularization_penalty_unnormalized**2).sum(dim=1).sum(dim=1))
-        attenion_regularization_penalty = attenion_regularization_penalty_per_batch.sum(dim=0)
+        attenion_regularization_penalty = None
+        if self.number_of_attention_heads == 1:
+            attenion_regularization_penalty = 0
+        else:
+            attention_weights_batch_first = attention_weights.transpose(0,1)
+            assert tuple(attention_weights_batch_first.shape) == (batch_size, max_number_of_words, self.number_of_attention_heads), "attention_weights_batch_first has unexpected dimensions."
+            attention_weights_batch_first_transpose = attention_weights_batch_first.transpose(1,2)
+            assert tuple(attention_weights_batch_first_transpose.shape) == (batch_size, self.number_of_attention_heads, max_number_of_words), \
+                "attention_weights_batch_first_transpose has unexpected dimensions."
+            attention_weights_times_transpose = attention_weights_batch_first.matmul(attention_weights_batch_first_transpose)
+            assert tuple(attention_weights_times_transpose.shape) == (batch_size, max_number_of_words, max_number_of_words), "attention_weights_times_transpose has unexpected dimensions."
+            identity_matrix = torch.eye(max_number_of_words).repeat(batch_size,1,1).to(self.device)
+            assert tuple(identity_matrix.shape) == (batch_size, max_number_of_words, max_number_of_words), "identity_matrix has unexpected dimensions."
+            attenion_regularization_penalty_unnormalized = attention_weights_times_transpose - identity_matrix
+            assert tuple(attenion_regularization_penalty_unnormalized.shape) == (batch_size, max_number_of_words, max_number_of_words), \
+                "attenion_regularization_penalty_unnormalized has unexpected dimensions."
+            attenion_regularization_penalty_per_batch = torch.sqrt((attenion_regularization_penalty_unnormalized**2).sum(dim=1).sum(dim=1))
+            attenion_regularization_penalty = attenion_regularization_penalty_per_batch.sum(dim=0)
+        assert attenion_regularization_penalty is not None, "Attention regularization was not calculated properly."
         attention_weights_duplicated = attention_weights.view(-1,1).repeat(1,input_size).view(max_number_of_words, batch_size, self.number_of_attention_heads*input_size)
         assert tuple(attention_weights_duplicated.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads*input_size), "attention_weights_duplicated has unexpected dimensions."
         input_matrix_duplicated = input_matrix.repeat(1,1,self.number_of_attention_heads) 
@@ -267,6 +268,10 @@ class SelfAttentionLayers(nn.Module):
         attended_matrix = torch.sum(weight_adjusted_input_matrix, dim=0)
         assert tuple(attended_matrix.shape) == (batch_size, self.number_of_attention_heads*input_size), "attended_matrix has unexpected dimensions."
         return attended_matrix, attenion_regularization_penalty
+        
+    def to(self, device):
+        self.device = device
+        self.attention_layers.to(device)
 
 class SentimentAnalysisNetwork(nn.Module):
     def __init__(self, embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24):
@@ -291,37 +296,6 @@ class SentimentAnalysisNetwork(nn.Module):
         self.encoding_layers.to(self.device)
         self.attention_layers.to(self.device)
         self.prediction_layers.to(self.device)
-        if True: # @todo remove this
-            def hook_fn(m, i, o):
-                print("m {}".format(m))
-                print("i {}".format(i))
-                print("o {}".format(o))
-                print(m)
-                print("------------Input Grad------------")
-                
-                for grad in i:
-                    try:
-                        print(grad)
-                        print(grad.shape)
-                    except AttributeError: 
-                        print ("None found for Gradient")
-
-                print("------------Output Grad------------")
-                for grad in o:  
-                    try:
-                        print(grad.shape)
-                    except AttributeError: 
-                        print ("None found for Gradient")
-                print("\n")
-            def get_hook_fn_that_prints_header(header: str):
-                def new_hook_fn(m, i, o):
-                    print(header)
-                    return hook_fn(m, i, o)
-                return new_hook_fn
-            self.embedding_layers.register_backward_hook(get_hook_fn_that_prints_header('embedding'))
-            self.encoding_layers.register_backward_hook(get_hook_fn_that_prints_header('encoding'))
-            self.attention_layers.register_backward_hook(get_hook_fn_that_prints_header('attention'))
-            self.prediction_layers.register_backward_hook(get_hook_fn_that_prints_header('predict'))
         
     def forward(self, text_strings: Iterable[str]):
         batch_size = len(text_strings)
