@@ -304,21 +304,14 @@ class SentimentAnalysisNetwork(nn.Module):
         text_string_batch_matrix = text_string_batch_matrix.to(self.device)
         max_number_of_words = max(map(len, text_string_matrices_unpadded))
         assert tuple(text_string_batch_matrix.shape) == (max_number_of_words, batch_size, WORD2VEC_VECTOR_LENGTH), "text_string_batch_matrix has unexpected dimensions."
-        print("\n\n\n\n")
-        print("text_strings {}".format(text_strings))
-        # print("text_string_batch_matrix {}".format(text_string_batch_matrix))
         embeddeding_batch_matrix = self.embedding_layers(text_string_batch_matrix)
-        print("embeddeding_batch_matrix {}".format(embeddeding_batch_matrix))
         assert tuple(embeddeding_batch_matrix.shape) == (max_number_of_words, batch_size, self.embedding_hidden_size)
         encoding_batch_matrix, _ = self.encoding_layers(embeddeding_batch_matrix)
-        print("encoding_batch_matrix {}".format(encoding_batch_matrix))
         assert tuple(encoding_batch_matrix.shape) == (max_number_of_words, batch_size, 2*self.embedding_hidden_size)
         attention_matrix, attenion_regularization_penalty = self.attention_layers(encoding_batch_matrix)
-        print("attention_matrix {}".format(attention_matrix))
         assert tuple(attention_matrix.shape) == (batch_size, self.number_of_attention_heads*2*self.embedding_hidden_size)
         prediction_scores = self.prediction_layers(attention_matrix)
         assert tuple(prediction_scores.shape) == (batch_size, NUMBER_OF_SENTIMENTS)
-        print("prediction_scores {}".format(prediction_scores))
         return prediction_scores, attenion_regularization_penalty
 
 ##########################
@@ -339,17 +332,6 @@ class SentimentAnalysisClassifier():
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
                  checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, 
     ):
-        # @todo number_of_attention_heads=1 causes NANs
-        print("batch_size {}".format(batch_size))
-        print("learning_rate {}".format(learning_rate))
-        print("attenion_regularization_penalty_multiplicative_factor {}".format(attenion_regularization_penalty_multiplicative_factor))
-        print("embedding_hidden_size {}".format(embedding_hidden_size))
-        print("lstm_dropout_prob {}".format(lstm_dropout_prob))
-        print("number_of_attention_heads {}".format(number_of_attention_heads))
-        print("attention_hidden_size {}".format(attention_hidden_size))
-        print("checkpoint_directory {}".format(checkpoint_directory))
-        print("loading_directory {}".format(loading_directory))
-        print("\n")
         global PROGRESS_CSV_LOCAL_NAME
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
@@ -456,10 +438,6 @@ class SentimentAnalysisClassifier():
             total_number_of_iterations = len(self.training_generator.dataset)
             current_global_epoch = self.number_of_completed_epochs
             for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
-                print("len(x_batch) {}".format(len(x_batch))
-                print("len(x_batch) {}".format(len(x_batch)))
-                print("y_batch.shape {}".format(y_batch.shape))
-                print("iteration_index {}".format(iteration_index))
                 if number_of_iterations_between_checkpoints is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
                         logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
@@ -470,8 +448,6 @@ class SentimentAnalysisClassifier():
                             timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                         self.save(sub_directory_to_checkpoint_in)
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
-                print("y_batch_predicted {}".format(y_batch_predicted))
-                print("y_batch {}".format(y_batch))
                 y_batch = y_batch.to(self.model.device)
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch) # @todo are these dimensions correct?
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
@@ -601,7 +577,7 @@ def test_classifier(loading_directory):
     logging_print("Starting Testing on {machine_name}.".format(machine_name=socket.gethostname()))
     logging_print()
     sentiment_texts = TEST_DATA_ID_TO_TEXT_MAP.values()
-    print("Number of Sentiment Texts for Testing: {sentiment_texts_len}".format(sentiment_texts_len=len(sentiment_texts)))
+    logging_print("Number of Sentiment Texts for Testing: {sentiment_texts_len}".format(sentiment_texts_len=len(sentiment_texts)))
     results, _ = classifier.evaluate(sentiment_texts)
     for (id, sentiment_text), result in zip(TEST_DATA_ID_TO_TEXT_MAP.items(), results):
         logging_print("ID: {id}".format(id=id))
