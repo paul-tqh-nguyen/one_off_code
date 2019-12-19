@@ -112,8 +112,8 @@ TEST_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TEST_DATA_LOCATION if NORMALI
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.01 #0.001 # @todo fix this
-PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
+VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.8 #0.001 # @todo fix this
+PORTION_OF_TRAINING_DATA_TO_USE = 0.005 #1.0 # @todo fix this
 PORTION_OF_TESTING_DATA_TO_USE = 1.0
 
 with open(TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
@@ -327,7 +327,7 @@ VALIDATION_RESULTS_LOCAL_NAME = "validation_results.txt"
 PROGRESS_CSV_LOCAL_NAME = "loss_per_epoch.csv"
 PROGRESS_PNG_LOCAL_NAME = "loss_per_epoch.png"
 
-VALIDATION_BATCH_SIZE = 64 # @todo experiment with increasing
+VALIDATION_BATCH_SIZE = 64
 
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
@@ -469,7 +469,8 @@ class SentimentAnalysisClassifier():
             self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                 timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
-            self.update_valiation_loss()
+            with timer(section_name="update_valiation_loss"):
+                self.update_valiation_loss()
             self._update_loss_per_epoch_logs(current_global_epoch)
             self.print_current_state()
             self.save(sub_directory_to_checkpoint_in)
