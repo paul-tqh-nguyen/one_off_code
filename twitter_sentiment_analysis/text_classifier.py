@@ -39,7 +39,7 @@ import socket
 import warnings
 import pandas as pd
 from matplotlib import pyplot as plt
-from string_processing_utilities import timeout, timer, normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET # @todo verify that these are from this file and not indirectly imported
+from string_processing_utilities import normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
 from word2vec_utilities import WORD2VEC_MODEL, WORD2VEC_VECTOR_LENGTH
 from misc_utilities import *
 
