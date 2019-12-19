@@ -112,8 +112,8 @@ TEST_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TEST_DATA_LOCATION if NORMALI
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.001 # @todo fix this
-PORTION_OF_TRAINING_DATA_TO_USE = 1.0 # @todo fix this
+VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.01 #0.001 # @todo fix this
+PORTION_OF_TRAINING_DATA_TO_USE = 0.01 #1.0 # @todo fix this
 PORTION_OF_TESTING_DATA_TO_USE = 1.0
 
 with open(TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
@@ -477,11 +477,13 @@ class SentimentAnalysisClassifier():
         logging_print()
         logging_print("===================================================================")
         logging_print("Timestamp: {timestamp}".format(timestamp=time.strftime("%Y%m%d-%H%M%S")))
+        logging_print()
         logging_print("Total validation loss for model prior to validation for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss))
         logging_print("Validation loss via correctness for model prior to validation for epoch {epoch_index} is {loss}".format(
             epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss_via_correctness))
         logging_print("Validation loss via attention regularization for model prior to validation for epoch {epoch_index} is {loss}".format(
             epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss_via_attention_regularization))
+        logging_print()
         logging_print("Total training loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
         logging_print("Training loss via correctness for model prior to training for epoch {epoch_index} is {loss}".format(
             epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss_via_correctness))
