@@ -113,7 +113,7 @@ TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
 VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.01 #0.001 # @todo fix this
-PORTION_OF_TRAINING_DATA_TO_USE = 0.01 #1.0 # @todo fix this
+PORTION_OF_TRAINING_DATA_TO_USE = 0.001 #1.0 # @todo fix this
 PORTION_OF_TESTING_DATA_TO_USE = 1.0
 
 with open(TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
@@ -419,6 +419,7 @@ class SentimentAnalysisClassifier():
                 assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 y_batch = y_batch.to(self.model.device)
+                assert y_batch_predicted.shape == y_batch.shape
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch) # @todo are these dimensions correct?
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 loss_via_correctness = float(loss_via_correctness)
@@ -449,7 +450,8 @@ class SentimentAnalysisClassifier():
                         self.save(sub_directory_to_checkpoint_in)
                 y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
                 y_batch = y_batch.to(self.model.device)
-                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch) # @todo are these dimensions correct?
+                assert y_batch_predicted.shape == y_batch.shape
+                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 batch_loss = loss_via_correctness + loss_via_attention_regularization
                 self.optimizer.zero_grad()
