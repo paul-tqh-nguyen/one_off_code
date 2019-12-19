@@ -327,12 +327,15 @@ VALIDATION_RESULTS_LOCAL_NAME = "validation_results.txt"
 PROGRESS_CSV_LOCAL_NAME = "loss_per_epoch.csv"
 PROGRESS_PNG_LOCAL_NAME = "loss_per_epoch.png"
 
+VALIDATION_BATCH_SIZE = 64 # @todo experiment with increasing
+
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
                  checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, 
     ):
         global PROGRESS_CSV_LOCAL_NAME
+        global VALIDATION_BATCH_SIZE
         self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
         self.most_recent_epoch_loss = 0
@@ -349,8 +352,8 @@ class SentimentAnalysisClassifier():
             attention_hidden_size=attention_hidden_size)
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)
         training_set, validation_set = determine_training_and_validation_datasets()
-        self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True)
-        self.validation_generator = data.DataLoader(validation_set, batch_size=1, shuffle=False)
+        self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True, num_workers=16)
+        self.validation_generator = data.DataLoader(validation_set, batch_size=VALIDATION_BATCH_SIZE, shuffle=False) # @todo update num_workers 
         self.checkpoint_directory = checkpoint_directory
         if not os.path.exists(self.checkpoint_directory):
             os.makedirs(self.checkpoint_directory)
@@ -413,14 +416,14 @@ class SentimentAnalysisClassifier():
         self.most_recent_epoch_validation_loss_via_correctness = 0
         self.most_recent_epoch_validation_loss_via_attention_regularization = 0
         with torch.no_grad():
-            for x_batch, y_batch in self.validation_generator:
+            for x_batch, y_batch in self.validation_generator: # @todo why are all the batches of size 1?
                 assert isinstance(x_batch, tuple)
                 assert len(x_batch) == 1
                 assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 y_batch = y_batch.to(self.model.device)
                 assert y_batch_predicted.shape == y_batch.shape
-                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch) # @todo are these dimensions correct?
+                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 loss_via_correctness = float(loss_via_correctness)
                 loss_via_attention_regularization = float(loss_via_attention_regularization)
@@ -438,7 +441,7 @@ class SentimentAnalysisClassifier():
             epoch_loss_via_attention_regularization = 0
             total_number_of_iterations = len(self.training_generator.dataset)
             current_global_epoch = self.number_of_completed_epochs
-            for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
+            for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator): # @todo why are all the batches of size 1?
                 if number_of_iterations_between_checkpoints is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
                         logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
