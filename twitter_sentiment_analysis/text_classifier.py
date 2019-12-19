@@ -138,7 +138,7 @@ with open(TEST_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as test_
         TEST_DATA_ID_TO_TEXT_MAP[id]=text
 
 class SentimentLabelledDataset(data.Dataset):
-    def __init__(self, texts, one_hot_sentiment_vectors):
+    def __init__(self, texts: List[str], one_hot_sentiment_vectors):
         self.x_data = texts
         self.y_data = one_hot_sentiment_vectors
         assert len(self.x_data) == len(self.y_data)
@@ -352,8 +352,8 @@ class SentimentAnalysisClassifier():
             attention_hidden_size=attention_hidden_size)
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)
         training_set, validation_set = determine_training_and_validation_datasets()
-        self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True, num_workers=16)
-        self.validation_generator = data.DataLoader(validation_set, batch_size=VALIDATION_BATCH_SIZE, shuffle=False) # @todo update num_workers 
+        self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True, num_workers=8)
+        self.validation_generator = data.DataLoader(validation_set, batch_size=VALIDATION_BATCH_SIZE, shuffle=False)
         self.checkpoint_directory = checkpoint_directory
         if not os.path.exists(self.checkpoint_directory):
             os.makedirs(self.checkpoint_directory)
@@ -418,8 +418,9 @@ class SentimentAnalysisClassifier():
         with torch.no_grad():
             for x_batch, y_batch in self.validation_generator: # @todo why are all the batches of size 1?
                 assert isinstance(x_batch, tuple)
-                assert len(x_batch) == 1
-                assert tuple(y_batch.shape) == (1, NUMBER_OF_SENTIMENTS)
+                assert len(x_batch) <= VALIDATION_BATCH_SIZE
+                assert tuple(y_batch.shape)[0] <= VALIDATION_BATCH_SIZE
+                assert tuple(y_batch.shape)[1] == NUMBER_OF_SENTIMENTS
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 y_batch = y_batch.to(self.model.device)
                 assert y_batch_predicted.shape == y_batch.shape
