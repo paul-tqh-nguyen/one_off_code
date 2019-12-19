@@ -112,8 +112,8 @@ TEST_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TEST_DATA_LOCATION if NORMALI
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.8 #0.001 # @todo fix this
-PORTION_OF_TRAINING_DATA_TO_USE = 0.005 #1.0 # @todo fix this
+VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.001
+PORTION_OF_TRAINING_DATA_TO_USE = 1.0
 PORTION_OF_TESTING_DATA_TO_USE = 1.0
 
 with open(TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
@@ -416,7 +416,7 @@ class SentimentAnalysisClassifier():
         self.most_recent_epoch_validation_loss_via_correctness = 0
         self.most_recent_epoch_validation_loss_via_attention_regularization = 0
         with torch.no_grad():
-            for x_batch, y_batch in self.validation_generator: # @todo why are all the batches of size 1?
+            for x_batch, y_batch in self.validation_generator:
                 assert isinstance(x_batch, tuple)
                 assert len(x_batch) <= VALIDATION_BATCH_SIZE
                 assert tuple(y_batch.shape)[0] <= VALIDATION_BATCH_SIZE
@@ -442,7 +442,7 @@ class SentimentAnalysisClassifier():
             epoch_loss_via_attention_regularization = 0
             total_number_of_iterations = len(self.training_generator.dataset)
             current_global_epoch = self.number_of_completed_epochs
-            for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator): # @todo why are all the batches of size 1?
+            for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
                 if number_of_iterations_between_checkpoints is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
                         logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
