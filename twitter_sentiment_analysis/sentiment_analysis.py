@@ -171,7 +171,7 @@ def validate_cli_args_for_testing(arg_to_value_map: dict) -> None:
 def main():
     '''
     Example Use:
-        ./sentiment_analysis.py -train-sentiment-analyzer -number-of-epochs 3 -batch-size  1 -learning-rate 1e-2 -attenion-regularization-penalty-multiplicative-factor 0.1 -embedding-hidden-size 200 -lstm-dropout-prob 0.2 -number-of-attention-heads 2 -attention-hidden-size 24 -number-of-iterations-between-checkpoints 1 -checkpoint-directory /tmp/checkpoint_dir
+        ./sentiment_analysis.py -train-sentiment-analyzer -number-of-epochs 3 -batch-size  1 -learning-rate 1e-2 -attenion-regularization-penalty-multiplicative-factor 0.1 -embedding-hidden-size 200 -lstm-dropout-prob 0.2 -number-of-attention-heads 2 -attention-hidden-size 16 -number-of-iterations-between-checkpoints 20000 -checkpoint-directory /tmp/checkpoint_dir
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-run-tests', action='store_true', help="To run all of the tests.")

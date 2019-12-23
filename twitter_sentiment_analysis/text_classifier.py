@@ -37,6 +37,7 @@ import time
 import pickle
 import socket
 import warnings
+import tqdm
 import pandas as pd
 from matplotlib import pyplot as plt
 from string_processing_utilities import normalized_words_from_text_string, word_string_resembles_meaningful_special_character_sequence_placeholder, PUNCTUATION_SET
@@ -442,7 +443,7 @@ class SentimentAnalysisClassifier():
             epoch_loss_via_attention_regularization = 0
             total_number_of_iterations = len(self.training_generator.dataset)
             current_global_epoch = self.number_of_completed_epochs
-            for iteration_index, (x_batch, y_batch) in enumerate(self.training_generator):
+            for iteration_index, (x_batch, y_batch) in tqdm.tqdm(enumerate(self.training_generator)):
                 if number_of_iterations_between_checkpoints is not None:
                     if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
                         logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
