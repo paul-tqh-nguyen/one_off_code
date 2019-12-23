@@ -388,6 +388,7 @@ class SentimentAnalysisClassifier():
         logging_print("Checkpoint Directory: {checkpoint_directory}".format(checkpoint_directory=self.checkpoint_directory))
         logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
         logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
+        logging_print("Model: \n{model}".format(model=self.model))
         
     def _update_loss_per_epoch_logs(self, current_global_epoch: int) -> None:
         global PROGRESS_CSV_LOCAL_NAME
@@ -449,7 +450,7 @@ class SentimentAnalysisClassifier():
     def train(self, number_of_epochs_to_train: int, number_of_iterations_between_checkpoints=None) -> None:
         self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
-            with timer(exitCallback=lambda number_of_seconds: logging_print("\nTime for epoch {epoch_index}: {time_for_epochs} seconds".format(
+            with timer(exitCallback=lambda number_of_seconds: logging_print("\nTime for epoch {epoch_index}: {time_for_epochs} seconds.\n".format(
                     epoch_index=self.number_of_completed_epochs,
                     time_for_epochs=number_of_seconds,
             ))):
