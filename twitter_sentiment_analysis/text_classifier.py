@@ -356,6 +356,7 @@ class SentimentAnalysisClassifier():
         self.most_recent_epoch_loss = 0
         self.most_recent_epoch_loss_via_correctness = 0
         self.most_recent_epoch_loss_via_attention_regularization = 0
+        self.most_recent_epoch_validation_incorrectness_count = 0
         self.most_recent_epoch_validation_loss = 0
         self.most_recent_epoch_validation_loss_via_correctness = 0
         self.most_recent_epoch_validation_loss_via_attention_regularization = 0
@@ -432,6 +433,7 @@ class SentimentAnalysisClassifier():
         self.most_recent_epoch_validation_loss = 0
         self.most_recent_epoch_validation_loss_via_correctness = 0
         self.most_recent_epoch_validation_loss_via_attention_regularization = 0
+        self.most_recent_epoch_validation_incorrectness_count = 0
         with torch.no_grad():
             for x_batch, y_batch in self.validation_generator:
                 assert isinstance(x_batch, tuple)
@@ -441,10 +443,13 @@ class SentimentAnalysisClassifier():
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 y_batch = y_batch.to(self.model.device)
                 assert y_batch_predicted.shape == y_batch.shape
+                self.most_recent_epoch_validation_incorrectness_count = torch.y_batch_predicted, y_batch
+                incorrectness_count = torch.sum(torch.abs(torch.round(y_batch_predicted-y_batch)).view(-1))
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 loss_via_correctness = float(loss_via_correctness)
                 loss_via_attention_regularization = float(loss_via_attention_regularization)
+                self.most_recent_epoch_validation_incorrectness_count += incorrectness_count
                 self.most_recent_epoch_validation_loss_via_correctness += loss_via_correctness
                 self.most_recent_epoch_validation_loss_via_attention_regularization += loss_via_attention_regularization
                 self.most_recent_epoch_validation_loss += loss_via_correctness + loss_via_attention_regularization
@@ -505,17 +510,20 @@ class SentimentAnalysisClassifier():
         logging_print("===================================================================")
         logging_print("Timestamp: {timestamp}".format(timestamp=current_timestamp_string()))
         logging_print()
-        logging_print("Total validation loss for model prior to validation for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss))
-        logging_print("Validation loss via correctness for model prior to validation for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss_via_correctness))
-        logging_print("Validation loss via attention regularization for model prior to validation for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss_via_attention_regularization))
+        logging_print("Total validation loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_loss))
+        logging_print("Validation loss via correctness for model prior to training for epoch {epoch_index} is {loss}".format(
+            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_loss_via_correctness))
+        logging_print("Validation loss via attention regularization for model prior to training for epoch {epoch_index} is {loss}".format(
+            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_loss_via_attention_regularization))
+        logging_print("Number of incorrect validation results for model prior to training for epoch {epoch_index} is {loss}".format(
+            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_incorrectness_count))
+        most_recent_epoch_validation_incorrectness_count
         logging_print()
-        logging_print("Total training loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss))
+        logging_print("Total training loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_loss))
         logging_print("Training loss via correctness for model prior to training for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss_via_correctness))
+            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_loss_via_correctness))
         logging_print("Training loss via attention regularization for model prior to training for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_loss_via_attention_regularization))
+            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_loss_via_attention_regularization))
         assert implies(self.most_recent_epoch_loss==0, self.number_of_completed_epochs==0)
         if self.most_recent_epoch_loss == 0:
             logging_print("    NB: Loss has not yet been calculated for model prior to training for epoch {epoch_index}.".format(epoch_index=self.number_of_completed_epochs))
