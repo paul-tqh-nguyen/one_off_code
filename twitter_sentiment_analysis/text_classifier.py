@@ -516,7 +516,6 @@ class SentimentAnalysisClassifier():
             epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_loss_via_attention_regularization))
         logging_print("Number of incorrect validation results for model prior to training for epoch {epoch_index} is {loss}".format(
             epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_incorrectness_count))
-        most_recent_epoch_validation_incorrectness_count
         logging_print()
         logging_print("Total training loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_loss))
         logging_print("Training loss via correctness for model prior to training for epoch {epoch_index} is {loss}".format(
