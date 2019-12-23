@@ -219,7 +219,7 @@ def main():
     
                 net.train()
                 print("Epoch: {}/{}...".format(e+1, epochs),
-                      "Step: {}...".format(counter),
+                      "Step Index: {}...".format(training_input_index),
                       "Loss: {:.6f}...".format(loss.item()),
                       "Val Loss: {:.6f}".format(np.mean(val_losses)))
 
