@@ -158,7 +158,7 @@ def determine_training_and_validation_datasets():
     global VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA
     global RAW_VALUE_TO_SENTIMENT_MAP
     data_dictionaries = list(TRAINING_DATA_ID_TO_DATA_MAP.values())
-    #random.shuffle(data_dictionaries)
+    random.shuffle(data_dictionaries)
     number_of_validation_data_points = round(VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA*len(data_dictionaries))
     training_inputs = []
     training_labels = []
