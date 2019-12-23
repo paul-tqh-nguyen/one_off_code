@@ -341,6 +341,9 @@ PROGRESS_PNG_LOCAL_NAME = "loss_per_epoch.png"
 
 VALIDATION_BATCH_SIZE = 64
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 class SentimentAnalysisClassifier():
     def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
                  embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
@@ -388,6 +391,7 @@ class SentimentAnalysisClassifier():
         logging_print("Checkpoint Directory: {checkpoint_directory}".format(checkpoint_directory=self.checkpoint_directory))
         logging_print("Training Size: {training_size}".format(training_size=len(self.training_generator.dataset)))
         logging_print("Validation Size: {validation_size}".format(validation_size=len(self.validation_generator.dataset)))
+        logging_print("Number of Parameters: {number_of_parameters}".format(number_of_parameters=count_parameters(self.model)))
         logging_print("Model: \n{model}".format(model=self.model))
         
     def _update_loss_per_epoch_logs(self, current_global_epoch: int) -> None:
@@ -486,8 +490,7 @@ class SentimentAnalysisClassifier():
                 self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
                 sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                     timestamp=current_timestamp_string(), current_global_epoch=current_global_epoch))
-                with timer(exitCallback=lambda number_of_seconds: logging_print("\nValidation Loss Calculation Time: {number_of_seconds}".format(number_of_seconds=number_of_seconds))):
-                    self.update_valiation_loss()
+                self.update_valiation_loss()
                 self._update_loss_per_epoch_logs(current_global_epoch)
                 self.print_current_state()
                 self.save(sub_directory_to_checkpoint_in)
