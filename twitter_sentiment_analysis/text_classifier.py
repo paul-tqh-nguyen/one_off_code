@@ -443,7 +443,6 @@ class SentimentAnalysisClassifier():
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 y_batch = y_batch.to(self.model.device)
                 assert y_batch_predicted.shape == y_batch.shape
-                self.most_recent_epoch_validation_incorrectness_count = torch.y_batch_predicted, y_batch
                 incorrectness_count = torch.sum(torch.abs(torch.round(y_batch_predicted-y_batch)).view(-1))
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
