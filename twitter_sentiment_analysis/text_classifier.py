@@ -360,7 +360,7 @@ class SentimentAnalysisClassifier():
         self.most_recent_epoch_validation_loss = 0
         self.most_recent_epoch_validation_loss_via_correctness = 0
         self.most_recent_epoch_validation_loss_via_attention_regularization = 0
-        self.loss_function = nn.BCEWithLogitsLoss()
+        self.loss_function = nn.BCEWithLogitsLoss() # @todo verify if this is correct?
         self.model = SentimentAnalysisNetwork(
             embedding_hidden_size=embedding_hidden_size,
             lstm_dropout_prob=lstm_dropout_prob,
