@@ -33,7 +33,6 @@ import torch.nn.functional as F
 from torch.utils import data
 import csv
 import random
-import time
 import pickle
 import socket
 import warnings
@@ -113,31 +112,44 @@ TEST_DATA_TO_USE_IN_PRACTICE_LOCATION = NORMALIZED_TEST_DATA_LOCATION if NORMALI
 TRAINING_DATA_ID_TO_DATA_MAP = {}
 TEST_DATA_ID_TO_TEXT_MAP = OrderedDict()
 
-VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.001
-PORTION_OF_TRAINING_DATA_TO_USE = 1.0
-PORTION_OF_TESTING_DATA_TO_USE = 1.0
+DEFAULT_VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA = 0.001
+DEFAULT_PORTION_OF_TRAINING_DATA_TO_USE = 1.0
+DEFAULT_PORTION_OF_TESTING_DATA_TO_USE = 1.0
+NUMBER_OF_VALIDATION_DATA_POINTS = None
 
-with open(TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
-    training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
-    row_dicts = list(training_data_csv_reader)
-    number_of_row_dicts = len(row_dicts)
-    for row_dict_index, row_dict in enumerate(row_dicts):
-        if row_dict_index/number_of_row_dicts >= PORTION_OF_TRAINING_DATA_TO_USE:
-            break
-        id = row_dict.pop('ItemID')
-        TRAINING_DATA_ID_TO_DATA_MAP[id]=row_dict
+def reload_data(validation_data_portion_relative_to_used_training_data=DEFAULT_VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA,
+                portion_of_training_data_to_use=DEFAULT_PORTION_OF_TRAINING_DATA_TO_USE,
+                portion_of_testing_data_to_use=DEFAULT_PORTION_OF_TESTING_DATA_TO_USE) -> None:
+    global NUMBER_OF_VALIDATION_DATA_POINTS
+    global TRAINING_DATA_ID_TO_DATA_MAP
+    global TEST_DATA_ID_TO_TEXT_MAP
+    TRAINING_DATA_ID_TO_DATA_MAP = {}
+    TEST_DATA_ID_TO_TEXT_MAP = {}
+    with open(TRAINING_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as training_data_csv_file:
+        training_data_csv_reader = csv.DictReader(training_data_csv_file, delimiter=',')
+        row_dicts = list(training_data_csv_reader)
+        number_of_row_dicts = len(row_dicts)
+        for row_dict_index, row_dict in enumerate(row_dicts):
+            if row_dict_index/number_of_row_dicts >= portion_of_training_data_to_use:
+                break
+            id = row_dict.pop('ItemID')
+            TRAINING_DATA_ID_TO_DATA_MAP[id]=row_dict
+    with open(TEST_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as test_data_csv_file:
+        test_data_csv_reader = csv.DictReader(test_data_csv_file, delimiter=',')
+        row_dicts = list(test_data_csv_reader)
+        number_of_row_dicts = len(row_dicts)
+        for row_dict_index, row_dict in enumerate(row_dicts):
+            if row_dict_index/number_of_row_dicts >= portion_of_testing_data_to_use:
+                break
+            id = row_dict['ItemID']
+            text = row_dict['SentimentText']
+            TEST_DATA_ID_TO_TEXT_MAP[id]=text
+    NUMBER_OF_VALIDATION_DATA_POINTS = round(validation_data_portion_relative_to_used_training_data*len(TRAINING_DATA_ID_TO_DATA_MAP))
+    assert NUMBER_OF_VALIDATION_DATA_POINTS is not None
+    return None
 
-with open(TEST_DATA_TO_USE_IN_PRACTICE_LOCATION, encoding='ISO-8859-1') as test_data_csv_file:
-    test_data_csv_reader = csv.DictReader(test_data_csv_file, delimiter=',')
-    row_dicts = list(test_data_csv_reader)
-    number_of_row_dicts = len(row_dicts)
-    for row_dict_index, row_dict in enumerate(row_dicts):
-        if row_dict_index/number_of_row_dicts >= PORTION_OF_TESTING_DATA_TO_USE:
-            break
-        id = row_dict['ItemID']
-        text = row_dict['SentimentText']
-        TEST_DATA_ID_TO_TEXT_MAP[id]=text
-
+reload_data()
+    
 class SentimentLabelledDataset(data.Dataset):
     def __init__(self, texts: List[str], one_hot_sentiment_vectors):
         self.x_data = texts
@@ -155,11 +167,10 @@ class SentimentLabelledDataset(data.Dataset):
 
 def determine_training_and_validation_datasets():
     global TRAINING_DATA_ID_TO_DATA_MAP
-    global VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA
+    global NUMBER_OF_VALIDATION_DATA_POINTS
     global RAW_VALUE_TO_SENTIMENT_MAP
     data_dictionaries = list(TRAINING_DATA_ID_TO_DATA_MAP.values())
     random.shuffle(data_dictionaries)
-    number_of_validation_data_points = round(VALIDATION_DATA_PORTION_RELATIVE_TO_USED_TRAINING_DATA*len(data_dictionaries))
     training_inputs = []
     training_labels = []
     validation_inputs = []
@@ -169,7 +180,7 @@ def determine_training_and_validation_datasets():
         raw_sentiment = data_dictionary['Sentiment']
         sentiment = RAW_VALUE_TO_SENTIMENT_MAP[raw_sentiment]
         one_hot_vector = sentiment_to_one_hot_vector(sentiment)
-        if data_dictionary_index < number_of_validation_data_points:
+        if data_dictionary_index < NUMBER_OF_VALIDATION_DATA_POINTS:
             validation_inputs.append(sentiment_text)
             validation_labels.append(one_hot_vector)
         else:
@@ -320,7 +331,7 @@ class SentimentAnalysisNetwork(nn.Module):
 ##########################
 
 def get_new_checkpoint_directory():
-    return "/tmp/sentiment_classifier_{timestamp}".format(timestamp=time.strftime("%Y%m%d-%H%M%S"))
+    return "/tmp/sentiment_classifier_{timestamp}".format(timestamp=current_timestamp_string())
 
 STATE_DICT_TO_BE_SAVED_FILE_LOCAL_NAME = "state_dict.pth"
 UNSEEN_WORD_TO_TENSOR_MAP_PICKLED_FILE_LOCAL_NAME = "unseen_word_to_tensor_map.pickle"
@@ -438,43 +449,47 @@ class SentimentAnalysisClassifier():
     def train(self, number_of_epochs_to_train: int, number_of_iterations_between_checkpoints=None) -> None:
         self.model.train()
         for new_epoch_index in range(number_of_epochs_to_train):
-            total_epoch_loss = 0
-            epoch_loss_via_correctness = 0
-            epoch_loss_via_attention_regularization = 0
-            total_number_of_iterations = len(self.training_generator.dataset)
-            current_global_epoch = self.number_of_completed_epochs
-            for iteration_index, (x_batch, y_batch) in tqdm.tqdm(enumerate(self.training_generator)):
-                if number_of_iterations_between_checkpoints is not None:
-                    if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
-                        logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
-                            iteration_index=iteration_index,
-                            total_number_of_iterations=total_number_of_iterations,
-                            current_global_epoch=current_global_epoch))
-                        sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
-                            timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
-                        self.save(sub_directory_to_checkpoint_in)
-                y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
-                y_batch = y_batch.to(self.model.device)
-                assert y_batch_predicted.shape == y_batch.shape
-                loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
-                loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
-                batch_loss = loss_via_correctness + loss_via_attention_regularization
-                self.optimizer.zero_grad()
-                batch_loss.backward()
-                self.optimizer.step()
-                total_epoch_loss += float(batch_loss)
-                epoch_loss_via_correctness += float(loss_via_correctness)
-                epoch_loss_via_attention_regularization += float(loss_via_attention_regularization)
-            self.most_recent_epoch_loss = total_epoch_loss
-            self.most_recent_epoch_loss_via_correctness = epoch_loss_via_correctness
-            self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
-            sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
-                timestamp=time.strftime("%Y%m%d-%H%M%S"), current_global_epoch=current_global_epoch))
-            with timer(section_name="update_valiation_loss"):
-                self.update_valiation_loss()
-            self._update_loss_per_epoch_logs(current_global_epoch)
-            self.print_current_state()
-            self.save(sub_directory_to_checkpoint_in)
+            with timer(exitCallback=lambda number_of_seconds: logging_print("\nTime for epoch {epoch_index}: {time_for_epochs} seconds".format(
+                    epoch_index=self.number_of_completed_epochs,
+                    time_for_epochs=number_of_seconds,
+            ))):
+                current_global_epoch = self.number_of_completed_epochs
+                total_epoch_loss = 0
+                epoch_loss_via_correctness = 0
+                epoch_loss_via_attention_regularization = 0
+                total_number_of_iterations = len(self.training_generator.dataset)
+                for iteration_index, (x_batch, y_batch) in tqdm.tqdm(enumerate(self.training_generator), total=len(self.training_generator)):
+                    if number_of_iterations_between_checkpoints is not None:
+                        if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
+                            logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
+                                iteration_index=iteration_index,
+                                total_number_of_iterations=total_number_of_iterations,
+                                current_global_epoch=current_global_epoch))
+                            sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
+                                timestamp=current_timestamp_string(), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
+                            self.save(sub_directory_to_checkpoint_in)
+                    y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
+                    y_batch = y_batch.to(self.model.device)
+                    assert y_batch_predicted.shape == y_batch.shape
+                    loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
+                    loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
+                    batch_loss = loss_via_correctness + loss_via_attention_regularization
+                    self.optimizer.zero_grad()
+                    batch_loss.backward()
+                    self.optimizer.step()
+                    total_epoch_loss += float(batch_loss)
+                    epoch_loss_via_correctness += float(loss_via_correctness)
+                    epoch_loss_via_attention_regularization += float(loss_via_attention_regularization)
+                self.most_recent_epoch_loss = total_epoch_loss
+                self.most_recent_epoch_loss_via_correctness = epoch_loss_via_correctness
+                self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
+                sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
+                    timestamp=current_timestamp_string(), current_global_epoch=current_global_epoch))
+                with timer(exitCallback=lambda number_of_seconds: logging_print("\nValidation Loss Calculation Time: {number_of_seconds}".format(number_of_seconds=number_of_seconds))):
+                    self.update_valiation_loss()
+                self._update_loss_per_epoch_logs(current_global_epoch)
+                self.print_current_state()
+                self.save(sub_directory_to_checkpoint_in)
             self.number_of_completed_epochs += 1
             
     def evaluate(self, strings: List[str]):
@@ -484,7 +499,7 @@ class SentimentAnalysisClassifier():
     def print_current_state(self) -> None:
         logging_print()
         logging_print("===================================================================")
-        logging_print("Timestamp: {timestamp}".format(timestamp=time.strftime("%Y%m%d-%H%M%S")))
+        logging_print("Timestamp: {timestamp}".format(timestamp=current_timestamp_string()))
         logging_print()
         logging_print("Total validation loss for model prior to validation for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs,loss=self.most_recent_epoch_validation_loss))
         logging_print("Validation loss via correctness for model prior to validation for epoch {epoch_index} is {loss}".format(
@@ -571,13 +586,8 @@ def train_classifier(
     logging_print()
     classifier.print_static_information()
     classifier.print_current_state()
-    for update_index in range(number_of_updates):
-        with timer(exitCallback=lambda number_of_seconds: logging_print("\nTime for epochs {start_epoch_index} to {end_epoch_index} (inclusive): {time_for_epochs} seconds".format(
-                start_epoch_index=update_index*number_of_epochs_between_updates,
-                end_epoch_index=(update_index+1)*number_of_epochs_between_updates-1,
-                time_for_epochs=number_of_seconds,
-        ))):
-            classifier.train(number_of_epochs_between_updates, number_of_iterations_between_checkpoints)
+    for _ in range(number_of_updates):
+        classifier.train(number_of_epochs_between_updates, number_of_iterations_between_checkpoints)
     logging_print("Training Complete.")
 
 def test_classifier(loading_directory):

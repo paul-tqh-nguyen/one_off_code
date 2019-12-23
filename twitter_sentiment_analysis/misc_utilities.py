@@ -87,6 +87,9 @@ def timer(section_name=None, exitCallback=None):
     else:
         logging_print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
+def current_timestamp_string() -> str:
+    return time.strftime("%Y_%m_%d_%H_%M_%S")
+        
 def false(*args, **kwargs):
     return False
 
