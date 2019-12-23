@@ -412,6 +412,7 @@ class SentimentAnalysisClassifier():
             'validation_incorrectness_count': self.most_recent_epoch_validation_incorrectness_count,
         }, ignore_index=True)
         updated_csv_dataframe.loc[:, 'epoch_index'] = updated_csv_dataframe['epoch_index'].apply(int)
+        updated_csv_dataframe.loc[:, 'validation_incorrectness_count'] = updated_csv_dataframe['validation_incorrectness_count'].apply(int) 
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
         plt.figure(figsize=(20.0,10.0))
         plt.grid()
@@ -445,7 +446,7 @@ class SentimentAnalysisClassifier():
                 y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
                 y_batch = y_batch.to(self.model.device)
                 assert y_batch_predicted.shape == y_batch.shape
-                incorrectness_count = int(torch.sum(torch.abs(torch.round(y_batch_predicted-y_batch)).view(-1)))
+                incorrectness_count = int(torch.sum(torch.abs(torch.round(y_batch_predicted)-y_batch).view(-1)))
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
                 loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 loss_via_correctness = float(loss_via_correctness)
