@@ -159,7 +159,6 @@ def main():
     
     epochs = 3 # 3-4 is approx where I noticed the validation loss stop decreasing
     
-    counter = 0
     print_every = 100
     clip=5 # gradient clipping
     
@@ -176,7 +175,6 @@ def main():
     
         # batch loop
         for training_input_index, (inputs, labels) in enumerate(train_loader):
-            counter += 1
     
             if(train_on_gpu):
                 inputs=inputs.cuda()
@@ -202,7 +200,7 @@ def main():
             optimizer.step()
             
             # loss stats
-            if counter % print_every == 0:
+            if training_input_index % print_every == 0:
                 # Get validation loss
                 val_h = net.init_hidden(batch_size)
                 val_losses = []
@@ -212,8 +210,8 @@ def main():
                     # Creating new variables for the hidden state, otherwise
                     # we'd backprop through the entire training history
                     val_h = tuple([each.data for each in val_h])
-    
-                    inputs, labels = inputs.cuda(), labels.cuda()  
+                    if train_on_gpu:
+                        inputs, labels = inputs.cuda(), labels.cuda()  
                     output, val_h = net(inputs, val_h)
                     val_loss = criterion(output.squeeze(), labels.float())
     
