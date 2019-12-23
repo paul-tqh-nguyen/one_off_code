@@ -200,7 +200,7 @@ def main():
             # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
             nn.utils.clip_grad_norm_(net.parameters(), clip)
             optimizer.step()
-    
+            
             # loss stats
             if counter % print_every == 0:
                 # Get validation loss
