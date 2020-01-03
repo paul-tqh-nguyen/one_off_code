@@ -567,7 +567,7 @@ def test_classifier(loading_directory):
     logging_print("Testing Complete.")
 
 def main():
-    print("This module contains utilities for sentiment analysis for Twitter data via neural network based text classification.")
+    print("This module contains utilities for sentiment analysis for Twitter data via neural network based text classification.") 
     
 if __name__ == '__main__':
     main()
