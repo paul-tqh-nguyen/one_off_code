@@ -252,25 +252,6 @@ class SelfAttentionLayers(nn.Module):
         assert tuple(attention_weights_pre_softmax.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads), "attention_weights_pre_softmax has unexpected dimensions."
         attention_weights = F.softmax(attention_weights_pre_softmax, dim=0)
         assert tuple(attention_weights.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads), "attention_weights has unexpected dimensions."
-        attenion_regularization_penalty = None
-        if self.number_of_attention_heads == 1:
-            attenion_regularization_penalty = 0
-        else:
-            attention_weights_batch_first = attention_weights.transpose(0,1)
-            assert tuple(attention_weights_batch_first.shape) == (batch_size, max_number_of_words, self.number_of_attention_heads), "attention_weights_batch_first has unexpected dimensions."
-            attention_weights_batch_first_transpose = attention_weights_batch_first.transpose(1,2)
-            assert tuple(attention_weights_batch_first_transpose.shape) == (batch_size, self.number_of_attention_heads, max_number_of_words), \
-                "attention_weights_batch_first_transpose has unexpected dimensions."
-            attention_weights_times_transpose = attention_weights_batch_first.matmul(attention_weights_batch_first_transpose)
-            assert tuple(attention_weights_times_transpose.shape) == (batch_size, max_number_of_words, max_number_of_words), "attention_weights_times_transpose has unexpected dimensions."
-            identity_matrix = torch.eye(max_number_of_words).repeat(batch_size,1,1).to(self.device)
-            assert tuple(identity_matrix.shape) == (batch_size, max_number_of_words, max_number_of_words), "identity_matrix has unexpected dimensions."
-            attenion_regularization_penalty_unnormalized = attention_weights_times_transpose - identity_matrix
-            assert tuple(attenion_regularization_penalty_unnormalized.shape) == (batch_size, max_number_of_words, max_number_of_words), \
-                "attenion_regularization_penalty_unnormalized has unexpected dimensions."
-            attenion_regularization_penalty_per_batch = torch.sqrt((attenion_regularization_penalty_unnormalized**2).sum(dim=1).sum(dim=1))
-            attenion_regularization_penalty = attenion_regularization_penalty_per_batch.sum(dim=0)
-        assert attenion_regularization_penalty is not None, "Attention regularization was not calculated properly."
         attention_weights_duplicated = attention_weights.view(-1,1).repeat(1,input_size).view(max_number_of_words, batch_size, self.number_of_attention_heads*input_size)
         assert tuple(attention_weights_duplicated.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads*input_size), "attention_weights_duplicated has unexpected dimensions."
         input_matrix_duplicated = input_matrix.repeat(1,1,self.number_of_attention_heads) 
@@ -279,7 +260,7 @@ class SelfAttentionLayers(nn.Module):
         assert tuple(weight_adjusted_input_matrix.shape) == (max_number_of_words, batch_size, self.number_of_attention_heads*input_size), "weight_adjusted_input_matrix has unexpected dimensions."
         attended_matrix = torch.sum(weight_adjusted_input_matrix, dim=0)
         assert tuple(attended_matrix.shape) == (batch_size, self.number_of_attention_heads*input_size), "attended_matrix has unexpected dimensions."
-        return attended_matrix, attenion_regularization_penalty
+        return attended_matrix
         
     def to(self, device):
         self.device = device
@@ -320,11 +301,11 @@ class SentimentAnalysisNetwork(nn.Module):
         assert tuple(embeddeding_batch_matrix.shape) == (max_number_of_words, batch_size, self.embedding_hidden_size)
         encoding_batch_matrix, _ = self.encoding_layers(embeddeding_batch_matrix)
         assert tuple(encoding_batch_matrix.shape) == (max_number_of_words, batch_size, 2*self.embedding_hidden_size)
-        attention_matrix, attenion_regularization_penalty = self.attention_layers(encoding_batch_matrix)
+        attention_matrix = self.attention_layers(encoding_batch_matrix)
         assert tuple(attention_matrix.shape) == (batch_size, self.number_of_attention_heads*2*self.embedding_hidden_size)
         prediction_scores = self.prediction_layers(attention_matrix)
         assert tuple(prediction_scores.shape) == (batch_size, NUMBER_OF_SENTIMENTS)
-        return prediction_scores, attenion_regularization_penalty
+        return prediction_scores
 
 ##########################
 # Classifier Definitions #
@@ -345,22 +326,18 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 class SentimentAnalysisClassifier():
-    def __init__(self, batch_size=1, learning_rate=1e-2, attenion_regularization_penalty_multiplicative_factor=0.1,
-                 embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
+    def __init__(self, batch_size=1, learning_rate=1e-2, embedding_hidden_size=200, lstm_dropout_prob=0.2, number_of_attention_heads=2, attention_hidden_size=24,
                  checkpoint_directory=get_new_checkpoint_directory(), loading_directory=None, 
     ):
         global PROGRESS_CSV_LOCAL_NAME
         global VALIDATION_BATCH_SIZE
-        self.attenion_regularization_penalty_multiplicative_factor = attenion_regularization_penalty_multiplicative_factor
         self.number_of_completed_epochs = 0
+        self.most_recent_epoch_loss_per_iteration_scaled = 0
+        self.most_recent_iteration_loss = 0
         self.most_recent_epoch_loss = 0
-        self.most_recent_epoch_loss_via_correctness = 0
-        self.most_recent_epoch_loss_via_attention_regularization = 0
         self.most_recent_epoch_validation_incorrectness_count = 0
         self.most_recent_epoch_validation_loss = 0
-        self.most_recent_epoch_validation_loss_via_correctness = 0
-        self.most_recent_epoch_validation_loss_via_attention_regularization = 0
-        self.loss_function = nn.BCEWithLogitsLoss() # @todo verify if this is correct?
+        self.loss_function = nn.BCELoss()
         self.model = SentimentAnalysisNetwork(
             embedding_hidden_size=embedding_hidden_size,
             lstm_dropout_prob=lstm_dropout_prob,
@@ -377,12 +354,9 @@ class SentimentAnalysisClassifier():
         with open(csv_location, 'w') as csvfile:
             headers = [
                 'epoch_index',
+                'training_loss_per_iteration_scaled',
                 'training_total_loss',
-                'training_attention_regularization_loss',
-                'training_correctness_loss',
                 'validation_total_loss',
-                'validation_attention_regularization_loss',
-                'validation_correctness_loss',
                 'validation_incorrectness_count',]
             writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n', fieldnames=headers)
             writer.writeheader()
@@ -396,32 +370,26 @@ class SentimentAnalysisClassifier():
         logging_print("Number of Parameters: {number_of_parameters}".format(number_of_parameters=count_parameters(self.model)))
         logging_print("Model: \n{model}".format(model=self.model))
         
-    def _update_loss_per_epoch_logs(self, current_global_epoch: int) -> None:
+    def _update_loss_per_epoch_logs(self, current_global_epoch: int, iteration_index: int = 0) -> None:
         global PROGRESS_CSV_LOCAL_NAME
-        global PROGRESS_PNG_LOCAL_NAME 
+        global PROGRESS_PNG_LOCAL_NAME
         loss_per_epoch_csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
         current_csv_dataframe = pd.read_csv(loss_per_epoch_csv_location)
         updated_csv_dataframe = current_csv_dataframe.append({
-            'epoch_index': current_global_epoch,
+            'epoch_index': current_global_epoch+iteration_index/len(self.training_generator),
+            'training_loss_per_iteration_scaled': self.most_recent_epoch_loss_per_iteration_scaled,
             'training_total_loss': self.most_recent_epoch_loss,
-            'training_attention_regularization_loss': self.most_recent_epoch_loss_via_attention_regularization,
-            'training_correctness_loss': self.most_recent_epoch_loss_via_correctness,
             'validation_total_loss': self.most_recent_epoch_validation_loss,
-            'validation_attention_regularization_loss': self.most_recent_epoch_validation_loss_via_attention_regularization,
-            'validation_correctness_loss': self.most_recent_epoch_validation_loss_via_correctness,
             'validation_incorrectness_count': self.most_recent_epoch_validation_incorrectness_count,
         }, ignore_index=True)
-        updated_csv_dataframe.loc[:, 'epoch_index'] = updated_csv_dataframe['epoch_index'].apply(int)
         updated_csv_dataframe.loc[:, 'validation_incorrectness_count'] = updated_csv_dataframe['validation_incorrectness_count'].apply(int) 
         updated_csv_dataframe.to_csv(loss_per_epoch_csv_location, index=False)
         plt.figure(figsize=(20.0,10.0))
         plt.grid()
+        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_loss_per_iteration_scaled, label='Training Loss Per Iteration Scaled')
+        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_incorrectness_count, label='Validation Incorrectness Count')
         plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_total_loss, label='Training Total Loss')
-        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_attention_regularization_loss, label='Training Attention Regularization Loss')
-        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.training_correctness_loss, label='Training Correctness Loss')
         plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_total_loss, label='Validation Total Loss')
-        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_attention_regularization_loss, label='Validation Attention Regularization Loss')
-        plt.plot(updated_csv_dataframe.epoch_index, updated_csv_dataframe.validation_correctness_loss, label='Validation Correctness Loss')
         plt.title('Loss Per Epoch')
         plt.ylabel('Loss')
         plt.xlabel('Epoch Index')
@@ -434,8 +402,6 @@ class SentimentAnalysisClassifier():
     
     def update_valiation_loss(self) -> None:
         self.most_recent_epoch_validation_loss = 0
-        self.most_recent_epoch_validation_loss_via_correctness = 0
-        self.most_recent_epoch_validation_loss_via_attention_regularization = 0
         self.most_recent_epoch_validation_incorrectness_count = 0
         with torch.no_grad():
             for x_batch, y_batch in self.validation_generator:
@@ -443,19 +409,14 @@ class SentimentAnalysisClassifier():
                 assert len(x_batch) <= VALIDATION_BATCH_SIZE
                 assert tuple(y_batch.shape)[0] <= VALIDATION_BATCH_SIZE
                 assert tuple(y_batch.shape)[1] == NUMBER_OF_SENTIMENTS
-                y_batch_predicted, attenion_regularization_penalty = self.evaluate(x_batch)
+                y_batch_predicted = self.evaluate(x_batch)
                 y_batch = y_batch.to(self.model.device)
                 assert y_batch_predicted.shape == y_batch.shape
                 incorrectness_count = int(torch.sum(torch.abs(torch.round(y_batch_predicted)-y_batch).view(-1)))
                 loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
-                loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
                 loss_via_correctness = float(loss_via_correctness)
-                loss_via_attention_regularization = float(loss_via_attention_regularization)
                 self.most_recent_epoch_validation_incorrectness_count += incorrectness_count
-                self.most_recent_epoch_validation_loss_via_correctness += loss_via_correctness
-                self.most_recent_epoch_validation_loss_via_attention_regularization += loss_via_attention_regularization
-                self.most_recent_epoch_validation_loss += loss_via_correctness + loss_via_attention_regularization
-                assert self.most_recent_epoch_validation_loss == self.most_recent_epoch_validation_loss_via_attention_regularization + self.most_recent_epoch_validation_loss_via_correctness
+                self.most_recent_epoch_validation_loss += loss_via_correctness
         return None
         
     def train(self, number_of_epochs_to_train: int, number_of_iterations_between_checkpoints=None) -> None:
@@ -467,41 +428,35 @@ class SentimentAnalysisClassifier():
             ))):
                 current_global_epoch = self.number_of_completed_epochs
                 total_epoch_loss = 0
-                epoch_loss_via_correctness = 0
-                epoch_loss_via_attention_regularization = 0
                 total_number_of_iterations = len(self.training_generator.dataset)
                 for iteration_index, (x_batch, y_batch) in tqdm.tqdm(enumerate(self.training_generator), total=len(self.training_generator)):
                     if number_of_iterations_between_checkpoints is not None:
                         if (iteration_index != 0) and (iteration_index % number_of_iterations_between_checkpoints) == 0:
-                            logging_print("Completed Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
+                            logging_print("\nCompleted Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
                                 iteration_index=iteration_index,
                                 total_number_of_iterations=total_number_of_iterations,
                                 current_global_epoch=current_global_epoch))
                             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
                                 timestamp=current_timestamp_string(), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                             self.save(sub_directory_to_checkpoint_in)
-                    y_batch_predicted, attenion_regularization_penalty = self.model(x_batch)
+                            self._update_loss_per_epoch_logs(current_global_epoch, iteration_index)
+                    y_batch_predicted = self.model(x_batch)
                     y_batch = y_batch.to(self.model.device)
                     assert y_batch_predicted.shape == y_batch.shape
-                    loss_via_correctness = self.loss_function(y_batch_predicted, y_batch)
-                    loss_via_attention_regularization = attenion_regularization_penalty * self.attenion_regularization_penalty_multiplicative_factor
-                    batch_loss = loss_via_correctness + loss_via_attention_regularization
+                    batch_loss = self.loss_function(y_batch_predicted, y_batch)
                     self.optimizer.zero_grad()
                     batch_loss.backward()
                     self.optimizer.step()
                     total_epoch_loss += float(batch_loss)
-                    epoch_loss_via_correctness += float(loss_via_correctness)
-                    epoch_loss_via_attention_regularization += float(loss_via_attention_regularization)
+                    self.most_recent_epoch_loss_per_iteration_scaled = len(self.training_generator) * total_epoch_loss / (1+iteration_index)
                 self.most_recent_epoch_loss = total_epoch_loss
-                self.most_recent_epoch_loss_via_correctness = epoch_loss_via_correctness
-                self.most_recent_epoch_loss_via_attention_regularization = epoch_loss_via_attention_regularization
                 sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                     timestamp=current_timestamp_string(), current_global_epoch=current_global_epoch))
                 self.update_valiation_loss()
-                self._update_loss_per_epoch_logs(current_global_epoch)
                 self.print_current_state()
                 self.save(sub_directory_to_checkpoint_in)
             self.number_of_completed_epochs += 1
+            self._update_loss_per_epoch_logs(self.number_of_completed_epochs)
             
     def evaluate(self, strings: List[str]):
         self.model.eval()
@@ -513,18 +468,10 @@ class SentimentAnalysisClassifier():
         logging_print("Timestamp: {timestamp}".format(timestamp=current_timestamp_string()))
         logging_print()
         logging_print("Total validation loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_loss))
-        logging_print("Validation loss via correctness for model prior to training for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_loss_via_correctness))
-        logging_print("Validation loss via attention regularization for model prior to training for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_validation_loss_via_attention_regularization))
         logging_print("Number of incorrect validation results for model prior to training for epoch {epoch_index} is {number_of_incorrect_results} out of {total}.".format(
             epoch_index=self.number_of_completed_epochs, number_of_incorrect_results=self.most_recent_epoch_validation_incorrectness_count, total=len(self.validation_generator.dataset)))
         logging_print()
         logging_print("Total training loss for model prior to training for epoch {epoch_index} is {loss}".format(epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_loss))
-        logging_print("Training loss via correctness for model prior to training for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_loss_via_correctness))
-        logging_print("Training loss via attention regularization for model prior to training for epoch {epoch_index} is {loss}".format(
-            epoch_index=self.number_of_completed_epochs, loss=self.most_recent_epoch_loss_via_attention_regularization))
         assert implies(self.most_recent_epoch_loss==0, self.number_of_completed_epochs==0)
         if self.most_recent_epoch_loss == 0:
             logging_print("    NB: Loss has not yet been calculated for model prior to training for epoch {epoch_index}.".format(epoch_index=self.number_of_completed_epochs))
@@ -571,7 +518,6 @@ class SentimentAnalysisClassifier():
 def train_classifier(
         batch_size=1,
         learning_rate=1e-2,
-        attenion_regularization_penalty_multiplicative_factor=0.1,
         embedding_hidden_size=200,
         lstm_dropout_prob=0.2,
         number_of_attention_heads=2,
@@ -584,7 +530,6 @@ def train_classifier(
     classifier = SentimentAnalysisClassifier(
         batch_size=batch_size,
         learning_rate=learning_rate,
-        attenion_regularization_penalty_multiplicative_factor=attenion_regularization_penalty_multiplicative_factor,
         embedding_hidden_size=embedding_hidden_size,
         lstm_dropout_prob=lstm_dropout_prob,
         number_of_attention_heads=number_of_attention_heads,
