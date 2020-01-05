@@ -58,7 +58,7 @@ class SentimentAnalysisNetwork(nn.Module):
         self.drop_out_probability = drop_out_probability
         
         self.embedding_layers = nn.Sequential(OrderedDict([
-            ("embedding_layer", nn.Embedding(vocabulary_size, embedding_size),
+            ("embedding_layer", nn.Embedding(vocabulary_size, embedding_size)),
             # ("activation", nn.ReLU(True)), # @todo is it correct to have this? 
         ]))
         self.encoding_layers = nn.Sequential(OrderedDict([
