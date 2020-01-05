@@ -77,7 +77,7 @@ HOST_NAMES_FOR_DISTRIBUTED_GRID_SEARCH = [
     'anscombe',
     'aquinas',
     'arendt',
-    # 'aristotle',
+    'aristotle',
     'aurelius',
     'bentham',
     'berkeley',

@@ -276,7 +276,7 @@ class SentimentAnalysisNetwork(nn.Module):
             self.number_of_attention_heads = number_of_attention_heads
         self.embedding_layers = nn.Sequential(OrderedDict([
             ("reduction_layer", nn.Linear(WORD2VEC_VECTOR_LENGTH, embedding_hidden_size)),
-            ("activation", nn.ReLU(True)),
+            ("activation", nn.ReLU(True)), # @todo is this correct? https://discuss.pytorch.org/t/why-is-there-a-relu-non-linearity-only-on-the-decoder-embedding-in-pytorch-seq2seq-tutorial/12791/2
         ]))
         self.encoding_layers = nn.LSTM(embedding_hidden_size, embedding_hidden_size, num_layers=2, dropout=lstm_dropout_prob, bidirectional=True)
         encoding_hidden_size = 2*embedding_hidden_size 
@@ -378,7 +378,7 @@ class SentimentAnalysisClassifier():
         loss_per_epoch_csv_location = os.path.join(self.checkpoint_directory, PROGRESS_CSV_LOCAL_NAME)
         current_csv_dataframe = pd.read_csv(loss_per_epoch_csv_location)
         updated_csv_dataframe = current_csv_dataframe.append({
-            'epoch_index': current_global_epoch+iteration_index/len(self.training_generator.dataset),
+            'epoch_index': current_global_epoch+iteration_index/len(self.training_generator),
             'training_loss_per_iteration_scaled': self.most_recent_epoch_loss_per_iteration_scaled,
             'training_total_loss': self.most_recent_epoch_loss,
             'validation_total_loss': self.most_recent_epoch_validation_loss,
@@ -429,8 +429,8 @@ class SentimentAnalysisClassifier():
             ))):
                 current_global_epoch = self.number_of_completed_epochs
                 total_epoch_loss = 0
-                total_number_of_iterations = len(self.training_generator.dataset)
-                for iteration_index, (x_batch, y_batch) in tqdm.tqdm(enumerate(self.training_generator), total=len(self.training_generator.dataset)):
+                total_number_of_iterations = len(self.training_generator)
+                for iteration_index, (x_batch, y_batch) in tqdm.tqdm(enumerate(self.training_generator), total=total_number_of_iterations):
                     if number_of_iterations_between_checkpoints is not None and (iteration_index != 0):
                         if (iteration_index % number_of_iterations_between_checkpoints) == 0:
                             logging_print("\nCompleted Iteration {iteration_index} / {total_number_of_iterations} of epoch {current_global_epoch}".format(
@@ -440,8 +440,8 @@ class SentimentAnalysisClassifier():
                             sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}_iteration_{iteration_index}".format(
                                 timestamp=current_timestamp_string(), current_global_epoch=current_global_epoch, iteration_index=iteration_index))
                             self.save(sub_directory_to_checkpoint_in)
-                        one_percent_of_training_size = math.ceil(max(1, len(self.training_generator.dataset)*0.01))
-                        if (iteration_index % one_percent_of_training_size) == 0:
+                        one_percent_of_total_number_of_iterations = math.ceil(max(1, total_number_of_iterations*0.01))
+                        if (iteration_index % one_percent_of_total_number_of_iterations) == 0:
                             self._update_loss_per_epoch_logs(current_global_epoch, iteration_index)
                     y_batch_predicted = self.model(x_batch)
                     y_batch = y_batch.to(self.model.device)
@@ -451,7 +451,7 @@ class SentimentAnalysisClassifier():
                     batch_loss.backward()
                     self.optimizer.step()
                     total_epoch_loss += float(batch_loss)
-                    self.most_recent_epoch_loss_per_iteration_scaled = len(self.training_generator.dataset) * total_epoch_loss / (1+iteration_index)
+                    self.most_recent_epoch_loss_per_iteration_scaled = total_number_of_iterations * total_epoch_loss / (1+iteration_index)
                 self.most_recent_epoch_loss = total_epoch_loss
                 sub_directory_to_checkpoint_in = os.path.join(self.checkpoint_directory, "checkpoint_{timestamp}_for_epoch_{current_global_epoch}".format(
                     timestamp=current_timestamp_string(), current_global_epoch=current_global_epoch))
