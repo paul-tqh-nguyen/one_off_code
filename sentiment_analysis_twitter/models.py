@@ -14,6 +14,7 @@ File Organization:
 * Imports
 * Models
 * Data Loading Utilities
+* Classifier Classes
 * Main Runner
 
 """
@@ -25,8 +26,10 @@ File Organization:
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
-import os
 import pandas as pd
+import sklearn.utils
+import tqdm
+import os
 import csv
 import math
 import statistics
@@ -63,7 +66,7 @@ class SentimentAnalysisNetwork(nn.Module):
         ]))
         self.encoding_layers = nn.Sequential(OrderedDict([
             ("LSTM_layers", nn.LSTM(self.embedding_size, self.lstm_hidden_size, self.number_of_lstm_layers, dropout=self.drop_out_probability, bidirectional=True, batch_first=True)),
-            ("final_drop_out_layer", nn.Dropout(self.drop_out_probability)), # @todo do we need this layer?
+            # ("final_drop_out_layer", nn.Dropout(self.drop_out_probability)), # @todo do we need this layer? Also, this is causing bugs, so this is implemented incorrectly
         ]))
         # @todo add attention layers
         self.prediction_layers = nn.Sequential(OrderedDict([
@@ -75,7 +78,7 @@ class SentimentAnalysisNetwork(nn.Module):
         batch_size = x.size()
         embedded_inputs = self.embedding_layers(x)
         encoded_results, _ = self.encoding_layers(embedded_inputs)
-        predicted_results = self.prediction_layers(out)
+        predicted_results = self.prediction_layers(encoded_results)
         predicted_results = predicted_results.view(batch_size, -1)
         predicted_results = predicted_results[:, -1]
         return predicted_results
@@ -146,6 +149,8 @@ VALIDATION_DATA_PORTION = 1 - TRAINING_DATA_PORTION
 
 MAX_TWEET_WORD_LENGTH = None
 
+RANDOMNESS_SEED = 1
+
 def get_training_and_validation_dataloaders(): # @todo add return types
     # @todo abstract out chunks below
     global TRAINING_DATA_PORTION
@@ -154,6 +159,8 @@ def get_training_and_validation_dataloaders(): # @todo add return types
     global TRAINING_DATA_TEXT_COLUMN_INDEX
     global MAX_TWEET_WORD_LENGTH
     normalized_training_dataframe = get_normalized_training_dataframe()
+    normalized_training_dataframe = sklearn.utils.shuffle(normalized_training_dataframe, random_state=RANDOMNESS_SEED).reset_index(drop=True)
+    # normalized_training_dataframe = normalized_training_dataframe.truncate(after=500) # @todo remove this
     vocabulary, word_tokenizer, vocabulary_size = vocabulary_from_training_dataframe(normalized_training_dataframe)
     tokenized_training_dataframe = tokenized_training_dataframe_from_normalized_training_dataframe(normalized_training_dataframe, word_tokenizer)
     MAX_TWEET_WORD_LENGTH = max(tokenized_training_dataframe[TRAINING_DATA_TEXT_COLUMN_INDEX].apply(len)) # @todo abstract this global updating out
@@ -180,22 +187,115 @@ def get_training_and_validation_dataloaders(): # @todo add return types
     validation_dataloader = DataLoader(validation_dataset)
     return training_dataloader, validation_dataloader, vocabulary_size
 
+######################
+# Classifier Classes #
+######################
+
+class SentimentAnalysisClassifier():
+    def __init__(self, # @todo add types
+                 batch_size=1,
+                 embedding_size=400,
+                 lstm_hidden_size=256,
+                 number_of_lstm_layers=2,
+                 drop_out_probability=0.2,
+                 learning_rate=1e-3,
+                 number_of_iterations_between_updates=1000,
+    ) -> None:
+        self.batch_size = batch_size # @todo do something with this
+        self.training_dataloader, self.validation_dataloader, vocabulary_size = get_training_and_validation_dataloaders()
+        self.loss_function = nn.BCELoss()
+        self.model = SentimentAnalysisNetwork(
+            vocabulary_size, 
+            embedding_size=embedding_size,
+            lstm_hidden_size=lstm_hidden_size,
+            number_of_lstm_layers=number_of_lstm_layers,
+            drop_out_probability=drop_out_probability)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate) # @todo try Adam
+        self.number_of_iterations_between_updates = number_of_iterations_between_updates
+        self.number_of_completed_epochs = 0
+        self.most_recent_epoch_training_loss = 0
+
+    def train(self, number_of_epochs_to_train: int) -> None:
+        self.model.train()
+        for _ in range(number_of_epochs_to_train):
+            self.note_validation_statistics()
+            self.print_epoch_training_preamble()
+            self.most_recent_epoch_training_loss = 0
+            training_process_bar = tqdm.tqdm(enumerate(self.training_dataloader), total=len(self.training_dataloader))
+            for training_input_index, (inputs, labels) in training_process_bar:
+                self.train_one_iteration(inputs, labels)
+                mean_training_loss = round(self.most_recent_epoch_training_loss/(1+training_input_index), 8)
+                training_process_bar.set_description("Mean training loss: {:0.8f}".format(mean_training_loss))
+                if 0 == (training_input_index % self.number_of_iterations_between_updates) and training_input_index != 0:
+                    self.note_validation_statistics()
+            self.print_epoch_training_postamble()
+            self.number_of_completed_epochs += 1
+        return None
+    
+    def train_one_iteration(self, inputs, labels) -> None: # @todo add input types
+        self.model.zero_grad()
+        predicted_label = self.model(inputs).squeeze()
+        label = labels.float().squeeze()
+        loss = self.loss_function(predicted_label, label) # @todo make this support batch sizes that are not 1
+        self.most_recent_epoch_training_loss += float(loss)
+        loss.backward()
+        nn.utils.clip_grad_norm_(self.model.parameters(), MAX_GRADIENT_NORM)
+        self.optimizer.step()
+        return None
+    
+    def print_epoch_training_preamble(self) -> None:
+        print("Training for epoch {number_of_completed_epochs}".format(number_of_completed_epochs=self.number_of_completed_epochs))
+        return None
+    
+    def print_epoch_training_postamble(self) -> None:
+        print("Training for epoch {number_of_completed_epochs}.".format(number_of_completed_epochs=self.number_of_completed_epochs))
+        print("Total loss for epoch {number_of_completed_epochs}: {loss}".format(number_of_completed_epochs=self.number_of_completed_epochs, loss=self.most_recent_epoch_training_loss))
+        print("Mean loss for epoch {number_of_completed_epochs}: {loss}".format(
+            number_of_completed_epochs=self.number_of_completed_epochs,
+            loss=self.most_recent_epoch_training_loss/len(self.training_dataloader)))
+        return None
+    
+    def note_validation_statistics(self) -> None:
+        number_of_validation_datapoints = len(self.validation_dataloader.dataset)
+        total_validation_loss = 0
+        total_number_of_incorrect_results = number_of_validation_datapoints
+        self.model.eval()
+        for validation_inputs, validation_labels in self.validation_dataloader:
+            validation_labels = validation_labels.float()
+            validation_label = validation_labels.squeeze()
+            predicted_validation_labels = self.model(validation_inputs)
+            predicted_validation_label = predicted_validation_labels.squeeze()
+            validation_loss = self.loss_function(predicted_validation_label, validation_label) # @todo make this support batch sizes that are not 1
+            total_validation_loss += float(validation_loss)
+            number_of_correct_results = torch.sum(validation_labels.eq(torch.round(predicted_validation_labels))).squeeze()
+            total_number_of_incorrect_results -= number_of_correct_results
+        mean_validation_loss = total_validation_loss / number_of_validation_datapoints
+        self.model.train()
+        # @todo make this look nicer
+        print()
+        print("    Mean Validation Loss: {:.6f}".format(mean_validation_loss))
+        print("    Incorrect Results: {} / {}".format(total_number_of_incorrect_results, number_of_validation_datapoints))
+        print()
+        return None
+
 ###############
 # Main Runner #
 ###############
 
 # @todo turn these into CLI parameters
 
-BATCH_SIZE = 64 # @todo use this
+BATCH_SIZE = 64
 EMBEDDING_SIZE = 400
 LSTM_HIDDEN_SIZE = 256
 NUMBER_OF_LSTM_LAYERS = 2
 DROP_OUT_PROBABILITY = 0.2
-LEARNING_RATE = 0.001
+LEARNING_RATE = 1e-3
 MAX_GRADIENT_NORM = 5
 NUMBER_OF_EPOCHS = 9999 # @todo change this
+NUMBER_OF_ITERATIONS_BETWEEN_UPDATES = 5000000000000
 
-def main():
+def main() -> None:
+    global BATCH_SIZE 
     global EMBEDDING_SIZE
     global LSTM_HIDDEN_SIZE
     global NUMBER_OF_LSTM_LAYERS
@@ -203,36 +303,19 @@ def main():
     global LEARNING_RATE
     global MAX_GRADIENT_NORM
     global NUMBER_OF_EPOCHS
-    training_dataloader, validation_dataloader, vocabulary_size = get_training_and_validation_dataloaders()
-    loss_function = nn.BCELoss()
-    model = SentimentAnalysisNetwork(
-        vocabulary_size, 
+    global NUMBER_OF_ITERATIONS_BETWEEN_UPDATES
+    print("Initializing classifier...")
+    classifier = SentimentAnalysisClassifier(
+        batch_size=BATCH_SIZE,
         embedding_size=EMBEDDING_SIZE,
         lstm_hidden_size=LSTM_HIDDEN_SIZE,
         number_of_lstm_layers=NUMBER_OF_LSTM_LAYERS,
-        drop_out_probability=DROP_OUT_PROBABILITY)
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE) # @todo try Adam
-    model.train()
-    for epoch_index in range(NUMBER_OF_EPOCHS): # @todo finish writing training loop
-        for training_input_index, (inputs, labels) in enumerate(training_dataloader):
-            model.zero_grad()
-            predicted_label = model(inputs).squeeze()
-            loss = loss_function(predicted_label, labels.float()) # @todo make this support batch sizes that are not 1
-            loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), MAX_GRADIENT_NORM)
-            optimizer.step()
-            if training_input_index % 100: # @todo parameterize via the CLI how often we calculate this
-                validation_losses = []
-                model.eval()
-                for validation_inputs, validation_labels in validation_dataloader:
-                    predicted_validation_label = model(validation_inputs).squeeze()
-                    validation_loss = loss_function(predicted_validation_label, validation_labels.float()) # @todo make this support batch sizes that are not 1
-                    validation_losses.append(validation_loss.item())
-                model.train()
-                print("Epoch: {}/{} \n".format(e+1, epochs), # @todo make this look nicer
-                      "Step Index: {} \n".format(training_input_index),
-                      "Loss: {:.6f} \n".format(loss.item()),
-                      "Val Loss: {:.6f}".format(statistics.mean(validation_losses)))
+        drop_out_probability=DROP_OUT_PROBABILITY,
+        learning_rate=LEARNING_RATE,
+        number_of_iterations_between_updates=NUMBER_OF_ITERATIONS_BETWEEN_UPDATES,
+    )
+    print("Starting training...")
+    classifier.train(NUMBER_OF_EPOCHS)
     #################################################
     print("This module contains sentiment analysis models for Twitter text classification.")
 
