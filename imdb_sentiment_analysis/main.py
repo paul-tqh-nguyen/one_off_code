@@ -26,6 +26,26 @@ from collections import Counter
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
+import time
+from contextlib import contextmanager
+
+##################
+# Misc Utilities #
+##################
+
+@contextmanager
+def timer(section_name=None, exitCallback=None):
+    start_time = time.time()
+    yield
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    if exitCallback != None:
+        exitCallback(elapsed_time)
+    elif section_name:
+        pass
+        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
+    else:
+        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -90,9 +110,6 @@ def main():
     total_words = len(all_words)
     sorted_words = count_words.most_common(total_words)
     vocab_to_int = {w:i+1 for i,(w,c) in enumerate(sorted_words)}
-
-    
-    
     encoded_reviews = list()
     for review in all_reviews:
         encoded_review = list()
@@ -130,8 +147,8 @@ def main():
     batch_size=50
     train_loader = DataLoader(train_data, batch_size=batch_size)
     valid_loader = DataLoader(valid_data, batch_size=batch_size)
-    test_loader = DataLoader(test_data, batch_size=batch_size)
-    
+    test_loader = DataLoader(test_data, batch_size=batch_size) 
+   
     vocab_size = len(vocab_to_int)+1 # +1 for the 0 padding
     output_size = 1
     embedding_dim = 400
@@ -164,29 +181,37 @@ def main():
     
     # train for some number of epochs
     for e in range(epochs):
-    
+
+        print("len(train_loader) {}".format(len(train_loader)))
         # batch loop
         for training_input_index, (inputs, labels) in enumerate(train_loader):
     
             if(train_on_gpu):
                 inputs=inputs.cuda()
                 labels=labels.cuda()
-            
+            print('\n\n')
+            print("training_input_index {}".format(training_input_index))
             # zero accumulated gradients
-            net.zero_grad()
+            with timer(section_name="zero out gradients"):
+                net.zero_grad()
 
             print("training_input_index {}".format(training_input_index))
             
             # get the output from the model
-            output = net(inputs)
+            with timer(section_name="get predicted label"):
+                output = net(inputs)
     
             # calculate the loss and perform backprop
-            loss = criterion(output.squeeze(), labels.float())
+            with timer(section_name="get loss"):
+                loss = criterion(output.squeeze(), labels.float())
             print("loss {}".format(float(loss)))
-            loss.backward()
+            with timer(section_name="loss.backward()"):
+                loss.backward()
             # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
-            nn.utils.clip_grad_norm_(net.parameters(), clip)
-            optimizer.step()
+            with timer(section_name="clip gradient"):
+                nn.utils.clip_grad_norm_(net.parameters(), clip)
+            with timer(section_name="optimizer step"):
+                optimizer.step()
             
             # loss stats
             if training_input_index % print_every == 0:
