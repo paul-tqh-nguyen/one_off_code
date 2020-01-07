@@ -83,28 +83,44 @@ class SentimentAnalysisNetwork(nn.Module):
         #dropout layer
         self.dropout=nn.Dropout(0.3) # @todo do we need this?
         #Linear and sigmoid layer
+        print("lstm_hidden_size {}".format(lstm_hidden_size))
         self.fc1=nn.Linear(lstm_hidden_size, 64)
         self.fc2=nn.Linear(64, 16)
-        self.fc3=nn.Linear(16,1)
+        self.fc3=nn.Linear(16, 1)
         self.sigmoid=nn.Sigmoid()
 
     def forward(self, x): # @todo rename this input ; add types
+        print()
+        print()
+        print()
         batch_size=x.size()
+        print("batch_size {}".format(batch_size))
         #Embadding and LSTM output
         embedd=self.embedding(x)
         lstm_out, _ = self.lstm(embedd)
+        print("1 lstm_out.shape {}".format(lstm_out.shape))
         #stack up the lstm output
         lstm_out=lstm_out.contiguous().view(-1, self.lstm_hidden_size)
         #dropout and fully connected layers
+        print("2 lstm_out.shape {}".format(lstm_out.shape))
         out=self.dropout(lstm_out)
+        print("1 out.shape {}".format(out.shape))
         out=self.fc1(out)
+        print("2 out.shape {}".format(out.shape))
         out=self.dropout(out)
+        print("3 out.shape {}".format(out.shape))
         out=self.fc2(out)
+        print("4 out.shape {}".format(out.shape))
         out=self.dropout(out)
+        print("5 out.shape {}".format(out.shape))
         out=self.fc3(out)
+        print("6 out.shape {}".format(out.shape))
         sig_out=self.sigmoid(out)
-        sig_out=sig_out.view(batch_size, -1)
-        sig_out=sig_out[:, -1]
+        print("batch_size {}".format(batch_size))
+        sig_out=sig_out.view(batch_size)
+        print("1 sig_out {}".format(sig_out.shape))
+        sig_out=sig_out[:, -1] # takes just the last state?
+        print("2 sig_out {}".format(sig_out.shape))
         return sig_out
 
 ##########################
@@ -256,7 +272,7 @@ class SentimentAnalysisClassifier():
             lstm_hidden_size=lstm_hidden_size,
             number_of_lstm_layers=number_of_lstm_layers,
             drop_out_probability=drop_out_probability)
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate) # @todo try Adam
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
         self.number_of_iterations_between_updates = number_of_iterations_between_updates
         self.number_of_completed_epochs = 0
         self.most_recent_epoch_training_loss = 0
@@ -279,22 +295,14 @@ class SentimentAnalysisClassifier():
         return None
     
     def train_one_iteration(self, inputs, labels) -> None: # @todo add input types
-        #print("\n\n")
-        with timer(section_name="zero out gradients"):
-            self.model.zero_grad()
-        with timer(section_name="get predicted label"):
-            predicted_label = self.model(inputs).squeeze()
-        with timer(section_name="get loss"):
-            label = labels.float().squeeze()
-            loss = self.loss_function(predicted_label, label) # @todo make this support batch sizes that are not 1
-        with timer(section_name="self.most_recent_epoch_training_loss += float(loss)"):
-            self.most_recent_epoch_training_loss += float(loss)
-        with timer(section_name="loss.backward()"):
-            loss.backward()
-        with timer(section_name="clip gradient"):
-            nn.utils.clip_grad_norm_(self.model.parameters(), MAX_GRADIENT_NORM)
-        with timer(section_name="optimizer step"):
-            self.optimizer.step()
+        self.model.zero_grad()
+        predicted_label = self.model(inputs).squeeze()
+        label = labels.float().squeeze()
+        loss = self.loss_function(predicted_label, label) # @todo make this support batch sizes that are not 1
+        self.most_recent_epoch_training_loss += float(loss)
+        loss.backward()
+        nn.utils.clip_grad_norm_(self.model.parameters(), MAX_GRADIENT_NORM)
+        self.optimizer.step()
         return None
     
     def print_epoch_training_preamble(self) -> None:
