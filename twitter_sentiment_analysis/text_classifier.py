@@ -345,7 +345,7 @@ class SentimentAnalysisClassifier():
             lstm_dropout_prob=lstm_dropout_prob,
             number_of_attention_heads=number_of_attention_heads,
             attention_hidden_size=attention_hidden_size)
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
         training_set, validation_set = determine_training_and_validation_datasets()
         self.training_generator = data.DataLoader(training_set, batch_size=batch_size, shuffle=True, num_workers=8)
         self.validation_generator = data.DataLoader(validation_set, batch_size=VALIDATION_BATCH_SIZE, shuffle=False)

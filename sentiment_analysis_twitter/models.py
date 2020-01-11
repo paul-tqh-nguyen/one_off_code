@@ -83,44 +83,22 @@ class SentimentAnalysisNetwork(nn.Module):
         #dropout layer
         self.dropout=nn.Dropout(0.3) # @todo do we need this?
         #Linear and sigmoid layer
-        print("lstm_hidden_size {}".format(lstm_hidden_size))
-        self.fc1=nn.Linear(lstm_hidden_size, 64)
-        self.fc2=nn.Linear(64, 16)
-        self.fc3=nn.Linear(16, 1)
+        self.fc=nn.Linear(lstm_hidden_size, 1)
         self.sigmoid=nn.Sigmoid()
 
     def forward(self, x): # @todo rename this input ; add types
-        print()
-        print()
-        print()
         batch_size=x.size()
-        print("batch_size {}".format(batch_size))
         #Embadding and LSTM output
         embedd=self.embedding(x)
         lstm_out, _ = self.lstm(embedd)
-        print("1 lstm_out.shape {}".format(lstm_out.shape))
         #stack up the lstm output
         lstm_out=lstm_out.contiguous().view(-1, self.lstm_hidden_size)
         #dropout and fully connected layers
-        print("2 lstm_out.shape {}".format(lstm_out.shape))
         out=self.dropout(lstm_out)
-        print("1 out.shape {}".format(out.shape))
-        out=self.fc1(out)
-        print("2 out.shape {}".format(out.shape))
-        out=self.dropout(out)
-        print("3 out.shape {}".format(out.shape))
-        out=self.fc2(out)
-        print("4 out.shape {}".format(out.shape))
-        out=self.dropout(out)
-        print("5 out.shape {}".format(out.shape))
-        out=self.fc3(out)
-        print("6 out.shape {}".format(out.shape))
+        out=self.fc(out)
         sig_out=self.sigmoid(out)
-        print("batch_size {}".format(batch_size))
         sig_out=sig_out.view(batch_size)
-        print("1 sig_out {}".format(sig_out.shape))
         sig_out=sig_out[:, -1] # takes just the last state?
-        print("2 sig_out {}".format(sig_out.shape))
         return sig_out
 
 ##########################
