@@ -33,6 +33,27 @@ body {
     text-shadow: 1px 1px black, -1px 1px black, 1px -1px black, -1px -1px black;
 }
 
+
+.bg-overall {
+  color: #fff;
+  background-color: #009933;
+}
+
+a.bg-overall:hover {
+  background-color: #009933;
+}
+
+.text-overall {
+  color: #009966;
+}
+a {
+  color: #336600;
+}
+
+a:hover, a:focus {
+  color: black;
+}
+
 /* Custom Button Styles */
 
 .btn-dark {
