@@ -1,0 +1,218 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="https://www.w3.org/1999/xhtml">
+
+<head>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Paul Nguyen's Homepage</title>
+<link href="https://fonts.googleapis.com/css?family=Arvo" rel="stylesheet" type="text/css" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Candal" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Suez+One" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Abril+Fatface" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=PT+Sans+Caption" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Work+Sans" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Alike+Angular" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Cambay" rel='stylesheet' type='text/css'>
+<link href="style.css" rel="stylesheet" type="text/css" media="all" />
+</head>
+
+<body>
+
+<div id="wrapper">
+	<div id="header">
+		<div id="logo">
+			<h1><a href="index.html">Paul Nguyen</a></h1>
+		</div>
+	</div>
+
+	<!-- end #header -->
+
+	<div id="menu">
+		<ul>
+			<li class="current_page_item"><a href="index.html">Home</a></li>
+            <li><a href="research.html">Research and Publications</a></li>
+            <li><a href="sample_work.html">Sample Work</a></li>
+            <li><a href="personal.html">Personal Life</a></li>
+			<li class="last"><a href="contact.html">Contact</a></li>
+		</ul>
+	</div>
+
+	<div id="page">
+		<div id="content2">
+            <h2>Image Perforation</h2>
+            <div class="item">
+                <div class="title">
+                    Automatically Accelerating Image Pipelines by Intelligently Skipping Samples
+                </div>
+                <div class="entry">
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><img src="docs/sample_code_image_perf_input.png" alt="" style="width:250px;" hspace="5"><br>Input</th>
+                            <th><img src="docs/sample_code_image_perf_reference_output.png" alt="" style="width:250px;" hspace="5"><br>Exact Sharpened Output</th> 
+                            <th><img src="docs/sample_code_image_perf_approximated_output.png" alt="" style="width:250px;" hspace="5"><br>Approximate Sharpened Output</th>
+                        </tr>
+                    </table>
+                    </center>
+                    <br>
+                    Image Perforation is a method for automatically accelerating arbitrary image processing pipelines. For further information and source code, see my <a href="research.html">research and publications page</a>. <br>
+                    <br>
+                    This was a collaborative research project I've done with Liming Lou, <a href="http://www.cs.virginia.edu/~jdl/">Jason Lawrence</a>, and <a href="http://www.connellybarnes.com/">Connelly Barnes</a>. It was accepted into ACM Transactions on Graphics and presented at ACM SIGGRAPH 2016. <br>
+                    <br>
+                    Photo credits: &copy; <a href="https://www.flickr.com/photos/stuckincustoms/12933454435/">Trey Ratcliff</a>
+                </div>
+            <h2>PatchMatch</h2>
+            <div class="item">
+                <div class="title">
+                    A Linear Time Nearest Neighbor Field Approximation for Patch Correspondence in Images
+                </div>
+                <div class="entry">
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><img src="docs/PatchMatch_A.png" alt="" style="width:350px;" hspace="5"><br>Image A</th>
+                            <th><img src="docs/PatchMatch_B.png" alt="" style="width:350px;" hspace="5"><br>Image B</th>
+                        </tr>
+                        <tr>
+                            <th><br><img src="docs/PatchMatch_A_patches.png" alt="" style="width:350px;" hspace="5"><br>Image A Select Patches</th>
+                            <th><br><img src="docs/PatchMatch_B_patches.png" alt="" style="width:350px;" hspace="5"><br>Image B Select Patches</th>
+                        </tr>
+                    </table>
+                    </center>
+                    <br>
+                    Finding correspondences between patches (small neighborhoods of pixels in an image) is useful in many graphics and vision applications such as optical flow, hole filling, or super-resolution. Naive exhaustive searches can be slow as they can be <i>O(n<sup>2</sup>)</i> where <i>n</i> is the number of pixels in any of our input images. PatchMatch is a linear time patch correspondence algorithm that approximates the optimal patch correspondences between two images. For further details and source code, see the <a href="http://gfx.cs.princeton.edu/gfx/pubs/Barnes_2009_PAR/index.php">PatchMatch research page</a>. <br>
+                    <br>
+                    NOTE: This implementation uses the SSD image metric.<br>
+                    <br>
+                    Source Code: <a href="https://github.com/paul-tqh-nguyen/patchmatch">GitHub</a> <br>
+                    <br>
+                    Photo credits: &copy; <a href="https://www.flickr.com/photos/paulnguyen1991/11662360866">Me!</a>
+                </div>
+            </div>
+            <h2>Bilateral Filter</h2>
+            <div class="item">
+                <div class="title">
+                    A Classic Edge Preserving Low Pass Filter for Image Smoothing and Denoising. 
+                </div>
+                <div class="entry">
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><img src="docs/bilateral_filter_input.png" alt="" style="width:250px;" hspace="5"><br>Input Image</a></th>
+                            <th><img src="docs/bilateral_filter_gaussian_filter_out.png" alt="" style="width:250px;" hspace="5"><br>Gaussian Denoising</a></th>
+                            <th><img src="docs/bilateral_filter_out.png" alt="" style="width:250px;" hspace="5"><br>Denoising via Bilateral Filter</a></th>
+                        </tr>
+                    </table>
+                    </center>
+                    <br>
+                    Image smoothing and denoising is a very important part of almost all computer vision and graphics algorithms. The issue with using basic Gaussian blurs or other linear filters are that they may cause us to lose important structural data in our image (think about smoothing a checkerboard with a basic Gaussian blur, we would lose our strong edges). In order to maintain edges, the bilateral filter assigns weights to it's neighbors based not only on spatial distance but also on intensity distances as well. This is demonstrated in how the grass in the above images are not blurred into the other objects when processed with bilateral filter. <br>
+                    <br>
+                    Source Code: <a href="https://github.com/paul-tqh-nguyen/bilateral_filter">GitHub</a> <br>
+                    <br>
+                    Photo credits: &copy; <a href="https://www.flickr.com/photos/paulnguyen1991/11662360866">Me!</a>
+                </div>
+            </div>
+            <h2>Canny Edge Detector</h2>
+            <div class="item">
+                <div class="title">
+                    A Classic Edge Detection Algorithm Exploiting Strong Gradients within Images
+                </div>
+                <div class="entry">
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><img src="docs/canny_edge_detector_input.png" alt="" style="width:350px;" hspace="5"><br>Input</th>
+                            <th><img src="docs/canny_edge_detector_output.png" alt="" style="width:350px;" hspace="5"><br>Edges</th>
+                        </tr>
+                    </table>
+                    </center>
+                    <br>
+                    The Canny Edge Detector is a classic computer vision algorithm used for extracting useful structural information from an image developed by John Canny. For more information, see the <a href="https://github.com/paul-tqh-nguyen/canny_edge_detector">source code</a>. <br>
+                    <br>
+                    Source Code: <a href="https://github.com/paul-tqh-nguyen/canny_edge_detector">GitHub</a> <br>
+                    <br>
+                    Photo credits: &copy; <a href="https://www.flickr.com/photos/paulnguyen1991/11662360866">Me!</a>
+                </div>
+            </div>
+            <h2>Harris Corner Detector</h2>
+            <div class="item">
+                <div class="title">
+                    Corner Detection Utilizing Gradient Covariance Thresholding
+                </div>
+                <div class="entry">
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><br><img src="docs/harris_corner_detector_input_2_cropped.png" alt="" style="width:350px;" hspace="5"><br>Natural Image Input <br>(cropped, see <a href="docs/harris_corner_detector_input_2.png">full size resolution</a>)</th>
+                            <th><br><img src="docs/harris_corner_detector_output_2_cropped.png" alt="" style="width:350px;" hspace="5"><br>Detected Corners <br>(cropped, see <a href="docs/harris_corner_detector_output_2.png">full size resolution</a>)</th>
+                        </tr>
+                        <tr>
+                            <th><img src="docs/harris_corner_detector_input_1_cropped.png" alt="" style="width:350px;" hspace="5"><br>Synthetic Input <br>(cropped, see <a href="docs/harris_corner_detector_input_1.png">full size resolution</a>)</th>
+                            <th><img src="docs/harris_corner_detector_output_1_cropped.png" alt="" style="width:350px;" hspace="5"><br>Detected Corners <br>(cropped, see <a href="docs/harris_corner_detector_output_1.png">full size resolution</a>)</th>
+                        </tr>
+                    </table>
+                    </center>
+                    <br>
+                    Automatic detection of features, e.g. corners or edges, are useful in many common computer vision problems , e.g. feature correspondence finding in stereo and motion estimation. Harris's corner detector is a classic algorithm used to find corners in an image where there are sufficiently strong and orthogonal gradient values. <br>
+                    <br>
+                    NOTE: In the natural image presented above, a high threshold value was used in order to determine more distinct features in the image. <br>
+                    <br>
+                    Source Code: <a href="https://github.com/paul-tqh-nguyen/harris_corner_detector">GitHub</a> <br>
+                    <br>
+                    Photo credits: &copy; <a href="https://www.flickr.com/photos/paulnguyen1991/11662360866">Me!</a>
+                </div>
+            </div>
+            <h2>Naive Patch Correspondence</h2>
+            <div class="item">
+                <div class="title">
+                    An Exhaustive <i>O(n<sup>2</sup>)</i> Algorithm for Finding Optimal Patch Correspondences
+                </div>
+                <div class="entry">
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><img src="docs/naive_patch_correspondence_A.png" alt="" style="width:350px;" hspace="5"><br>Patch in Image A</a></th>
+                            <th><img src="docs/naive_patch_correspondence_B.png" alt="" style="width:350px;" hspace="5"><br>Visualization of Exhaustive Search</a></th>
+                        </tr>
+                    </table>
+                    </center>
+                    <br>
+                    Many popular computer vision and graphics algorithms rely on nearest neighbor fields, i.e. correspondences between small neighborhoods within images. This is an exhaustive algorithm for finding optimal nearest neighborfields. <br>
+                    <br>
+                    NOTE: Though this is an optimal technique, it is very slow. Approximation methods, e.g. <a href="http://ieeexplore.ieee.org/document/6247665/">Propagation-Assisted KD-Trees</a>, are often sufficiently accurate for many applications and are significantly faster. This code is not intended for practical use, but for optimality comparison purposes. <br>
+                    <br>
+                    Source Code: <a href="https://github.com/paul-tqh-nguyen/naive_patch_correspondence">GitHub</a> <br>
+                    <br>
+                    Photo credits: &copy; <a href="https://www.flickr.com/photos/paulnguyen1991/11662360866">Me!</a>
+                </div>
+            </div>
+        </div>
+        
+		<!-- end #content -->
+	</div>
+	<!-- end #page <!--
+    <!--<div id="page-bottom">
+    </div>
+    -->
+</div>
+
+<div id="footer">
+    <p>&copy; Paul Nguyen. All rights reserved.</p>
+</div>
+
+<!-- end #footer -->
+
+</body>
+
+</html>
+

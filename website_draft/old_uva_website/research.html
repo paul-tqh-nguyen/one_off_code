@@ -1,0 +1,137 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="https://www.w3.org/1999/xhtml">
+
+<head>
+<meta name="keywords" content="" />
+<meta name="description" content="" />
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Paul Nguyen's Homepage</title>
+<link href="https://fonts.googleapis.com/css?family=Arvo" rel="stylesheet" type="text/css" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
+<link href="https://fonts.googleapis.com/css?family=Candal" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Suez+One" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Abril+Fatface" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=PT+Sans+Caption" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Work+Sans" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Alike+Angular" rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Cambay" rel='stylesheet' type='text/css'>
+<link href="style.css" rel="stylesheet" type="text/css" media="all" />
+</head>
+
+<body>
+
+<div id="wrapper">
+	<div id="header">
+		<div id="logo">
+			<h1><a href="index.html">Paul Nguyen</a></h1>
+		</div>
+	</div>
+
+	<!-- end #header -->
+
+	<div id="menu">
+		<ul>
+			<li class="current_page_item"><a href="index.html">Home</a></li>
+            <li><a href="research.html">Research and Publications</a></li>
+            <li><a href="sample_work.html">Sample Work</a></li>
+            <li><a href="personal.html">Personal Life</a></li>
+			<li class="last"><a href="contact.html">Contact</a></li>
+		</ul>
+	</div>
+
+	<div id="page">
+		<div id="content2">
+            <h2>University of Virginia</h2>
+            <div class="item">
+                <div class="title">
+                    Image Perforation: Automatically Accelerating Image Pipelines by Intelligently Skipping Samples
+                </div>
+                <div class="entry">
+                    Authors: Liming Lou, <a href="index.html">Paul Nguyen</a>, <a href="http://www.cs.virginia.edu/~jdl/">Jason Lawrence</a>, <a href="http://www.connellybarnes.com/">Connelly Barnes</a> <br>
+                    Accepted into ACM Transactions on Graphics. Presented at ACM SIGGRAPH 2016. <br>
+                    
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><img src="docs/2016_image_perforation_input.png" alt="" style="width:250px;" hspace="5"><br>Input</th>
+                            <th><img src="docs/2016_image_perforation_reference_output.png" alt="" style="width:250px;" hspace="5"><br>Reference Output</th> 
+                            <th><img src="docs/2016_image_perforation_image_perf.png" alt="" style="width:250px;" hspace="5"><br>Image Perforation</th>
+                        </tr>
+                    </table>
+                    </center>
+                    Summary: As image processing applications like Instagram and Snapchat become more popular on portable devices with limited processing power, there's a need to explore ways to boost speed while taking into account the hardware limitations. We introduce image perforation, a method that allows us to take an arbitrary target image processing program and automatically find optimal ways to sacrifice exactness for speed. Modern image processing applications often utilize multistage pipelines that contain several stages that pass processed images between each other. The output images of one stage are often used as the input for the next. We achieve our speedups by intelligently selecting which pixels of an image to process in each stage of the pipeline. As this will yeild missing data in the output of the stage, we use fast reconstruction methods to ensure that the output of each stage is complete. Since there are many ways we can intelligently select samples and many fast reconstruction methods, we use a genetica algorithm to find those that work best. Image perforation achieves speedups of 2x-10x with acceptable loss in visual quality on several classic image processing applications, e.g. bilateral and median filtering. <br>
+                    <div style="line-height:70%;"><br></div>
+                    Documents: <a href="docs/2016_image_perforation_high_res.pdf">High Resolution Publication</a>, <a href="docs/2016_image_perforation_low_res.pdf">Low Resolution Publication</a>, <a href="docs/2016_image_perforation_supplemental_doc.pdf">Supplemental Results</a>, <a href="docs/2016_image_perforation_slides.pptx">Presentation Slides</a> <br>
+                    Code and Data: <a href="https://github.com/uva-graphics/image_perforation">Source Code</a>, <a href="https://github.com/uva-graphics/image_perforation/tree/master/proj/images/train">Training Data</a>, <a href="docs/2016_image_perforation_testing_data.zip">Testing Data</a> <br>
+                    Miscellaneous: <a href="docs/2016_image_perforation.bib">BibTeX</a> <br>
+                    Photo credits: &copy; <a href="https://www.flickr.com/photos/werkunz/4258961388">Werner Kunz</a>
+		                </ul>
+                </div>
+            <h2>Suffolk University</h2>
+            <div class="item">
+                <div class="title">
+                    Perspectives on Co-Evolution of Friendship and Content Productionin Massive Online Social Networks
+                </div>
+                <div class="entry">
+                    Authors: <a href="index.html">Paul Nguyen</a>, Elizabeth Mckenzie, Aleksander Liholips <br>
+                    
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><img src="docs/14_social_networks.png" alt="" style="width:700px;" hspace="5"></th>
+                        </tr>
+                    </table>
+                    </center>
+                    Summary: We studied online social user interaction on several social networks of various types (e.g. video-sharing, blogging, micro-blogging, etc.) and observed that the four LiveJournal user archetypes described by Dmitry Zinoviev exist in various social networks types (not just blogging social networks). Though the same archetypes exist in these networks, we observed that the social interaction methods correlated with long term social wealth differed based on the nature of the content creation methods. Zinoviev describes the four LiveJournal user archetypes as the blogger (which we refer to in other networks as the strict content creator), the socializer, the blogger-socializer (which we refer to as the socializing content creator), and the reader (colloquially referred to as a "lurker," which we refer to as the strict content consumer). The roles that each of these archetypes played in creating social capital varied due to the nature of the content creation. Specific differences, e.g. allowance of HD playback, significantly influenced differences in the impact of social user interaction in seemingly similar networks like YouTube and Vimeo. For specifics concerning how the content creation influenced the flow of social capital in each of our studied networks, see our <a href="docs/perspectives_on_coevolution_of_friendship_and_content_production_in_massive_online_social_networks.pdf">research report</a>. <br>
+                    <br>
+                    NOTE: The data we studied and gathered were from 2010 to 2012, and thus many features of these social networks may have changed since then, which would cause differences in content creation methods and content consumption methods. Thus, the observations we make concerning specific networks may be out of date. 
+                    <div style="line-height:70%;"><br></div>
+                    Documents: <a href="docs/perspectives_on_coevolution_of_friendship_and_content_production_in_massive_online_social_networks.pdf">Research Report</a>
+		                </ul>
+                </div>
+            </div>
+            <h2>Washington & Lee University</h2>
+            <div class="item">
+                <div class="title">
+                    Visual Object Recognition in Natural Images
+                </div>
+                <div class="entry">
+                    Authors: <a href="index.html">Paul Nguyen</a>, Lee Davis, Garrett Koller <br>
+                    <center>
+                    <div style="line-height:60%;"><br></div>
+                    <table style="width:100%">
+                        <tr>
+                            <th><img src="docs/svm_with_images.png" alt="" style="width:700px;" hspace="5"></th>
+                        </tr>
+                    </table>
+                    </center>
+                    Summary: The <a href="http://host.robots.ox.ac.uk/pascal/VOC/">PASCAL Visual Object Classes Challenge</a> was a competition held from 2005 to 2012 in conjunction with the <a href="https://en.wikipedia.org/wiki/European_Conference_on_Computer_Vision">European Conference on Computer Vision</a> with the goal of automatically recognizing objects from about twenty classes in natural scenes (photos taken from <a href="https://www.flickr.com/" alt="" title="Flickr is an image hosting and video hosting website and web services suite that was created by Ludicorp in 2004 and acquired by Yahoo on March 20, 2005.">flickr</a>). Systems are rated according to their efficacy in classifying a large collection of unlabeled images. We competed in the PASCAL Visual Object Classes Challenge in 2011 using an SVM-based system developed in years prior. We focused on improving accuracy and speed. We achieved a greater than 50-fold speedup through the use of lower-level programming languages and low-level parallelism and by exploiting the inherent parallelism in the problem through distributed computing. We also worked to improve our methodology to obtain more accurate results, implementing and testing various distance metrics. For specific details, see our <a href="docs/FinalRELeeReport_LeePaul.pdf">research report</a>. <br>
+                    <div style="line-height:70%;"><br></div>
+                    Documents: <a href="docs/FinalRELeeReport_LeePaul.pdf">Research Report</a>, <a href="docs/Lenfest2011Report.pdf">Grant Report</a>
+		                </ul>
+                </div>
+            </div>
+        </div>
+        
+		<!-- end #content -->
+	</div>
+	<!-- end #page <!--
+    <!--<div id="page-bottom">
+    </div>
+    -->
+</div>
+
+<div id="footer">
+    <p>&copy; Paul Nguyen. All rights reserved.</p>
+</div>
+
+<!-- end #footer -->
+
+</body>
+
+</html>
+
