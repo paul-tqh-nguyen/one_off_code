@@ -234,10 +234,23 @@ hr.small {
     font-size: 1.2em;
     margin-bottom: 30px;
     background: #f0f0f0;
-    padding-top: 5vw;
-    padding-bottom: 5vw;
-    padding-left: 5vw;
-    padding-right: 5vw;
+    padding-top: 2vw;
+    padding-bottom: 2vw;
+}
+
+.portfolio-item p{
+    padding-left: 2vw;
+    padding-right: 2vw;
+}
+
+.portfolio-item a {
+    color: black;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.portfolio-item a:hover, a:focus {
+  color: #336600;
 }
 
 .img-portfolio {
@@ -272,6 +285,22 @@ hr.small {
 
 /* Footer */
 
-footer {
-    padding: 100px 0;
+#contact {   
+    height: 40%;
+    padding-top: 5%;
+    padding-bottom: 5%;
 }
+
+footer {
+    display: table;
+    position: relative;
+    width: 100%;
+    height: 60%;
+    background: url(https://live.staticflickr.com/7424/11551449493_e7213c6b64_k.jpg) no-repeat scroll;
+    background-position: center;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    background-size: cover;
+    -o-background-size: cover;
+}
+
