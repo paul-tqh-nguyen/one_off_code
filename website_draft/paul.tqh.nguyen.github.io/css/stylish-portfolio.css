@@ -51,6 +51,55 @@ a:hover, a:focus {
   color: black;
 }
 
+/* Header Row */
+
+#header-row {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    left: 0px;
+    height: 56px;
+    padding-left: 10px;
+    padding-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1;
+    background-color: rgba(0,153,51,0.2);
+    color: rgba(200, 200, 200, 1.0);
+    transition: background-color 0.25s;
+} 
+
+#header-row:hover {
+    transition: background-color 0.25s;
+    color: white;
+    background-color: rgba(0,153,51,1);
+}
+
+#header-row ul {
+    align-items: center;
+    list-style-type: none;
+    margin: 0;
+    overflow: hidden;
+}
+
+#header-row li {
+    float: left;
+}
+
+#header-row li a {
+  display: block;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  padding-left: 5vw;
+  padding-right: 5vw;
+}
+
+#header-row li a:hover {
+    font-size: 1em;
+}
+
 /* Custom Button Styles */
 
 .btn-dark {
@@ -150,7 +199,7 @@ hr.small {
 }
 
 #menu-toggle {
-    z-index: 1;
+    z-index: 3;
     position: fixed;
     top: 0;
     right: 0;
