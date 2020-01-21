@@ -51,3 +51,5 @@ Employment Duration6 yrs 11 mos
 - Create and document comprehensive test cases.
 - Meet with development teams to comprehend system expectations.
 - Prioritize, estimate, and plan testing activities, depending on urgency and deadline of projects.
+
+Overall design and primary implementation of the Cyc reasoner, knowledge base storage, truth maintenance, and database interoperability mechanisms.
