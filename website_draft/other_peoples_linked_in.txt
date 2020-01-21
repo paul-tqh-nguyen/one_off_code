@@ -1,0 +1,53 @@
+
+Experienced Ontologist, Software Architect, and Technical Senior Project Manager with a demonstrated history of developing knowledge-based AI solutions for Fortune 100 businesses and US Government. Strong program and project management professional skilled in Ontology, Software Architecture, and Semantic Technologies. Passionate about creating knowledge-based AI systems that leverage effective, efficient, accurate and auditable machine reasoning. 
+
+I am a programmer, ontologist, and advocate for common sense artificial intelligence. My focus has been on applying AI to health care and the oil and gas industry. For the latter, I have been particularly engaged in optimizing unconventional drilling efficiency. This focus stemmed from my internal development of functional analysis for complex system. Additionally, I have experience in sales and project leadership. I thrive in environments where I get to perform a variety of tasks, and leverage that breadth to better communicate with others.
+
+My background is in academic philosophy, where I worked on formal (social) epistemology, philosophy of science, and metaphysics. For more detail, see https://sites.google.com/site/caseythart/. 
+
+My roles within Cycorp range from knowledge representation, data wrangling, pre-sales and sales, to developing continuing training for employees and managing interns. I use my philosophy background to isolate important distinctions and principles that experts leverage to do their jobs well. Then, I program these things so that our artificial intelligence can reason the way that experts do. I get to look at fascinating problems from a variety of disciplines, though recently I have focused on healthcare and energy.
+
+I helped maintain, extend and explore how to improve Cyc, the world's premier symbolic artificial intelligence. I also worked with teams that developed and deployed applications based on Cyc for specific client needs.
+
+● Developed end-to-end applications independently, from generating or finding data and importing it into relational or graph databases; cleaning, wrangling, manipulating and analyzing that data using SQL and SPARQL; designing knowledge representation and machine reasoning solutions in Lisp; delivering those solutions in usable natural language interfaces driven either by Lisp code or Rasa NLU; and writing R scripts and Javascript tests for quality assurance.
+● Developed enterprise-scale virtual advisor applications that: analyze and forecast financial data to find strategic investment opportunities; offer insights into military technology trends; and prioritize customer needs by modeling customers' experiences with and value to a company
+● Invented new methods for natural language processing, natural language generation, and follow-up question generation that have been deployed and widely adopted
+● Led ontology build-outs on autonomous vehicles, materials science, and the semantics of gradable adjectives, culminating in two company-wide research presentations and several new demos for potential clients
+
+Contributed to the Cyc Knowledge Base at both the upper level and for domain knowledge in order to support several applications. Focus was on conversational agents, specifically in adding a theory of mind (meta-knowledge about the interlocutor's own beliefs and other mental states) to drive more intelligent inferences. Worked closely with the inference and natural language team to optimize ontology-driven solutions.
+
+Experienced software developer and ontologist based in Austin, Texas, specializing in formalization of human knowledge and customer application development. Programming experience in a wide variety of languages with a focus on Python and Common LISP, and a deep knowledge of higher-order logic. Extensive work with PostgreSQL databases, and web services returning both JSON and XML for customer applications. Bachelor of Computing (Honors) focused in Cognitive Science from Queen's University. I have a passion for discovery, creation, and communication in both the technological and the social world. 
+
+Cyc is the world’s largest AI program, with millions of rules written in full first-order logic and beyond (meta- and meta-meta- reasoning, reflection, modals, contexts, etc.). This knowledge base, along with a powerful inference engine, allows Cyc do causal reasoning without needing large amounts of data like traditional machine learning solutions. I have worked extensively on all aspects of the Cyc system including formalizing knowledge in higher-order logic, improving the inference engine code, and as the lead developer for numerous client applications that harness Cyc in the health care, oil, aerospace, defense, and entertainment spaces, spanning more than a half dozen Fortune 500 companies and government entities.
+
+My management responsibilities include product management, program/project management, and employee supervision. My technical responsibilities include Java development, ontological engineering, and employee training.
+
+I'm a project manager and ontologist at Cycorp, where I currently lead a team of ontologists and programmers in designing and building the AI health care platform for a Fortune 10 company. I excel at leading agile teams that rapidly adapt to client needs while advancing company-wide best practices to secure the long-term value ... see more 
+
+• Leads a team of ontologists and programmers in designing and building the AI health care platform for a Fortune 10 company.
+• Innovates AI solutions for the finance, media, health care, and automotive industries.
+• Performs core knowledge representation and ontology development in the Cyc Knowledge Base.
+• Advances company-wide best practices in efficient software development through focused training initiatives.
+
+• Presented on developing true AI to set high expectations and inspire employees on future work
+• Established a self-directed applied research program for motivated employees to work on their own AI projects while providing guidance and inference implementations
+• Designed, promoted, and initiated a knowledge-based natural language understanding effort, utilizing common sense knowledge to transform text into first-order predicate logic KB content suitable for reasoning
+• Developed itinerary for leveraging unstructured data with knowledge algorithms to create a self-correcting, self-healing, self-improving knowledge base suitable for general intelligence reasoning
+…
+see more
+TitleAI Researcher & Senior Inference Architect
+Dates EmployedMar 2011 – Jan 2018
+Employment Duration6 yrs 11 mos
+• Directly supported the inference and functional representation needs of philosopher-ontologists who encoded descriptions of the world in first order predicate calculus to build common sense and business logic applications
+• Designed and implemented entailment store graph search algorithm that utilized multiple entailment generation techniques concurrently to increase completeness of complicated inferences
+
+
+• Symbolic artificial intelligence research and development
+• Knowledge algorithms design, implementation, and analysis
+• Test-driven development and refactoring of code and knowledge
+• Large codebase and knowledgebase maintenance and management
+
+- Identify and thoroughly document and track bugs in Jira system.
+- Create and document comprehensive test cases.
+- Meet with development teams to comprehend system expectations.
+- Prioritize, estimate, and plan testing activities, depending on urgency and deadline of projects.
