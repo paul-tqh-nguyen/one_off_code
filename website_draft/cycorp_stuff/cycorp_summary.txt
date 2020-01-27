@@ -1,0 +1,25 @@
+I play several roles with my primary being the data integration technical lead; my others are senior inference engine developer and NLP engineer.
+
+Data Integration Technical Lead:
+* Independently revive and rebuild a 20 year old source-to-source compiler to generate SQL & SPARQL for data integration with our knowledge graph.
+* Built a framework for integrating data from HTTP webservices into our knowledge graph search engine.
+* Optimize compiler-generated SQL for performance on several SQL backends (PostgreSQL, Microsoft SQL Server, Oracle Database, etc.).
+* Expand our SQL data integration capabilities for ETL purposes (e.g. trigger and stored procedure generation).
+* Meet with project managers in an Agile environment to meet client needs.
+* Manage Jenkins jobs for running tests and builds as necessary as to facilitate continuous integration of new features.
+
+Senior Inference Engine Developer:
+* Interact directly with Inference engine clients on weekly basis.
+* Built a framework for performing distributed knowledge graph search and ETL based on our proprietary inference engine.
+* Optimize, test, and maintain knowledge graph search capabilities.
+* Maintain and develop tests and tools for knowledge graph integrity maintenance on a 40 year old ever-expanding knowledge graph.
+
+Natural Language Processing Engineer:
+* Create deep-learning model (via pre-trained BERT models) for data-driven word-sense disabiguation for use in rule-based natural language to formal-logic language translation mechanisms.
+* Develop automated natural language data cleaning utilities. 
+* Expand natural language generation scope via vocabulary addition.
+
+My miscellaneous contributions include:
+* Mentoring junior software developers.
+* Creating a training program for new employees.
+* Training non-developers to take on software development roles by training them on data visualization, hashing optimizations, API design and development, etc.
