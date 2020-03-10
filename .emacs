@@ -11,7 +11,12 @@
 ;; Update EMACS Load Path
 
 (package-initialize)
-(add-to-list 'load-path "/home/pnguyen/code/")
+(add-to-list 'load-path "./emacs_files/")
+
+(when (eq system-type 'darwin)
+  (setq mac-command-modifier 'meta)
+  (setq mac-function-modifieer 'control)
+  (setq mac-option-modifier nil))
 
 ;; Undo Tree
 
