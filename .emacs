@@ -13,7 +13,7 @@
 (cond
  ((eq system-type 'darwin)
   (setq mac-command-modifier 'meta)
-  (setq mac-function-modifieer 'control)
+  (setq mac-function-modifier 'control)
   (setq mac-option-modifier nil))
  ((eq system-type 'gnu/linux)
   )
