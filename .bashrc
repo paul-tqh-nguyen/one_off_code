@@ -35,7 +35,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
     export PATH=$PATH:~/scripts/:~/bin/
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    alias ll="ls -l"
+    alias ll="ls -alF"
 else
     echo "Could not detect OS flavor."
 fi
