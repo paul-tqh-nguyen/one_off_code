@@ -10,13 +10,19 @@
 
 ;; Update EMACS Load Path
 
+(let (emacs-file-directory)
+  (cond
+   ((eq system-type 'darwin)
+    (setq mac-command-modifier 'meta)
+    (setq mac-function-modifieer 'control)
+    (setq mac-option-modifier nil))
+   ((eq system-type 'gnu/linux)
+    (setq emacs-file-directory "/home/pnguyen/code/one_off_code/emacs_files/"))
+   (t
+    (format "Could not determine OS flavor."))
+
 (package-initialize)
 (add-to-list 'load-path "./emacs_files/")
-
-(when (eq system-type 'darwin)
-  (setq mac-command-modifier 'meta)
-  (setq mac-function-modifieer 'control)
-  (setq mac-option-modifier nil))
 
 ;; Undo Tree
 
