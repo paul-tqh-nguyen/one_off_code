@@ -3,7 +3,7 @@
 
 alias lt="ls -ltr"
 alias myjobs="ps auwwx | grep $USER"
-export PS1="\u@\h:\`pwd\` $ "
+export PS1="\u@\h:\`pwd\`$ "
 
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
