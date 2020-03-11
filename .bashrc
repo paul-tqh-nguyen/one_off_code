@@ -5,7 +5,8 @@ export PS1="\u@\h:\`pwd\`$ "
 alias lt="ls -ltr"
 alias myjobs="ps auwwx | grep $USER"
 
-alias init-metagraph-env="conda env create ; conda activate mg && pre-commit install && python setup.py develop"
+alias init-mg-env="conda env create ; conda activate mg && pre-commit install && python setup.py develop"
+alias del-mg-env="conda env remove --name mg"
 
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
