@@ -5,9 +5,6 @@ export PS1="\u@\h:\`pwd\`$ "
 alias lt="ls -ltr"
 alias myjobs="ps auwwx | grep $USER"
 
-alias init-mg-env="conda env create ; conda activate mg && pre-commit install && python setup.py develop"
-alias del-mg-env="conda env remove --name mg"
-
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
     if [ "1024" -gt "$num_bytes" ]
@@ -29,6 +26,13 @@ function set-title() {
   TITLE="\[\e]2;$*\a\]"
   PS1=${ORIG}${TITLE}
 }
+
+# Metagraph Utilities
+
+alias goto-mg="cd ~/code/metagraph/"
+alias init-mg-env="goto-mg && (conda env create ; conda activate mg && pre-commit install && python setup.py develop)"
+alias del-mg-env="goto-mg && (conda env remove --name mg)"
+alias fresh-mg-env="del-mg-env && init-mg-env"
 
 # OS Specific Basic Needs
 
