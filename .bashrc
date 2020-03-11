@@ -5,6 +5,8 @@ export PS1="\u@\h:\`pwd\`$ "
 alias lt="ls -ltr"
 alias myjobs="ps auwwx | grep $USER"
 
+alias update-settings="cd ~/code/one_off_code/ ; git pull; git add .bashrc ; git commit -m \"Update .bashrc and .emacs files.\" ; git push ; source ~/.bashrc"
+
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
     if [ "1024" -gt "$num_bytes" ]
