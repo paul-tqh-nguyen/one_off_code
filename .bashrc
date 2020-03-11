@@ -7,7 +7,6 @@ alias myjobs="ps auwwx | grep $USER"
 
 alias init-metagraph-env="conda env create ; conda activate mg && pre-commit install && python setup.py develop"
 
-
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
     if [ "1024" -gt "$num_bytes" ]
