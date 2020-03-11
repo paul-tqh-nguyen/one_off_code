@@ -37,6 +37,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
     export PATH=$PATH:~/scripts/:~/bin/
 elif [[ "$OSTYPE" == "darwin"* ]]; then
+    source ~/anaconda3/etc/profile.d/conda.sh
     export PATH=/Users/pnguyen/anaconda3/condabin${PATH:+:$PATH}
     export PATH=/opt/anaconda3/bin${PATH:+:$PATH}
     alias ll="ls -alF"
