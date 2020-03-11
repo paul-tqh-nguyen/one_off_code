@@ -32,8 +32,8 @@ function set-title() {
 # Metagraph Utilities
 
 alias goto-mg="cd ~/code/metagraph/"
-alias init-mg-env="goto-mg && (conda env create ; conda activate mg && pre-commit install && python setup.py develop)"
-alias del-mg-env="goto-mg && (conda env remove --name mg)"
+alias init-mg-env="goto-mg && conda env create ; conda activate mg && pre-commit install && python setup.py develop"
+alias del-mg-env="goto-mg && conda env remove --name mg"
 alias fresh-mg-env="del-mg-env && init-mg-env"
 
 # OS Specific Basic Needs
