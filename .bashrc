@@ -47,6 +47,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     export PATH=$PATH:~/scripts/:~/bin/
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     source ~/anaconda3/etc/profile.d/conda.sh
+    export PATH=/usr/local/bin${PATH:+:$PATH}
     export PATH=/Users/pnguyen/anaconda3/condabin${PATH:+:$PATH}
     export PATH=/opt/anaconda3/bin${PATH:+:$PATH}
     alias ll="ls -alF"
