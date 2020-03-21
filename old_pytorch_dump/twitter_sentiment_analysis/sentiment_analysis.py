@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -O
+#!/usr/bin/python3
 
 """
 
@@ -171,7 +171,9 @@ def validate_cli_args_for_testing(arg_to_value_map: dict) -> None:
 def main():
     '''
     Example Use:
-        ./sentiment_analysis.py -train-sentiment-analyzer -number-of-epochs 3 -batch-size  1 -learning-rate 1e-2 -attenion-regularization-penalty-multiplicative-factor 0.1 -embedding-hidden-size 200 -lstm-dropout-prob 0.2 -number-of-attention-heads 2 -attention-hidden-size 16 -number-of-iterations-between-checkpoints 20000 -checkpoint-directory /tmp/checkpoint_dir
+        # @todo make -attenion-regularization-penalty-multiplicative-factor work
+        #./sentiment_analysis.py -train-sentiment-analyzer -number-of-epochs 3 -batch-size  1 -learning-rate 1e-2 -attenion-regularization-penalty-multiplicative-factor 0.1 -embedding-hidden-size 200 -lstm-dropout-prob 0.2 -number-of-attention-heads 2 -attention-hidden-size 16 -number-of-iterations-between-checkpoints 20000 -checkpoint-directory /tmp/checkpoint_dir
+        ./sentiment_analysis.py -train-sentiment-analyzer -number-of-epochs 3 -batch-size  1 -learning-rate 1e-2 -embedding-hidden-size 200 -lstm-dropout-prob 0.2 -number-of-attention-heads 2 -attention-hidden-size 16 -number-of-iterations-between-checkpoints 20000 -checkpoint-directory /tmp/checkpoint_dir
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-run-tests', action='store_true', help="To run all of the tests.")
@@ -226,8 +228,9 @@ def main():
             keyword_args['learning_rate'] = float(arg_to_value_map['learning_rate'])
         if arg_to_value_map['embedding_hidden_size'] is not None:
             keyword_args['embedding_hidden_size'] = int(arg_to_value_map['embedding_hidden_size'])
-        if arg_to_value_map['attenion_regularization_penalty_multiplicative_factor'] is not None:
-            keyword_args['attenion_regularization_penalty_multiplicative_factor'] = float(arg_to_value_map['attenion_regularization_penalty_multiplicative_factor'])
+        # @todo add this back in
+        # if arg_to_value_map['attenion_regularization_penalty_multiplicative_factor'] is not None:
+        #     keyword_args['attenion_regularization_penalty_multiplicative_factor'] = float(arg_to_value_map['attenion_regularization_penalty_multiplicative_factor'])
         if arg_to_value_map['lstm_dropout_prob'] is not None:
             keyword_args['lstm_dropout_prob'] = float(arg_to_value_map['lstm_dropout_prob'])
         if arg_to_value_map['batch_size'] is not None:

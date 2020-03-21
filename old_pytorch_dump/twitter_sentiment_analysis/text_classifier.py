@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -O
+#!/usr/bin/python3 
 
 """
 
@@ -245,7 +245,7 @@ class SelfAttentionLayers(nn.Module):
             ("reduction_layer", nn.Linear(input_size, hidden_size)),
             ("activation", nn.ReLU(True)),
             ("attention_layer", nn.Linear(hidden_size, number_of_attention_heads)),
-        ]))
+        ])) # @todo should we add dropout here?
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
     def forward(self, input_matrix):
@@ -274,12 +274,14 @@ class SentimentAnalysisNetwork(nn.Module):
         if __debug__: # only used for assertion checking
             self.embedding_hidden_size = embedding_hidden_size
             self.number_of_attention_heads = number_of_attention_heads
+        self.number_of_lstm_layers = 2
         self.embedding_layers = nn.Sequential(OrderedDict([
             ("reduction_layer", nn.Linear(WORD2VEC_VECTOR_LENGTH, embedding_hidden_size)),
             ("activation", nn.ReLU(True)), # @todo is this correct? https://discuss.pytorch.org/t/why-is-there-a-relu-non-linearity-only-on-the-decoder-embedding-in-pytorch-seq2seq-tutorial/12791/2
         ]))
-        self.encoding_layers = nn.LSTM(embedding_hidden_size, embedding_hidden_size, num_layers=2, dropout=lstm_dropout_prob, bidirectional=True)
-        encoding_hidden_size = 2*embedding_hidden_size 
+        # @todo should we add dropout here?
+        self.encoding_layers = nn.LSTM(embedding_hidden_size, embedding_hidden_size, num_layers=self.number_of_lstm_layers, dropout=lstm_dropout_prob, bidirectional=True)
+        encoding_hidden_size = embedding_hidden_size
         self.attention_layers = SelfAttentionLayers(input_size=encoding_hidden_size, number_of_attention_heads=number_of_attention_heads, hidden_size=attention_hidden_size)
         attention_size = encoding_hidden_size*number_of_attention_heads
         self.prediction_layers = nn.Sequential(OrderedDict([
@@ -293,17 +295,23 @@ class SentimentAnalysisNetwork(nn.Module):
         self.prediction_layers.to(self.device)
         
     def forward(self, text_strings: Iterable[str]):
-        batch_size = len(text_strings)
         text_string_matrices_unpadded = [text_string_matrix_from_text_string(text_string) for text_string in text_strings]
         text_string_batch_matrix = torch.nn.utils.rnn.pad_sequence(text_string_matrices_unpadded)
         text_string_batch_matrix = text_string_batch_matrix.to(self.device)
-        max_number_of_words = max(map(len, text_string_matrices_unpadded))
+        if __debug__:
+            batch_size = len(text_strings)
+            max_number_of_words = max(map(len, text_string_matrices_unpadded))
         assert tuple(text_string_batch_matrix.shape) == (max_number_of_words, batch_size, WORD2VEC_VECTOR_LENGTH), "text_string_batch_matrix has unexpected dimensions."
         embeddeding_batch_matrix = self.embedding_layers(text_string_batch_matrix)
         assert tuple(embeddeding_batch_matrix.shape) == (max_number_of_words, batch_size, self.embedding_hidden_size)
-        encoding_batch_matrix, _ = self.encoding_layers(embeddeding_batch_matrix)
+        if __debug__:
+            encoding_batch_matrix, (encoding_hidden_state, encoding_cell_state) = self.encoding_layers(embeddeding_batch_matrix)
+        else:
+            _, (encoding_hidden_state, _) = self.encoding_layers(embeddeding_batch_matrix)
         assert tuple(encoding_batch_matrix.shape) == (max_number_of_words, batch_size, 2*self.embedding_hidden_size)
-        attention_matrix = self.attention_layers(encoding_batch_matrix)
+        assert tuple(encoding_hidden_state.shape) == (2*self.number_of_lstm_layers, batch_size, self.embedding_hidden_size)
+        assert tuple(encoding_cell_state.shape) == (2*self.number_of_lstm_layers, batch_size, self.embedding_hidden_size)
+        attention_matrix = self.attention_layers() # @todo make this take all the hidden states (either concat the forward and backward ro send them in as is and have attention account for how important each forward or backward state is) for each word
         assert tuple(attention_matrix.shape) == (batch_size, self.number_of_attention_heads*2*self.embedding_hidden_size)
         prediction_scores = self.prediction_layers(attention_matrix)
         assert tuple(prediction_scores.shape) == (batch_size, NUMBER_OF_SENTIMENTS)
