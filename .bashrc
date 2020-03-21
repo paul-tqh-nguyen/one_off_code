@@ -1,9 +1,10 @@
 
 # Convenience & Workflow 
 
-alias lt="ls -ltr"
-alias myjobs="ps auwwx | grep $USER"
 export PS1="\u@\h:\`pwd\`$ "
+alias lt="ls -ltr"
+
+alias update-settings="cd ~/code/one_off_code/ ; git pull; git add .bashrc ; git commit -m \"Update .bashrc and .emacs files.\" ; git push ; source ~/.bashrc"
 
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
@@ -27,6 +28,18 @@ function set-title() {
   PS1=${ORIG}${TITLE}
 }
 
+# Metagraph Utilities
+
+alias goto-mg="cd ~/code/metagraph/"
+alias init-mg="goto-mg && conda env create ; conda activate mg && pre-commit install && python setup.py develop"
+alias del-mg="goto-mg && conda env remove --name mg"
+alias fresh-mg="del-mg && init-mg"
+
+alias goto-mgc="cd ~/code/metagraph-cuda/"
+alias init-mgc="goto-mgc && conda env create ; conda activate mgc && conda install ~/dump/metagraph-0.0.1-py3.7h39e3cac_g15c13c6_12.tar.bz2 && pre-commit install && python setup.py develop"
+alias del-mgc="goto-mgc && conda env remove --name mgc"
+alias fresh-mgc="del-mgc && init-mgc"
+
 # OS Specific Basic Needs
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -37,6 +50,10 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
     export PATH=$PATH:~/scripts/:~/bin/
 elif [[ "$OSTYPE" == "darwin"* ]]; then
+    source ~/anaconda3/etc/profile.d/conda.sh
+    export PATH=/usr/local/bin${PATH:+:$PATH}
+    export PATH=/Users/pnguyen/anaconda3/condabin${PATH:+:$PATH}
+    export PATH=/opt/anaconda3/bin${PATH:+:$PATH}
     alias ll="ls -alF"
 else
     echo "Could not detect OS flavor."
