@@ -52,7 +52,9 @@ class RNN(nn.Module):
     def __init__(self, vocab_size, embedding_size, encoding_hidden_size, output_size, number_of_encoding_layers, dropout_probability):
         super().__init__()
         if __debug__:
+            self.embedding_size = embedding_size
             self.encoding_hidden_size = encoding_hidden_size
+            self.number_of_encoding_layers = number_of_encoding_layers
         self.embedding_layers = nn.Sequential(OrderedDict([
             ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=PAD_IDX)),
             ("dropout_layer", nn.Dropout(dropout_probability)),
@@ -60,7 +62,7 @@ class RNN(nn.Module):
         self.rnn = nn.LSTM(embedding_size, 
                            encoding_hidden_size, 
                            num_layers=number_of_encoding_layers, 
-                           bidirectional=true, 
+                           bidirectional=True, 
                            dropout=dropout_probability)
         self.dropout = nn.Dropout(dropout_probability)
         self.prediction_layers = nn.Sequential(OrderedDict([
@@ -70,32 +72,28 @@ class RNN(nn.Module):
         ]))
         
     def forward(self, text_batch, text_lengths):
-        # text_batch.shape == (max_sentence_length, BATCH_SIZE)
-        max_sentence_length = max(text_lengths)
-        assert text_batch.shape[0] == max_sentence_length
-        assert text_batch.shape[1] <= BATCH_SIZE
-        assert text_lengths.shape[0] <= BATCH_SIZE
-        assert text_batch.shape[1] == text_lengths.shape[0]
-        
+        if __debug__:
+            max_sentence_length = max(text_lengths)
+            batch_size = text_batch.shape[1]
+        assert batch_size <= BATCH_SIZE
+        assert tuple(text_batch.shape) == (max_sentence_length, batch_size)
+        assert tuple(text_lengths.shape) == (batch_size,)
+                
         embedded_batch = self.embedding_layers(text_batch)
-        # embedded_batch.shape == (max_sentence_length, BATCH_SIZE, EMBEDDING_SIZE)
-        assert embedded_batch.shape[0] == max_sentence_length
-        assert embedded_batch.shape[1] <= BATCH_SIZE
-        assert embedded_batch.shape[1] == text_batch.shape[1]
-        assert embedded_batch.shape[2] == EMBEDDING_SIZE
+        assert tuple(embedded_batch.shape) == (max_sentence_length, batch_size, self.embedding_size)
         
         embedded_batch_packed = nn.utils.rnn.pack_padded_sequence(embedded_batch, text_lengths)
         encoded_batch_packed, (encoding_hidden_state, encoding_cell_state) = self.rnn(embedded_batch_packed)
         encoded_batch, encoded_batch_lengths = nn.utils.rnn.pad_packed_sequence(encoded_batch_packed)
         assert tuple(encoded_batch.shape) == (max_sentence_length, batch_size, self.encoding_hidden_size*2)
-        assert tuple(encoding_hidden_state.shape) == (number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
-        assert tuple(encoding_cell_state.shape) == (number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
+        assert tuple(encoding_hidden_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
+        assert tuple(encoding_cell_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
 
-        hidden = self.dropout(torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim = 1))
+        hidden = self.dropout(torch.cat((encoding_hidden_state[-2,:,:], encoding_hidden_state[-1,:,:]), dim = 1))
         #hidden = [batch size, hid dim * num directions]
         
         prediction = self.prediction_layers(hidden)
-        assert tuple(prediction.shape) == (1,)
+        assert tuple(prediction.shape) == (batch_size,1)
         
         return prediction
 
