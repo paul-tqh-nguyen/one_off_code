@@ -4,7 +4,7 @@
 export PS1="\u@\h:\`pwd\`$ "
 alias lt="ls -ltr"
 
-alias update-settings="cd ~/code/one_off_code/ ; git pull; git add .bashrc ; git commit -m \"Update .bashrc and .emacs files.\" ; git push ; source ~/.bashrc"
+alias update-settings="cd ~/code/one_off_code/ ; git pull; git add .bashrc ; git commit -m \"Update .bashrc and .emacs files.\" ; git push ; source ~/.bashrc ; cd $OLDPWD"
 
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
@@ -36,7 +36,7 @@ alias del-mg="goto-mg && conda env remove --name mg"
 alias fresh-mg="del-mg && init-mg"
 
 alias goto-mgc="cd ~/code/metagraph-cuda/"
-alias init-mgc="goto-mgc && conda env create ; conda activate mgc && conda install ~/dump/metagraph-0.0.1-py3.7h39e3cac_g15c13c6_12.tar.bz2 && pre-commit install && python setup.py develop"
+alias init-mgc="goto-mgc && conda env create ; conda activate mgc && conda install ~/dump/metagraph-0.0.1-py3.7h39e3cac_g15c13c6_12.tar.bz2 && conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 && pre-commit install && python setup.py develop"
 alias del-mgc="goto-mgc && conda env remove --name mgc"
 alias fresh-mgc="del-mgc && init-mgc"
 
