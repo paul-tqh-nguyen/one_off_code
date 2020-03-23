@@ -29,7 +29,9 @@ function set-title() {
   PS1=${ORIG}${TITLE}
 }
 
-# Metagraph Utilities
+# metagraph utilities
+
+alias ssh-cuda="ssh 192.168.131.229"
 
 alias goto-mg="cd ~/code/metagraph/"
 alias init-mg="goto-mg && conda env create ; conda activate mg && pre-commit install && python setup.py develop"
