@@ -14,13 +14,12 @@ import time
 import spacy
 from contextlib import contextmanager
 from collections import OrderedDict
+import imdb_dataset
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchtext import data
-from torchtext import datasets
-from torchtext import datasets
 
 ################################################
 # Misc. Globals & Global State Initializations #
@@ -36,13 +35,13 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
 NUMBER_OF_EPOCHS = 5
-BATCH_SIZE = 64
+BATCH_SIZE = 2#64
 
 DROPOUT_PROBABILITY = 0.5
 NUMBER_OF_ENCODING_LAYERS = 2
 EMBEDDING_SIZE = 100
 ENCODING_HIDDEN_SIZE = 256
-OUTPUT_SIZE = 1
+OUTPUT_SIZE = 2
 
 ####################
 # Model Definition #
@@ -68,7 +67,7 @@ class RNN(nn.Module):
         self.prediction_layers = nn.Sequential(OrderedDict([
             ("fully_connected_layer", nn.Linear(encoding_hidden_size * 2, output_size)),
             ("dropout_layer", nn.Dropout(dropout_probability)),
-            ("sigmoid_layer", nn.Sigmoid()),
+            ("softmax_layer", nn.Softmax()),
         ]))
         
     def forward(self, text_batch, text_lengths):
@@ -83,17 +82,20 @@ class RNN(nn.Module):
         assert tuple(embedded_batch.shape) == (max_sentence_length, batch_size, self.embedding_size)
         
         embedded_batch_packed = nn.utils.rnn.pack_padded_sequence(embedded_batch, text_lengths)
-        encoded_batch_packed, (encoding_hidden_state, encoding_cell_state) = self.rnn(embedded_batch_packed)
+        if __debug__:
+            encoded_batch_packed, (encoding_hidden_state, encoding_cell_state) = self.rnn(embedded_batch_packed)
+        else:
+            encoded_batch_packed, _ = self.rnn(embedded_batch_packed)
         encoded_batch, encoded_batch_lengths = nn.utils.rnn.pad_packed_sequence(encoded_batch_packed)
         assert tuple(encoded_batch.shape) == (max_sentence_length, batch_size, self.encoding_hidden_size*2)
         assert tuple(encoding_hidden_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
         assert tuple(encoding_cell_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
-
+        
         hidden = self.dropout(torch.cat((encoding_hidden_state[-2,:,:], encoding_hidden_state[-1,:,:]), dim = 1))
         #hidden = [batch size, hid dim * num directions]
         
         prediction = self.prediction_layers(hidden)
-        assert tuple(prediction.shape) == (batch_size,1)
+        assert tuple(prediction.shape) == (batch_size, OUTPUT_SIZE)
         
         return prediction
 
@@ -114,14 +116,14 @@ def timer(section_name=None, exitCallback=None):
     else:
         print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
-def binary_accuracy(preds, y):
-    rounded_preds = torch.round(preds)
-    correct = (rounded_preds == y).float()
-    acc = correct.sum() / len(correct)
-    return acc
-
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+def binary_accuracy(y_hat, y):
+    y_hat_rounded = torch.round(y_hat)
+    number_of_correct_answers = (y_hat_rounded == y).all(dim=1).float().sum(dim=0)
+    mean_accuracy = number_of_correct_answers / len(correct)
+    return mean_accuracy
 
 def predict_sentiment(model, sentence):
     model.eval()
@@ -141,8 +143,10 @@ def predict_sentiment(model, sentence):
 TEXT = data.Field(tokenize = 'spacy', include_lengths = True)
 LABEL = data.LabelField(dtype = torch.float)
 
-train_data, test_data = datasets.IMDB.splits(TEXT, LABEL)
+print(f'creating datasets')
+train_data, test_data = imdb_dataset.IMDB.splits(TEXT, LABEL)
 train_data, valid_data = train_data.split(random_state = random.seed(SEED))
+print(f'done creating datasets')
 
 TEXT.build_vocab(train_data, max_size = MAX_VOCAB_SIZE, vectors = "glove.6B.100d", unk_init = torch.Tensor.normal_)
 LABEL.build_vocab(train_data)
@@ -151,7 +155,7 @@ assert TEXT.vocab.vectors.shape[0] <= MAX_VOCAB_SIZE+2
 assert TEXT.vocab.vectors.shape[1] == EMBEDDING_SIZE
 
 VOCAB_SIZE = len(TEXT.vocab)
-
+print(f'creating iterators')
 train_iterator, valid_iterator, test_iterator = data.BucketIterator.splits(
     (train_data, valid_data, test_data), 
     batch_size = BATCH_SIZE,
@@ -159,6 +163,24 @@ train_iterator, valid_iterator, test_iterator = data.BucketIterator.splits(
     device = DEVICE)
 
 #print(f'An arbitrary training batch: {" ".join(map(lambda dim: dim[0], map(lambda int_list: list(map(lambda index :TEXT.vocab.itos[index], int_list)), next(iter(train_iterator)).text[0])))}')
+print(f'An arbitrary label: {next(iter(train_iterator)).label}')
+print(f'11111111111111111111111111')
+iterator = iter(train_iterator)
+print(f'')
+print(f'just got the iterator')
+print(f'iterator {iterator}')
+print(f'\n\n\n\n')
+print(f'getting the next item')
+next_item = next(iterator)
+print(f'')
+print(f'just got the next item')
+print(f'next_item {next_item}')
+print(f'vars(next_item).keys() {vars(next_item).keys()}')
+#print(f'next_item.text {next_item.text}')
+print(f'next_item.label {next_item.label}') # we need to find out where .label gets set to a tensor of zeros or ones
+print(f'22222222222222222222222222')
+print(f'')
+exit(1)
 
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
 UNK_IDX = TEXT.vocab.stoi[TEXT.unk_token]
@@ -167,15 +189,21 @@ UNK_IDX = TEXT.vocab.stoi[TEXT.unk_token]
 # Main Driver #
 ###############
 
-def train(model, iterator, optimizer, criterion):
+def train(model, iterator, optimizer, loss_function):
     epoch_loss = 0
     epoch_acc = 0
     model.train()
+    print(f'main.py train 1')
     for batch in iterator:
+        print(f'main.py train 2')
         optimizer.zero_grad()
+        print(f'main.py train 3')
         text, text_lengths = batch.text
+        print(f'main.py train 4')
         predictions = model(text, text_lengths).squeeze(1)
-        loss = criterion(predictions, batch.label)
+        print(f'predictions {str(predictions.to("cpu"))[:500]}')
+        print(f'batch.label {str(batch.label.to("cpu"))[:500]}')
+        loss = loss_function(predictions, batch.label)
         acc = binary_accuracy(predictions, batch.label)
         loss.backward()
         optimizer.step()
@@ -183,7 +211,7 @@ def train(model, iterator, optimizer, criterion):
         epoch_acc += acc.item()
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
-def evaluate(model, iterator, criterion):
+def evaluate(model, iterator, loss_function):
     epoch_loss = 0
     epoch_acc = 0
     model.eval()
@@ -191,7 +219,7 @@ def evaluate(model, iterator, criterion):
         for batch in iterator:
             text, text_lengths = batch.text
             predictions = model(text, text_lengths).squeeze(1)
-            loss = criterion(predictions, batch.label)
+            loss = loss_function(predictions, batch.label)
             acc = binary_accuracy(predictions, batch.label)
             epoch_loss += loss.item()
             epoch_acc += acc.item()
@@ -215,22 +243,22 @@ def main():
     print(f'embedding_layer_weight_data.shape {embedding_layer_weight_data.shape}')
 
     optimizer = optim.Adam(model.parameters())
-    criterion = nn.BCELoss()
+    loss_function = nn.BCELoss()
     model = model.to(DEVICE)
-    criterion = criterion.to(DEVICE)
+    loss_function = loss_function.to(DEVICE)
     best_valid_loss = float('inf')
     
     for epoch_index in range(NUMBER_OF_EPOCHS):
         with timer(section_name=f"Epoch {epoch_index}"):
-            train_loss, train_acc = train(model, train_iterator, optimizer, criterion)
-            valid_loss, valid_acc = evaluate(model, valid_iterator, criterion)
+            train_loss, train_acc = train(model, train_iterator, optimizer, loss_function)
+            valid_loss, valid_acc = evaluate(model, valid_iterator, loss_function)
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), 'tut2-model.pt')
         print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
     model.load_state_dict(torch.load('tut2-model.pt'))
-    test_loss, test_acc = evaluate(model, test_iterator, criterion)
+    test_loss, test_acc = evaluate(model, test_iterator, loss_function)
     print(f'Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%')
     
     print(f'predict_sentiment(model, "This film is terrible") {predict_sentiment(model, "This film is terrible")}')
