@@ -4,7 +4,7 @@
 export PS1="\u@\h:\`pwd\`$ "
 alias lt="ls -ltr"
 
-alias update-settings="cd ~/code/one_off_code/ ; git pull; git add .bashrc ; git commit -m \"Update .bashrc and .emacs files.\" ; git push ; source ~/.bashrc ; cd $OLDPWD"
+alias update-settings="cd . ; cd ~/code/one_off_code/ ; git pull; git add .bashrc ; git commit -m \"Update .bashrc and .emacs files.\" ; git push ; source ~/.bashrc ; cd $OLDPWD"
 
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
