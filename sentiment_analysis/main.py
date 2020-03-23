@@ -15,6 +15,7 @@ import sys
 import random
 import time
 import spacy
+from tqdm import tqdm
 from contextlib import contextmanager
 from collections import OrderedDict
 
@@ -177,7 +178,7 @@ def predict_sentiment(model, sentence):
     tensor = torch.LongTensor(indexed).to(DEVICE)
     tensor = tensor.unsqueeze(1)
     length_tensor = torch.LongTensor(lengths)
-    prediction_as_index = model(tensor, length_tensor).item()
+    prediction_as_index = model(tensor, length_tensor).argmax(dim=1).item()
     prediction = LABEL.vocab.itos(prediction_as_index)
     return prediction
 
@@ -189,7 +190,7 @@ def train(model, iterator, optimizer, loss_function):
     epoch_loss = 0
     epoch_acc = 0
     model.train()
-    for batch in iterator:
+    for batch in tqdm(iterator, total=len(iterator)):
         optimizer.zero_grad()
         text, text_lengths = batch.text
         predictions = model(text, text_lengths)
@@ -206,7 +207,7 @@ def evaluate(model, iterator, loss_function):
     epoch_acc = 0
     model.eval()
     with torch.no_grad():
-        for batch in iterator:
+        for batch in tqdm(iterator, total=len(iterator)):
             text, text_lengths = batch.text
             predictions = model(text, text_lengths).squeeze(1)
             loss = loss_function(predictions, batch.label)
@@ -239,6 +240,7 @@ def main():
     loss_function = loss_function.to(DEVICE)
     best_valid_loss = float('inf')
     
+    print(f'Starting training')
     for epoch_index in range(NUMBER_OF_EPOCHS):
         with timer(section_name=f"Epoch {epoch_index}"):
             train_loss, train_acc = train(model, train_iterator, optimizer, loss_function)
