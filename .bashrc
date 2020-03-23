@@ -29,20 +29,6 @@ function set-title() {
   PS1=${ORIG}${TITLE}
 }
 
-# metagraph utilities
-
-alias ssh-cuda="ssh 192.168.131.229"
-
-alias goto-mg="cd ~/code/metagraph/"
-alias init-mg="goto-mg && conda env create ; conda activate mg && pre-commit install && python setup.py develop"
-alias del-mg="goto-mg && conda env remove --name mg"
-alias fresh-mg="del-mg && init-mg"
-
-alias goto-mgc="cd ~/code/metagraph-cuda/"
-alias init-mgc="goto-mgc && conda env create ; conda activate mgc && conda install ~/dump/metagraph-0.0.1-py3.7h39e3cac_g15c13c6_12.tar.bz2 && conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 && pre-commit install && python setup.py develop"
-alias del-mgc="goto-mgc && conda env remove --name mgc"
-alias fresh-mgc="del-mgc && init-mgc"
-
 # OS Specific Basic Needs
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -67,4 +53,22 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     alias lt='ls -ltr'
 else
     echo "Could not detect OS flavor."
+fi
+
+# Anaconda Utilities
+
+alias ssh-cuda="ssh 192.168.131.229"
+
+alias goto-mg="cd ~/code/metagraph/"
+alias init-mg="goto-mg && conda env create ; conda activate mg && pre-commit install && python setup.py develop"
+alias del-mg="goto-mg && conda env remove --name mg"
+alias fresh-mg="del-mg && init-mg"
+
+alias goto-mgc="cd ~/code/metagraph-cuda/"
+alias init-mgc="goto-mgc && conda env create ; conda activate mgc && conda install ~/dump/metagraph-0.0.1-py3.7h39e3cac_g15c13c6_12.tar.bz2 && conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 && pre-commit install && python setup.py develop"
+alias del-mgc="goto-mgc && conda env remove --name mgc"
+alias fresh-mgc="del-mgc && init-mgc"
+
+if [ $(hostname) = "demouser-DGX-Station" ] ; then
+    export PATH=/home/pnguyen/miniconda3/bin${PATH:+:$PATH}
 fi
