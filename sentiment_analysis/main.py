@@ -179,7 +179,7 @@ def predict_sentiment(model, sentence):
     tensor = tensor.unsqueeze(1)
     length_tensor = torch.LongTensor(lengths)
     prediction_as_index = model(tensor, length_tensor).argmax(dim=1).item()
-    prediction = LABEL.vocab.itos(prediction_as_index)
+    prediction = LABEL.vocab.itos[prediction_as_index]
     return prediction
 
 ###############
