@@ -9,17 +9,20 @@ https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/2%20-%20Upg
 # Imports #
 ###########
 
+import pdb
+import traceback
+import sys
 import random
 import time
 import spacy
 from contextlib import contextmanager
 from collections import OrderedDict
-import imdb_dataset
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchtext import data
+from torchtext import datasets
 
 ################################################
 # Misc. Globals & Global State Initializations #
@@ -35,7 +38,7 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
 NUMBER_OF_EPOCHS = 5
-BATCH_SIZE = 2#64
+BATCH_SIZE = 64
 
 DROPOUT_PROBABILITY = 0.5
 NUMBER_OF_ENCODING_LAYERS = 2
@@ -67,7 +70,7 @@ class RNN(nn.Module):
         self.prediction_layers = nn.Sequential(OrderedDict([
             ("fully_connected_layer", nn.Linear(encoding_hidden_size * 2, output_size)),
             ("dropout_layer", nn.Dropout(dropout_probability)),
-            ("softmax_layer", nn.Softmax()),
+            ("softmax_layer", nn.Softmax(dim=1)),
         ]))
         
     def forward(self, text_batch, text_lengths):
@@ -99,6 +102,35 @@ class RNN(nn.Module):
         
         return prediction
 
+#############
+# Load Data #
+#############
+
+TEXT = data.Field(tokenize = 'spacy', include_lengths = True)
+LABEL = data.LabelField(dtype = torch.long)
+
+train_data, test_data = datasets.IMDB.splits(TEXT, LABEL)
+train_data, valid_data = train_data.split(random_state = random.seed(SEED))
+
+TEXT.build_vocab(train_data, max_size = MAX_VOCAB_SIZE, vectors = "glove.6B.100d", unk_init = torch.Tensor.normal_)
+LABEL.build_vocab(train_data)
+
+assert TEXT.vocab.vectors.shape[0] <= MAX_VOCAB_SIZE+2
+assert TEXT.vocab.vectors.shape[1] == EMBEDDING_SIZE
+
+VOCAB_SIZE = len(TEXT.vocab)
+
+train_iterator, valid_iterator, test_iterator = data.BucketIterator.splits(
+    (train_data, valid_data, test_data), 
+    batch_size = BATCH_SIZE,
+    sort_within_batch = True,
+    device = DEVICE)
+
+#print(f'An arbitrary training batch: {" ".join(map(lambda dim: dim[0], map(lambda int_list: list(map(lambda index :TEXT.vocab.itos[index], int_list)), next(iter(train_iterator)).text[0])))}')
+
+PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
+UNK_IDX = TEXT.vocab.stoi[TEXT.unk_token]
+
 ###########
 # Helpers #
 ###########
@@ -116,13 +148,25 @@ def timer(section_name=None, exitCallback=None):
     else:
         print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
+def debug_on_error(func):
+    def func_wrapped(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as err:
+            print(f'Exception Class: {type(err)}')
+            print(f'Exception Args: {err.args}')
+            extype, value, tb = sys.exc_info()
+            traceback.print_exc()
+            pdb.post_mortem(tb)
+    return func_wrapped
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-def binary_accuracy(y_hat, y):
-    y_hat_rounded = torch.round(y_hat)
-    number_of_correct_answers = (y_hat_rounded == y).all(dim=1).float().sum(dim=0)
-    mean_accuracy = number_of_correct_answers / len(correct)
+def discrete_accuracy(y_hat, y):
+    y_hat_indices_of_max = y_hat.argmax(dim=1)
+    number_of_correct_answers = (y_hat_indices_of_max == y).float().sum(dim=0)
+    mean_accuracy = number_of_correct_answers / y.shape[0]
     return mean_accuracy
 
 def predict_sentiment(model, sentence):
@@ -133,57 +177,9 @@ def predict_sentiment(model, sentence):
     tensor = torch.LongTensor(indexed).to(DEVICE)
     tensor = tensor.unsqueeze(1)
     length_tensor = torch.LongTensor(lengths)
-    prediction = model(tensor, length_tensor)
-    return prediction.item()
-
-#############
-# Load Data #
-#############
-
-TEXT = data.Field(tokenize = 'spacy', include_lengths = True)
-LABEL = data.LabelField(dtype = torch.float)
-
-print(f'creating datasets')
-train_data, test_data = imdb_dataset.IMDB.splits(TEXT, LABEL)
-train_data, valid_data = train_data.split(random_state = random.seed(SEED))
-print(f'done creating datasets')
-
-TEXT.build_vocab(train_data, max_size = MAX_VOCAB_SIZE, vectors = "glove.6B.100d", unk_init = torch.Tensor.normal_)
-LABEL.build_vocab(train_data)
-
-assert TEXT.vocab.vectors.shape[0] <= MAX_VOCAB_SIZE+2
-assert TEXT.vocab.vectors.shape[1] == EMBEDDING_SIZE
-
-VOCAB_SIZE = len(TEXT.vocab)
-print(f'creating iterators')
-train_iterator, valid_iterator, test_iterator = data.BucketIterator.splits(
-    (train_data, valid_data, test_data), 
-    batch_size = BATCH_SIZE,
-    sort_within_batch = True,
-    device = DEVICE)
-
-#print(f'An arbitrary training batch: {" ".join(map(lambda dim: dim[0], map(lambda int_list: list(map(lambda index :TEXT.vocab.itos[index], int_list)), next(iter(train_iterator)).text[0])))}')
-print(f'An arbitrary label: {next(iter(train_iterator)).label}')
-print(f'11111111111111111111111111')
-iterator = iter(train_iterator)
-print(f'')
-print(f'just got the iterator')
-print(f'iterator {iterator}')
-print(f'\n\n\n\n')
-print(f'getting the next item')
-next_item = next(iterator)
-print(f'')
-print(f'just got the next item')
-print(f'next_item {next_item}')
-print(f'vars(next_item).keys() {vars(next_item).keys()}')
-#print(f'next_item.text {next_item.text}')
-print(f'next_item.label {next_item.label}') # we need to find out where .label gets set to a tensor of zeros or ones
-print(f'22222222222222222222222222')
-print(f'')
-exit(1)
-
-PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
-UNK_IDX = TEXT.vocab.stoi[TEXT.unk_token]
+    prediction_as_index = model(tensor, length_tensor).item()
+    prediction = LABEL.vocab.itos(prediction_as_index)
+    return prediction
 
 ###############
 # Main Driver #
@@ -193,18 +189,12 @@ def train(model, iterator, optimizer, loss_function):
     epoch_loss = 0
     epoch_acc = 0
     model.train()
-    print(f'main.py train 1')
     for batch in iterator:
-        print(f'main.py train 2')
         optimizer.zero_grad()
-        print(f'main.py train 3')
         text, text_lengths = batch.text
-        print(f'main.py train 4')
-        predictions = model(text, text_lengths).squeeze(1)
-        print(f'predictions {str(predictions.to("cpu"))[:500]}')
-        print(f'batch.label {str(batch.label.to("cpu"))[:500]}')
+        predictions = model(text, text_lengths)
         loss = loss_function(predictions, batch.label)
-        acc = binary_accuracy(predictions, batch.label)
+        acc = discrete_accuracy(predictions, batch.label)
         loss.backward()
         optimizer.step()
         epoch_loss += loss.item()
@@ -220,11 +210,12 @@ def evaluate(model, iterator, loss_function):
             text, text_lengths = batch.text
             predictions = model(text, text_lengths).squeeze(1)
             loss = loss_function(predictions, batch.label)
-            acc = binary_accuracy(predictions, batch.label)
+            acc = discrete_accuracy(predictions, batch.label)
             epoch_loss += loss.item()
             epoch_acc += acc.item()
     return epoch_loss / len(iterator), epoch_acc / len(iterator)
 
+@debug_on_error
 def main():
     model = RNN(VOCAB_SIZE, 
                 EMBEDDING_SIZE,
@@ -241,9 +232,9 @@ def main():
     embedding_layer_weight_data[UNK_IDX] = torch.zeros(EMBEDDING_SIZE)
     embedding_layer_weight_data[PAD_IDX] = torch.zeros(EMBEDDING_SIZE)
     print(f'embedding_layer_weight_data.shape {embedding_layer_weight_data.shape}')
-
+    
     optimizer = optim.Adam(model.parameters())
-    loss_function = nn.BCELoss()
+    loss_function = nn.CrossEntropyLoss()
     model = model.to(DEVICE)
     loss_function = loss_function.to(DEVICE)
     best_valid_loss = float('inf')
