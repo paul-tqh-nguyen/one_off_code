@@ -120,7 +120,7 @@
 	 (host "192.168.131.229")
 	 (buffer-name "*ssh-cuda*")
 	 (default-directory (format "/ssh:%s@%s:" username host)))
-    (shell-command "(cd /home/pnguyen/code/one_off_code/ ; /usr/bin/git pull)") ;; 1
+    (shell-command "(cd /home/pnguyen/code/one_off_code/ ; /usr/bin/git pull)")
     (start-remote-ssh-shell-buffer-with-name username host buffer-name)))
 
 ;; Shortcut Keys
