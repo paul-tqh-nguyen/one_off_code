@@ -12,10 +12,11 @@
 
 (shell-command-to-string "pushd ~/code/one_off_code/ ; git pull ; popd")
 
-;; Misc. OS-Specific Changes
+;; Misc. OS-Specific / Machine-Specific Changes
 
 (cond
- ((eq system-type 'darwin)
+ ((or (eq system-type 'darwin)
+      (equal "demouser-DGX-Station\n" (shell-command-to-string "hostname")))
   (setq mac-command-modifier 'meta)
   (setq mac-function-modifier 'control)
   (setq mac-option-modifier nil))
