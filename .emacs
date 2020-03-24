@@ -85,7 +85,7 @@
 (defmacro create-named-shell-functions (&rest function-names)
   (let (commands)
     (dolist (function-name function-names)
-      (push `(create-function-for-shell-with-name ,function-name) commands))
+      (push `(create-named-shell-function ,function-name) commands))
     (setq commands (nreverse commands))
     `(list ,@commands)))
 
