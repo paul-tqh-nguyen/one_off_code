@@ -74,50 +74,34 @@
       (shell buffer-name)
     (switch-to-buffer buffer-name)))
 
-(defun tmp ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*tmp\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*tmp*"))
+(defmacro create-named-shell-function (function-name)
+  (let ((buffer-name-regex-string (format "^\\*%s\\*$" function-name))
+	(buffer-name (format "*%s*" function-name)))
+    `(defun ,function-name ()
+       (interactive)
+       (add-to-list 'display-buffer-alist '(,buffer-name-regex-string . (display-buffer-same-window)))
+       (start-shell-buffer-with-name ,buffer-name))))
 
-(defun runner ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*runner\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*runner*"))
+(defmacro create-named-shell-functions (&rest function-names)
+  (let (commands)
+    (dolist (function-name function-names)
+      (push `(create-function-for-shell-with-name ,function-name) commands))
+    (setq commands (nreverse commands))
+    `(list ,@commands)))
 
-(defun second ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*second\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*second*"))
+(create-named-shell-functions
+ ssh-cuda
 
-(defun thrid ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*thrid\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*thrid*"))
-
-(defun fourth ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*fourth\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*fourth*"))
-
-(defun fifth ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*fifth\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*fifth*"))
-
-(defun python ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*python\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*python*"))
-
-(defun node ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*node\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*node*"))
-
-(defun server ()
-  (interactive)
-  (add-to-list 'display-buffer-alist '("^\\*server\\*$" . (display-buffer-same-window)))
-  (start-shell-buffer-with-name "*server*"))
+ python
+ node
+ server
+ 
+ tmp
+ second
+ third
+ fourth
+ fifth
+ )
 
 ;; Shortcut Keys
 
