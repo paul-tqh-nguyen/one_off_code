@@ -109,13 +109,12 @@
  )
 
 (defun start-remote-ssh-shell-buffer-with-name (username host buffer-name &optional async-command-strings)
-  (let ((default-directory (format "/ssh:%s@%s:" username host)))
-    (mapcar #'async-shell-command async-command-strings)
-    (if (get-buffer buffer-name)
-	(switch-to-buffer buffer-name)
-      (progn
-	(add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
-	(start-shell-buffer-with-name buffer-name)))))
+  (if (get-buffer buffer-name)
+      (switch-to-buffer buffer-name)
+    (let ((default-directory (format "/ssh:%s@%s:" username host)))
+      (mapcar #'async-shell-command async-command-strings)
+      (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
+      (start-shell-buffer-with-name buffer-name))))
 
 (defun cuda ()
   (interactive)
