@@ -8,6 +8,10 @@
 (when (version<= "26.0.50" emacs-version)
   (global-display-line-numbers-mode))
 
+;; Keep Settings updated
+
+(shell-command-to-string "pushd ~/code/one_off_code/ ; git pull ; popd")
+
 ;; Misc. OS-Specific Changes
 
 (cond
@@ -106,7 +110,7 @@
 ;; Shortcut Keys
 
 (global-set-key (kbd "C-c \"") 'escape-quotes)
-(global-set-key (kbd "C-x C-b") 'buffer-menu)
+(global-set-key (kbd "C-x C-b") 'buffer-menzu)
 (global-set-key (kbd "C-x a") 'undo-tree-visualize)
 (global-set-key (kbd "C-c ;") 'comment-region)
 (global-set-key (kbd "C-c :") 'uncomment-region)
