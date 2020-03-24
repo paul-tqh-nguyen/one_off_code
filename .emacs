@@ -7,6 +7,7 @@
 (add-to-list 'display-buffer-alist '("^\\*shell\\*$" . (display-buffer-same-window)))
 (when (version<= "26.0.50" emacs-version)
   (global-display-line-numbers-mode))
+(setq tramp-default-method "ssh")
 
 ;; Keep Settings updated
 
@@ -15,8 +16,7 @@
 ;; Misc. OS-Specific / Machine-Specific Changes
 
 (cond
- ((or (eq system-type 'darwin)
-      (equal "demouser-DGX-Station\n" (shell-command-to-string "hostname")))
+ ((eq system-type 'darwin)
   (setq mac-command-modifier 'meta)
   (setq mac-function-modifier 'control)
   (setq mac-option-modifier nil))
@@ -121,3 +121,4 @@
 (global-set-key (kbd "<C-M-right>") 'forward-sexp) ;; @todo get this working
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
+(put 'dired-find-alternate-file 'disabled nil)
