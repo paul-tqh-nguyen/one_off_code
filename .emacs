@@ -110,7 +110,7 @@
 ;; Shortcut Keys
 
 (global-set-key (kbd "C-c \"") 'escape-quotes)
-(global-set-key (kbd "C-x C-b") 'buffer-menzu)
+(global-set-key (kbd "C-x C-b") 'buffer-menu)
 (global-set-key (kbd "C-x a") 'undo-tree-visualize)
 (global-set-key (kbd "C-c ;") 'comment-region)
 (global-set-key (kbd "C-c :") 'uncomment-region)
