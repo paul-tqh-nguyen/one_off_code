@@ -116,11 +116,11 @@
 
 (defun ssh-cuda ()
   (interactive)
-  (let ((username "pnguyen")
-	(host "192.168.131.229")
-	(buffer-name "*ssh-cuda*")
-	(default-directory (format "/ssh:%s@%s:" username host)))
-    (shell-command "pushd /home/pnguyen/code/one_off_code/ ; git pull ; popd")
+  (let* ((username "pnguyen")
+	 (host "192.168.131.229")
+	 (buffer-name "*ssh-cuda*")
+	 (default-directory (format "/ssh:%s@%s:" username host)))
+    (shell-command "(cd /home/pnguyen/code/one_off_code/ ; /usr/bin/git pull)") ;; 1
     (start-remote-ssh-shell-buffer-with-name username host buffer-name)))
 
 ;; Shortcut Keys
