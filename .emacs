@@ -8,6 +8,7 @@
 (when (version<= "26.0.50" emacs-version)
   (global-display-line-numbers-mode))
 (setq tramp-default-method "ssh")
+(add-to-list 'display-buffer-alist (cons "\\*Async Shell Command\\*.*" (cons #'display-buffer-no-window nil)))
 
 ;; Keep Settings updated
 
@@ -107,21 +108,23 @@
  fifth
  )
 
-(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name)
-  (if (get-buffer buffer-name)
-      (switch-to-buffer buffer-name)
-    (let ((default-directory (format "/ssh:%s@%s:" username host)))
-      (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
-      (start-shell-buffer-with-name buffer-name))))
+(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name &optional async-command-strings)
+  (let ((default-directory (format "/ssh:%s@%s:" username host)))
+    (mapcar #'async-shell-command async-command-strings)
+    (if (get-buffer buffer-name)
+	(switch-to-buffer buffer-name)
+      (progn
+	(add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
+	(start-shell-buffer-with-name buffer-name)))))
 
-(defun ssh-cuda ()
+(defun cuda ()
   (interactive)
   (let* ((username "pnguyen")
 	 (host "192.168.131.229")
 	 (buffer-name "*ssh-cuda*")
+	 (async-command-strings '("(cd /home/pnguyen/code/one_off_code/ ; git pull)"))
 	 (default-directory (format "/ssh:%s@%s:" username host)))
-    (shell-command "(cd /home/pnguyen/code/one_off_code/ ; git pull)")
-    (start-remote-ssh-shell-buffer-with-name username host buffer-name)))
+    (start-remote-ssh-shell-buffer-with-name username host buffer-name async-command-strings)))
 
 ;; Shortcut Keys
 
