@@ -95,8 +95,7 @@
     `(list ,@commands)))
 
 (create-named-shell-functions
- ssh-cuda
-
+ 
  python
  node
  server
@@ -107,6 +106,19 @@
  fourth
  fifth
  )
+
+(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name)
+  (if (get-buffer buffer-name)
+      (switch-to-buffer buffer-name)
+    (let ((default-directory (format "/ssh:%s@%s:" username host)))
+      (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
+      (start-shell-buffer-with-name buffer-name))))
+
+(defun ssh-cuda ()
+  (interactive)
+  (let ((default-directory (format "/ssh:%s@%s:" username host)))
+    (shell-command "pushd /home/pnguyen/code/one_off_code/ ; git pull ; popd"))
+  (start-remote-ssh-shell-buffer-with-name "pnguyen" "192.168.131.229" "*ssh-cuda*"))
 
 ;; Shortcut Keys
 
