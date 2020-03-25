@@ -63,13 +63,12 @@ fi
 alias ssh-cuda="ssh 192.168.131.229"
 
 alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
-&& conda install pandas \
+&& yes | conda install pandas \
 && :"
 alias goto-mg="cd ~/code/metagraph/"
 alias init-mg="goto-mg && conda env create ; conda activate mg && install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml && pre-commit install && python setup.py develop"
 alias del-mg="goto-mg && conda env remove --name mg"
 alias fresh-mg="del-mg && init-mg"
-
 
 alias install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
 && install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml \
