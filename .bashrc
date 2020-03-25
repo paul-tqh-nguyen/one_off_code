@@ -7,6 +7,8 @@ alias lt="ls -ltr"
 alias update-settings="pushd ~/code/one_off_code/ ; git pull; git add .bashrc .emacs ; git commit -m \"Update .bashrc and .emacs files.\" ; git push ; source ~/.bashrc ; popd"
 alias store-git-credentials="git config --global credential.helper store"
 
+alias ipynb-to-py="jupyter nbconvert --to script"
+
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
     if [ "1024" -gt "$num_bytes" ]
