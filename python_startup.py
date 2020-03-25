@@ -1,11 +1,17 @@
 import pdb
 import traceback
 import sys
+import os
 import time
 import signal
 from contextlib import contextmanager
 from itertools import chain, combinations
 from typing import Iterable, Callable, Generator
+
+# Start Up Prints
+
+print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
+print(f'Current Working Directory: {os.getcwd()}')
 
 # Printing Utilities
 
