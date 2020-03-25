@@ -159,8 +159,8 @@
 (global-set-key (kbd "C-c `") 'camel-case-to-dashes)
 (global-set-key (kbd "C-c ;") 'comment-region)
 (global-set-key (kbd "C-c :") 'uncomment-region)
-(global-set-key (kbd "<C-down>") 'forward-paragraph)
-(global-set-key (kbd "<C-up>") 'backward-paragraph)
+(global-set-key (kbd "<M-down>") 'forward-paragraph)
+(global-set-key (kbd "<M-up>") 'backward-paragraph)
 (global-set-key (kbd "<C-M-left>") 'backward-sexp) ;; @todo get this working
 (global-set-key (kbd "<C-M-right>") 'forward-sexp) ;; @todo get this working
 (put 'downcase-region 'disabled nil)
