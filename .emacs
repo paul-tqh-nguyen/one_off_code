@@ -64,6 +64,16 @@
         (while (search-forward "\"" nil t)
           (replace-match "\\\"" "FIXEDCASE" "LITERAL")))))
 
+(defun camel-case-to-dashes () 
+  (interactive) 
+  (replace-regexp "\\([A-Z]\\)" "-\\1" nil (region-beginning) (region-end))
+  (downcase-region (region-beginning) (region-end)))
+
+(defun scratch ()
+   "Create a scratch buffer"
+   (interactive)
+   (switch-to-buffer (get-buffer-create "*scratch*")))
+
 (defun new-shell ()
   "Creates a new shell buffer"
   ;; @todo this currently doesn't work via M-x ; make it work
@@ -146,6 +156,7 @@
 (global-set-key (kbd "C-c \"") 'escape-quotes)
 (global-set-key (kbd "C-x C-b") 'buffer-menu)
 (global-set-key (kbd "C-x a") 'undo-tree-visualize)
+(global-set-key (kbd "C-c `") 'camel-case-to-dashes)
 (global-set-key (kbd "C-c ;") 'comment-region)
 (global-set-key (kbd "C-c :") 'uncomment-region)
 (global-set-key (kbd "<C-down>") 'forward-paragraph)
