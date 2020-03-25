@@ -63,7 +63,7 @@ alias ssh-cuda="ssh 192.168.131.229"
 
 alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
 && conda install pandas \
-"
+:"
 alias goto-mg="cd ~/code/metagraph/"
 alias init-mg="goto-mg && conda env create ; conda activate mg && install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml && pre-commit install && python setup.py develop"
 alias del-mg="goto-mg && conda env remove --name mg"
@@ -73,7 +73,7 @@ alias fresh-mg="del-mg && init-mg"
 alias install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
 && install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml \
 && conda install ~/dump/metagraph-0.0.1-py3.7h39e3cac_g15c13c6_12.tar.bz2 && conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \ 
-"
+:"
 alias goto-mgc="cd ~/code/metagraph-cuda/"
 alias init-mgc="goto-mgc && conda env create ; conda activate mgc && install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml && pre-commit install && python setup.py develop"
 alias del-mgc="goto-mgc && conda env remove --name mgc"
