@@ -9,7 +9,7 @@ alias update-settings="pushd ~/code/one_off_code/ ; git pull; git add .bashrc .e
 alias store-git-credentials="git config --global credential.helper store"
 
 alias ipynb-to-py="jupyter nbconvert --to script"
-
+export PYTHONSTARTUP=$HOME/code/one_off_code/python_startup.py
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
     if [ "1024" -gt "$num_bytes" ]
