@@ -116,16 +116,31 @@
       (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
       (start-shell-buffer-with-name buffer-name))))
 
-(defun cuda ()
-  (interactive)
-  (let* ((username "pnguyen")
-	 (host "192.168.131.229")
-	 (buffer-name "*ssh-cuda*")
-	 (async-command-strings '("(cd /home/pnguyen/code/one_off_code/ ; git pull)"))
-	 (default-directory (format "/ssh:%s@%s:" username host)))
-    (start-remote-ssh-shell-buffer-with-name username host buffer-name async-command-strings)))
+(defmacro create-named-cuda-shell-function (function-name)
+  (let ((buffer-name (format "*%s*" function-name)))
+    `(defun ,function-name ()
+       (interactive)
+       (let* ((username "pnguyen")
+	      (host "192.168.131.229")
+	      (buffer-name ,buffer-name)
+	      (async-command-strings '("(cd /home/pnguyen/code/one_off_code/ ; git pull)"))
+	      (default-directory (format "/ssh:%s@%s:" username host)))
+	 (start-remote-ssh-shell-buffer-with-name username host buffer-name async-command-strings)))))
 
-;; Shortcut Keys
+(defmacro create-named-cuda-shell-functions (&rest function-names)
+  (let (commands)
+    (dolist (function-name function-names)
+      (push `(create-named-cuda-shell-function ,function-name) commands))
+    (setq commands (nreverse commands))
+    `(list ,@commands)))
+
+(create-named-cuda-shell-functions
+ cuda
+ cuda-python
+ cuda-shell
+ )
+
+;; shortcut keys
 
 (global-set-key (kbd "C-c \"") 'escape-quotes)
 (global-set-key (kbd "C-x C-b") 'buffer-menu)
