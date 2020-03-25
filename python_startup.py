@@ -12,6 +12,9 @@ from typing import Iterable, Callable, Generator
 
 print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
 print(f'Current Working Directory: {os.getcwd()}')
+print(f'''Useful Forms:
+import metagraph_cuda.tests.test_triangle_count ; from importlib import reload ; reload(metagraph_cuda.tests.test_triangle_count) ; from metagraph_cuda.tests.test_triangle_count import *
+''')
 
 # Printing Utilities
 
