@@ -136,8 +136,9 @@
 
 (create-named-cuda-shell-functions
  cuda
- cuda-python
  cuda-shell
+ cuda-python
+ cuda-test
  )
 
 ;; shortcut keys
