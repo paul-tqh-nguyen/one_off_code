@@ -10,11 +10,15 @@ from typing import Iterable, Callable, Generator
 
 # Start Up Prints
 
-print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
-print(f'Current Working Directory: {os.getcwd()}')
-print(f'''Useful Forms:
+def print_header() -> None:
+    print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
+    print(f'Current Working Directory: {os.getcwd()}')
+    print(f'''Useful Forms:
 import metagraph_cuda.tests.test_triangle_count ; from importlib import reload ; reload(metagraph_cuda.tests.test_triangle_count) ; from metagraph_cuda.tests.test_triangle_count import *
 ''')
+    return
+
+print_header()
 
 # Printing Utilities
 
