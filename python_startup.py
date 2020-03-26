@@ -11,6 +11,7 @@ from typing import Iterable, Callable, Generator
 # Start Up Prints
 
 def print_header() -> None:
+    print(f'')
     print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
     print(f'Current Working Directory: {os.getcwd()}')
     print(f'''Useful Forms:
