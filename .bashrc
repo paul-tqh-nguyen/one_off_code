@@ -12,6 +12,10 @@ function git-add-mod {
     git add $(git status | grep modified | cut -d":" -f2)
 }
 
+function git-black {
+    black $(git status | grep modified | cut -d":" -f2)
+}
+
 alias ipynb-to-py="jupyter nbconvert --to script"
 export PYTHONSTARTUP=$HOME/code/one_off_code/python_startup.py
 
