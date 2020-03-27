@@ -8,12 +8,13 @@ alias yes="yes | head -n 1000"
 alias update-settings="pushd ~/code/one_off_code/ ; git pull; git add .bashrc .emacs python_startup.py ; git commit -m \"Update .bashrc and .emacs and python_startup.py files.\" ; git push ; source ~/.bashrc ; popd"
 alias store-git-credentials="git config --global credential.helper store"
 
-function git-add-mod {
-    git add $(git status | grep modified | cut -d":" -f2)
-}
-
 function git-black {
     black $(git status | grep modified | cut -d":" -f2)
+}
+
+function git-add-mod {
+    git-black
+    git add $(git status | grep modified | cut -d":" -f2)
 }
 
 alias ipynb-to-py="jupyter nbconvert --to script"

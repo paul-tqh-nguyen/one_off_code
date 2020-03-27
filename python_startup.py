@@ -101,3 +101,5 @@ def false(*args, **kwargs) -> bool:
 def current_timestamp_string() -> str:
     return time.strftime("%Y_%m_%d_%H_%M_%S")
 
+def unzip(zipped_item: Iterable) -> Iterable:
+    return zip(*zipped_item)
