@@ -3,6 +3,8 @@
 
 """
 https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/2%20-%20Upgraded%20Sentiment%20Analysis.ipynb
+
+4,811,370 parameters yielded ~75% accuracy.
 """
 
 ###########
@@ -51,8 +53,30 @@ OUTPUT_SIZE = 2
 # Model Definition #
 ####################
 
-class RNN(nn.Module):
-    def __init__(self, vocab_size, embedding_size, encoding_hidden_size, output_size, number_of_encoding_layers, dropout_probability):
+# class AttentionLayers(nn.Module):
+#     def __init__(self, encoding_hidden_size, intermediate_attention_state_size, number_of_attention_heads, dropout_probability):
+#         if __debug__:
+#             self.encoding_hidden_size = encoding_hidden_size
+#         self.attention_layers = nn.Sequential(OrderedDict([
+#             ("intermediate_attention_layer", nn.Linear(encoding_hidden_size*2, intermediate_attention_state_size)),
+#             ("intermediate_attention_dropout_layer", nn.Dropout(dropout_probability)),
+#             ("attention_activation", nn.ReLU(True)),
+#             ("final_attention_layer", nn.Linear(intermediate_attention_state_size, number_of_attention_heads)),
+#             ("final_attention_dropout_layer", nn.Dropout(dropout_probability)),
+#         ]))
+        
+#     def forward(self, encoded_batch, text_lengths):
+#         max_sentence_length = encoded_batch.shape[0]
+#         batch_size = encoded_batch.shape[1]
+#         for batch_index in range(batch_size):
+#             text_length = text_lengths[batch_index]
+#             encoded_matrix = encoded_batch[:text_length, batch_index, :]
+#             assert tuple(encoded_matrix.shape) == (text_length, self.encoding_hidden_size)
+#             attention_weights = self.attention_layers(encoded_matrix)
+#             assert tuple(attention_weights.shape) == ()
+
+class EEAPNetwork(nn.Module):
+    def __init__(self, vocab_size, embedding_size, encoding_hidden_size, number_of_encoding_layers, output_size, dropout_probability):
         super().__init__()
         if __debug__:
             self.embedding_size = embedding_size
@@ -62,14 +86,14 @@ class RNN(nn.Module):
             ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=PAD_IDX)),
             ("dropout_layer", nn.Dropout(dropout_probability)),
         ]))
-        self.rnn = nn.LSTM(embedding_size, 
-                           encoding_hidden_size, 
-                           num_layers=number_of_encoding_layers, 
-                           bidirectional=True, 
-                           dropout=dropout_probability)
-        self.dropout = nn.Dropout(dropout_probability)
+        self.encoding_layers = nn.LSTM(embedding_size,
+                                       encoding_hidden_size,
+                                       num_layers=number_of_encoding_layers,
+                                       bidirectional=True,
+                                       dropout=dropout_probability)
+        #self.attention_layers = AttentionLayers(dropout_probability)
         self.prediction_layers = nn.Sequential(OrderedDict([
-            ("fully_connected_layer", nn.Linear(encoding_hidden_size * 2, output_size)),
+            ("fully_connected_layer", nn.Linear(encoding_hidden_size*2, output_size)),
             ("dropout_layer", nn.Dropout(dropout_probability)),
             ("softmax_layer", nn.Softmax(dim=1)),
         ]))
@@ -81,22 +105,29 @@ class RNN(nn.Module):
         assert batch_size <= BATCH_SIZE
         assert tuple(text_batch.shape) == (max_sentence_length, batch_size)
         assert tuple(text_lengths.shape) == (batch_size,)
-                
+        
         embedded_batch = self.embedding_layers(text_batch)
         assert tuple(embedded_batch.shape) == (max_sentence_length, batch_size, self.embedding_size)
         
         embedded_batch_packed = nn.utils.rnn.pack_padded_sequence(embedded_batch, text_lengths)
         if __debug__:
-            encoded_batch_packed, (encoding_hidden_state, encoding_cell_state) = self.rnn(embedded_batch_packed)
+            encoded_batch_packed, (encoding_hidden_state, encoding_cell_state) = self.encoding_layers(embedded_batch_packed)
         else:
-            encoded_batch_packed, _ = self.rnn(embedded_batch_packed)
+            encoded_batch_packed, _ = self.encoding_layers(embedded_batch_packed)
         encoded_batch, encoded_batch_lengths = nn.utils.rnn.pad_packed_sequence(encoded_batch_packed)
         assert tuple(encoded_batch.shape) == (max_sentence_length, batch_size, self.encoding_hidden_size*2)
         assert tuple(encoding_hidden_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
         assert tuple(encoding_cell_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
-        
-        hidden = self.dropout(torch.cat((encoding_hidden_state[-2,:,:], encoding_hidden_state[-1,:,:]), dim = 1))
+
+        hidden = torch.cat((encoding_hidden_state[-2,:,:], encoding_hidden_state[-1,:,:]), dim = 1)
         #hidden = [batch size, hid dim * num directions]
+
+        '''
+# 1 2 3
+a = torch.tensor(range(2*3*5)).view(2,3,5)     # [sequence_length, batch_size, encoding_hidden_size]
+b = torch.tensor(range(2*3*5)).view(2,3,5)*100 # [sequence_length, batch_size, encoding_hidden_size]
+c =torch.cat((a,b),dim=1)
+        '''
         
         prediction = self.prediction_layers(hidden)
         assert tuple(prediction.shape) == (batch_size, OUTPUT_SIZE)
@@ -218,21 +249,16 @@ def evaluate(model, iterator, loss_function):
 
 @debug_on_error
 def main():
-    model = RNN(VOCAB_SIZE, 
-                EMBEDDING_SIZE,
-                ENCODING_HIDDEN_SIZE, 
-                OUTPUT_SIZE, 
-                NUMBER_OF_ENCODING_LAYERS, 
-                DROPOUT_PROBABILITY)
+    model = EEAPNetwork(VOCAB_SIZE, 
+                        EMBEDDING_SIZE,
+                        ENCODING_HIDDEN_SIZE, 
+                        NUMBER_OF_ENCODING_LAYERS, 
+                        OUTPUT_SIZE, 
+                        DROPOUT_PROBABILITY)
     print(f'The model has {count_parameters(model):,} trainable parameters')
-    pretrained_embeddings = TEXT.vocab.vectors
-
-    print(f'pretrained_embeddings.shape {pretrained_embeddings.shape}')
-    embedding_layer_weight_data = model.embedding_layers.embedding_layer.weight.data
-    embedding_layer_weight_data.copy_(pretrained_embeddings)
-    embedding_layer_weight_data[UNK_IDX] = torch.zeros(EMBEDDING_SIZE)
-    embedding_layer_weight_data[PAD_IDX] = torch.zeros(EMBEDDING_SIZE)
-    print(f'embedding_layer_weight_data.shape {embedding_layer_weight_data.shape}')
+    model.embedding_layers.embedding_layer.weight.data.copy_(TEXT.vocab.vectors)
+    model.embedding_layers.embedding_layer.weight.data[UNK_IDX] = torch.zeros(EMBEDDING_SIZE)
+    model.embedding_layers.embedding_layer.weight.data[PAD_IDX] = torch.zeros(EMBEDDING_SIZE)
     
     optimizer = optim.Adam(model.parameters())
     loss_function = nn.CrossEntropyLoss()
@@ -259,4 +285,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
