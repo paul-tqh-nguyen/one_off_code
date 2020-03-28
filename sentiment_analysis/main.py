@@ -4,7 +4,8 @@
 """
 https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/2%20-%20Upgraded%20Sentiment%20Analysis.ipynb
 
-4,811,370 parameters yielded ~75% accuracy.
+Original implementation with 4,811,370 parameters yielded ~75% accuracy in 5 epochs.
+Batch first implementation with 4,811,370 parameters yielded ~86% accuracy in 8 epochs. 7 epochs only got yo 65% at best.
 """
 
 ###########
@@ -40,7 +41,7 @@ NLP = spacy.load('en')
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
-NUMBER_OF_EPOCHS = 5
+NUMBER_OF_EPOCHS = 30
 BATCH_SIZE = 64
 
 DROPOUT_PROBABILITY = 0.5
@@ -97,27 +98,31 @@ class EEAPNetwork(nn.Module):
             ("dropout_layer", nn.Dropout(dropout_probability)),
             ("softmax_layer", nn.Softmax(dim=1)),
         ]))
-        
+    
     def forward(self, text_batch, text_lengths):
         if __debug__:
             max_sentence_length = max(text_lengths)
-            batch_size = text_batch.shape[1]
+            batch_size = text_batch.shape[0]
         assert batch_size <= BATCH_SIZE
-        assert tuple(text_batch.shape) == (max_sentence_length, batch_size)
+        #assert tuple(text_batch.shape) == (max_sentence_length, batch_size)
+        assert tuple(text_batch.shape) == (batch_size, max_sentence_length)
         assert tuple(text_lengths.shape) == (batch_size,)
         
         embedded_batch = self.embedding_layers(text_batch)
-        assert tuple(embedded_batch.shape) == (max_sentence_length, batch_size, self.embedding_size)
+        #assert tuple(embedded_batch.shape) == (max_sentence_length, batch_size, self.embedding_size)
+        assert tuple(embedded_batch.shape) == (batch_size, max_sentence_length, self.embedding_size)
         
-        embedded_batch_packed = nn.utils.rnn.pack_padded_sequence(embedded_batch, text_lengths)
+        embedded_batch_packed = nn.utils.rnn.pack_padded_sequence(embedded_batch, text_lengths, batch_first=True)
         if __debug__:
             encoded_batch_packed, (encoding_hidden_state, encoding_cell_state) = self.encoding_layers(embedded_batch_packed)
+            encoded_batch, encoded_batch_lengths = nn.utils.rnn.pad_packed_sequence(encoded_batch_packed, batch_first=True)
         else:
             encoded_batch_packed, _ = self.encoding_layers(embedded_batch_packed)
-        encoded_batch, encoded_batch_lengths = nn.utils.rnn.pad_packed_sequence(encoded_batch_packed)
-        assert tuple(encoded_batch.shape) == (max_sentence_length, batch_size, self.encoding_hidden_size*2)
+            encoded_batch, _ = nn.utils.rnn.pad_packed_sequence(encoded_batch_packed, batch_first=True)
+        assert tuple(encoded_batch.shape) == (batch_size, max_sentence_length, self.encoding_hidden_size*2)
         assert tuple(encoding_hidden_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
         assert tuple(encoding_cell_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
+        assert tuple(encoded_batch_lengths.shape) == (batch_size,)
 
         hidden = torch.cat((encoding_hidden_state[-2,:,:], encoding_hidden_state[-1,:,:]), dim = 1)
         #hidden = [batch size, hid dim * num directions]
@@ -138,7 +143,7 @@ c =torch.cat((a,b),dim=1)
 # Load Data #
 #############
 
-TEXT = data.Field(tokenize = 'spacy', include_lengths = True)
+TEXT = data.Field(tokenize = 'spacy', include_lengths = True, batch_first = True)
 LABEL = data.LabelField(dtype = torch.long)
 
 train_data, test_data = datasets.IMDB.splits(TEXT, LABEL)
@@ -207,7 +212,8 @@ def predict_sentiment(model, sentence):
     indexed = [TEXT.vocab.stoi[t] for t in tokenized]
     lengths = [len(indexed)]
     tensor = torch.LongTensor(indexed).to(DEVICE)
-    tensor = tensor.unsqueeze(1)
+    #tensor = tensor.unsqueeze(1)
+    tensor = tensor.view(1,-1)
     length_tensor = torch.LongTensor(lengths)
     prediction_as_index = model(tensor, length_tensor).argmax(dim=1).item()
     prediction = LABEL.vocab.itos[prediction_as_index]
