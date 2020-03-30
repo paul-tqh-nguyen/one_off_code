@@ -15,9 +15,17 @@ def print_header() -> None:
     print(f'')
     print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
     print(f'Current Working Directory: {os.getcwd()}')
+    print(f'')
     print(f'''Useful Forms:
+
 import metagraph_cuda.tests.algorithms.test_pagerank ; from importlib import reload ; reload(metagraph_cuda.tests.algorithms.test_pagerank) ; from metagraph_cuda.tests.algorithms.test_pagerank import *
+
 import test_community, importlib; importlib.reload(test_community); from test_community import * ; test_subgraph_extraction()
+
+@debug_on_error
+def test()
+    import test_community, importlib; importlib.reload(test_community)
+    return test_subgraph_extraction()
 ''')
     return
 
