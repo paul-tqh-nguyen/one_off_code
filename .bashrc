@@ -13,9 +13,13 @@ function git-black {
 }
 
 function git-add-mod {
-    git-black
+    if [[ $(pwd | grep "metagraph" ) ]]
+    then
+	git-black
+    fi
     git add $(git status | grep modified | cut -d":" -f2)
 }
+alias gam="git-add-mod"
 
 alias ipynb-to-py="jupyter nbconvert --to script"
 export PYTHONSTARTUP=$HOME/code/one_off_code/python_startup.py
