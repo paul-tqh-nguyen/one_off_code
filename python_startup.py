@@ -23,7 +23,7 @@ import metagraph_cuda.tests.algorithms.test_pagerank ; from importlib import rel
 import test_community, importlib; importlib.reload(test_community); from test_community import * ; test_subgraph_extraction()
 
 @debug_on_error
-def test()
+def test():
     import test_community, importlib; importlib.reload(test_community)
     return test_subgraph_extraction()
 ''')
