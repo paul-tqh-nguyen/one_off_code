@@ -4,7 +4,7 @@
 """
 https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/2%20-%20Upgraded%20Sentiment%20Analysis.ipynb
 
-Original implementation with 4,811,370 parameters yielded ~75% accuracy in 5 epochs.
+Original implementation with 4,811,370 parameters yielded ~75% accuracy in 5 epochs. With embedding normalization, got 85% accuracy in 5 epochs.
 Batch first implementation with 4,811,370 parameters yielded ~86% accuracy in 8 epochs. 7 epochs only got yo 65% at best.
 Taking the mean of the output states with 4,827,819 parameters yielded 89.5% accuracy in 4 epochs. First epoch got 83.8%.
 """
@@ -97,15 +97,6 @@ class AttentionLayers(nn.Module):
         assert tuple(attended_batch.shape) == (batch_size, self.encoding_hidden_size*2*self.number_of_attention_heads)
         return attended_batch
 
-    def old_forward(self, encoded_batch, text_lengths):
-        max_sentence_length = encoded_batch.shape[1]
-        batch_size = text_lengths.shape[0]
-        assert tuple(encoded_batch.shape) == (batch_size, max_sentence_length, self.encoding_hidden_size*2)
-
-        attended_batch = Variable(encoded_batch.sum(dim=1), requires_grad=True)
-
-        return attended_batch
-
 class EEAPNetwork(nn.Module):
     def __init__(self, vocab_size, embedding_size, encoding_hidden_size, number_of_encoding_layers, attention_intermediate_size, number_of_attention_heads, output_size, dropout_probability):
         super().__init__()
@@ -115,7 +106,7 @@ class EEAPNetwork(nn.Module):
             self.number_of_encoding_layers = number_of_encoding_layers
             self.number_of_attention_heads = number_of_attention_heads
         self.embedding_layers = nn.Sequential(OrderedDict([
-            ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=PAD_IDX)),
+            ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=PAD_IDX, max_norm=1.0)),
             ("dropout_layer", nn.Dropout(dropout_probability)),
         ]))
         self.encoding_layers = nn.LSTM(embedding_size,
@@ -198,7 +189,8 @@ class EEAPNetwork(nn.Module):
         # assert tuple(attended_batch.shape) == (batch_size, self.encoding_hidden_size*2*self.number_of_attention_heads)
         # prediction = self.prediction_layers(attended_batch)
         # assert tuple(prediction.shape) == (batch_size, OUTPUT_SIZE)
-        raise Exception
+
+        # print(f'hidden norm {torch.norm(hidden)}')
         return prediction
 
 #############
