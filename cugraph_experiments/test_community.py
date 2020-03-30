@@ -1,3 +1,4 @@
+
 import cugraph
 import cudf
 import random
@@ -8,31 +9,29 @@ random.seed(1234)
 
 from functools import reduce
 
-
 def n_choose_k(n, k):
-    k = min(k, n - k)
-    numerator = reduce(int.__mul__, range(n, n - k, -1), 1)
-    denominator = reduce(int.__mul__, range(1, k + 1), 1)
+    k = min(k, n-k)
+    numerator = reduce(int.__mul__, range(n, n-k, -1), 1)
+    denominator = reduce(int.__mul__, range(1, k+1), 1)
     return numerator // denominator
-
 
 # Louvain Community Detection
 
 # @todo get this working
-# Not yet working
+#Not yet working
 # def test_louvain_case_1():
 #     '''Two cliques. Weight uninitialized (implicitly all equal weight). Various number of connections between two cliques.'''
-
+    
 #     clique_a_sources = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 7, 7, 8]
 #     clique_a_destinations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9, 3, 4, 5, 6, 7, 8, 9, 4, 5, 6, 7, 8, 9, 5, 6, 7, 8, 9, 6, 7, 8, 9, 7, 8, 9, 8, 9, 9]
-
+    
 #     clique_b_node_id_delta = 100
 #     clique_b_sources = [node + clique_b_node_id_delta for node in clique_a_sources]
 #     clique_b_destinations = [node + clique_b_node_id_delta for node in clique_a_destinations]
 
 #     clique_a_nodes = list(set(clique_a_sources+clique_a_destinations))
 #     clique_b_nodes = list(set(clique_b_sources+clique_b_destinations))
-
+    
 #     sources = list(clique_a_sources + clique_b_sources)
 #     destinations = list(clique_a_destinations + clique_b_destinations)
 
@@ -75,241 +74,49 @@ def n_choose_k(n, k):
 
 # @todo get this working
 def test_subgraph_extraction():
-    sources = [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        2,
-        2,
-        2,
-        2,
-        2,
-        2,
-        2,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        4,
-        4,
-        4,
-        4,
-        4,
-        5,
-        5,
-        5,
-        5,
-        6,
-        6,
-        6,
-        7,
-        7,
-        8,
-    ]
-    destinations = [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        5,
-        6,
-        7,
-        8,
-        9,
-        6,
-        7,
-        8,
-        9,
-        7,
-        8,
-        9,
-        8,
-        9,
-        9,
-    ]
+    sources = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 7, 7, 8]
+    destinations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9, 3, 4, 5, 6, 7, 8, 9, 4, 5, 6, 7, 8, 9, 5, 6, 7, 8, 9, 6, 7, 8, 9, 7, 8, 9, 8, 9, 9]
     assert len(sources) == len(destinations)
     assert len(sources) == 45
     assert len(destinations) == 45
-    nodes = set(sources + destinations)
+    nodes = set(sources+destinations)
     number_of_nodes = len(nodes)
     assert number_of_nodes == 10
-
-    gdf = cudf.DataFrame({"source": sources, "destination": destinations})
+    
+    gdf = cudf.DataFrame({'source': sources, 'destination': destinations})
     g = cugraph.Graph()
     g.from_cudf_edgelist(gdf, source="source", destination="destination")
-
-    assert g.number_of_edges() == number_of_nodes * (
-        number_of_nodes - 1
-    )  # total number of edges x 2 for both directions
+    
+    assert g.number_of_edges() == number_of_nodes * (number_of_nodes-1) # total number of edges x 2 for both directions
     assert g.number_of_edges() == 2 * len(sources)
     assert g.number_of_edges() == 2 * len(destinations)
     assert g.number_of_edges() == 90
     assert g.number_of_vertices() == number_of_nodes
     assert g.number_of_nodes() == number_of_nodes
-
-    for number_of_subgraph_nodes in range(3, len(nodes)):
-        subgraph_nodes = sorted(
-            random.sample(nodes, number_of_subgraph_nodes)
-        )  # @todo why do these have to be sorted?
+    
+    for number_of_subgraph_nodes in range(3,len(nodes)):
+        subgraph_nodes = sorted(random.sample(nodes, number_of_subgraph_nodes)) # @todo why do these have to be sorted?
         subgraph_node_series = cudf.Series(subgraph_nodes)
         subgraph = cugraph.subgraph(g, subgraph_node_series)
-        assert subgraph.number_of_edges() == number_of_subgraph_nodes * (
-            number_of_subgraph_nodes - 1
-        )
+        assert subgraph.number_of_edges() == number_of_subgraph_nodes * (number_of_subgraph_nodes-1)
         assert subgraph.number_of_vertices() == number_of_subgraph_nodes
         assert subgraph.number_of_nodes() == number_of_subgraph_nodes
 
-
 # Triangle Count
 
-
 def test_triangle_count_trivial():
-    sources = [0, 1, 2]
-    destinations = [1, 2, 0]
-    gdf = cudf.DataFrame({"source": sources, "destination": destinations})
+    sources =      [0,1,2]
+    destinations = [1,2,0]
+    gdf = cudf.DataFrame({'source': sources, 'destination': destinations})
     g = cugraph.Graph()
     g.from_cudf_edgelist(gdf, source="source", destination="destination")
     assert cugraph.triangles(g) // 3 == 1
 
-
 def test_triangle_count_fully_connected_graph():
-    sources = [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        1,
-        2,
-        2,
-        2,
-        2,
-        2,
-        2,
-        2,
-        3,
-        3,
-        3,
-        3,
-        3,
-        3,
-        4,
-        4,
-        4,
-        4,
-        4,
-        5,
-        5,
-        5,
-        5,
-        6,
-        6,
-        6,
-        7,
-        7,
-        8,
-    ]
-    destinations = [
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        5,
-        6,
-        7,
-        8,
-        9,
-        6,
-        7,
-        8,
-        9,
-        7,
-        8,
-        9,
-        8,
-        9,
-        9,
-    ]
-    gdf = cudf.DataFrame({"source": sources, "destination": destinations})
+    sources =      [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 7, 7, 8]
+    destinations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9, 3, 4, 5, 6, 7, 8, 9, 4, 5, 6, 7, 8, 9, 5, 6, 7, 8, 9, 6, 7, 8, 9, 7, 8, 9, 8, 9, 9]
+    gdf = cudf.DataFrame({'source': sources, 'destination': destinations})
     g = cugraph.Graph()
     g.from_cudf_edgelist(gdf, source="source", destination="destination")
-    assert cugraph.triangles(g) // 3 == 120  # 10 choose 3
+    assert cugraph.triangles(g) // 3 == 120 # 10 choose 3
+
