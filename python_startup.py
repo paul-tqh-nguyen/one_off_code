@@ -4,6 +4,7 @@ import sys
 import os
 import time
 import signal
+from functools import reduce
 from contextlib import contextmanager
 from itertools import chain, combinations
 from typing import Iterable, Callable, Generator
@@ -94,6 +95,12 @@ def powerset(iterable: Iterable) -> Iterable:
     number_of_items = len(items)
     subset_iterable = chain.from_iterable(combinations(items, length) for length in range(1, number_of_items+1))
     return subset_iterable
+
+def n_choose_k(n, k):
+    k = min(k, n-k)
+    numerator = reduce(int.__mul__, range(n, n-k, -1), 1)
+    denominator = reduce(int.__mul__, range(1, k+1), 1)
+    return numerator // denominator
 
 def false(*args, **kwargs) -> bool:
     return False
