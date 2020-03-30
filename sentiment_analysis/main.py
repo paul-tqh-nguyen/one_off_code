@@ -7,6 +7,8 @@ https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/2%20-%20Upg
 Original implementation with 4,811,370 parameters yielded ~75% accuracy in 5 epochs. With embedding normalization, got 85% accuracy in 5 epochs.
 Batch first implementation with 4,811,370 parameters yielded ~86% accuracy in 8 epochs. 7 epochs only got yo 65% at best.
 Taking the mean of the output states with 4,827,819 parameters yielded 89.5% accuracy in 4 epochs. First epoch got 83.8%.
+Attention implementation with 3,133,563 parameters yielded 89% accuracy in 2 epochs.
+Attention implementation with 2,738,820 parameters yielded 88% accuracy in 5 epochs. Only used 1 LSTM layer. 2 attention heads.
 """
 
 ###########
@@ -48,11 +50,11 @@ NUMBER_OF_EPOCHS = 15
 BATCH_SIZE = 32
 
 DROPOUT_PROBABILITY = 0.5
-NUMBER_OF_ENCODING_LAYERS = 2
+NUMBER_OF_ENCODING_LAYERS = 1
 EMBEDDING_SIZE = 100
-ENCODING_HIDDEN_SIZE = 256
-ATTENTION_INTERMEDIATE_SIZE = 32
-NUMBER_OF_ATTENTION_HEADS = 1 # 2
+ENCODING_HIDDEN_SIZE = 128
+ATTENTION_INTERMEDIATE_SIZE = 8
+NUMBER_OF_ATTENTION_HEADS = 2 # 2
 OUTPUT_SIZE = 2
 
 class AttentionLayers(nn.Module):
@@ -67,7 +69,7 @@ class AttentionLayers(nn.Module):
             ("attention_activation", nn.ReLU(True)),
             ("final_attention_layer", nn.Linear(attention_intermediate_size, number_of_attention_heads)),
             ("final_attention_dropout_layer", nn.Dropout(dropout_probability)),
-            ("softmax_layer", nn.Softmax(dim=1)),
+            ("softmax_layer", nn.Softmax(dim=0)),
         ]))
 
     def forward(self, encoded_batch, text_lengths):
@@ -75,16 +77,22 @@ class AttentionLayers(nn.Module):
         batch_size = text_lengths.shape[0]
         assert tuple(encoded_batch.shape) == (batch_size, max_sentence_length, self.encoding_hidden_size*2)
 
-        # @todo can we make this more space efficient by not allocating this? This will let us increase the batch_size
         attended_batch = Variable(torch.zeros(batch_size, self.encoding_hidden_size*2*self.number_of_attention_heads).to(encoded_batch.device)) # @todo can we use torch.empty ?
 
         for batch_index in range(batch_size):
             sentence_length = text_lengths[batch_index]
             sentence_matrix = encoded_batch[batch_index, :sentence_length, :]
+            assert encoded_batch[batch_index ,sentence_length:, :].data.sum() == 0
             assert tuple(sentence_matrix.shape) == (sentence_length, self.encoding_hidden_size*2)
 
+            # Intended Implementation
             sentence_weights = self.attention_layers(sentence_matrix)
             assert tuple(sentence_weights.shape) == (sentence_length, self.number_of_attention_heads)
+            assert (sentence_weights.data.sum(dim=0)-1).abs().mean() < 1e-4
+            
+            # Mean Implementation
+            # sentence_weights = torch.ones(sentence_length, self.number_of_attention_heads).to(encoded_batch.device) / sentence_length
+            # assert tuple(sentence_weights.shape) == (sentence_length, self.number_of_attention_heads)
 
             weight_adjusted_sentence_matrix = torch.mm(sentence_matrix.t(), sentence_weights)
             assert tuple(weight_adjusted_sentence_matrix.shape) == (self.encoding_hidden_size*2, self.number_of_attention_heads,)
@@ -148,11 +156,11 @@ class EEAPNetwork(nn.Module):
         # original implementation
         # hidden = torch.cat((encoding_hidden_state[-2,:,:], encoding_hidden_state[-1,:,:]), dim = 1) # one-line implementation
         #
-        hidden = Variable(torch.zeros(batch_size, self.encoding_hidden_size*2).to(encoded_batch.device))
-        hidden[:, self.encoding_hidden_size:] = encoding_hidden_state[-2,:,:]
-        hidden[:, :self.encoding_hidden_size] = encoding_hidden_state[-1,:,:]
-        assert tuple(hidden.shape) == (batch_size, self.encoding_hidden_size*2)
-        prediction = self.prediction_layers(hidden)
+        # hidden = Variable(torch.zeros(batch_size, self.encoding_hidden_size*2).to(encoded_batch.device))
+        # hidden[:, self.encoding_hidden_size:] = encoding_hidden_state[-2,:,:]
+        # hidden[:, :self.encoding_hidden_size] = encoding_hidden_state[-1,:,:]
+        # assert tuple(hidden.shape) == (batch_size, self.encoding_hidden_size*2)
+        # prediction = self.prediction_layers(hidden)
         
         # Sum Implementation (didn't work)
         # hidden = encoded_batch.sum(dim=1) 
@@ -185,12 +193,11 @@ class EEAPNetwork(nn.Module):
         # prediction = self.prediction_layers(hidden)
         
         # Attention Implementation
-        # attended_batch = self.attention_layers(encoded_batch, text_lengths)
-        # assert tuple(attended_batch.shape) == (batch_size, self.encoding_hidden_size*2*self.number_of_attention_heads)
-        # prediction = self.prediction_layers(attended_batch)
-        # assert tuple(prediction.shape) == (batch_size, OUTPUT_SIZE)
-
-        # print(f'hidden norm {torch.norm(hidden)}')
+        attended_batch = self.attention_layers(encoded_batch, text_lengths)
+        assert tuple(attended_batch.shape) == (batch_size, self.encoding_hidden_size*2*self.number_of_attention_heads)
+        prediction = self.prediction_layers(attended_batch)
+        assert tuple(prediction.shape) == (batch_size, OUTPUT_SIZE)
+        
         return prediction
 
 #############
