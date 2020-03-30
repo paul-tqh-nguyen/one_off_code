@@ -20,7 +20,7 @@ def print_header() -> None:
 
 import metagraph_cuda.tests.algorithms.test_pagerank ; from importlib import reload ; reload(metagraph_cuda.tests.algorithms.test_pagerank) ; from metagraph_cuda.tests.algorithms.test_pagerank import *
 
-os.chdir(os.path.expanduser('~/code/one_off_code/cugraph_experiments/')); import test_community, importlib; importlib.reload(test_community); from test_community import * ; test_subgraph_extraction()
+os.chdir(os.path.expanduser('~/code/one_off_code/cugraph_experiments/')); import test_community, importlib; importlib.reload(test_community); from test_community import * 
 
 @debug_on_error
 def test():
