@@ -18,7 +18,7 @@ def n_choose_k(n, k):
 # Louvain Community Detection
 
 # @todo get this working
-#Not yet working
+# Not yet working
 # def test_louvain_case_1():
 #     '''Two cliques. Weight uninitialized (implicitly all equal weight). Various number of connections between two cliques.'''
     
@@ -47,7 +47,7 @@ def n_choose_k(n, k):
 #         destinations.append(random_b_node)
 #         gdf = cudf.DataFrame({'source': sources, 'destination': destinations})
 #         g = cugraph.Graph()
-#         g.from_cudf_edgelist(gdf, source="source", destination="destination")
+#         g.from_cudf_edgelist(gdf, source='source', destination='destination')
 #         node_to_label_map, modularity_score = cugraph.louvain(g)
 #         print('\n\n\n')
 #         print(f'Iteration: {index}')
@@ -61,6 +61,11 @@ def n_choose_k(n, k):
 #             if node_to_label_map_as_dict[a_node] != 0:
 #                 print(f'{a_node}->{node_to_label_map_as_dict[a_node]} {[e for e in edges if a_node in e]}')
 
+# ECG
+
+# @todo get this working
+# cugraph.ecg
+
 # Spectral Clustering
 
 # @todo get this working
@@ -72,8 +77,7 @@ def n_choose_k(n, k):
 
 # Subgraph Extraction
 
-# @todo get this working
-def test_subgraph_extraction():
+def test_subgraph_extraction_fully_connected_unweighted_undirected():
     sources = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 7, 7, 8]
     destinations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9, 3, 4, 5, 6, 7, 8, 9, 4, 5, 6, 7, 8, 9, 5, 6, 7, 8, 9, 6, 7, 8, 9, 7, 8, 9, 8, 9, 9]
     assert len(sources) == len(destinations)
@@ -85,7 +89,7 @@ def test_subgraph_extraction():
     
     gdf = cudf.DataFrame({'source': sources, 'destination': destinations})
     g = cugraph.Graph()
-    g.from_cudf_edgelist(gdf, source="source", destination="destination")
+    g.from_cudf_edgelist(gdf, source='source', destination='destination')
     
     assert g.number_of_edges() == number_of_nodes * (number_of_nodes-1) # total number of edges x 2 for both directions
     assert g.number_of_edges() == 2 * len(sources)
@@ -93,6 +97,7 @@ def test_subgraph_extraction():
     assert g.number_of_edges() == 90
     assert g.number_of_vertices() == number_of_nodes
     assert g.number_of_nodes() == number_of_nodes
+    assert not g.edgelist.weights
     
     for number_of_subgraph_nodes in range(3,len(nodes)):
         subgraph_nodes = sorted(random.sample(nodes, number_of_subgraph_nodes)) # @todo why do these have to be sorted?
@@ -101,6 +106,58 @@ def test_subgraph_extraction():
         assert subgraph.number_of_edges() == number_of_subgraph_nodes * (number_of_subgraph_nodes-1)
         assert subgraph.number_of_vertices() == number_of_subgraph_nodes
         assert subgraph.number_of_nodes() == number_of_subgraph_nodes
+        assert not g.edgelist.weights
+
+def test_subgraph_extraction_weighted_undirected():
+    '''
+ 0 - 1    5 - 6
+ | X |    | /
+ 3 - 4 -- 2 - 7
+    '''
+    sources =      [0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 5]
+    destinations = [1, 3, 4, 3, 4, 4, 5, 6, 7, 4, 6]
+    weights = [source+destination/10 for source, destination in zip(sources, destinations)]
+    assert len(sources) == 11
+    assert len(destinations) == 11
+    assert len(weights) == 11
+    nodes = set(sources+destinations)
+    assert len(nodes) == 8
+    
+    gdf = cudf.DataFrame({'source': sources, 'destination': destinations, 'weight': weights})
+    g = cugraph.Graph()
+    g.from_cudf_edgelist(gdf, source='source', destination='destination', edge_attr='weight')
+    
+    assert g.number_of_edges() == 22 # one for both directions
+    assert g.number_of_vertices() == 8
+    assert g.number_of_nodes() == 8
+    assert g.edgelist.weights
+    assert 'weights' in tuple(g.view_edge_list().columns)
+    assert g.view_edge_list().weights.sum() == 22.7 * 2 # @todo why are edges double counted?
+    
+    '''
+ 0 - 1    
+ | X |    
+ 3 - 4 -- 2
+    '''
+    subgraph_nodes = [0,1,2,3,4]
+    assert len(subgraph_nodes) == 5
+    subgraph_node_series = cudf.Series(subgraph_nodes)
+    subgraph = cugraph.subgraph(g, subgraph_node_series)
+    assert subgraph.number_of_edges() == 14
+    assert subgraph.number_of_vertices() == 5
+    assert subgraph.number_of_nodes() == 5
+    # The subgraph doesn't contain the weights. Is this a bug worth reporting?
+    # assert 'weights' in tuple(subgraph.view_edge_list().columns)
+    # assert subgraph.edgelist.weights
+    # assert subgraph.view_edge_list().weights.sum() == 22.7 * 2
+    assert cugraph.triangles(subgraph) // 3 == 4
+    
+    # @todo support this case
+    '''
+ 0        5 - 6
+ |        | /
+ 3        2   7
+    '''
 
 # Triangle Count
 
@@ -109,7 +166,7 @@ def test_triangle_count_trivial():
     destinations = [1,2,0]
     gdf = cudf.DataFrame({'source': sources, 'destination': destinations})
     g = cugraph.Graph()
-    g.from_cudf_edgelist(gdf, source="source", destination="destination")
+    g.from_cudf_edgelist(gdf, source='source', destination='destination')
     assert cugraph.triangles(g) // 3 == 1
 
 def test_triangle_count_fully_connected_graph():
@@ -117,6 +174,6 @@ def test_triangle_count_fully_connected_graph():
     destinations = [1, 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5, 6, 7, 8, 9, 3, 4, 5, 6, 7, 8, 9, 4, 5, 6, 7, 8, 9, 5, 6, 7, 8, 9, 6, 7, 8, 9, 7, 8, 9, 8, 9, 9]
     gdf = cudf.DataFrame({'source': sources, 'destination': destinations})
     g = cugraph.Graph()
-    g.from_cudf_edgelist(gdf, source="source", destination="destination")
+    g.from_cudf_edgelist(gdf, source='source', destination='destination')
     assert cugraph.triangles(g) // 3 == 120 # 10 choose 3
 
