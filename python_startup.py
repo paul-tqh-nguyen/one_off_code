@@ -17,6 +17,7 @@ def print_header() -> None:
     print(f'Current Working Directory: {os.getcwd()}')
     print(f'''Useful Forms:
 import metagraph_cuda.tests.algorithms.test_pagerank ; from importlib import reload ; reload(metagraph_cuda.tests.algorithms.test_pagerank) ; from metagraph_cuda.tests.algorithms.test_pagerank import *
+import test_community, importlib; importlib.reload(test_community); from test_community import * ; test_subgraph_extraction()
 ''')
     return
 
