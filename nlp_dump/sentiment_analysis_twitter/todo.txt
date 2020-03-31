@@ -1,5 +1,0 @@
-https://github.com/NirantK/awesome-project-ideas
-Data set https://inclass.kaggle.com/c/si650winter11/data#
-
-Create a simple model https://towardsdatascience.com/reading-between-the-layers-lstm-network-7956ad192e58
-Sweep old code to add all the features we had there to this implementation
