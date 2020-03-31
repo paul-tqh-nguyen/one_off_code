@@ -24,8 +24,7 @@ os.chdir(os.path.expanduser('~/code/one_off_code/cugraph_experiments/')); import
 
 @debug_on_error
 def test():
-    import test_community, importlib; importlib.reload(test_community)
-    return test_subgraph_extraction()
+    return test_katz_centrality_undirected()
 ''')
     return
 
