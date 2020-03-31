@@ -2,8 +2,6 @@
 "#!/usr/bin/python3 -OO"
 
 """
-https://github.com/bentrevett/pytorch-sentiment-analysis/blob/master/2%20-%20Upgraded%20Sentiment%20Analysis.ipynb
-
 Original implementation with 4,811,370 parameters yielded ~75% accuracy in 5 epochs. With embedding normalization, got 85% accuracy in 5 epochs.
 Batch first implementation with 4,811,370 parameters yielded ~86% accuracy in 8 epochs. 7 epochs only got yo 65% at best.
 Taking the mean of the output states with 4,827,819 parameters yielded 89.5% accuracy in 4 epochs. First epoch got 83.8%.
