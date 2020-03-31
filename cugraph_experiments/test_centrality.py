@@ -2,8 +2,6 @@
 import cugraph
 import cudf
 
-# Helpers
-
 # Katz Centrality
 
 def test_katz_centrality_undirected():
