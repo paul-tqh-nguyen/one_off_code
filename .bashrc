@@ -85,10 +85,11 @@ alias del-mg="goto-mg && conda env remove --name mg"
 alias fresh-mg="del-mg && init-mg"
 
 alias install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
-&& install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml \
 && conda install ~/dump/metagraph-0.0.1-py3.7h39e3cac_g15c13c6_12.tar.bz2 \
 && yes | conda install networkx \
+&& yes | conda install numba \
 && yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \
+&& yes | conda install pandas \ # putting this before cugraph causes problems for some reason?
 && :"
 alias goto-mgc="cd ~/code/metagraph-cuda/"
 alias init-mgc="goto-mgc && conda env create ; conda activate mgc && install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml && pre-commit install && python setup.py develop"
