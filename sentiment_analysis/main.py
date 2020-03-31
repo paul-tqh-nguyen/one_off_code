@@ -54,7 +54,7 @@ NUMBER_OF_ENCODING_LAYERS = 1
 EMBEDDING_SIZE = 100
 ENCODING_HIDDEN_SIZE = 128
 ATTENTION_INTERMEDIATE_SIZE = 8
-NUMBER_OF_ATTENTION_HEADS = 2 # 2
+NUMBER_OF_ATTENTION_HEADS = 2
 OUTPUT_SIZE = 2
 
 class AttentionLayers(nn.Module):
@@ -77,7 +77,7 @@ class AttentionLayers(nn.Module):
         batch_size = text_lengths.shape[0]
         assert tuple(encoded_batch.shape) == (batch_size, max_sentence_length, self.encoding_hidden_size*2)
 
-        attended_batch = Variable(torch.zeros(batch_size, self.encoding_hidden_size*2*self.number_of_attention_heads).to(encoded_batch.device)) # @todo can we use torch.empty ?
+        attended_batch = Variable(torch.empty(batch_size, self.encoding_hidden_size*2*self.number_of_attention_heads).to(encoded_batch.device))
 
         for batch_index in range(batch_size):
             sentence_length = text_lengths[batch_index]
