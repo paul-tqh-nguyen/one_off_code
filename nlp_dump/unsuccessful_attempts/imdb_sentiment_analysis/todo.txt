@@ -1,0 +1,6 @@
+
+https://medium.com/@bhadreshpsavani/tutorial-on-sentimental-analysis-using-pytorch-b1431306a2d7
+
+Can we get rid of init_hidden ? Let's do some experiments
+Get rid of Counter
+Can we get rid of np
