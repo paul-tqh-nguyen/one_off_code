@@ -1,7 +1,10 @@
 
 import cugraph
 import cudf
+import numpy as np
+import scipy
 import random
+import pytest
 
 random.seed(1234)
 
@@ -177,3 +180,20 @@ def test_triangle_count_fully_connected_graph():
     g.from_cudf_edgelist(gdf, source='source', destination='destination')
     assert cugraph.triangles(g) // 3 == 120 # 10 choose 3
 
+def test_triangle_count_fully_connected_graph_from_adjacency_list():
+    sparse_matrix = scipy.sparse.csr_matrix(np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]), dtype=np.int8)
+    offsets = cudf.Series(sparse_matrix.indptr)
+    indices = cudf.Series(sparse_matrix.indices)
+    g = cugraph.Graph()
+    g.from_cudf_adjlist(offsets, indices, None)
+    assert cugraph.triangles(g) // 3 == 1
+
+def test_triangle_count_fails_on_fully_connected_graph_from_directed_weighted_adjacency_list():
+    sparse_matrix = scipy.sparse.csr_matrix(np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]), dtype=np.int8)
+    offsets = cudf.Series(sparse_matrix.indptr)
+    indices = cudf.Series(sparse_matrix.indices)
+    weights = cudf.Series([1.1,2.2,3.3,4.4,5.5,6.6])
+    g = cugraph.DiGraph()
+    g.from_cudf_adjlist(offsets, indices, weights)
+    with pytest.raises(Exception):
+        assert cugraph.triangles(g) // 3 == 1
