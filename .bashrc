@@ -87,9 +87,9 @@ alias fresh-mg="del-mg && init-mg"
 # not installing metagraph bc we are using Jim's abstract props branch right now 
 # && conda install ~/dump/metagraph-0.0.1-py3.7h39e3cac_g15c13c6_12.tar.bz2
 alias install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
+&& yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \
 && yes | conda install networkx \
 && yes | conda install numba \
-&& yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \
 && yes | conda install pandas \
 && :"
 alias goto-mgc="cd ~/code/metagraph-cuda/"
