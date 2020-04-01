@@ -90,7 +90,7 @@ alias install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml=
 && yes | conda install networkx \
 && yes | conda install numba \
 && yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \
-&& yes | conda install pandas \ # putting this before cugraph causes problems for some reason?
+&& yes | conda install pandas \
 && :"
 alias goto-mgc="cd ~/code/metagraph-cuda/"
 alias init-mgc="goto-mgc && conda env create ; conda activate mgc && install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml && pre-commit install && python setup.py develop"
