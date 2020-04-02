@@ -151,6 +151,22 @@
  cuda-test
  )
 
+(defun start-cuda-shells ()
+  (interactive)
+  (mapcar #'funcall '(
+		      cuda
+		      shell
+		      
+		      cuda-shell
+		      shell
+		      
+		      cuda-test
+		      shell
+		      
+		      cuda-python
+		      shell 
+		      )))
+
 ;; shortcut keys
 
 (global-set-key (kbd "C-c \"") 'escape-quotes)
