@@ -110,7 +110,7 @@
   (if (get-buffer buffer-name)
       (switch-to-buffer buffer-name)
     (let ((default-directory (format "/ssh:%s@%s:" username host)))
-      (mapcar #'async-shell-command async-command-strings)
+      ;;(mapcar #'async-shell-command async-command-strings)
       (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
       (start-shell-buffer-with-name buffer-name))))
 
@@ -166,7 +166,8 @@
 		    third
 		    fourth
 		    fifth
-		    ))
+		    
+		    shell))
 
 ;; Shortcut Keys
 
