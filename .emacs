@@ -189,10 +189,10 @@
 
 (cond
  ((eq system-type 'darwin)
-  (start-cuda-shells)
   (setq mac-command-modifier 'meta)
   (setq mac-function-modifier 'control)
-  (setq mac-option-modifier nil))
+  (setq mac-option-modifier nil)
+  (start-cuda-shells))
  ((eq system-type 'gnu/linux)
   )
  (t
