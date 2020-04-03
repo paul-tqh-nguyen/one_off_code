@@ -14,18 +14,6 @@
 
 (shell-command-to-string "pushd ~/code/one_off_code/ ; git pull ; popd")
 
-;; Misc. OS-Specific / Machine-Specific Changes
-
-(cond
- ((eq system-type 'darwin)
-  (setq mac-command-modifier 'meta)
-  (setq mac-function-modifier 'control)
-  (setq mac-option-modifier nil))
- ((eq system-type 'gnu/linux)
-  )
- (t
-  (format "Could not determine OS flavor.")))
-
 ;; Update EMACS Load Path
 
 (package-initialize)
@@ -167,7 +155,20 @@
 		      shell 
 		      )))
 
-;; shortcut keys
+;; Start Up Shells
+
+(mapcar #'funcall '(
+		    shell
+		    python
+ 
+		    tmp
+		    second
+		    third
+		    fourth
+		    fifth
+		    ))
+
+;; Shortcut Keys
 
 (global-set-key (kbd "C-c \"") 'escape-quotes)
 (global-set-key (kbd "C-x C-b") 'buffer-menu)
@@ -182,3 +183,17 @@
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
 (put 'dired-find-alternate-file 'disabled nil)
+
+
+;; Misc. OS-Specific / Machine-Specific Changes
+
+(cond
+ ((eq system-type 'darwin)
+  (start-cuda-shells)
+  (setq mac-command-modifier 'meta)
+  (setq mac-function-modifier 'control)
+  (setq mac-option-modifier nil))
+ ((eq system-type 'gnu/linux)
+  )
+ (t
+  (format "Could not determine OS flavor.")))
