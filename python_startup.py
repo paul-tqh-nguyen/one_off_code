@@ -39,71 +39,59 @@ def p1(iterable: Iterable) -> None:
 
 # Debugging Utilities
 
-def dpn(var_name: str):
+def dpn(var_name: str, given_frame=None):
     """dpn == debug print name"""
-    import inspect
-    frame = inspect.currentframe()
     try:
+        import inspect
+        frame = inspect.currentframe() if given_frame is None else given_frame
         prev_frame = frame.f_back
         macro_caller_locals = prev_frame.f_locals
         macro_caller_globals = prev_frame.f_globals
-        if var_name in macro_caller_locals:
-            print(f'{var_name} (local {type(var_name)}): {macro_caller_locals[var_name]}')
-        elif var_name in macro_caller_globals:
-            print(f'{var_name} (global {type(var_name)}): {macro_caller_globals[var_name]}')
-        else:
+        bogus_token = lambda x:x
+        var_value = macro_caller_locals[var_name] if var_name in macro_caller_locals else macro_caller_globals[var_name] if var_name in macro_caller_globals else bogus_token
+        if var_value == bogus_token:
             raise NameError(f"Cannot determine value of {var_name}")
+        print(f'{var_name}: {var_value}')
     finally:
         del frame
+    return var_value
 
 class __dpf_hack_by_paul__():
     def __init__(self):
         pass
-            
+    
     def __getattr__(self, var_name):
-        try:
-            import inspect
-            frame = inspect.currentframe()
-            prev_frame = frame.f_back
-            macro_caller_locals = prev_frame.f_locals
-            macro_caller_globals = prev_frame.f_globals
-            if var_name in macro_caller_locals:
-                var_value = macro_caller_locals[var_name]
-            elif var_name in macro_caller_globals:
-                var_value = macro_caller_globals[var_name]
-            else:
-                raise NameError(f"Cannot determine value of {var_name}")
-            print(f'{var_name}: {var_value}')
-        finally:
-            del frame
-        return var_value
+        import inspect
+        frame = inspect.currentframe()
+        return dpn(var_name, frame)
 
-dpf = __dpf_hack_by_paul__()
+dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
 
-class __user_describe_hack_by_paul__():
-    def __init__(self):
-        pass
+# @todo check out dir(), vars(), and keys() 
+# class __user_describe_hack_by_paul__():
+#     def __init__(self):
+#         pass
             
-    def __getattr__(self, var_name):
-        try:
-            import inspect
-            frame = inspect.currentframe()
-            prev_frame = frame.f_back
-            macro_caller_locals = prev_frame.f_locals
-            macro_caller_globals = prev_frame.f_globals
-            if var_name in macro_caller_locals:
-                var_value = macro_caller_locals[var_name]
-                print(f'{var_name} (local {type(var_name)}): {var_value}')
-            elif var_name in macro_caller_globals:
-                var_value = macro_caller_globals[var_name]
-                print(f'{var_name} (global {type(var_name)}): {var_value}')
-            else:
-                raise NameError(f"Cannot determine value of {var_name}")
-        finally:
-            del frame
-        return var_value
+#     def __getattr__(self, var_name):
+#         try:
+#             import inspect
+#             frame = inspect.currentframe()
+#             prev_frame = frame.f_back
+#             macro_caller_locals = prev_frame.f_locals
+#             macro_caller_globals = prev_frame.f_globals
+#             if var_name in macro_caller_locals:
+#                 var_value = macro_caller_locals[var_name]
+#                 print(f'{var_name} (local {type(var_name)}): {var_value}')
+#             elif var_name in macro_caller_globals:
+#                 var_value = macro_caller_globals[var_name]
+#                 print(f'{var_name} (global {type(var_name)}): {var_value}')
+#             else:
+#                 raise NameError(f"Cannot determine value of {var_name}")
+#         finally:
+#             del frame
+#         return var_value
 
-user_describe = __user_describe_hack_by_paul__()
+# user_describe = __user_describe_hack_by_paul__()
 
 def debug_on_error(func: Callable) -> Callable:
     def func_wrapped(*args, **kwargs):
