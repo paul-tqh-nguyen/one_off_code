@@ -30,9 +30,9 @@ from misc_utilites import debug_on_error, eager_map, at_most_one, tqdm_with_mess
 DATA_DIRECTORY = "./data/"
 PREPROCESSED_DATA_DIR = './preprocessed_data/'
 ALL_DATA_OUTPUT_CSV_FILE = os.path.join(PREPROCESSED_DATA_DIR, 'all_extracted_data.csv')
-TOPICS_DATA_OUTPUT_CSV_FILE = os.path.join(PREPROCESSED_DATA_DIR, 'all_extracted_data.csv')
+TOPICS_DATA_OUTPUT_CSV_FILE = os.path.join(PREPROCESSED_DATA_DIR, 'topics_data.csv')
 
-COLUMNS_RELEVANT_TO_TOPICS_DATA = ['date', 'text_dateline', 'topics_raw_string', 'text_title', 'text', 'file', 'reuter_element_position']
+COLUMNS_RELEVANT_TO_TOPICS_DATA = {'date', 'text_dateline', 'text_title', 'text', 'file', 'reuter_element_position'}
 
 ###########################
 # Preprocessing Utilities #
@@ -41,7 +41,6 @@ COLUMNS_RELEVANT_TO_TOPICS_DATA = ['date', 'text_dateline', 'topics_raw_string',
 def gather_sgm_files() -> Iterable[str]:
     all_data_entries = os.listdir('./data/')
     sgm_files = map(lambda sgm_file_name: os.path.join(DATA_DIRECTORY, sgm_file_name), filter(lambda entry: '.' in entry and entry.split('.')[-1]=='sgm', all_data_entries))
-    sgm_files = list(sgm_files)[:2]
     return sgm_files
 
 def get_element_text(element: bs4.element.Tag) -> str:
@@ -100,12 +99,22 @@ def parse_sgm_files() -> Tuple[pd.DataFrame, pd.DataFrame]:
     topics_df = pd.DataFrame(topics_rows)
     return all_df, topics_df
 
-def preprocess_all_data() -> None:
+def preprocess_data() -> None:
     if not os.path.isdir(PREPROCESSED_DATA_DIR):
         os.makedirs(PREPROCESSED_DATA_DIR)
     all_df, topics_df = parse_sgm_files()
     all_df.to_csv(ALL_DATA_OUTPUT_CSV_FILE, index=False)
     topics_df.to_csv(TOPICS_DATA_OUTPUT_CSV_FILE, index=False)
+    print()
+    print(f'Preprocessing of entire dataset is in {ALL_DATA_OUTPUT_CSV_FILE}')
+    print(f'{ALL_DATA_OUTPUT_CSV_FILE} has {len(all_df)} rows.')
+    print(f'{ALL_DATA_OUTPUT_CSV_FILE} has {len(all_df.columns)} columns.')
+    print()
+    print(f'Preprocessing of topics is in {TOPICS_DATA_OUTPUT_CSV_FILE}')
+    print(f'{TOPICS_DATA_OUTPUT_CSV_FILE} has {len(set(topics_df.columns)-COLUMNS_RELEVANT_TO_TOPICS_DATA)} topics.')
+    print(f'{TOPICS_DATA_OUTPUT_CSV_FILE} has {len(topics_df)} rows.')
+    print(f'{TOPICS_DATA_OUTPUT_CSV_FILE} has {len(topics_df.columns)} columns.')
+    print()
     return
 
 ##########

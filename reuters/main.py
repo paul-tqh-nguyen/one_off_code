@@ -34,7 +34,7 @@ def main() -> None:
         print("Please specify exactly one action.")
     elif args.preprocess_data:
         import preprocess_data
-        preprocess_data.preprocess_all_data()
+        preprocess_data.preprocess_data()
     else:
         raise Exception("Unexpected args received.")
     return
