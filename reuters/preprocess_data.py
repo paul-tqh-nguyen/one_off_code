@@ -17,7 +17,7 @@ Sections:
 import os
 from bs4 import BeautifulSoup
 from typing import Iterable, List
-from misc_utilites import debug_on_error, eager_map, at_most_one
+from misc_utilites import debug_on_error, eager_map, at_most_one, tqdm_with_message
 
 ###########
 # Globals #
@@ -40,7 +40,7 @@ def parse_sgm_files() -> List:
         with open(sgm_file, 'r') as sgm_text:
             soup = BeautifulSoup(sgm_text,'html.parser')
             reuters_elements = soup.find_all('reuters')
-            for reuters_element in reuters_elements:
+            for reuters_element in tqdm_with_message(reuters_elements, pre_yield_message_func = lambda index: f'Working on {sgm_file}', bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
                 date_element = at_most_one(reuters_element.find_all('date'))
                 topics_element = at_most_one(reuters_element.find_all('topics'))
                 topic_elements = topics_element.find_all('d')
@@ -54,7 +54,7 @@ def parse_sgm_files() -> List:
                 exchange_elements = exchanges_element.find_all('d')
                 companies_element = at_most_one(reuters_element.find_all('companies'))
                 company_elements = companies_element.find_all('d')
-                unknown_element = at_most_one(reuters_element.find_all('unknown'))
+                unknown_elements = reuters_element.find_all('unknown')
                 text_element = at_most_one(reuters_element.find_all('text'))
                 text_element_title = at_most_one(text_element.find_all('title'))
                 text_element_dateline = at_most_one(text_element.find_all('dateline'))
@@ -68,14 +68,18 @@ def parse_sgm_files() -> List:
                     'orgs': eager_map(get_element_text, org_elements),
                     'exchanges': eager_map(get_element_text, exchange_elements),
                     'companies': eager_map(get_element_text, company_elements),
-                    'unknown': unknown_element.text,
+                    'unknown': eager_map(get_element_text, unknown_elements),
                     'text_title': text_element_title.text if text_element_title else None,
                     'text_dateline': text_element_dateline.text if text_element_dateline else None,
                     'text': text_element_body.text if text_element_body else None,
                     'file': sgm_file,
                 }
                 rows.append(row)
-                print(f'row {row}')
+                # print()
+                # print(f'row {row}')
+                # print()
+                # print(f'text_element_body {text_element_body}')
+                # print()
     return rows
 
 ##########
@@ -84,7 +88,7 @@ def parse_sgm_files() -> List:
 
 @debug_on_error # @todo get rid of this
 def main() -> None:
-    print(parse_sgm_files())
+    print(len(parse_sgm_files()))
     return
 
 if __name__ == '__main__':
