@@ -2,28 +2,41 @@
 "#!/usr/bin/python3 -OO"
 
 """
-Original implementation with 4,811,370 parameters yielded ~75% accuracy in 5 epochs. With embedding normalization, got 85% accuracy in 5 epochs.
-Batch first implementation with 4,811,370 parameters yielded ~86% accuracy in 8 epochs. 7 epochs only got yo 65% at best.
-Taking the mean of the output states with 4,827,819 parameters yielded 89.5% accuracy in 4 epochs. First epoch got 83.8%.
-Attention implementation with 3,133,563 parameters yielded 89% accuracy in 2 epochs.
-Attention implementation with 2,738,820 parameters yielded 88% accuracy in 5 epochs. Only used 1 LSTM layer. 2 attention heads.
+
+>>> text='''
+<REUTERS TOPICS="NO" LEWISSPLIT="TEST" CGISPLIT="TRAINING-SET" OLDID="20436" NEWID="21001">
+<DATE>19-OCT-1987 15:37:46.03</DATE>
+<TOPICS></TOPICS>
+<PLACES></PLACES>
+<PEOPLE></PEOPLE>
+<ORGS></ORGS>
+<EXCHANGES></EXCHANGES>
+<COMPANIES></COMPANIES>
+<UNKNOWN> 
+&#5;&#5;&#5;F 
+&#22;&#22;&#1;f2882&#31;reute
+f f BC-CITYFED-FINANCI   10-19 0013</UNKNOWN>
+<TEXT TYPE="BRIEF">&#2;
+******<TITLE>CITYFED FINANCIAL CORP SAYS IT CUT QTRLY DIVIDEND TO ONE CENT FROM 10 CTS/SHR
+</TITLE>Blah blah blah.
+&#3;
+
+</TEXT>
+</REUTERS>
+''' ; soup = BeautifulSoup(text,'html.parser') ; soup.find_all('date')
+
+
 """
 
 ###########
 # Imports #
 ###########
 
-import pdb
-import traceback
-import sys
 import random
-import time
 import spacy
-from tqdm import tqdm
-from contextlib import contextmanager
 from collections import OrderedDict
 from typing import Callable
-
+# @todo import misc helpers
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -229,54 +242,6 @@ train_iterator, valid_iterator, test_iterator = data.BucketIterator.splits(
 
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
 UNK_IDX = TEXT.vocab.stoi[TEXT.unk_token]
-
-###################
-# General Helpers #
-###################
-
-@contextmanager
-def timer(section_name=None, exitCallback=None):
-    start_time = time.time()
-    yield
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    if exitCallback != None:
-        exitCallback(elapsed_time)
-    elif section_name:
-        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
-    else:
-        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
-
-def debug_on_error(func):
-    def func_wrapped(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as err:
-            print(f'Exception Class: {type(err)}')
-            print(f'Exception Args: {err.args}')
-            extype, value, tb = sys.exc_info()
-            traceback.print_exc()
-            pdb.post_mortem(tb)
-    return func_wrapped
-
-def _dummy_tqdm_message_func(index: int):
-    return ''
-
-def tqdm_with_message(iterable,
-                      pre_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
-                      post_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
-                      *args, **kwargs):
-    progress_bar_iterator = tqdm(iterable, *args, **kwargs)
-    for index, element in enumerate(progress_bar_iterator):
-        if pre_yield_message_func != _dummy_tqdm_message_func:
-            pre_yield_message = pre_yield_message_func(index)
-            progress_bar_iterator.set_description(pre_yield_message)
-            progress_bar_iterator.refresh()
-        yield element
-        if post_yield_message_func != _dummy_tqdm_message_func:
-            post_yield_message = post_yield_message_func(index)
-            progress_bar_iterator.set_description(post_yield_message)
-            progress_bar_iterator.refresh()
 
 ###########################
 # Domain Specific Helpers #
