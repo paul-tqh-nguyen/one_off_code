@@ -1,22 +1,21 @@
-#!/usr/bin/python3
-"#!/usr/bin/python3 -OO"
+#!/usr/bin/python3 -OO
 
 """
 Sections:
 * Imports
+* Globals
 * Preprocessing Utilities
 * Driver
 """
-
-# @todo finish the top-level doc string.
 
 ###########
 # Imports #
 ###########
 
 import os
+import pandas as pd
 from bs4 import BeautifulSoup
-from typing import Iterable, List
+from typing import Iterable
 from misc_utilites import debug_on_error, eager_map, at_most_one, tqdm_with_message
 
 ###########
@@ -24,6 +23,8 @@ from misc_utilites import debug_on_error, eager_map, at_most_one, tqdm_with_mess
 ###########
 
 DATA_DIRECTORY = "./data/"
+PREPROCESSED_DATA_DIR = './preprocessed_data/'
+ALL_DATA_OUTPUT_CSV_FILE = os.path.join(PREPROCESSED_DATA_DIR,'extracted_data.csv')
 
 ###########################
 # Preprocessing Utilities #
@@ -34,13 +35,13 @@ def gather_sgm_files() -> Iterable[str]:
     sgm_files = map(lambda sgm_file_name: os.path.join(DATA_DIRECTORY, sgm_file_name), filter(lambda entry: '.' in entry and entry.split('.')[-1]=='sgm', all_data_entries))
     return sgm_files
 
-def parse_sgm_files() -> List:
+def parse_sgm_files() -> pd.DataFrame:
     rows = []
-    for sgm_file in gather_sgm_files():
+    for sgm_file in gather_sgm_files(): # @todo parallelize this
         with open(sgm_file, 'rb') as sgm_text:
             soup = BeautifulSoup(sgm_text,'html.parser')
             reuters_elements = soup.find_all('reuters')
-            for reuters_element in tqdm_with_message(reuters_elements, pre_yield_message_func = lambda index: f'Working on {sgm_file}', bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
+            for row_index, reuters_element in enumerate(tqdm_with_message(reuters_elements, pre_yield_message_func=lambda index: f'Processing {sgm_file}', bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}')):
                 date_element = at_most_one(reuters_element.find_all('date'))
                 topics_element = at_most_one(reuters_element.find_all('topics'))
                 topic_elements = topics_element.find_all('d')
@@ -73,22 +74,22 @@ def parse_sgm_files() -> List:
                     'text_dateline': text_element_dateline.text if text_element_dateline else None,
                     'text': text_element_body.text if text_element_body else None,
                     'file': sgm_file,
+                    'reuter_element_position': row_index,
                 }
                 rows.append(row)
-                # print()
-                # print(f'row {row}')
-                # print()
-                # print(f'text_element_body {text_element_body}')
-                # print()
-    return rows
+    df = pd.DataFrame(rows)
+    return df
 
 ##########
 # Driver #
 ##########
 
-@debug_on_error # @todo get rid of this
+@debug_on_error
 def main() -> None:
-    print(len(parse_sgm_files()))
+    if not os.isdir(PREPROCESSED_DATA_DIR):
+        os.makedirs(PREPROCESSED_DATA_DIR)
+    df = parse_sgm_files()
+    df.to_csv(ALL_DATA_OUTPUT_CSV_FILE, index=False)
     return
 
 if __name__ == '__main__':
