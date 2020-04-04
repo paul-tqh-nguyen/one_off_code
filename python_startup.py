@@ -7,7 +7,7 @@ import signal
 from functools import reduce
 from contextlib import contextmanager
 from itertools import chain, combinations
-from typing import Iterable, Callable, Generator
+from typing import Iterable, Callable, Generator, List
 
 # Start Up Prints
 
