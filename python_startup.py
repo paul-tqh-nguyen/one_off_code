@@ -83,6 +83,20 @@ def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
 
 # General Utilities
 
+def only_one(items: List):
+    assert isinstance(items, list)
+    assert len(items) == 1
+    return items[0]
+
+def at_most_one(items: List):
+    return only_one(items) if items else None
+
+def eager_map(func: Callable, iterable: Iterable) -> List:
+    return list(map(func, iterable))
+
+def eager_filter(func: Callable, iterable: Iterable) -> List:
+    return list(filter(func, iterable))
+
 def identity(input):
     return input
 
