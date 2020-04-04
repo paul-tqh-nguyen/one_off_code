@@ -1,6 +1,10 @@
 #!/usr/bin/python3 -OO
 
 """
+This file contains SGML data pre-processing utilities for documents that appeared on Reuters newswire in 1987.
+
+The data can be found at http://kdd.ics.uci.edu/databases/reuters21578/reuters21578.html
+
 Sections:
 * Imports
 * Globals
@@ -14,8 +18,9 @@ Sections:
 
 import os
 import pandas as pd
+import bs4
 from bs4 import BeautifulSoup
-from typing import Iterable
+from typing import Iterable, Tuple
 from misc_utilites import debug_on_error, eager_map, at_most_one, tqdm_with_message
 
 ###########
@@ -24,7 +29,10 @@ from misc_utilites import debug_on_error, eager_map, at_most_one, tqdm_with_mess
 
 DATA_DIRECTORY = "./data/"
 PREPROCESSED_DATA_DIR = './preprocessed_data/'
-ALL_DATA_OUTPUT_CSV_FILE = os.path.join(PREPROCESSED_DATA_DIR,'extracted_data.csv')
+ALL_DATA_OUTPUT_CSV_FILE = os.path.join(PREPROCESSED_DATA_DIR, 'all_extracted_data.csv')
+TOPICS_DATA_OUTPUT_CSV_FILE = os.path.join(PREPROCESSED_DATA_DIR, 'all_extracted_data.csv')
+
+COLUMNS_RELEVANT_TO_TOPICS_DATA = ['date', 'text_dateline', 'topics_raw_string', 'text_title', 'text', 'file', 'reuter_element_position']
 
 ###########################
 # Preprocessing Utilities #
@@ -33,10 +41,15 @@ ALL_DATA_OUTPUT_CSV_FILE = os.path.join(PREPROCESSED_DATA_DIR,'extracted_data.cs
 def gather_sgm_files() -> Iterable[str]:
     all_data_entries = os.listdir('./data/')
     sgm_files = map(lambda sgm_file_name: os.path.join(DATA_DIRECTORY, sgm_file_name), filter(lambda entry: '.' in entry and entry.split('.')[-1]=='sgm', all_data_entries))
+    sgm_files = list(sgm_files)[:2]
     return sgm_files
 
-def parse_sgm_files() -> pd.DataFrame:
-    rows = []
+def get_element_text(element: bs4.element.Tag) -> str:
+    return element.text
+
+def parse_sgm_files() -> Tuple[pd.DataFrame, pd.DataFrame]:
+    all_rows: List[dict] = []
+    topics_rows: List[dict] = []
     for sgm_file in gather_sgm_files(): # @todo parallelize this
         with open(sgm_file, 'rb') as sgm_text:
             soup = BeautifulSoup(sgm_text,'html.parser')
@@ -45,6 +58,7 @@ def parse_sgm_files() -> pd.DataFrame:
                 date_element = at_most_one(reuters_element.find_all('date'))
                 topics_element = at_most_one(reuters_element.find_all('topics'))
                 topic_elements = topics_element.find_all('d')
+                topics = eager_map(get_element_text, topic_elements)
                 places_element = at_most_one(reuters_element.find_all('places'))
                 place_elements = places_element.find_all('d')
                 people_element = at_most_one(reuters_element.find_all('people'))
@@ -60,10 +74,10 @@ def parse_sgm_files() -> pd.DataFrame:
                 text_element_title = at_most_one(text_element.find_all('title'))
                 text_element_dateline = at_most_one(text_element.find_all('dateline'))
                 text_element_body = at_most_one(text_element.find_all('body'))
-                get_element_text = lambda element: element.text
-                row = {
+                
+                all_data_row = {
                     'date': date_element.text.strip(),
-                    'topics': eager_map(get_element_text, topic_elements),
+                    'topics_raw_string': topics,
                     'places': eager_map(get_element_text, place_elements),
                     'people': eager_map(get_element_text, person_elements),
                     'orgs': eager_map(get_element_text, org_elements),
@@ -76,21 +90,27 @@ def parse_sgm_files() -> pd.DataFrame:
                     'file': sgm_file,
                     'reuter_element_position': row_index,
                 }
-                rows.append(row)
-    df = pd.DataFrame(rows)
-    return df
+                all_rows.append(all_data_row)
+                
+                topic_row = {column_name:all_data_row[column_name] for column_name in COLUMNS_RELEVANT_TO_TOPICS_DATA}
+                topic_row.update({topic: True for topic in topics})
+                topics_rows.append(topic_row)
+    
+    all_df = pd.DataFrame(all_rows)
+    topics_df = pd.DataFrame(topics_rows)
+    return all_df, topics_df
+
+def preprocess_all_data() -> None:
+    if not os.path.isdir(PREPROCESSED_DATA_DIR):
+        os.makedirs(PREPROCESSED_DATA_DIR)
+    all_df, topics_df = parse_sgm_files()
+    all_df.to_csv(ALL_DATA_OUTPUT_CSV_FILE, index=False)
+    topics_df.to_csv(TOPICS_DATA_OUTPUT_CSV_FILE, index=False)
+    return
 
 ##########
 # Driver #
 ##########
 
-@debug_on_error
-def main() -> None:
-    if not os.isdir(PREPROCESSED_DATA_DIR):
-        os.makedirs(PREPROCESSED_DATA_DIR)
-    df = parse_sgm_files()
-    df.to_csv(ALL_DATA_OUTPUT_CSV_FILE, index=False)
-    return
-
 if __name__ == '__main__':
-    main()
+    print("This file contains SGML data pre-processing utilities.")
