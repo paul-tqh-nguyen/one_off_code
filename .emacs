@@ -106,11 +106,10 @@
  fifth
  )
 
-(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name &optional async-command-strings)
+(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name)
   (if (get-buffer buffer-name)
       (switch-to-buffer buffer-name)
     (let ((default-directory (format "/ssh:%s@%s:" username host)))
-      ;;(mapcar #'async-shell-command async-command-strings)
       (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
       (start-shell-buffer-with-name buffer-name))))
 
@@ -121,9 +120,8 @@
        (let* ((username "pnguyen")
 	      (host "192.168.131.229")
 	      (buffer-name ,buffer-name)
-	      (async-command-strings '("(cd /home/pnguyen/code/one_off_code/ ; git pull)"))
 	      (default-directory (format "/ssh:%s@%s:" username host)))
-	 (start-remote-ssh-shell-buffer-with-name username host buffer-name async-command-strings)))))
+	 (start-remote-ssh-shell-buffer-with-name username host buffer-name)))))
 
 (defmacro create-named-cuda-shell-functions (&rest function-names)
   (let (commands)
@@ -198,3 +196,10 @@
   )
  (t
   (format "Could not determine OS flavor.")))
+
+;; Continuous Functions
+
+(setq hourly-timer (run-at-time nil 3600 (lambda ()
+					   (let ((default-directory "~/"))
+					     (async-shell-command "(cd ~/code/one_off_code/ ; git pull)"))
+					   )))
