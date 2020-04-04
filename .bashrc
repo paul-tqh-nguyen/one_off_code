@@ -76,6 +76,10 @@ fi
 
 alias ssh-cuda="ssh 192.168.131.229"
 
+alias init-impact="cd ~/code/impact_of_attention && conda env create ; conda activate impact"
+alias del-impact="~/code/impact_of_attention && conda env remove --name impact"
+alias fresh-impact="del-impact && init-impact"
+
 alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
 && yes | conda install pandas \
 && :"
