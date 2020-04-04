@@ -9,6 +9,7 @@
   (global-display-line-numbers-mode))
 (setq tramp-default-method "ssh")
 (add-to-list 'display-buffer-alist (cons "\\*Async Shell Command\\*.*" (cons #'display-buffer-no-window nil)))
+(add-to-list 'display-buffer-alist (cons "\\*Shell Command Output\\*.*" (cons #'display-buffer-no-window nil)))
 
 ;; Keep Settings updated
 
