@@ -37,7 +37,7 @@ def gather_sgm_files() -> Iterable[str]:
 def parse_sgm_files() -> List:
     rows = []
     for sgm_file in gather_sgm_files():
-        with open(sgm_file, 'r') as sgm_text:
+        with open(sgm_file, 'rb') as sgm_text:
             soup = BeautifulSoup(sgm_text,'html.parser')
             reuters_elements = soup.find_all('reuters')
             for reuters_element in tqdm_with_message(reuters_elements, pre_yield_message_func = lambda index: f'Working on {sgm_file}', bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
