@@ -9,6 +9,7 @@
   (global-display-line-numbers-mode))
 (setq tramp-default-method "ssh")
 (add-to-list 'display-buffer-alist (cons "\\*Async Shell Command\\*.*" (cons #'display-buffer-no-window nil)))
+(add-to-list 'display-buffer-alist (cons "\\*Shell Command Output\\*.*" (cons #'display-buffer-no-window nil)))
 
 ;; Keep Settings updated
 
@@ -106,11 +107,11 @@
  fifth
  )
 
-(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name &optional async-command-strings)
+(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name &optional init-command-strings)
   (if (get-buffer buffer-name)
       (switch-to-buffer buffer-name)
     (let ((default-directory (format "/ssh:%s@%s:" username host)))
-      ;;(mapcar #'async-shell-command async-command-strings)
+      (mapcar #'shell-command init-command-strings)
       (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
       (start-shell-buffer-with-name buffer-name))))
 
@@ -121,9 +122,9 @@
        (let* ((username "pnguyen")
 	      (host "192.168.131.229")
 	      (buffer-name ,buffer-name)
-	      (async-command-strings '("(cd /home/pnguyen/code/one_off_code/ ; git pull)"))
+	      (init-command-strings '("(cd /home/pnguyen/code/one_off_code/ ; git pull)"))
 	      (default-directory (format "/ssh:%s@%s:" username host)))
-	 (start-remote-ssh-shell-buffer-with-name username host buffer-name async-command-strings)))))
+	 (start-remote-ssh-shell-buffer-with-name username host buffer-name init-command-strings)))))
 
 (defmacro create-named-cuda-shell-functions (&rest function-names)
   (let (commands)
