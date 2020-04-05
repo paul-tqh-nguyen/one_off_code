@@ -12,6 +12,7 @@ import os
 import sys
 import traceback
 import pdb
+import inspect
 import time
 from tqdm import tqdm
 from contextlib import contextmanager
@@ -48,18 +49,6 @@ def timer(section_name=None, exitCallback=None):
     else:
         print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
 
-def debug_on_error(func):
-    def func_wrapped(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as err:
-            print(f'Exception Class: {type(err)}')
-            print(f'Exception Args: {err.args}')
-            extype, value, tb = sys.exc_info()
-            traceback.print_exc()
-            pdb.post_mortem(tb)
-    return func_wrapped
-
 def _dummy_tqdm_message_func(index: int):
     return ''
 
@@ -78,6 +67,38 @@ def tqdm_with_message(iterable,
             post_yield_message = post_yield_message_func(index)
             progress_bar_iterator.set_description(post_yield_message)
             progress_bar_iterator.refresh()
+
+def debug_on_error(func: Callable) -> Callable:
+    def decorating_function(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as err:
+            print(f'Exception Class: {type(err)}')
+            print(f'Exception Args: {err.args}')
+            extype, value, tb = sys.exc_info()
+            traceback.print_exc()
+            pdb.post_mortem(tb)
+    return decorating_function
+
+BOGUS_TOKEN = lambda x:x
+
+def dpn(expression_string: str, given_frame=None):
+    try:
+        frame = inspect.currentframe() if given_frame is None else given_frame
+        prev_frame = frame.f_back
+        macro_caller_locals = prev_frame.f_locals
+        macro_caller_globals = prev_frame.f_globals
+        new_var_name = f'paul_dpf_hack_{id(expression_string)}'
+        new_globals = dict(macro_caller_globals)
+        new_globals.update({new_var_name: BOGUS_TOKEN})
+        exec(f'{new_var_name} = {expression_string}', macro_caller_locals, new_globals)
+        var_value = new_globals[new_var_name]
+        if var_value == BOGUS_TOKEN:
+            raise NameError(f"Cannot determine value of {expression_string}")
+        print(f'{expression_string}: {repr(var_value)}')
+    finally:
+        del frame
+    return var_value
 
 if __name__ == '__main__':
     print("This file contains miscellaneous utilities.")
