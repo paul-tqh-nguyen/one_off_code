@@ -54,10 +54,19 @@ def parse_sgm_files() -> Tuple[pd.DataFrame, pd.DataFrame]:
             soup = BeautifulSoup(sgm_text,'html.parser')
             reuters_elements = soup.find_all('reuters')
             for row_index, reuters_element in enumerate(tqdm_with_message(reuters_elements, pre_yield_message_func=lambda index: f'Processing {sgm_file}', bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}')):
+                text_element = at_most_one(reuters_element.find_all('text'))
+                text_element_title = at_most_one(text_element.find_all('title'))
+                text_element_dateline = at_most_one(text_element.find_all('dateline'))
+                text_element_body = at_most_one(text_element.find_all('body'))
+                text_element_body_text = text_element_body.text.strip() if text_element_body else None # @todo filter out empty text bodies
+                if not text_element_body_text or len(text_element_body_text)==0: # @todo make an implies macro
+                    print(reuters_element)
+                    print('\n\n\n')
+                    break
                 date_element = at_most_one(reuters_element.find_all('date'))
                 topics_element = at_most_one(reuters_element.find_all('topics'))
                 topic_elements = topics_element.find_all('d')
-                topics = eager_map(get_element_text, topic_elements)
+                topics: List[str] = eager_map(get_element_text, topic_elements)
                 places_element = at_most_one(reuters_element.find_all('places'))
                 place_elements = places_element.find_all('d')
                 people_element = at_most_one(reuters_element.find_all('people'))
@@ -69,10 +78,6 @@ def parse_sgm_files() -> Tuple[pd.DataFrame, pd.DataFrame]:
                 companies_element = at_most_one(reuters_element.find_all('companies'))
                 company_elements = companies_element.find_all('d')
                 unknown_elements = reuters_element.find_all('unknown')
-                text_element = at_most_one(reuters_element.find_all('text'))
-                text_element_title = at_most_one(text_element.find_all('title'))
-                text_element_dateline = at_most_one(text_element.find_all('dateline'))
-                text_element_body = at_most_one(text_element.find_all('body'))
                 
                 all_data_row = {
                     'date': date_element.text.strip(),
@@ -90,10 +95,11 @@ def parse_sgm_files() -> Tuple[pd.DataFrame, pd.DataFrame]:
                     'reuter_element_position': row_index,
                 }
                 all_rows.append(all_data_row)
-                
-                topic_row = {column_name:all_data_row[column_name] for column_name in COLUMNS_RELEVANT_TO_TOPICS_DATA}
-                topic_row.update({topic: True for topic in topics})
-                topics_rows.append(topic_row)
+
+                if len(topics) > 0:
+                    topic_row = {column_name:all_data_row[column_name] for column_name in COLUMNS_RELEVANT_TO_TOPICS_DATA}
+                    topic_row.update({topic: True for topic in topics})
+                    topics_rows.append(topic_row)
     
     all_df = pd.DataFrame(all_rows)
     topics_df = pd.DataFrame(topics_rows)

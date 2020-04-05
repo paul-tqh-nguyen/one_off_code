@@ -32,6 +32,9 @@ def at_most_one(items: List):
 def eager_map(func: Callable, iterable: Iterable) -> List:
     return list(map(func, iterable))
 
+def implies(antecedent: bool, consequent: bool) -> bool:
+    return not antecedent or consequent
+
 @contextmanager
 def timer(section_name=None, exitCallback=None):
     start_time = time.time()
