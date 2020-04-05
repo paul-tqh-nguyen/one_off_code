@@ -8,6 +8,7 @@ import signal
 from inspect import getfile, getsource, getsourcefile
 from inspect import getmodule
 from inspect import getdoc
+from inspect import signature
 from functools import reduce
 from contextlib import contextmanager
 from itertools import chain, combinations
@@ -71,13 +72,23 @@ def doc(obj) -> None:
 def debug_on_error(func: Callable) -> Callable:
     def func_wrapped(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except Exception as err:
             print(f'Exception Class: {type(err)}')
             print(f'Exception Args: {err.args}')
             extype, value, tb = sys.exc_info()
             traceback.print_exc()
             pdb.post_mortem(tb)
+    return func_wrapped
+
+def trace(func: Callable) -> Callable:
+    def func_wrapped(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except:
+            for frame in inspect.trace():
+                print(frame.code_context, frame.lineno)
+                print(dir(frame))
     return func_wrapped
 
 def dpn(var_name: str, given_frame=None):
@@ -105,6 +116,8 @@ class __dpf_hack_by_paul__():
         return dpn(var_name, frame)
 
 dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
+
+# @todo make apropos methods
 
 # Timing Utilities
 
