@@ -3,7 +3,11 @@ import traceback
 import sys
 import os
 import time
+import inspect
 import signal
+from inspect import getfile, getsource, getsourcefile
+from inspect import getmodule
+from inspect import getdoc
 from functools import reduce
 from contextlib import contextmanager
 from itertools import chain, combinations
@@ -39,10 +43,46 @@ def p1(iterable: Iterable) -> None:
 
 # Debugging Utilities
 
+def file(obj) -> str:
+    try:
+        file_location = inspect.getfile(obj)
+        source_file_location = inspect.getsourcefile(obj)
+    except TypeError as err:
+        module = inspect.getmodule(obj)
+        file_location = inspect.getfile(module)
+        source_file_location = inspect.getsourcefile(module)
+    if file_location != source_file_location:
+        print("Consider using inspect.getsourcefile as well.")
+    return file_location
+
+def source(obj) -> None:
+    try:
+        source_code = inspect.getsource(obj)
+    except TypeError as err:
+        module = inspect.getmodule(obj)
+        source_code = inspect.getsource(module)
+    print(source_code)
+    return
+
+def doc(obj) -> None:
+    print(inspect.getdoc(batch))
+    return
+
+def debug_on_error(func: Callable) -> Callable:
+    def func_wrapped(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as err:
+            print(f'Exception Class: {type(err)}')
+            print(f'Exception Args: {err.args}')
+            extype, value, tb = sys.exc_info()
+            traceback.print_exc()
+            pdb.post_mortem(tb)
+    return func_wrapped
+
 def dpn(var_name: str, given_frame=None):
     """dpn == debug print name"""
     try:
-        import inspect
         frame = inspect.currentframe() if given_frame is None else given_frame
         prev_frame = frame.f_back
         macro_caller_locals = prev_frame.f_locals
@@ -61,23 +101,10 @@ class __dpf_hack_by_paul__():
         pass
     
     def __getattr__(self, var_name):
-        import inspect
         frame = inspect.currentframe()
         return dpn(var_name, frame)
 
 dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
-
-def debug_on_error(func: Callable) -> Callable:
-    def func_wrapped(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as err:
-            print(f'Exception Class: {type(err)}')
-            print(f'Exception Args: {err.args}')
-            extype, value, tb = sys.exc_info()
-            traceback.print_exc()
-            pdb.post_mortem(tb)
-    return func_wrapped
 
 # Timing Utilities
 
