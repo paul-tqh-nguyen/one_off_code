@@ -5,7 +5,7 @@
 """
 
 # @todo fill in the top-level doc string
-
+# @todo add type declarations 
 ###########
 # Imports #
 ###########
@@ -32,6 +32,8 @@ torch.backends.cudnn.deterministic = True
 MAX_VOCAB_SIZE = 25_000
 BATCH_SIZE = 32
 
+EMBEDDING_SIZE = 100
+
 #############
 # Load Data #
 #############
@@ -45,6 +47,8 @@ with open(preprocess_data.TOPICS_DATA_OUTPUT_CSV_FILE, 'r') as topics_csv_file:
     column_name_to_field_map = [(column_name, TEXT if column_name=='text' else
                                  None if column_name in preprocess_data.COLUMNS_RELEVANT_TO_TOPICS_DATA else
                                  LABEL) for column_name in column_names]
+
+    TOPICS = list(set(column_names)-preprocess_data.COLUMNS_RELEVANT_TO_TOPICS_DATA)
 
 TRAIN_PORTION, VALIDATION_PORTION, TESTING_PORTION = (0.50, 0.20, 0.3)
 
@@ -60,7 +64,7 @@ TEXT.build_vocab(training_data, max_size = MAX_VOCAB_SIZE, vectors = "glove.6B.1
 LABEL.build_vocab(training_data)
 
 assert TEXT.vocab.vectors.shape[0] <= MAX_VOCAB_SIZE+2
-# assert TEXT.vocab.vectors.shape[1] == EMBEDDING_SIZE
+assert TEXT.vocab.vectors.shape[1] == EMBEDDING_SIZE
 
 VOCAB_SIZE = len(TEXT.vocab)
 
@@ -72,18 +76,40 @@ training_iterator, validation_iterator, testing_iterator = data.BucketIterator.s
     repeat=False,
     device = DEVICE)
 
+class NumericalizedBatchIterator:
+    def __init__(self, non_numericalized_iterator, x_attribute_name, y_attribute_names):
+        self.non_numericalized_iterator = non_numericalized_iterator
+        self.x_attribute_name: str = x_attribute_name
+        self.y_attribute_names: List[str] = y_attribute_names
+
+    def __iter__(self):
+        for non_numericalized_batch in self.non_numericalized_iterator:
+            x = getattr(non_numericalized_batch, self.x_attribute_name)
+            y = torch.cat([getattr(non_numericalized_batch, y_attribute_names).unsqueeze(1) for feat in self.y_attribute_names], dim=1).int()
+            yield (x, y)
+
+    def __len__(self):
+        return len(self.non_numericalized_iterator)
+
+training_iterator = NumericalizedBatchIterator(training_iterator, 'text', TOPICS)
+validation_iterator = NumericalizedBatchIterator(validation_iterator, 'text', TOPICS)
+testing_iterator = NumericalizedBatchIterator(testing_iterator, 'text', TOPICS)
+
 ###############
 # Main Driver #
 ###############
 
 @debug_on_error
 def main(): # @todo get rid of this
-    for x in train_iterator:
-        print(f'train_iterator {x}')
-    for x in validation_iterator:
-        print(f'validation_iterator {x}')
-    for x in testing_iterator:
-        print(f'testing_iterator {x}')
+    for batch, labels in training_iterator:
+        print(f'training_iterator batch {batch}')
+        print(f'training_iterator labels {labels}')
+    for batch, labels in validation_iterator:
+        print(f'validation_iterator batch {batch}')
+        print(f'validation_iterator labels {labels}')
+    for batch, labels in testing_iterator:
+        print(f'testing_iterator batch {batch}')
+        print(f'testing_iterator labels {labels}')
 
 if __name__ == '__main__':
     print() # @todo fill this in
