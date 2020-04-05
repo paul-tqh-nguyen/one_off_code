@@ -58,11 +58,8 @@ def parse_sgm_files() -> Tuple[pd.DataFrame, pd.DataFrame]:
                 text_element_title = at_most_one(text_element.find_all('title'))
                 text_element_dateline = at_most_one(text_element.find_all('dateline'))
                 text_element_body = at_most_one(text_element.find_all('body'))
-                text_element_body_text = text_element_body.text.strip() if text_element_body else None # @todo filter out empty text bodies
-                if not text_element_body_text or len(text_element_body_text)==0: # @todo make an implies macro
-                    print(reuters_element)
-                    print('\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
-                    #raise Exception
+                text_element_body_text = text_element_body.text.strip() if text_element_body else None
+                if not text_element_body_text or len(text_element_body_text)==0:
                     continue
                 date_element = at_most_one(reuters_element.find_all('date'))
                 topics_element = at_most_one(reuters_element.find_all('topics'))

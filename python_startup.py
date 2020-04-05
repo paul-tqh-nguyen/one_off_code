@@ -60,17 +60,20 @@ def source(obj) -> None:
     try:
         source_code = inspect.getsource(obj)
     except TypeError as err:
-        module = inspect.getmodule(obj)
-        source_code = inspect.getsource(module)
+        obj_type = type(obj)
+        source_code = inspect.getsource(obj_type)
     print(source_code)
     return
+
+def module(obj):
+    return getmodule(obj)
 
 def doc(obj) -> None:
     print(inspect.getdoc(batch))
     return
 
 def debug_on_error(func: Callable) -> Callable:
-    def func_wrapped(*args, **kwargs):
+    def decorating_function(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception as err:
@@ -79,17 +82,23 @@ def debug_on_error(func: Callable) -> Callable:
             extype, value, tb = sys.exc_info()
             traceback.print_exc()
             pdb.post_mortem(tb)
-    return func_wrapped
+    return decorating_function
+
+TRACE_INDENT_LEVEL = 0
+TRACE_INDENTATION = '    '
 
 def trace(func: Callable) -> Callable:
-    def func_wrapped(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except:
-            for frame in inspect.trace():
-                print(frame.code_context, frame.lineno)
-                print(dir(frame))
-    return func_wrapped
+    def decorating_function(*args, **kwargs):
+        arg_values_string = ', '.join((f'{param_name}={value}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
+        global TRACE_INDENT_LEVEL, TRACE_INDENTATION
+        entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] {func.__name__}({arg_values_string})'
+        print(entry_line)
+        TRACE_INDENT_LEVEL += 1
+        result = func(*args, **kwargs)
+        TRACE_INDENT_LEVEL -= 1
+        print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] returned {result}')
+        return result
+    return decorating_function
 
 def dpn(var_name: str, given_frame=None):
     """dpn == debug print name"""
@@ -102,7 +111,7 @@ def dpn(var_name: str, given_frame=None):
         var_value = macro_caller_locals[var_name] if var_name in macro_caller_locals else macro_caller_globals[var_name] if var_name in macro_caller_globals else bogus_token
         if var_value == bogus_token:
             raise NameError(f"Cannot determine value of {var_name}")
-        print(f'{var_name}: {var_value}')
+        print(f'{var_name}: {repr(var_value)}')
     finally:
         del frame
     return var_value
