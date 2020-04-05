@@ -35,14 +35,10 @@ def test():
 
 print_header()
 
-# Printing Utilities
-
-def p1(iterable: Iterable) -> None:
-    for e in iterable:
-        print(e)
-    return
-
 # Debugging Utilities
+
+def pid() -> int:
+    return os.getpid()
 
 def file(obj) -> str:
     try:
@@ -100,18 +96,23 @@ def trace(func: Callable) -> Callable:
         return result
     return decorating_function
 
-def dpn(var_name: str, given_frame=None):
+BOGUS_TOKEN = lambda x:x
+
+def dpn(expression_string: str, given_frame=None):
     """dpn == debug print name"""
     try:
         frame = inspect.currentframe() if given_frame is None else given_frame
         prev_frame = frame.f_back
         macro_caller_locals = prev_frame.f_locals
         macro_caller_globals = prev_frame.f_globals
-        bogus_token = lambda x:x
-        var_value = macro_caller_locals[var_name] if var_name in macro_caller_locals else macro_caller_globals[var_name] if var_name in macro_caller_globals else bogus_token
-        if var_value == bogus_token:
-            raise NameError(f"Cannot determine value of {var_name}")
-        print(f'{var_name}: {repr(var_value)}')
+        new_var_name = f'paul_dpf_hack_{id(expression_string)}'
+        new_globals = dict(macro_caller_globals)
+        new_globals.update({new_var_name: BOGUS_TOKEN})
+        exec(f'{new_var_name} = {expression_string}', macro_caller_locals, new_globals)
+        var_value = new_globals[new_var_name]
+        if var_value == BOGUS_TOKEN:
+            raise NameError(f"Cannot determine value of {expression_string}")
+        print(f'{expression_string}: {repr(var_value)}')
     finally:
         del frame
     return var_value
@@ -125,6 +126,11 @@ class __dpf_hack_by_paul__():
         return dpn(var_name, frame)
 
 dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
+
+def p1(iterable: Iterable) -> None:
+    for e in iterable:
+        print(e)
+    return
 
 # @todo make apropos methods
 
