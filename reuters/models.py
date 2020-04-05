@@ -35,7 +35,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
-NUMBER_OF_EPOCHS = 2
+NUMBER_OF_EPOCHS = 1
 MAX_VOCAB_SIZE = 25_000
 BATCH_SIZE = 32
 
