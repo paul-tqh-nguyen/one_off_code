@@ -80,6 +80,10 @@ alias init-impact="cd ~/code/impact_of_attention && conda env create ; conda act
 alias del-impact="~/code/impact_of_attention && conda env remove --name impact"
 alias fresh-impact="del-impact && init-impact"
 
+alias init-reuters="cd ~/code/reuters_of_attention && conda env create ; conda activate reuters"
+alias del-reuters="~/code/reuters_of_attention && conda env remove --name reuters"
+alias fresh-reuters="del-reuters && init-reuters"
+
 alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
 && yes | conda install pandas \
 && :"
