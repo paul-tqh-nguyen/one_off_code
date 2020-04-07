@@ -110,7 +110,7 @@ def dpn(expression_string: str, given_frame=None):
         new_globals.update({new_var_name: BOGUS_TOKEN})
         exec(f'{new_var_name} = {expression_string}', macro_caller_locals, new_globals)
         var_value = new_globals[new_var_name]
-        if var_value == BOGUS_TOKEN:
+        if id(var_value) == id(BOGUS_TOKEN):
             raise NameError(f"Cannot determine value of {expression_string}")
         print(f'{expression_string}: {repr(var_value)}')
     finally:
