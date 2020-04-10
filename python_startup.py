@@ -14,6 +14,10 @@ from contextlib import contextmanager
 from itertools import chain, combinations
 from typing import Iterable, Callable, Generator, List
 
+# Imports purely for accessibility, not necessarily use in these functions
+
+import random
+
 # Start Up Prints
 
 def print_header() -> None:
