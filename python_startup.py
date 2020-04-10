@@ -17,6 +17,7 @@ from typing import Iterable, Callable, Generator, List
 # Imports purely for accessibility, not necessarily use in these functions
 
 import random
+import re
 
 # Start Up Prints
 
