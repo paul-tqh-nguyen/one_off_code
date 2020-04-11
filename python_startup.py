@@ -5,6 +5,7 @@ import os
 import time
 import inspect
 import signal
+from collections import Counter
 from inspect import getfile, getsource, getsourcefile
 from inspect import getmodule
 from inspect import getdoc
@@ -227,3 +228,9 @@ def current_timestamp_string() -> str:
 
 def unzip(zipped_item: Iterable) -> Iterable:
     return zip(*zipped_item)
+
+def histogram(iterator: Iterable) -> Counter:
+    counter = Counter()
+    for element in iterator:
+        counter[element]+=1
+    return counter
