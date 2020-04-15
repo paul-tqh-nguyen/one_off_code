@@ -115,14 +115,16 @@ def dpn(expression_string: str, given_frame=None):
         new_var_name = f'paul_dpf_hack_{id(expression_string)}'
         new_globals = dict(macro_caller_globals)
         new_globals.update({new_var_name: BOGUS_TOKEN})
+        sys.stdout = open(os.devnull, 'w')
         exec(f'{new_var_name} = {expression_string}', macro_caller_locals, new_globals)
+        sys.stdout = sys.__stdout__
         var_value = new_globals[new_var_name]
         if id(var_value) == id(BOGUS_TOKEN):
             raise NameError(f"Cannot determine value of {expression_string}")
         print(f'{expression_string}: {repr(var_value)}')
     finally:
         del frame
-    return
+    return var_value
 
 class __dpf_hack_by_paul__():
     def __init__(self):
