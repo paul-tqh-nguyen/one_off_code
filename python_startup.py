@@ -122,7 +122,7 @@ def dpn(expression_string: str, given_frame=None):
         print(f'{expression_string}: {repr(var_value)}')
     finally:
         del frame
-    return var_value
+    return
 
 class __dpf_hack_by_paul__():
     def __init__(self):
