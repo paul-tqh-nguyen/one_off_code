@@ -72,7 +72,7 @@ def module(obj):
     return getmodule(obj)
 
 def doc(obj) -> None:
-    print(inspect.getdoc(batch))
+    print(inspect.getdoc(obj))
     return
 
 def debug_on_error(func: Callable) -> Callable:
