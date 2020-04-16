@@ -10,15 +10,19 @@ const data_location = "https://raw.githubusercontent.com/paul-tqh-nguyen/one_off
 
 const render = data => {
     const xScale = d3.scaleLinear()
-          .domain([0, d3.max(data, d=>d.population)]);
+          .domain([0, d3.max(data, d=>d.population)])
+          .range([0, svg_width]);
     
-    console.log(xScale.domain());
+    const yScale = d3.scaleBand()
+          .domain(data.map(d=>d.location))
+          .range([0, svg_height]);
     
     svg.selectAll('rect').data(data)
         .enter()
         .append('rect')
-        .attr('width', 300)
-        .attr('height', 300);
+        .attr('width', d => xScale(d.population))
+        .attr('y', d => yScale(d.location))
+        .attr('height', yScale.bandwidth());
 };
 
 d3.json(data_location)
@@ -26,7 +30,7 @@ d3.json(data_location)
         data = data.map(datum => {
             return {
                 population: parseFloat(datum.PopTotal) * 1000,
-                location: datum.Location_Populations,
+                location: datum.Location,
             };
         });
         render(data);
