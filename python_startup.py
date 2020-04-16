@@ -20,6 +20,8 @@ from typing import Iterable, Callable, Generator, List
 import random
 import re
 from statistics import mean
+import numpy as np
+import networkx as nx
 
 # Start Up Prints
 
