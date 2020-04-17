@@ -20,8 +20,12 @@ from typing import Iterable, Callable, Generator, List
 import random
 import re
 from statistics import mean
-import numpy as np
-import networkx as nx
+
+import socket
+hostname = socket.gethostbyaddr(socket.gethostname())[0]
+if hostname == "demouser-DGX-Station":
+    import numpy as np
+    import networkx as nx
 
 # Start Up Prints
 
