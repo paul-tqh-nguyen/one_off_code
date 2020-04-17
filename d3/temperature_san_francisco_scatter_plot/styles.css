@@ -21,6 +21,9 @@ text {
     stroke: #C0C0BB;
 }
 
+path {
+    stroke-linejoin: round;
+}
 .domain {
     stroke: #C0C0BB;
 }

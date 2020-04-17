@@ -80,7 +80,8 @@ const render = data => {
 
     const lineGenerator = d3.line()
           .x(datum => xScale(getXValue(datum)))
-          .y(datum => yScale(getYValue(datum)));
+          .y(datum => yScale(getYValue(datum)))
+          .curve(d3.curveBasis);
     barChartGroup.append('path')
         .attr('d', lineGenerator(data))
         .attr('fill-opacity', 0.0)
