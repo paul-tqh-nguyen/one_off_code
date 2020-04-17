@@ -55,13 +55,13 @@ const render = data => {
         .attr('x', innerWidth / 2)
         .text('Population');
 
-    // create horizontal bars for data
+    // display data
     barChartGroup.selectAll('rect').data(data)
         .enter()
-        .append('rect')
-        .attr('width', datum => xScale(getDatumPopulation(datum)))
-        .attr('y', datum => yScale(getDatumLocation(datum)))
-        .attr('height', yScale.bandwidth());
+        .append('circle')
+        .attr('cx', datum => xScale(getDatumPopulation(datum)))
+        .attr('cy', datum => yScale(getDatumLocation(datum))+(yScale.bandwidth() / 2))
+        .attr('r', yScale.bandwidth() / 5);
 
 };
 
