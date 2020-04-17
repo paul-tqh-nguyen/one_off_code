@@ -12,8 +12,8 @@ const render = data => {
     const getDatumPopulation = datum => datum.population;
     const getDatumLocation = datum => datum.location;
     const margin = {
-        top: 40,
-        bottom: 30,
+        top: 80,
+        bottom: 80,
         left: 120,
         right: 30,
     };
@@ -34,27 +34,28 @@ const render = data => {
           .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
     const barChartTitle = barChartGroup.append('text')
+          .attr('class', 'chart-title')
           .text("Some Populous Countries")
-          .attr('x', 5)
+          .attr('x', innerWidth * 0.3)
           .attr('y', -10);
         
     const yAxisGroup = barChartGroup.append('g')
           .call(d3.axisLeft(yScale));
+    yAxisGroup.selectAll('.domain, .tick line').remove(); // remove ticks
     
-    yAxisGroup
-        .selectAll('.domain, .tick line')
-        .remove();
-    
-    const xAxisTickFormat = number => d3.format('.3s')(number).replace(/G/,"B");
-    
+    const xAxisTickFormat = number => d3.format('.3s')(number).replace(/G/,"B");    
     const xAxisGroup = barChartGroup.append('g')
-          .call(d3.axisBottom(xScale).tickFormat(xAxisTickFormat))
+          .call(d3.axisBottom(xScale).tickFormat(xAxisTickFormat).tickSize(-innerHeight))
           .attr('transform', `translate(0, ${innerHeight})`);
+    xAxisGroup.selectAll('.domain').remove(); // remove ticks
+    xAxisGroup.append('text') // X-axis label
+        .attr('class','axis-label')
+        .attr('fill', 'black')
+        .attr('y', margin.bottom * 0.75)
+        .attr('x', innerWidth / 2)
+        .text('Population');
 
-    xAxisGroup
-        .selectAll('.domain')
-        .remove();
-    
+    // create horizontal bars for data
     barChartGroup.selectAll('rect').data(data)
         .enter()
         .append('rect')
