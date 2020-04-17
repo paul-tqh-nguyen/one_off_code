@@ -200,7 +200,7 @@
 	    (when index-of-first-non-white-space-character
 	      (dotimes (space-index index-of-first-non-white-space-character)
 		(insert " ")))
-	    (insert (format "print(f'%s {%s}}')" no-indentation-region-line no-indentation-region-line)))))
+	    (insert (format "print(f'%s {%s}')" no-indentation-region-line no-indentation-region-line)))))
       (goto-char (region-beginning)))))
 
 (add-hook 'python-mode-hook
