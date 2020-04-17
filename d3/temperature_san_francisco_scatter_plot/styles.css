@@ -21,6 +21,10 @@ text {
     stroke: #C0C0BB;
 }
 
+.domain {
+    stroke: #C0C0BB;
+}
+
 .axis-label {
     font-family: sans-serif;
     font-size: 3.5em;

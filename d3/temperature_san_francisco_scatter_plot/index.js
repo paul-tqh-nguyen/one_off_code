@@ -1,30 +1,22 @@
-
 const svg = d3.select('svg');
 svg.style('background-color', 'white');
 
 const svg_height = parseFloat(svg.attr('height'));
 const svg_width = parseFloat(svg.attr('width'));
 
-const data_location = "https://raw.githubusercontent.com/paul-tqh-nguyen/one_off_code/master/d3/cars_scatter_plot/cars_data.csv";
+const data_location = "https://raw.githubusercontent.com/paul-tqh-nguyen/one_off_code/master/d3/temperature_san_francisco_scatter_plot/temperature_in_san_francisco.csv";
 
 const render = data => {
-    const getDatumMPG = datum => datum.mpg;
-    const getDatumCylinders = datum => datum.cylinders;
-    const getDatumDisplacement = datum => datum.displacement;
-    const getDatumHorsePower = datum => datum.horsepower;
-    const getDatumWeight = datum => datum.weight;
-    const getDatumAcceleration = datum => datum.acceleration;
-    const getDatumYear = datum => datum.year;
-    const getDatumOrigin = datum => datum.origin;
-    const getDatumName = datum => datum.Name;
+    const getDatumTemperature = datum => datum.temperature;
+    const getDatumTimestamp = datum => datum.timestamp;
     
-    const getXValue = getDatumWeight;
-    const getYValue = getDatumAcceleration;
+    const getXValue = getDatumTimestamp;
+    const getYValue = getDatumTemperature;
 
-    const xAxisLabel = 'Weight';
-    const yAxisLabel = 'Acceleration';
+    const xAxisLabel = 'Timestamp';
+    const yAxisLabel = 'Temperature';
     
-    const chartTitle = 'Car Comparison';
+    const chartTitle = 'Temperature in San Francisco';
     
     const margin = {
         top: 80,
@@ -37,14 +29,14 @@ const render = data => {
     const innerWidth = svg_width - margin.left - margin.right;
     const innerHeight = svg_height - margin.top - margin.bottom;
     
-    const xScale = d3.scaleLinear()
+    const xScale = d3.scaleTime()
           .domain(d3.extent(data, getXValue))
           .range([0, innerWidth])
           .nice();
     
     const yScale = d3.scaleLinear()
           .domain(d3.extent(data, getYValue))
-          .range([0, innerHeight])
+          .range([innerHeight, 0])
           .nice();
     
     const barChartGroup = svg.append('g')
@@ -62,7 +54,7 @@ const render = data => {
           .tickPadding(20);
     const yAxisGroup = barChartGroup.append('g')
           .call(yAxis);
-    yAxisGroup.selectAll('.domain').remove();
+    yAxisGroup.selectAll('.domain');
     yAxisGroup.append('text') // Y-xaxix label
         .attr('class','axis-label')
         .attr('fill', 'black')
@@ -86,8 +78,17 @@ const render = data => {
         .attr('x', innerWidth / 2)
         .text(xAxisLabel);
 
-    // display data
-    barChartGroup.selectAll('rect').data(data)
+    const lineGenerator = d3.line()
+          .x(datum => xScale(getXValue(datum)))
+          .y(datum => yScale(getYValue(datum)));
+    barChartGroup.append('path')
+        .attr('d', lineGenerator(data))
+        .attr('fill-opacity', 0.0)
+        .attr('fill','green')
+        .attr('stroke-width', 5)
+        .attr('stroke','purple');
+    
+    barChartGroup.selectAll('circle').data(data)
         .enter()
         .append('circle')
         .attr('cx', datum => xScale(getXValue(datum)))
@@ -100,15 +101,8 @@ d3.csv(data_location)
     .then(data => {
         data = data.map(datum => {
             return {
-                mpg: parseFloat(datum.mpg),
-                cylinders: parseFloat(datum.cylinders),
-                displacement: parseFloat(datum.displacement),
-                horsepower: parseFloat(datum.horsepower),
-                weight: parseFloat(datum.weight),
-                acceleration: parseFloat(datum.acceleration),
-                year: parseInt(datum.year),
-                origin: datum.origin,
-                name: datum.name,
+                timestamp: new Date(datum.timestamp),
+                temperature: parseFloat(datum.temperature),
             };
         });
         render(data);
