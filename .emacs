@@ -178,12 +178,34 @@
 (global-set-key (kbd "C-c :") 'uncomment-region)
 (global-set-key (kbd "<M-down>") 'forward-paragraph)
 (global-set-key (kbd "<M-up>") 'backward-paragraph)
-(global-set-key (kbd "<C-M-left>") 'backward-sexp) ;; @todo get this working
-(global-set-key (kbd "<C-M-right>") 'forward-sexp) ;; @todo get this working
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
 (put 'dired-find-alternate-file 'disabled nil)
 
+;; Python Settings
+
+(defun python-printf-selected ()
+  (interactive)
+  (when (use-region-p)
+    (let* ((region-string (buffer-substring (region-beginning) (region-end)))
+	   (region-lines (split-string region-string "\n")))
+      (delete-region (region-beginning) (region-end))
+      (dolist (region-line region-lines)
+	(let* ((index-of-first-non-white-space-character (string-match "[^\s-]" region-line))
+	       (no-indentation-region-line (if index-of-first-non-white-space-character (substring region-line index-of-first-non-white-space-character nil) region-line)))
+	  (unless (eq (point) (region-beginning))
+	    (insert "\n"))
+	  (if (null index-of-first-non-white-space-character)
+	      (insert region-line)
+	    (when index-of-first-non-white-space-character
+	      (dotimes (space-index index-of-first-non-white-space-character)
+		(insert " ")))
+	    (insert (format "print(f'%s {%s}}')" no-indentation-region-line no-indentation-region-line)))))
+      (goto-char (region-beginning)))))
+
+(add-hook 'python-mode-hook
+	  (lambda ()
+	    (local-set-key (kbd "C-c p") 'python-printf-selected)))
 
 ;; Misc. OS-Specific / Machine-Specific Changes
 
