@@ -4,7 +4,8 @@ body {
 }
 
 circle {
-    fill: steelblue;
+    fill: red;
+    opacity: 0.5;
 }
 
 text {
