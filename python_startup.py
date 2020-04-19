@@ -5,7 +5,6 @@ import os
 import time
 import inspect
 import signal
-import gc
 from collections import Counter
 from inspect import getfile, getsource, getsourcefile
 from inspect import getmodule
@@ -90,9 +89,8 @@ def p1(iterable: Iterable) -> None:
 
 def current_tensors() -> List:
     import torch
-    current_tensors = [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
-    p1(current_tensors)
-    return current_tensors
+    import gc
+    return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
 
 def debug_on_error(func: Callable) -> Callable:
     def decorating_function(*args, **kwargs):
