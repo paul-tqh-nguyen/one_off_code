@@ -52,10 +52,6 @@ print_header()
 
 # Debugging Utilities
 
-def current_tensors() -> List:
-    import torch
-    return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
-
 def pid() -> int:
     return os.getpid()
 
@@ -91,6 +87,12 @@ def p1(iterable: Iterable) -> None:
     for e in iterable:
         print(e)
     return
+
+def current_tensors() -> List:
+    import torch
+    current_tensors = [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
+    p1(current_tensors)
+    return current_tensors
 
 def debug_on_error(func: Callable) -> Callable:
     def decorating_function(*args, **kwargs):
