@@ -51,6 +51,14 @@ print_header()
 
 # Debugging Utilities
 
+@contextmanager
+def suppressed_output() -> None:
+    with open(os.devnull, 'w') as dev_null:
+        sys.stdout = dev_null
+        yield
+        sys.stdout = sys.__stdout__
+    return
+
 def pid() -> int:
     return os.getpid()
 
