@@ -5,6 +5,7 @@ import os
 import time
 import inspect
 import signal
+import gc
 from collections import Counter
 from inspect import getfile, getsource, getsourcefile
 from inspect import getmodule
@@ -51,6 +52,10 @@ print_header()
 
 # Debugging Utilities
 
+def current_tensors() -> List:
+    import torch
+    return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
+
 def pid() -> int:
     return os.getpid()
 
@@ -80,6 +85,11 @@ def module(obj):
 
 def doc(obj) -> None:
     print(inspect.getdoc(obj))
+    return
+
+def p1(iterable: Iterable) -> None:
+    for e in iterable:
+        print(e)
     return
 
 def debug_on_error(func: Callable) -> Callable:
@@ -142,11 +152,6 @@ class __dpf_hack_by_paul__():
         return dpn(var_name, frame)
 
 dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
-
-def p1(iterable: Iterable) -> None:
-    for e in iterable:
-        print(e)
-    return
 
 # @todo make apropos methods
 
