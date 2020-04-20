@@ -5,79 +5,49 @@ svg.style('background-color', 'grey');
 const svg_height = parseFloat(svg.attr('height'));
 const svg_width = parseFloat(svg.attr('width'));
 
-const faceRadius = svg_height/3;
-const eyeRadius = faceRadius/8;
-const eyeBrowOffset = 10;
-const eyeBrowWidth = 10;
-const eyeTranslationMagnitude = faceRadius/3;
-const eyeBrowAnimationTime = 1000;
-const eyeBrowRaiseDistance = 30;
+const colorScale = d3.scaleOrdinal()
+      .domain(['apple', 'lemon'])
+      .range(['red', 'yellow']);
 
-const smileyFaceGroup = svg.append('g')
-      .attr('transform', `translate(${svg_width/2}, ${svg_height/2})`)
-      .attr('fill', 'black');
+const radiusScale = d3.scaleOrdinal()
+      .domain(['apple', 'lemon'])
+      .range([50, 30]);
 
-const face = smileyFaceGroup.append('circle')
-      .attr('fill', 'yellow')
-      .attr('stroke-width', '5px')
-      .attr('stroke', 'black')
-      .attr('r', faceRadius);
-
-const mouth = smileyFaceGroup.append('path')
-      .attr('d', d3.arc()({
-          innerRadius: 80,
-          outerRadius: 100,
-          startAngle: Math.PI/2,
-          endAngle: Math.PI*3/2,
-      }));
-
-const eyesGroup = smileyFaceGroup.append('g');
-
-const leftEye = eyesGroup.append('circle')
-      .attr('transform', `translate(-${eyeTranslationMagnitude}, -${eyeTranslationMagnitude})`)
-      .attr('r', eyeRadius);
-
-const rightEye = eyesGroup.append('circle')
-      .attr('transform', `translate(${eyeTranslationMagnitude}, -${eyeTranslationMagnitude})`)
-      .attr('r', eyeRadius);
-
-const leftEyeBrow = eyesGroup.append('path')
-      .attr('transform', `translate(${eyeTranslationMagnitude}, -${eyeTranslationMagnitude})`)
-      .attr('d', d3.arc()({
-          innerRadius: eyeRadius+eyeBrowOffset,
-          outerRadius: eyeRadius+eyeBrowOffset+eyeBrowWidth,
-          startAngle: -Math.PI/2,
-          endAngle: Math.PI/2,
-      }))
-      .attr('stroke-width', '5px');
-
-const rightEyeBrow = eyesGroup.append('path')
-      .attr('transform', `translate(-${eyeTranslationMagnitude}, -${eyeTranslationMagnitude})`)
-      .attr('d', d3.arc()({
-          innerRadius: eyeRadius+eyeBrowOffset,
-          outerRadius: eyeRadius+eyeBrowOffset+eyeBrowWidth,
-          startAngle: -Math.PI/2,
-          endAngle: Math.PI/2,
-      }))
-      .attr('stroke-width', '5px');
-
-const repeatedRaiseEyeBrows = () => {
-    rightEyeBrow
-        .transition()
-        .duration(eyeBrowAnimationTime)
-        .attr('transform', `translate(-${eyeTranslationMagnitude}, -${eyeTranslationMagnitude+eyeBrowRaiseDistance})`)
-        .transition()
-        .duration(eyeBrowAnimationTime)
-        .attr('transform', `translate(-${eyeTranslationMagnitude}, -${eyeTranslationMagnitude})`)
-        .on('end', repeatedRaiseEyeBrows);
-    leftEyeBrow
-        .transition()
-        .duration(eyeBrowAnimationTime)
-        .attr('transform', `translate(${eyeTranslationMagnitude}, -${eyeTranslationMagnitude+eyeBrowRaiseDistance})`)
-        .transition()
-        .duration(eyeBrowAnimationTime)
-        .attr('transform', `translate(${eyeTranslationMagnitude}, -${eyeTranslationMagnitude})`)
-        .on('end', repeatedRaiseEyeBrows);
+const render = (selection, { fruits }) => {
+    const circles = selection.selectAll('circle').data(fruits);
+    circles
+        .enter()
+        .append('circle')
+        .attr('class', datum => datum.type)
+        .attr('cx', (datum, index) => (index * 100) + 60)
+        .attr('cy', svg_height / 2)
+        .merge(circles)
+        .attr('fill', d => colorScale(d.type))
+        .attr('r', d => radiusScale(d.type));
+    circles
+        .exit()
+        .remove();
 };
 
-repeatedRaiseEyeBrows();
+const makeFruit = type => ({ type });
+
+let fruits = d3.range(5).map(() => makeFruit('apple'));
+
+render(svg, {fruits});
+
+setTimeout(() => {
+    fruits.pop();
+    render(svg, {fruits});
+}, 1000);
+
+setTimeout(() => {
+    fruits.pop();
+    fruits[1].type='lemon';
+    render(svg, {fruits});
+}, 2000);
+
+
+setTimeout(() => {
+    fruits = fruits.filter((datum, index) => (index != 0));
+    render(svg, {fruits});
+}, 3000);
