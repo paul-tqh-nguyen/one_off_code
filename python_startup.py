@@ -1,27 +1,3 @@
-from collections import Counter
-from contextlib import contextmanager
-from typing import Iterable, Callable, Generator, List
-
-# Imports purely for accessibility, not necessarily use in helper utilities
-
-import os
-import sys
-import random
-import re
-import time
-import math
-from inspect import getfile, getsource, getsourcefile
-from inspect import getmodule
-from inspect import getdoc
-from inspect import signature
-from statistics import mean
-from functools import reduce
-
-import socket
-hostname = socket.gethostbyaddr(socket.gethostname())[0]
-if hostname == "demouser-DGX-Station":
-    import numpy as np
-    import networkx as nx
 
 # Start Up Prints
 
@@ -44,8 +20,30 @@ def test():
 
 print_header()
 
+# Imports purely for accessibility, not use in helper utilities
+
+import os
+import sys
+import random
+import re
+import time
+import math
+from inspect import getfile, getsource, getsourcefile
+from inspect import getmodule
+from inspect import getdoc
+from inspect import signature
+from statistics import mean
+from functools import reduce
+
+import socket
+hostname = socket.gethostbyaddr(socket.gethostname())[0]
+if hostname == "demouser-DGX-Station":
+    import numpy as np
+    import networkx as nx
+
 # Debugging Utilities
 
+from contextlib import contextmanager
 @contextmanager
 def suppressed_output() -> None:
     import sys
@@ -94,11 +92,13 @@ def p1(iterable: Iterable) -> None:
         print(e)
     return
 
+from typing import List
 def current_tensors() -> List:
     import torch
     import gc
     return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
 
+from typing import Callable
 def debug_on_error(func: Callable) -> Callable:
     import pdb
     import traceback
@@ -117,6 +117,7 @@ def debug_on_error(func: Callable) -> Callable:
 TRACE_INDENT_LEVEL = 0
 TRACE_INDENTATION = '    '
 
+from typing import Callable
 def trace(func: Callable) -> Callable:
     def decorating_function(*args, **kwargs):
         arg_values_string = ', '.join((f'{param_name}={value}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
@@ -170,6 +171,8 @@ dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
 
 # Timing Utilities
 
+from typing import Callable
+from contextlib import contextmanager
 @contextmanager
 def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None):
     """NB: This cannot be nested."""
@@ -186,6 +189,8 @@ def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None):
     finally:
         signal.signal(signal.SIGALRM, signal.SIG_IGN)
 
+from typing import Callable
+from contextlib import contextmanager
 @contextmanager
 def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
     start_time = time.time()
@@ -201,6 +206,7 @@ def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
 
 # General Utilities
 
+from contextlib import contextmanager
 @contextmanager
 def temp_plt_figure(*args, **kwargs):
     import matplotlib.pyplot as plt
@@ -208,14 +214,17 @@ def temp_plt_figure(*args, **kwargs):
     yield figure
     plt.close(figure)
 
+from typing import List
 def only_one(items: List):
     assert isinstance(items, list)
     assert len(items) == 1
     return items[0]
 
+from typing import List
 def at_most_one(items: List):
     return only_one(items) if items else None
 
+from typing import Iterable, Callable, List
 def parallel_map(func: Callable, iterable: Iterable) -> List:
     p = multiprocessing.Pool()
     result = p.map(func, iterable)
@@ -223,9 +232,11 @@ def parallel_map(func: Callable, iterable: Iterable) -> List:
     p.join()
     return result
 
+from typing import Iterable, Callable,  List
 def eager_map(func: Callable, iterable: Iterable) -> List:
     return list(map(func, iterable))
 
+from typing import Iterable, Callable, List
 def eager_filter(func: Callable, iterable: Iterable) -> List:
     return list(filter(func, iterable))
 
@@ -237,6 +248,7 @@ def implies(antecedent: bool, consequent: bool) -> bool:
 
 UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
 
+from typing import Generator
 def uniq(iterator: Iterable) -> Generator:
     previous = UNIQUE_BOGUS_RESULT_IDENTIFIER
     for value in iterator:
@@ -244,6 +256,7 @@ def uniq(iterator: Iterable) -> Generator:
             yield value
             previous = value
 
+from typing import Iterable 
 def powerset(iterable: Iterable) -> Iterable:
     from itertools import chain, combinations
     items = list(iterable)
