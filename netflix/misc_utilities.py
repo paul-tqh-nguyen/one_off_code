@@ -5,26 +5,15 @@ from contextlib import contextmanager
 @contextmanager
 def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -> None:
     import sys
-    print('redirected_output 1')
     from io import StringIO
-    print('redirected_output 2')
     original_stdout = sys.stdout
-    print('redirected_output 3')
     temporary_std_out = StringIO()
-    print('redirected_output 4')
     sys.stdout = temporary_std_out
-    print('redirected_output 5')
     yield
-    print('redirected_output 6')
     sys.stdout = original_stdout
-    print('redirected_output 7')
     printed_output: str = temporary_std_out.getvalue()
-    print('redirected_output 8')
-    print(f"printed_output {printed_output}")
     if exitCallback is not None:
-        print('redirected_output 8.5')
         exitCallback(printed_output)
-    print('redirected_output 9')
     return
 
 from contextlib import contextmanager
@@ -78,20 +67,40 @@ def histogram(iterator: Iterable) -> Counter:
         counter[element]+=1
     return counter
 
+import io
+from contextlib import contextmanager
+@contextmanager
+def std_out(stream: io.TextIOWrapper) -> None:
+    import sys
+    original_std_out = sys.stdout
+    sys.stdout = stream
+    yield
+    sys.stdout = original_std_out
+    return
+
 TRACE_INDENT_LEVEL = 0
 TRACE_INDENTATION = '    '
+TRACE_VALUE_SIZE_LIMIT = 20
 from typing import Callable
 def trace(func: Callable) -> Callable:
     from inspect import signature
+    import sys
+    def human_readable_value(value) -> str:
+        readable_value = repr(value)
+        if len(readable_value) > TRACE_VALUE_SIZE_LIMIT:
+            readable_value = readable_value[:TRACE_VALUE_SIZE_LIMIT]+'...'
+        return readable_value
     def decorating_function(*args, **kwargs):
-        arg_values_string = ', '.join((f'{param_name}={value}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
+        arg_values_string = ', '.join((f'{param_name}={human_readable_value(value)}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
         global TRACE_INDENT_LEVEL, TRACE_INDENTATION
         entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] {func.__name__}({arg_values_string})'
-        print(entry_line)
+        with std_out(sys.__stdout__):
+            print(entry_line)
         TRACE_INDENT_LEVEL += 1
         result = func(*args, **kwargs)
         TRACE_INDENT_LEVEL -= 1
-        print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] returned {result}')
+        with std_out(sys.__stdout__):
+            print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] returned {result}')
         return result
     return decorating_function
 

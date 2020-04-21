@@ -46,14 +46,24 @@ if hostname == "demouser-DGX-Station":
 
 # Debugging Utilities
 
+import io
+from contextlib import contextmanager
+@contextmanager
+def std_out(stream: io.TextIOWrapper) -> None:
+    import sys
+    original_std_out = sys.stdout
+    sys.stdout = stream
+    yield
+    sys.stdout = original_std_out
+    return
+
 from contextlib import contextmanager
 @contextmanager
 def suppressed_output() -> None:
     import sys
     with open(os.devnull, 'w') as dev_null:
-        sys.stdout = dev_null
-        yield
-        sys.stdout = sys.__stdout__
+        with std_out(dev_null):
+            yield
     return
 
 from typing import Callable, Union
@@ -62,11 +72,9 @@ from contextlib import contextmanager
 def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -> None:
     import sys
     from io import StringIO
-    original_stdout = sys.stdout
     temporary_std_out = StringIO()
-    sys.stdout = temporary_std_out
-    yield
-    sys.stdout = original_stdout
+    with std_out(temporary_std_out):
+        yield
     printed_output: str = temporary_std_out.getvalue()
     if exitCallback is not None:
         exitCallback(printed_output)
@@ -136,18 +144,27 @@ def debug_on_error(func: Callable) -> Callable:
 
 TRACE_INDENT_LEVEL = 0
 TRACE_INDENTATION = '    '
+TRACE_VALUE_SIZE_LIMIT = 20
 from typing import Callable
 def trace(func: Callable) -> Callable:
     from inspect import signature
+    import sys
+    def human_readable_value(value) -> str:
+        readable_value = repr(value)
+        if len(readable_value) > TRACE_VALUE_SIZE_LIMIT:
+            readable_value = readable_value[:TRACE_VALUE_SIZE_LIMIT]+'...'
+        return readable_value
     def decorating_function(*args, **kwargs):
-        arg_values_string = ', '.join((f'{param_name}={value}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
+        arg_values_string = ', '.join((f'{param_name}={human_readable_value(value)}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
         global TRACE_INDENT_LEVEL, TRACE_INDENTATION
         entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] {func.__name__}({arg_values_string})'
-        print(entry_line)
+        with std_out(sys.__stdout__):
+            print(entry_line)
         TRACE_INDENT_LEVEL += 1
         result = func(*args, **kwargs)
         TRACE_INDENT_LEVEL -= 1
-        print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] returned {result}')
+        with std_out(sys.__stdout__):
+            print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] returned {result}')
         return result
     return decorating_function
 
