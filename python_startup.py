@@ -1,26 +1,21 @@
-import pdb
-import traceback
-import sys
-import os
-import time
-import inspect
-import signal
 from collections import Counter
+from contextlib import contextmanager
+from typing import Iterable, Callable, Generator, List
+
+# Imports purely for accessibility, not necessarily use in helper utilities
+
+import os
+import sys
+import random
+import re
+import time
+import math
 from inspect import getfile, getsource, getsourcefile
 from inspect import getmodule
 from inspect import getdoc
 from inspect import signature
-from functools import reduce
-from contextlib import contextmanager
-from itertools import chain, combinations
-from typing import Iterable, Callable, Generator, List
-
-# Imports purely for accessibility, not necessarily use in these functions
-
-import random
-import re
 from statistics import mean
-import math
+from functools import reduce
 
 import socket
 hostname = socket.gethostbyaddr(socket.gethostname())[0]
@@ -53,6 +48,7 @@ print_header()
 
 @contextmanager
 def suppressed_output() -> None:
+    import sys
     with open(os.devnull, 'w') as dev_null:
         sys.stdout = dev_null
         yield
@@ -63,6 +59,7 @@ def pid() -> int:
     return os.getpid()
 
 def file(obj) -> str:
+    import inspect
     try:
         file_location = inspect.getfile(obj)
         source_file_location = inspect.getsourcefile(obj)
@@ -75,6 +72,7 @@ def file(obj) -> str:
     return file_location
 
 def source(obj) -> None:
+    import inspect
     try:
         source_code = inspect.getsource(obj)
     except TypeError as err:
@@ -87,6 +85,7 @@ def module(obj):
     return getmodule(obj)
 
 def doc(obj) -> None:
+    import inspect
     print(inspect.getdoc(obj))
     return
 
@@ -101,6 +100,9 @@ def current_tensors() -> List:
     return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
 
 def debug_on_error(func: Callable) -> Callable:
+    import pdb
+    import traceback
+    import sys
     def decorating_function(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -128,10 +130,12 @@ def trace(func: Callable) -> Callable:
         return result
     return decorating_function
 
-BOGUS_TOKEN = lambda x:x
+BOGUS_TOKEN = object()
 
 def dpn(expression_string: str, given_frame=None):
     """dpn == debug print name"""
+    import sys
+    import inspect
     try:
         frame = inspect.currentframe() if given_frame is None else given_frame
         prev_frame = frame.f_back
@@ -156,6 +160,7 @@ class __dpf_hack_by_paul__():
         pass
     
     def __getattr__(self, var_name):
+        import inspect
         frame = inspect.currentframe()
         return dpn(var_name, frame)
 
@@ -168,6 +173,7 @@ dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
 @contextmanager
 def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None):
     """NB: This cannot be nested."""
+    import signal
     def _raise_timeout(*args, **kwargs):
         raise TimeoutError
     signal.signal(signal.SIGALRM, _raise_timeout)
@@ -194,6 +200,13 @@ def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
         print(f'Execution took {elapsed_time} seconds.')
 
 # General Utilities
+
+@contextmanager
+def temp_plt_figure(*args, **kwargs):
+    import matplotlib.pyplot as plt
+    figure = plt.figure(*args, **kwargs)
+    yield figure
+    plt.close(figure)
 
 def only_one(items: List):
     assert isinstance(items, list)
@@ -232,6 +245,7 @@ def uniq(iterator: Iterable) -> Generator:
             previous = value
 
 def powerset(iterable: Iterable) -> Iterable:
+    from itertools import chain, combinations
     items = list(iterable)
     number_of_items = len(items)
     subset_iterable = chain.from_iterable(combinations(items, length) for length in range(1, number_of_items+1))
@@ -252,7 +266,9 @@ def current_timestamp_string() -> str:
 def unzip(zipped_item: Iterable) -> Iterable:
     return zip(*zipped_item)
 
+from collections import Counter
 def histogram(iterator: Iterable) -> Counter:
+    from collections import Counter
     counter = Counter()
     for element in iterator:
         counter[element]+=1
