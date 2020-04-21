@@ -6,6 +6,7 @@ import pandas as pd
 import networkx as nx
 import matplotlib
 import matplotlib.pyplot as plt
+from typing import List
 
 from misc_utilities import timer, histogram, temp_plt_figure, debug_on_error
 
@@ -21,8 +22,7 @@ RELEVANT_COLUMNS = ['title', 'cast', 'director', 'country', 'type', 'listed_in']
 COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING = ['cast', 'director']
 assert set(COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING).issubset(RELEVANT_COLUMNS)
 
-NODE_COUNT_UPPER_BOUNDS = [100, 1000, 5000, 10_000, 15_000]
-NODE_COUNT_UPPER_BOUNDS.reverse()
+K_CORE_VALUES = [10, 20, 30, 45]
 
 def draw_graph_to_file(graph: nx.Graph, output_location: str) -> None:
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
@@ -111,17 +111,23 @@ def preprocess_data() -> None:
         projected_directors_edgelist.to_csv(PROJECTED_DIRECTORS_CSV, index=False)
         print(f"Number of Directors: {len(projected_directors_graph.nodes)}")
     with timer(section_name="Actor/Director graph projection visualization"):
-        def visualize_actors(maximum_number_of_directors: int) -> None:
-            projected_actors_graph = reduce_graph_size_via_increasing_k_core(full_projected_actors_graph, maximum_number_of_actors)
-            draw_graph_to_file(projected_actors_graph, f'./projected_actors_{maximum_number_of_actors}.png')
-            return
-        def visualize_directors(maximum_number_of_directors: int) -> None:
-            projected_directors_graph = reduce_graph_size_via_increasing_k_core(full_projected_directors_graph, maximum_number_of_directors)
-            draw_graph_to_file(projected_directors_graph, f'./projected_directors_{maximum_number_of_directors}.png')
+        def _visualize(input_values) -> None:
+            k, full_projected_directors_graph, output_png_file_name = input_values
+            projected_directors_graph = nx.k_core(full_projected_directors_graph, k)
+            draw_graph_to_file(projected_directors_graph, output_png_file_name)
             return
         p = multiprocessing.Pool()
-        p.map(visualize_actors, NODE_COUNT_UPPER_BOUNDS)
-        p.map(visualize_directors, NODE_COUNT_UPPER_BOUNDS)
+        k_choices: List[int] = []
+        graphs: List[nx.Graphs] = []
+        output_files: List[str] = []
+        for k_core_value in K_CORE_VALUES:
+            k_choices.append(k_core_value)
+            graphs.append(full_projected_actors_graph)
+            output_files.append(f'./projected_actors_{len(projected_actors_graph)}_actors_via_k_core_{k}.png')
+            k_choices.append(k_core_value)
+            graphs.append(full_projected_directors_graph)
+            output_files.append(f'./projected_directors_{len(projected_directors_graph)}_directors_via_k_core_{k}.png')
+        p.map(_visualize, k_choices, graphs, output_files)
         p.close()
         p.join()
     return
