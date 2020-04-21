@@ -44,8 +44,6 @@ def expand_dataframe_list_values_for_column(df: pd.DataFrame, column_name: str) 
 def load_raw_data() -> Tuple[nx.Graph, pd.DataFrame]:
     with timer(section_name='Initial raw data loading'):
         all_df = pd.read_csv(RAW_DATA_CSV, usecols=RELEVANT_COLUMNS)
-        #all_df = all_df[all_df.country.str.find(r'United States')>=0]
-        #all_df = all_df[:200]
         movies_df = all_df[all_df['type']=='Movie'].drop(columns=['type']).dropna()
         for column in COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING:
             movies_df = expand_dataframe_list_values_for_column(movies_df, column)
