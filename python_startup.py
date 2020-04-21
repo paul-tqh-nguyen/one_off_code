@@ -2,6 +2,7 @@
 # Start Up Prints
 
 def print_header() -> None:
+    import time
     print(f'')
     print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
     print(f'Current Working Directory: {os.getcwd()}')
@@ -193,6 +194,7 @@ from typing import Callable
 from contextlib import contextmanager
 @contextmanager
 def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
+    import time
     start_time = time.time()
     yield
     end_time = time.time()
