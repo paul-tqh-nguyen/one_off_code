@@ -56,6 +56,22 @@ def suppressed_output() -> None:
         sys.stdout = sys.__stdout__
     return
 
+from typing import Callable, Union
+from contextlib import contextmanager
+@contextmanager
+def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -> None:
+    import sys
+    from io import StringIO
+    original_stdout = sys.stdout
+    temporary_std_out = StringIO()
+    sys.stdout = temporary_std_out
+    yield
+    sys.stdout = original_stdout
+    printed_output: str = temporary_std_out.getvalue()
+    if exitCallback is not None:
+        exitCallback(printed_output)
+    return
+
 def pid() -> int:
     return os.getpid()
 
@@ -178,7 +194,7 @@ dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
 from typing import Callable
 from contextlib import contextmanager
 @contextmanager
-def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None):
+def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None) -> None:
     """NB: This cannot be nested."""
     import signal
     def _raise_timeout(*args, **kwargs):
@@ -192,11 +208,12 @@ def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None):
             functionToExecuteOnTimeout()
     finally:
         signal.signal(signal.SIGALRM, signal.SIG_IGN)
+    return
 
 from typing import Callable
 from contextlib import contextmanager
 @contextmanager
-def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
+def timer(section_name: str = None, exitCallback: Callable[[], None] = None) -> None:
     import time
     start_time = time.time()
     yield
@@ -208,16 +225,18 @@ def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
         print(f'{section_name} took {elapsed_time} seconds.')
     else:
         print(f'Execution took {elapsed_time} seconds.')
+    return
 
 # General Utilities
 
 from contextlib import contextmanager
 @contextmanager
-def temp_plt_figure(*args, **kwargs):
+def temp_plt_figure(*args, **kwargs) -> None:
     import matplotlib.pyplot as plt
     figure = plt.figure(*args, **kwargs)
     yield figure
     plt.close(figure)
+    return
 
 from typing import List
 def only_one(items: List):
@@ -269,7 +288,7 @@ def powerset(iterable: Iterable) -> Iterable:
     subset_iterable = chain.from_iterable(combinations(items, length) for length in range(1, number_of_items+1))
     return subset_iterable
 
-def n_choose_k(n, k):
+def n_choose_k(n: int, k: int):
     k = min(k, n-k)
     numerator = reduce(int.__mul__, range(n, n-k, -1), 1)
     denominator = reduce(int.__mul__, range(1, k+1), 1)
@@ -281,6 +300,7 @@ def false(*args, **kwargs) -> bool:
 def current_timestamp_string() -> str:
     return time.strftime("%Y_%m_%d_%H_%M_%S")
 
+from typing import Iterable 
 def unzip(zipped_item: Iterable) -> Iterable:
     return zip(*zipped_item)
 

@@ -1,5 +1,21 @@
 #!/usr/bin/python3
 
+from typing import Callable, Union
+from contextlib import contextmanager
+@contextmanager
+def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -> None:
+    import sys
+    from io import StringIO
+    original_stdout = sys.stdout
+    temporary_std_out = StringIO()
+    sys.stdout = temporary_std_out
+    yield
+    sys.stdout = original_stdout
+    printed_output: str = temporary_std_out.getvalue()
+    if exitCallback is not None:
+        exitCallback(printed_output)
+    return
+
 from contextlib import contextmanager
 @contextmanager
 def temp_plt_figure(*args, **kwargs):
