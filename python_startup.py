@@ -3,6 +3,7 @@
 
 def print_header() -> None:
     import time
+    import os
     print(f'')
     print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
     print(f'Current Working Directory: {os.getcwd()}')
