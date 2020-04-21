@@ -9,6 +9,7 @@ import pandas as pd
 import networkx as nx
 import multiprocessing as mp
 from typing import List, Tuple
+from functools import reduce
 
 from misc_utilities import timer, debug_on_error, redirected_output, tqdm_with_message, trace
 
@@ -64,7 +65,6 @@ def load_raw_data() -> Tuple[nx.Graph, pd.DataFrame]:
 def project_actor_graph_serial(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> nx.Graph:
     full_projected_actors_graph = nx.projected_graph(movies_graph, movies_df['actor'])
     projected_actors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_actors_graph)
-    projected_actors_edgelist = projected_actors_edgelist.rename(columns={'source': 'source_actor', 'target': 'target_actor'})
     projected_actors_edgelist.to_csv(PROJECTED_ACTORS_CSV, index=False)
     print(f'Number of Actors: {len(full_projected_actors_graph.nodes)}')
     assert set(projected_actors_edgelist.stack().unique()).issubset(set(full_projected_actors_graph.nodes))
@@ -74,7 +74,6 @@ def project_actor_graph_serial(movies_graph: nx.Graph, movies_df: pd.DataFrame) 
 def project_director_graph_serial(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> nx.Graph:
     full_projected_directors_graph = nx.projected_graph(movies_graph, movies_df['director'])
     projected_directors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_directors_graph)
-    projected_directors_edgelist = projected_directors_edgelist.rename(columns={'source': 'source_director', 'target': 'target_director'})
     projected_directors_edgelist.to_csv(PROJECTED_DIRECTORS_CSV, index=False)
     print(f'Number of Directors: {len(full_projected_directors_graph.nodes)}')
     assert set(projected_directors_edgelist.stack().unique()).issubset(set(full_projected_directors_graph.nodes))
@@ -137,30 +136,40 @@ def project_graphs(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> Tuple[nx.
 # Generate K-Core Graphs #
 ##########################
 
-def generate_k_core_graph(full_projected_graph: nx.Graph, k: int, graph_node_type: str) -> None:
+def generate_k_core_graph(full_projected_graph: nx.Graph, k: int, graph_node_type: str, output_queue: mp.SimpleQueue) -> None:
     k_core_graph = nx.k_core(full_projected_graph, k)
     k_core_edgelist = nx.convert_matrix.to_pandas_edgelist(k_core_graph)
-    k_core_edgelist = k_core_edgelist.rename(columns={'source': f'source_{graph_node_type}', 'target': f'target_{graph_node_type}'})
     template = K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE if graph_node_type == 'actor' else K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE
     k_core_edgelist.to_csv(template%k, index=False)
+    output_queue.put((k_core_graph, graph_node_type, k))
     return
 
-def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected_directors_graph: nx.Graph) -> None:
-    sorted_k_core_choices_for_k = sorted(K_CORE_CHOICES_FOR_K)
+def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected_directors_graph: nx.Graph) -> Tuple[dict,dict]:
+    k_to_actor_k_core_graph_map = dict()
+    k_to_director_k_core_graph_map = dict()
     with timer(section_name='K-core computation'):
         processes: List[mp.Process] = []
+        output_queue = mp.SimpleQueue()
+        sorted_k_core_choices_for_k = sorted(K_CORE_CHOICES_FOR_K)
         for k in sorted_k_core_choices_for_k:
-            actor_process = mp.Process(target=generate_k_core_graph, args=(full_projected_actors_graph, k, 'actor'))
+            actor_process = mp.Process(target=generate_k_core_graph, args=(full_projected_actors_graph, k, 'actor', output_queue))
             actor_process.start()
             processes.append(actor_process)
             
-            director_process = mp.Process(target=generate_k_core_graph, args=(full_projected_directors_graph, k, 'director'))
+            director_process = mp.Process(target=generate_k_core_graph, args=(full_projected_directors_graph, k, 'director', output_queue))
             director_process.start()
             processes.append(director_process)
         
+        for _ in tqdm_with_message(range(len(processes)), post_yield_message_func = lambda index: f'Gathering Results from K-Core Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+            k_core_graph, graph_node_type, k = output_queue.get()
+            if graph_node_type == 'actor':
+                k_to_actor_k_core_graph_map[k] = k_core_graph
+            else:
+                assert graph_node_type == 'director'
+                k_to_director_k_core_graph_map[k] = k_core_graph
         for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join K-Core Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
             process.join()
-    return
+    return k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map
 
 ########
 # Main #
@@ -169,7 +178,7 @@ def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected
 def preprocess_data() -> None:
     movies_graph, movies_df = load_raw_data()
     full_projected_actors_graph, full_projected_directors_graph = project_graphs(movies_graph, movies_df)
-    generate_k_core_graphs(full_projected_actors_graph, full_projected_directors_graph)
+    k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map = generate_k_core_graphs(full_projected_actors_graph, full_projected_directors_graph)
     print()
     print('Done.')
     return
