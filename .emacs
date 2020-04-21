@@ -226,7 +226,7 @@
 	    (progn
 	      (dotimes (space-index index-of-first-non-white-space-character)
 	  	(insert " "))
-	      (insert (format "print(f'%s {%s}')" no-indentation-region-line no-indentation-region-line))))
+	      (insert (format "print(f\"%s {%s}\")" no-indentation-region-line no-indentation-region-line))))
 	  (unless (eq current-line-index (1- number-of-region-lines))
 	    (insert "\n")
 	    (setq current-line-index (1+ current-line-index))))))))
