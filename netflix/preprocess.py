@@ -27,7 +27,7 @@ K_CORE_VALUES = [10, 20, 30, 45]
 def draw_graph_to_file(graph: nx.Graph, output_location: str) -> None:
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
         plot = figure.add_subplot(111)
-        layout = nx.spring_layout(graph, iterations=max(15, math.sqrt(graph.nodes)))
+        layout = nx.spring_layout(graph, iterations=max(15, math.sqrt(len(graph.nodes))))
         nx.draw_networkx_edges(graph,
                                layout, 
                                width=1,
@@ -86,48 +86,54 @@ def reduce_graph_size_via_increasing_k_core(graph: nx.Graph, node_count_upperbou
                 break
     return reduced_graph
 
+def _generate_png(input_tuple: tuple) -> None:
+    (k, graph, graph_node_type) = input_tuple
+    reduced_graph = nx.k_core(graph, k)
+    draw_graph_to_file(reduced_graph, f'./projected_{graph_node_type}_size_{len(graph.nodes)}_k_core_{k}.png')
+    return
+
 def preprocess_data() -> None:
     with timer(section_name="Initial raw data loading"):
         all_df = pd.read_csv(RAW_DATA_CSV, usecols=RELEVANT_COLUMNS)
-        movies_df = all_df[all_df['type']=='Movie'].drop(columns=['type'])
-        movies_df = movies_df.dropna()
+        #all_df = all_df.head(100)
+        movies_df = all_df[all_df['type']=='Movie'].drop(columns=['type']).dropna()
         for column in COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING:
             movies_df = expand_dataframe_list_values_for_column(movies_df, column)
+        movies_df = movies_df.rename(columns={'cast': 'actor'})
+        movies_df = movies_df[movies_df.director != movies_df.actor]
         print(f'Original Number of Directors: {len(movies_df.director.unique())}')
-        print(f'Original Number of Actors: {len(movies_df.cast.unique())}')
-        movies_df = movies_df[movies_df.director != movies_df.cast]
+        print(f'Original Number of Actors: {len(movies_df.actor.unique())}')
         movies_df.to_csv(DIRECTOR_ACTOR_EDGE_LIST_CSV, index=False)
-        movies_graph = nx.from_pandas_edgelist(movies_df, 'cast', 'director', True)
+        movies_graph = nx.from_pandas_edgelist(movies_df, 'actor', 'director')
     with timer(section_name="Actor graph projection"):
-        full_projected_actors_graph = nx.projected_graph(movies_graph, movies_df['cast'])
+        full_projected_actors_graph = nx.projected_graph(movies_graph, movies_df['actor'])
         projected_actors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_actors_graph)
-        projected_actors_edgelist.rename(columns={"source": "source_actor", "target": "target_actor"})
+        projected_actors_edgelist = projected_actors_edgelist.rename(columns={"source": "source_actor", "target": "target_actor"})
         projected_actors_edgelist.to_csv(PROJECTED_ACTORS_CSV, index=False)
         print(f"Number of Actors: {len(full_projected_actors_graph.nodes)}")
+        assert set(projected_actors_edgelist.stack().unique()).issubset(set(full_projected_actors_graph.nodes))
+        #assert set(projected_actors_edgelist.stack().unique()).issubset(set(movies_df.actor.unique()))
     with timer(section_name="Director graph projection"):
         full_projected_directors_graph = nx.projected_graph(movies_graph, movies_df['director'])
         projected_directors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_directors_graph)
-        projected_directors_edgelist.rename(columns={"source": "source_director", "target": "target_director"})
+        projected_directors_edgelist = projected_directors_edgelist.rename(columns={"source": "source_director", "target": "target_director"})
         projected_directors_edgelist.to_csv(PROJECTED_DIRECTORS_CSV, index=False)
         print(f"Number of Directors: {len(full_projected_directors_graph.nodes)}")
+        assert set(projected_directors_edgelist.stack().unique()).issubset(set(full_projected_directors_graph.nodes))
+        #assert set(projected_directors_edgelist.stack().unique()).issubset(set(movies_df.director.unique()))
     with timer(section_name="Actor/Director graph projection visualization"):
-        def _visualize(input_values) -> None:
-            k, full_projected_directors_graph, output_png_file_name = input_values
-            projected_directors_graph = nx.k_core(full_projected_directors_graph, k)
-            draw_graph_to_file(projected_directors_graph, output_png_file_name)
-            return
         p = multiprocessing.Pool()
         k_choices: List[int] = []
         graphs: List[nx.Graphs] = []
-        output_files: List[str] = []
+        graph_node_types: List[str] = []
         for k_core_value in K_CORE_VALUES:
             k_choices.append(k_core_value)
             graphs.append(full_projected_actors_graph)
-            output_files.append(f'./projected_actors_{len(projected_actors_graph)}_actors_via_k_core_{k}.png')
+            graph_node_types.append('actor')
             k_choices.append(k_core_value)
             graphs.append(full_projected_directors_graph)
-            output_files.append(f'./projected_directors_{len(projected_directors_graph)}_directors_via_k_core_{k}.png')
-        p.map(_visualize, k_choices, graphs, output_files)
+            graph_node_types.append('director')
+        p.map(_generate_png, zip(k_choices, graphs, graph_node_types))
         p.close()
         p.join()
     return
