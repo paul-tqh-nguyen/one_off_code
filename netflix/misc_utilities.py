@@ -11,6 +11,24 @@ def temp_plt_figure(*args, **kwargs):
 from typing import Callable
 from contextlib import contextmanager
 @contextmanager
+def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None):
+    """NB: This cannot be nested."""
+    import signal
+    def _raise_timeout(*args, **kwargs):
+        raise TimeoutError
+    signal.signal(signal.SIGALRM, _raise_timeout)
+    signal.alarm(time)
+    try:
+        yield
+    except TimeoutError:
+        if functionToExecuteOnTimeout is not None:
+            functionToExecuteOnTimeout()
+    finally:
+        signal.signal(signal.SIGALRM, signal.SIG_IGN)
+
+from typing import Callable
+from contextlib import contextmanager
+@contextmanager
 def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
     import time
     start_time = time.time()
