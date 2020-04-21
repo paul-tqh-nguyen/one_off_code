@@ -136,9 +136,9 @@ def debug_on_error(func: Callable) -> Callable:
 
 TRACE_INDENT_LEVEL = 0
 TRACE_INDENTATION = '    '
-
 from typing import Callable
 def trace(func: Callable) -> Callable:
+    from inspect import signature
     def decorating_function(*args, **kwargs):
         arg_values_string = ', '.join((f'{param_name}={value}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
         global TRACE_INDENT_LEVEL, TRACE_INDENTATION
@@ -152,7 +152,6 @@ def trace(func: Callable) -> Callable:
     return decorating_function
 
 BOGUS_TOKEN = object()
-
 def dpn(expression_string: str, given_frame=None):
     """dpn == debug print name"""
     import sys

@@ -10,7 +10,7 @@ import networkx as nx
 import multiprocessing as mp
 from typing import List, Tuple
 
-from misc_utilities import timer, debug_on_error, redirected_output
+from misc_utilities import timer, debug_on_error, redirected_output, tqdm_with_message, trace
 
 ###########
 # Globals #
@@ -34,13 +34,13 @@ K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
 # Utilities #
 #############
 
-def _mp_queue_is_empty(mp_queue: mp.Queue): -> bool:
+def _mp_queue_is_empty(mp_queue: mp.Queue) -> bool:
     '''NB: Destructive; changes order.'''
-    try: 
-        queue_item = output_mp_queue.get(block = False)
-        output_mp_queue.put(queue_item)
+    try:
+        queue_item = mp_queue.get(block = False)
+        mp_queue.put(queue_item)
         is_empty = False
-    except mp.Queue.Empty:
+    except mp.queues.Empty:
         is_empty = True
     return True
 
@@ -58,67 +58,101 @@ def expand_dataframe_list_values_for_column(df: pd.DataFrame, column_name: str) 
 def load_raw_data() -> Tuple[nx.Graph, pd.DataFrame]:
     with timer(section_name="Initial raw data loading"):
         all_df = pd.read_csv(RAW_DATA_CSV, usecols=RELEVANT_COLUMNS)
-        movies_df = all_df[all_df['type']=='Movie'].drop(columns=['type']).dropna()
         #all_df = all_df[all_df.country.str.find(r'United States')>=0]
+        all_df = all_df[:200]
+        movies_df = all_df[all_df['type']=='Movie'].drop(columns=['type']).dropna()
         for column in COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING:
             movies_df = expand_dataframe_list_values_for_column(movies_df, column)
         movies_df = movies_df.rename(columns={'cast': 'actor'})
-        movies_df = movies_df[movies_df.director != movies_df.actor]
+        movies_df = movies_df[~movies_df.actor.isin(movies_df.director)]
         print(f'Original Number of Directors: {len(movies_df.director.unique())}')
         print(f'Original Number of Actors: {len(movies_df.actor.unique())}')
         movies_df.to_csv(DIRECTOR_ACTOR_EDGE_LIST_CSV, index=False)
         movies_graph = nx.from_pandas_edgelist(movies_df, 'actor', 'director')
+        assert nx.is_bipartite(movies_graph)
+        assert len(set(movies_df.actor) & set (movies_df.director)) == 0
     return movies_graph, movies_df
 
 ##################
 # Project Graphs #
 ##################
 
-def project_actor_graph(movies_graph: nx.Graph, movies_df.DataFrame, output_queue: mp.Queue):
-    output_string = None
+@trace
+def project_actor_graph_serial(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> nx.Graph:
+    full_projected_actors_graph = nx.projected_graph(movies_graph, movies_df['actor'])
+    projected_actors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_actors_graph)
+    projected_actors_edgelist = projected_actors_edgelist.rename(columns={"source": "source_actor", "target": "target_actor"})
+    projected_actors_edgelist.to_csv(PROJECTED_ACTORS_CSV, index=False)
+    print(f"Number of Actors: {len(full_projected_actors_graph.nodes)}")
+    assert set(projected_actors_edgelist.stack().unique()).issubset(set(full_projected_actors_graph.nodes))
+    assert set(projected_actors_edgelist.stack().unique()).issubset(set(movies_df.actor.unique()))
+    return full_projected_actors_graph
+
+@trace
+def project_director_graph_serial(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> nx.Graph:
+    print("director 1")
+    full_projected_directors_graph = nx.projected_graph(movies_graph, movies_df['director'])
+    print("director 2")
+    projected_directors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_directors_graph)
+    print("director 3")
+    projected_directors_edgelist = projected_directors_edgelist.rename(columns={"source": "source_director", "target": "target_director"})
+    print("director 4")
+    projected_directors_edgelist.to_csv(PROJECTED_DIRECTORS_CSV, index=False)
+    print(f"Number of Directors: {len(full_projected_directors_graph.nodes)}")
+    assert set(projected_directors_edgelist.stack().unique()).issubset(set(full_projected_directors_graph.nodes))
+    assert set(projected_directors_edgelist.stack().unique()).issubset(set(movies_df.director.unique()))
+    return full_projected_directors_graph
+
+@trace
+def project_actor_graph(movies_graph: nx.Graph, movies_df: pd.DataFrame, output_queue: mp.Queue) -> None:
+    output_dict = dict()
     def note_output_string(new_output_string_value: str) -> None:
-        output_string = new_output_string_value
+        output_dict['output_string'] = new_output_string_value
         return
     with redirected_output(note_output_string):
         with timer(section_name="Actor graph projection"):
-            full_projected_actors_graph = nx.projected_graph(movies_graph, movies_df['actor'])
-            projected_actors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_actors_graph)
-            projected_actors_edgelist = projected_actors_edgelist.rename(columns={"source": "source_actor", "target": "target_actor"})
-            projected_actors_edgelist.to_csv(PROJECTED_ACTORS_CSV, index=False)
-            print(f"Number of Actors: {len(full_projected_actors_graph.nodes)}")
-            assert set(projected_actors_edgelist.stack().unique()).issubset(set(full_projected_actors_graph.nodes))
-            #assert set(projected_actors_edgelist.stack().unique()).issubset(set(movies_df.actor.unique()))
-    output_queue.put((full_projected_actors_graph, output_string))
+            full_projected_actors_graph = project_actor_graph_serial(movies_graph, movies_df)
+    output_queue.put((full_projected_actors_graph, output_dict['output_string']))
+    assert len(output_dict)==1
     return 
 
-def project_director_graph(movies_graph: nx.Graph, movies_df.DataFrame, output_queue: mp.Queue) -> None:
-    output_string = None
+@trace
+def project_director_graph(movies_graph: nx.Graph, movies_df: pd.DataFrame, output_queue: mp.Queue) -> None:
+    output_dict = dict()
     def note_output_string(new_output_string_value: str) -> None:
-        output_string = new_output_string_value
+        output_dict['output_string'] = new_output_string_value
         return
     with redirected_output(note_output_string):
         with timer(section_name="Director graph projection"):
-            full_projected_directors_graph = nx.projected_graph(movies_graph, movies_df['director'])
-            projected_directors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_directors_graph)
-            projected_directors_edgelist = projected_directors_edgelist.rename(columns={"source": "source_director", "target": "target_director"})
-            projected_directors_edgelist.to_csv(PROJECTED_DIRECTORS_CSV, index=False)
-            print(f"Number of Directors: {len(full_projected_directors_graph.nodes)}")
-            assert set(projected_directors_edgelist.stack().unique()).issubset(set(full_projected_directors_graph.nodes))
-            #assert set(projected_directors_edgelist.stack().unique()).issubset(set(movies_df.director.unique()))
-    output_queue.put((full_projected_directors_graph, output_string))
+            full_projected_directors_graph = project_director_graph_serial(movies_graph, movies_df)
+    output_queue.put((full_projected_directors_graph, output_dict['output_string']))
+    assert len(output_dict)==1
     return
 
-def project_graphs(movies_graph: nx.Graph, movies_df.DataFrame) -> Tuple[nx.Graph, nx.Graph]:
+@trace
+def project_graphs_serial(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> Tuple[nx.Graph, nx.Graph]:
+    full_projected_actors_graph = project_actor_graph_serial(movies_graph, movies_df)
+    full_projected_directors_graph = project_director_graph_serial(movies_graph, movies_df)
+    return full_projected_actors_graph, full_projected_directors_graph
+
+@trace
+def project_graphs_concurrent(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> Tuple[nx.Graph, nx.Graph]:
+    print()
     actor_output_queue = mp.Queue()
-    actor_process = mp.Process(target=project_actor_graph, args=(movies_graph, movies_df, output_queue))
+    actor_process = mp.Process(target=project_actor_graph, args=(movies_graph, movies_df, actor_output_queue))
     actor_process.start()
+    print("Started projection of actors.")
 
     director_output_queue = mp.Queue()
-    director_process = mp.Process(target=project_director_graph, args=(movies_graph, movies_df, output_queue))
+    director_process = mp.Process(target=project_director_graph, args=(movies_graph, movies_df, director_output_queue))
     director_process.start()
+    print("Started projection of directors.")
     
+    print()
+    print("joining")
     actor_process.join()
     director_process.join()
+    print("done joining")
     full_projected_actors_graph, actor_printouts = actor_output_queue.get()
     full_projected_directors_graph, director_printouts = director_output_queue.get()
     print(actor_printouts)
@@ -128,6 +162,11 @@ def project_graphs(movies_graph: nx.Graph, movies_df.DataFrame) -> Tuple[nx.Grap
     
     return full_projected_actors_graph, full_projected_directors_graph
 
+@trace
+def project_graphs(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> Tuple[nx.Graph, nx.Graph]:
+    return project_graphs_concurrent(movies_graph, movies_df)
+    #return project_graphs_serial(movies_graph, movies_df)
+
 ##########################
 # Generate K-Core Graphs #
 ##########################
@@ -135,7 +174,7 @@ def project_graphs(movies_graph: nx.Graph, movies_df.DataFrame) -> Tuple[nx.Grap
 def generate_k_core_graph(full_projected_graph: nx.Graph, k: int, graph_node_type: str) -> None:
     k_core_graph = nx.k_core(full_projected_graph, k)
     k_core_edgelist = nx.convert_matrix.to_pandas_edgelist(k_core_graph)
-    k_core_edgelist = k_core_actors_edgelist.rename(columns={'source': f'source_{graph_node_type}', 'target': f'target_{graph_node_type}'})
+    k_core_edgelist = k_core_edgelist.rename(columns={'source': f'source_{graph_node_type}', 'target': f'target_{graph_node_type}'})
     template = K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE if graph_node_type == 'actor' else K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE
     k_core_edgelist.to_csv(template%k, index=False)
     return
@@ -145,15 +184,15 @@ def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected
     with timer(section_name="K-core computation"):
         processes: List[mp.Process] = []
         for k in sorted_k_core_choices_for_k:
-            actor_process = mp.Process(f=generate_k_core_graph, args=(full_projected_actors_graph, k, 'actor'))
+            actor_process = mp.Process(target=generate_k_core_graph, args=(full_projected_actors_graph, k, 'actor'))
             actor_process.start()
             processes.append(actor_process)
             
-            director_process = mp.Process(f=generate_k_core_graph, args=(full_projected_directors_graph, k, 'director'))
+            director_process = mp.Process(target=generate_k_core_graph, args=(full_projected_directors_graph, k, 'director'))
             director_process.start()
-            processes.append(process)
+            processes.append(director_process)
         
-        for process in processes:
+        for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join K-Core Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
             process.join()
     return
 
@@ -165,6 +204,8 @@ def preprocess_data() -> None:
     movies_graph, movies_df = load_raw_data()
     full_projected_actors_graph, full_projected_directors_graph = project_graphs(movies_graph, movies_df)
     generate_k_core_graphs(full_projected_actors_graph, full_projected_directors_graph)
+    print()
+    print('Done.')
     return
 
 @debug_on_error
