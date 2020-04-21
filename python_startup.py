@@ -89,6 +89,7 @@ def doc(obj) -> None:
     print(inspect.getdoc(obj))
     return
 
+from typing import Iterable
 def p1(iterable: Iterable) -> None:
     for e in iterable:
         print(e)
