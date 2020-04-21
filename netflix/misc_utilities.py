@@ -1,5 +1,14 @@
 #!/usr/bin/python3
 
+from typing import List
+def parallel_map(*args, **kwargs) -> List:
+    import multiprocessing
+    p = multiprocessing.Pool()
+    result = p.map(*args, **kwargs)
+    p.close()
+    p.join()
+    return result
+
 from typing import Callable, Union
 from contextlib import contextmanager
 @contextmanager

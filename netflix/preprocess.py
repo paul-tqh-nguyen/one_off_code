@@ -9,7 +9,6 @@ import pandas as pd
 import networkx as nx
 import multiprocessing as mp
 from typing import List, Tuple
-from functools import reduce
 
 from misc_utilities import timer, debug_on_error, redirected_output, tqdm_with_message, trace
 

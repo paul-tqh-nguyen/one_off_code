@@ -266,6 +266,7 @@ def at_most_one(items: List):
 
 from typing import List
 def parallel_map(*args, **kwargs) -> List:
+    import multiprocessing
     p = multiprocessing.Pool()
     result = p.map(*args, **kwargs)
     p.close()
