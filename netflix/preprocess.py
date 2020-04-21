@@ -103,13 +103,13 @@ def preprocess_data() -> None:
         projected_actors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_actors_graph)
         projected_actors_edgelist.rename(columns={"source": "source_actor", "target": "target_actor"})
         projected_actors_edgelist.to_csv(PROJECTED_ACTORS_CSV, index=False)
-        print(f"Number of Actors: {len(projected_actors_graph.nodes)}")
+        print(f"Number of Actors: {len(full_projected_actors_graph.nodes)}")
     with timer(section_name="Director graph projection"):
         full_projected_directors_graph = nx.projected_graph(movies_graph, movies_df['director'])
         projected_directors_edgelist = nx.convert_matrix.to_pandas_edgelist(full_projected_directors_graph)
         projected_directors_edgelist.rename(columns={"source": "source_director", "target": "target_director"})
         projected_directors_edgelist.to_csv(PROJECTED_DIRECTORS_CSV, index=False)
-        print(f"Number of Directors: {len(projected_directors_graph.nodes)}")
+        print(f"Number of Directors: {len(full_projected_directors_graph.nodes)}")
     with timer(section_name="Actor/Director graph projection visualization"):
         def _visualize(input_values) -> None:
             k, full_projected_directors_graph, output_png_file_name = input_values

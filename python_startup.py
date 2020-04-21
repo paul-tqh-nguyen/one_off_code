@@ -228,10 +228,10 @@ from typing import List
 def at_most_one(items: List):
     return only_one(items) if items else None
 
-from typing import Iterable, Callable, List
-def parallel_map(func: Callable, iterable: Iterable) -> List:
+from typing import List
+def parallel_map(*args, **kwargs) -> List:
     p = multiprocessing.Pool()
-    result = p.map(func, iterable)
+    result = p.map(*args, **kwargs)
     p.close()
     p.join()
     return result
