@@ -181,7 +181,7 @@ def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected
 # Generate Clusters #
 #####################
 
-# Label Propagation 
+# Label Propagation
 
 def generate_label_propagation_csv(graph: nx.Graph, csv_file: str) -> None:
     communities = nx.algorithms.community.label_propagation.label_propagation_communities(graph)
