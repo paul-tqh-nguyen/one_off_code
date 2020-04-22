@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import networkx as nx
 from functools import reduce
-from typing import Union
+from typing import Union, Tuple
 
 from misc_utilities import timer, histogram, temp_plt_figure, timeout, debug_on_error, parallel_map
 from preprocess import K_CORE_CHOICES_FOR_K
@@ -37,7 +37,7 @@ def node_label_csv_file_into_label_to_nodes_map(node_label_csv_file: str) -> dic
         if label in label_to_nodes_map:
             label_to_nodes_map[label].add(node)
         else:
-            label_to_nodes_map[label] = node
+            label_to_nodes_map[label] = {node}
     return label_to_nodes_map
 
 ###########
@@ -62,7 +62,7 @@ def draw_graph_to_file(output_location: str, graph: nx.Graph, label_to_nodes_map
                                width=1,
                                alpha=0.1,
                                edge_color=EDGE_COLOR)
-        if node_labels_df:
+        if label_to_nodes_map:
             for label, nodes in label_to_nodes_map.items():
                 node_color = random_hex_color()
                 nx.draw_networkx_nodes(graph,
@@ -99,10 +99,12 @@ def visualize_k_core_csv(csv_file: str) -> None:
 
 def visualize_community_csv(edge_list_csv_label_csv_pair: Tuple[str,str]) -> None:
     edge_list_csv_file, node_label_csv_file = edge_list_csv_label_csv_pair
+    print(f"edge_list_csv_file {repr(edge_list_csv_file)}")
+    print(f"node_label_csv_file {repr(node_label_csv_file)}")
     edge_list_df = pd.read_csv(edge_list_csv_file)
-    graph = nx.from_pandas_edgelist(df, 'source', 'target')
-    png_file = '.'.join(label_csv_file.split('.')[:-1])+'.png'
-    assert label_csv_file[:-4] == png_file[:-4]
+    graph = nx.from_pandas_edgelist(edge_list_df, 'source', 'target')
+    png_file = '.'.join(node_label_csv_file.split('.')[:-1])+'.png'
+    assert node_label_csv_file[:-4] == png_file[:-4]
     label_to_nodes_map = node_label_csv_file_into_label_to_nodes_map(node_label_csv_file)
     draw_graph_to_file(png_file, graph, label_to_nodes_map)
     return 

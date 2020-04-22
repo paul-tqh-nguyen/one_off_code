@@ -1,5 +1,37 @@
 #!/usr/bin/python3
 
+TRACE_INDENT_LEVEL = 0
+TRACE_INDENTATION = '    '
+TRACE_VALUE_SIZE_LIMIT = 200
+from typing import Callable
+def trace(func: Callable) -> Callable:
+    from inspect import signature
+    import sys
+    import random
+    def human_readable_value(value) -> str:
+        readable_value = repr(value)
+        if len(readable_value) > TRACE_VALUE_SIZE_LIMIT:
+            readable_value = readable_value[:TRACE_VALUE_SIZE_LIMIT]+'...'
+        return readable_value
+    def decorating_function(*args, **kwargs):
+        arg_values_string = ', '.join((f'{param_name}={human_readable_value(value)}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
+        probably_unique_id = random.randint(10,99)
+        global TRACE_INDENT_LEVEL, TRACE_INDENTATION
+        entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] {func.__name__}({arg_values_string})'
+        with std_out(sys.__stdout__):
+            print()
+            print(entry_line)
+            print()
+        TRACE_INDENT_LEVEL += 1
+        result = func(*args, **kwargs)
+        TRACE_INDENT_LEVEL -= 1
+        with std_out(sys.__stdout__):
+            print()
+            print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] returned {result}')
+            print()
+        return result
+    return decorating_function
+
 from typing import List
 def parallel_map(*args, **kwargs) -> List:
     import multiprocessing
@@ -86,32 +118,6 @@ def std_out(stream: io.TextIOWrapper) -> None:
     yield
     sys.stdout = original_std_out
     return
-
-TRACE_INDENT_LEVEL = 0
-TRACE_INDENTATION = '    '
-TRACE_VALUE_SIZE_LIMIT = 20
-from typing import Callable
-def trace(func: Callable) -> Callable:
-    from inspect import signature
-    import sys
-    def human_readable_value(value) -> str:
-        readable_value = repr(value)
-        if len(readable_value) > TRACE_VALUE_SIZE_LIMIT:
-            readable_value = readable_value[:TRACE_VALUE_SIZE_LIMIT]+'...'
-        return readable_value
-    def decorating_function(*args, **kwargs):
-        arg_values_string = ', '.join((f'{param_name}={human_readable_value(value)}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
-        global TRACE_INDENT_LEVEL, TRACE_INDENTATION
-        entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] {func.__name__}({arg_values_string})'
-        with std_out(sys.__stdout__):
-            print(entry_line)
-        TRACE_INDENT_LEVEL += 1
-        result = func(*args, **kwargs)
-        TRACE_INDENT_LEVEL -= 1
-        with std_out(sys.__stdout__):
-            print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] returned {result}')
-        return result
-    return decorating_function
 
 from typing import Callable
 def debug_on_error(func: Callable) -> Callable:
