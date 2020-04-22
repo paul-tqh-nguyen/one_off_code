@@ -8,7 +8,8 @@ import math
 import pandas as pd
 import networkx as nx
 import multiprocessing as mp
-from typing import List, Tuple
+import community as community_louvain
+from typing import List, Tuple, Union
 
 from misc_utilities import timer, debug_on_error, redirected_output, tqdm_with_message, trace
 
@@ -30,11 +31,17 @@ K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE = './projected_actors_k_core_%d.csv'
 K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE = './projected_directors_k_core_%d.csv'
 K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
 
+ACTORS_LABEL_PROP_CSV_TEMPLATE = './projected_actors_k_core_%d_label_propagation.csv'
+DIRECTORS_LABEL_PROP_CSV_TEMPLATE = './projected_directors_k_core_%d_label_propagation.csv'
+
+ACTORS_LOUVAIN_CSV_TEMPLATE = './projected_actors_k_core_%d_louvain.csv'
+DIRECTORS_LOUVAIN_CSV_TEMPLATE = './projected_directors_k_core_%d_louvain.csv'
+
 #################
 # Load Raw Data #
 #################
 
-def expand_dataframe_list_values_for_column(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+def expand_dataframe_list_values_for_column(df: pd.DataFrame, column_name: Union[str, int]) -> pd.DataFrame:
     return df.apply(lambda x: pd.Series(x[column_name].split(', ')), axis=1) \
                   .stack() \
                   .reset_index(level=1, drop=True) \
@@ -170,6 +177,69 @@ def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected
             process.join()
     return k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map
 
+#####################
+# Generate Clusters #
+#####################
+
+# Label Propagation 
+
+def generate_label_propagation_csv(graph: nx.Graph, csv_file: str) -> None:
+    communities = nx.algorithms.community.label_propagation.label_propagation_communities(graph)
+    node_to_label_map = dict()
+    for label, nodes in enumerate(communities):
+        for node in nodes:
+            assert node not in node_to_label_map
+            node_to_label_map[node] = label
+    label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index')
+    label_df.to_csv(csv_file, index_label='node', header=['label'])
+    return
+
+def generate_label_propagation_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = ACTORS_LABEL_PROP_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_label_propagation_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = DIRECTORS_LABEL_PROP_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_label_propagation_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Louvain
+
+def generate_louvain_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_label_map = community_louvain.best_partition(graph)
+    label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index')
+    label_df.to_csv(csv_file, index_label='node', header=['label'])
+    return
+
+def generate_louvain_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = ACTORS_LOUVAIN_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_louvain_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = DIRECTORS_LOUVAIN_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_louvain_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Top-Level
+
+def generate_clusters_for_k_core_graphs(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> None:
+    processes: List[mp.Process] = []
+    processes = processes + generate_label_propagation_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_louvain_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Cluster Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+        process.join()
+    return
+
 ########
 # Main #
 ########
@@ -178,6 +248,7 @@ def preprocess_data() -> None:
     movies_graph, movies_df = load_raw_data()
     full_projected_actors_graph, full_projected_directors_graph = project_graphs(movies_graph, movies_df)
     k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map = generate_k_core_graphs(full_projected_actors_graph, full_projected_directors_graph)
+    generate_clusters_for_k_core_graphs(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
     print()
     print('Done.')
     return
