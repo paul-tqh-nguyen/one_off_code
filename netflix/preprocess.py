@@ -13,9 +13,6 @@ from typing import List, Tuple, Union
 
 from misc_utilities import timer, debug_on_error, redirected_output, tqdm_with_message, trace
 
-def tqdm_with_message(*args, **kwargs): # @todo remove this
-    return args[0]
-
 ###########
 # Globals #
 ###########
@@ -26,20 +23,19 @@ RELEVANT_COLUMNS = ['title', 'cast', 'director', 'country', 'type', 'listed_in']
 COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING = ['cast', 'director']
 assert set(COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING).issubset(RELEVANT_COLUMNS)
 
-DIRECTOR_ACTOR_EDGE_LIST_CSV = './director_actor_edge_list.csv'
-PROJECTED_ACTORS_CSV = './projected_actors.csv'
-PROJECTED_DIRECTORS_CSV = './projected_directors.csv'
+DIRECTOR_ACTOR_EDGE_LIST_CSV = './output/director_actor_edge_list.csv'
+PROJECTED_ACTORS_CSV = './output/projected_actors.csv'
+PROJECTED_DIRECTORS_CSV = './output/projected_directors.csv'
 
-K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE = './projected_actors_k_core_%d.csv'
-K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE = './projected_directors_k_core_%d.csv'
-#K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
-K_CORE_CHOICES_FOR_K = [45]
+K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE = './output/projected_actors_k_core_%d.csv'
+K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE = './output/projected_directors_k_core_%d.csv'
+K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
 
-ACTORS_LABEL_PROP_CSV_TEMPLATE = './projected_actors_k_core_%d_label_propagation.csv'
-DIRECTORS_LABEL_PROP_CSV_TEMPLATE = './projected_directors_k_core_%d_label_propagation.csv'
+ACTORS_LABEL_PROP_CSV_TEMPLATE = './output/projected_actors_k_core_%d_label_propagation.csv'
+DIRECTORS_LABEL_PROP_CSV_TEMPLATE = './output/projected_directors_k_core_%d_label_propagation.csv'
 
-ACTORS_LOUVAIN_CSV_TEMPLATE = './projected_actors_k_core_%d_louvain.csv'
-DIRECTORS_LOUVAIN_CSV_TEMPLATE = './projected_directors_k_core_%d_louvain.csv'
+ACTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_actors_k_core_%d_louvain.csv'
+DIRECTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_directors_k_core_%d_louvain.csv'
 
 #################
 # Load Raw Data #
@@ -146,22 +142,14 @@ def project_graphs(movies_graph: nx.Graph, movies_df: pd.DataFrame) -> Tuple[nx.
 # Generate K-Core Graphs #
 ##########################
 
-@trace
 def generate_k_core_graph(full_projected_graph: nx.Graph, k: int, graph_node_type: str, output_queue: mp.SimpleQueue) -> None:
     k_core_graph = nx.k_core(full_projected_graph, k)
     k_core_edgelist = nx.convert_matrix.to_pandas_edgelist(k_core_graph)
     template = K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE if graph_node_type == 'actor' else K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE
     k_core_edgelist.to_csv(template%k, index=False)
-    import time, random; time.sleep(random.randint(1,3))
-    print(f"graph_node_type {repr(graph_node_type)}")
-    print(f"k_core_graph {repr(k_core_graph)}")
-    print(f"len(k_core_graph) {repr(len(k_core_graph))}")
-    print(f"len(k_core_edgelist) {repr(len(k_core_edgelist))}")
-    print(f"template%k {repr(template%k)}")
     output_queue.put((k_core_graph, graph_node_type, k))
     return
 
-@trace
 def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected_directors_graph: nx.Graph) -> Tuple[dict,dict]:
     k_to_actor_k_core_graph_map = dict()
     k_to_director_k_core_graph_map = dict()
@@ -180,13 +168,6 @@ def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected
         
         for _ in tqdm_with_message(range(len(processes)), post_yield_message_func = lambda index: f'Gathering Results from K-Core Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
             k_core_graph, graph_node_type, k = output_queue.get()
-            print('===============================================')
-            print('generate_k_core_graphs')
-            print(f"graph_node_type {repr(graph_node_type)}")
-            print(f"k {k}")
-            print(f"k_core_graph {repr(k_core_graph)}")
-            print(f"len(k_core_graph) {repr(len(k_core_graph))}")
-            print('===============================================')
             if graph_node_type == 'actor':
                 k_to_actor_k_core_graph_map[k] = k_core_graph
             else:
@@ -211,38 +192,25 @@ def write_node_to_label_map_to_csv(node_to_label_map: dict, csv_file: str) -> No
 
 # Label Propagation
 
-@trace
 def generate_label_propagation_csv(graph: nx.Graph, csv_file: str) -> None:
-    print(f"csv_file {repr(csv_file)}")
-    print(f"len(graph.nodes) {len(graph.nodes)}")
     communities = nx.algorithms.community.label_propagation.label_propagation_communities(graph)
     node_to_label_map = dict()
     for label, nodes in enumerate(communities):
         for node in nodes:
             assert node not in node_to_label_map
             node_to_label_map[node] = label
-    print(f"node_to_label_map {node_to_label_map}")
     write_node_to_label_map_to_csv(node_to_label_map, csv_file)
     return
 
-@trace
 def generate_label_propagation_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
     processes: List[mp.Process] = []
     for k, graph in k_to_actor_k_core_graph_map.items():
         csv_file = ACTORS_LABEL_PROP_CSV_TEMPLATE%k
-        print(f"csv_file {repr(csv_file)}")
-        print(f"k {k}")
-        print(f"graph {repr(graph)}")
-        print(f"len(graph.nodes) {len(graph.nodes)}")
         process = mp.Process(target=generate_label_propagation_csv, args=(graph,csv_file))
         process.start()
         processes.append(process)
     for k, graph in k_to_director_k_core_graph_map.items():
         csv_file = DIRECTORS_LABEL_PROP_CSV_TEMPLATE%k
-        print(f"csv_file {repr(csv_file)}")
-        print(f"k {k}")
-        print(f"graph {repr(graph)}")
-        print(f"len(graph.nodes) {len(graph.nodes)}")
         process = mp.Process(target=generate_label_propagation_csv, args=(graph,csv_file))
         process.start()
         processes.append(process)
@@ -250,21 +218,19 @@ def generate_label_propagation_processes(k_to_actor_k_core_graph_map: dict, k_to
 
 # Louvain
 
-@trace
 def generate_louvain_csv(graph: nx.Graph, csv_file: str) -> None:
     node_to_label_map = community_louvain.best_partition(graph)
-    print(f"node_to_label_map {node_to_label_map}")
     write_node_to_label_map_to_csv(node_to_label_map, csv_file)
     return
 
 def generate_louvain_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
     processes: List[mp.Process] = []
-    for k, graph in k_to_director_k_core_graph_map.items():
+    for k, graph in k_to_actor_k_core_graph_map.items():
         csv_file = ACTORS_LOUVAIN_CSV_TEMPLATE%k
         process = mp.Process(target=generate_louvain_csv, args=(graph,csv_file))
         process.start()
         processes.append(process)
-    for k, graph in k_to_actor_k_core_graph_map.items():
+    for k, graph in k_to_director_k_core_graph_map.items():
         csv_file = DIRECTORS_LOUVAIN_CSV_TEMPLATE%k
         process = mp.Process(target=generate_louvain_csv, args=(graph,csv_file))
         process.start()
@@ -273,7 +239,6 @@ def generate_louvain_processes(k_to_actor_k_core_graph_map: dict, k_to_director_
 
 # Top-Level
 
-@trace
 def generate_clusters_for_k_core_graphs(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> None:
     processes: List[mp.Process] = []
     processes = processes + generate_label_propagation_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
