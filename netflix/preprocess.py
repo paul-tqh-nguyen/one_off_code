@@ -181,9 +181,9 @@ def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected
 # Generate Clusters #
 #####################
 
-def write_node_to_label_map_to_csv(node_to_label_map: dict) -> None:
+def write_node_to_label_map_to_csv(node_to_label_map: dict, csv_file: str) -> None:
     if len(node_to_label_map) == 0:
-        with open(csv_file, 'wb') as f:
+        with open(csv_file, 'w') as f:
             f.write('node,label')
     else:
         label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index')
@@ -199,7 +199,7 @@ def generate_label_propagation_csv(graph: nx.Graph, csv_file: str) -> None:
         for node in nodes:
             assert node not in node_to_label_map
             node_to_label_map[node] = label
-    write_node_to_label_map_to_csv(node_to_label_map)
+    write_node_to_label_map_to_csv(node_to_label_map, csv_file)
     return
 
 def generate_label_propagation_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
@@ -220,7 +220,7 @@ def generate_label_propagation_processes(k_to_actor_k_core_graph_map: dict, k_to
 
 def generate_louvain_csv(graph: nx.Graph, csv_file: str) -> None:
     node_to_label_map = community_louvain.best_partition(graph)
-    write_node_to_label_map_to_csv(node_to_label_map)
+    write_node_to_label_map_to_csv(node_to_label_map, csv_file)
     return
 
 def generate_louvain_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
