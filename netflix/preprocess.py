@@ -4,6 +4,7 @@
 # Imports #
 ###########
 
+import os
 import math
 import pandas as pd
 import networkx as nx
@@ -23,19 +24,16 @@ RELEVANT_COLUMNS = ['title', 'cast', 'director', 'country', 'type', 'listed_in']
 COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING = ['cast', 'director']
 assert set(COLUMNS_WITH_LIST_VALUES_WORTH_EXPANDING).issubset(RELEVANT_COLUMNS)
 
+if not os.path.isdir('./output/'):
+    os.makedirs('./output/')
 DIRECTOR_ACTOR_EDGE_LIST_CSV = './output/director_actor_edge_list.csv'
 PROJECTED_ACTORS_CSV = './output/projected_actors.csv'
 PROJECTED_DIRECTORS_CSV = './output/projected_directors.csv'
 
 K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE = './output/projected_actors_k_core_%d.csv'
 K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE = './output/projected_directors_k_core_%d.csv'
-K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
-
-ACTORS_LABEL_PROP_CSV_TEMPLATE = './output/projected_actors_k_core_%d_label_propagation.csv'
-DIRECTORS_LABEL_PROP_CSV_TEMPLATE = './output/projected_directors_k_core_%d_label_propagation.csv'
-
-ACTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_actors_k_core_%d_louvain.csv'
-DIRECTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_directors_k_core_%d_louvain.csv'
+#K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
+K_CORE_CHOICES_FOR_K = [45]
 
 #################
 # Load Raw Data #
@@ -177,9 +175,9 @@ def generate_k_core_graphs(full_projected_actors_graph: nx.Graph, full_projected
             process.join()
     return k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map
 
-#####################
-# Generate Clusters #
-#####################
+########################
+# Generate Communities #
+########################
 
 def write_node_to_label_map_to_csv(node_to_label_map: dict, csv_file: str) -> None:
     if len(node_to_label_map) == 0:
@@ -191,6 +189,9 @@ def write_node_to_label_map_to_csv(node_to_label_map: dict, csv_file: str) -> No
     return
 
 # Label Propagation
+
+ACTORS_LABEL_PROP_CSV_TEMPLATE = './output/projected_actors_k_core_%d_label_propagation.csv'
+DIRECTORS_LABEL_PROP_CSV_TEMPLATE = './output/projected_directors_k_core_%d_label_propagation.csv'
 
 def generate_label_propagation_csv(graph: nx.Graph, csv_file: str) -> None:
     communities = nx.algorithms.community.label_propagation.label_propagation_communities(graph)
@@ -218,6 +219,9 @@ def generate_label_propagation_processes(k_to_actor_k_core_graph_map: dict, k_to
 
 # Louvain
 
+ACTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_actors_k_core_%d_louvain.csv'
+DIRECTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_directors_k_core_%d_louvain.csv'
+
 def generate_louvain_csv(graph: nx.Graph, csv_file: str) -> None:
     node_to_label_map = community_louvain.best_partition(graph)
     write_node_to_label_map_to_csv(node_to_label_map, csv_file)
@@ -239,11 +243,266 @@ def generate_louvain_processes(k_to_actor_k_core_graph_map: dict, k_to_director_
 
 # Top-Level
 
-def generate_clusters_for_k_core_graphs(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> None:
+def generate_communities_for_k_core_graphs(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> None:
     processes: List[mp.Process] = []
     processes = processes + generate_label_propagation_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
     processes = processes + generate_louvain_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
-    for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Cluster Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+    for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Community Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+        process.join()
+    return
+
+############################
+# Generate Vertex Rankings #
+############################
+
+def write_node_to_value_map_to_csv(node_to_value_map: dict, csv_file: str) -> None:
+    if len(node_to_value_map) == 0:
+        with open(csv_file, 'w') as f:
+            f.write('node,value')
+    else:
+        value_df = pd.DataFrame.from_dict(node_to_value_map, orient='index')
+        assert len(value_df.columns) == 1
+        value_df.to_csv(csv_file, index_label='node', header=['value'])
+    return
+
+# HITS
+
+ACTORS_HITS_AUTHORITY_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_hits_authority.csv'
+DIRECTORS_HITS_AUTHORITY_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_hits_authority.csv'
+
+ACTORS_HITS_HUB_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_hits_hub.csv'
+DIRECTORS_HITS_HUB_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_hits_hub.csv'
+
+def generate_hits_csv(graph: nx.Graph, hub_csv_file: str, authority_csv_file: str) -> None:
+    node_to_hub_value_map, node_to_authority_value_map = nx.hits(graph, normalized=True)
+    write_node_to_value_map_to_csv(node_to_hub_value_map, hub_csv_file)
+    write_node_to_value_map_to_csv(node_to_authority_value_map, authority_csv_file)
+    return
+
+def generate_hits_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        hub_csv_file = ACTORS_HITS_HUB_CSV_TEMPLATE%k
+        authority_csv_file = ACTORS_HITS_AUTHORITY_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_hits_csv, args=(graph,hub_csv_file,authority_csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        hub_csv_file = DIRECTORS_HITS_HUB_CSV_TEMPLATE%k
+        authority_csv_file = DIRECTORS_HITS_AUTHORITY_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_hits_csv, args=(graph,hub_csv_file,authority_csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Square Clustering Coefficient
+
+ACTORS_SQUARE_CLUSTERING_COEFFICIENT_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_square_clustering_coefficient.csv'
+DIRECTORS_SQUARE_CLUSTERING_COEFFICIENT_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_square_clustering_coefficient.csv'
+
+def generate_square_clustering_coefficient_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_value_map = nx.square_clustering(graph)
+    write_node_to_value_map_to_csv(node_to_value_map, csv_file)
+    return
+
+def generate_square_clustering_coefficient_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = ACTORS_SQUARE_CLUSTERING_COEFFICIENT_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_square_clustering_coefficient_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = DIRECTORS_SQUARE_CLUSTERING_COEFFICIENT_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_square_clustering_coefficient_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Clustering Coefficient
+
+ACTORS_CLUSTERING_COEFFICIENT_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_clustering_coefficient.csv'
+DIRECTORS_CLUSTERING_COEFFICIENT_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_clustering_coefficient.csv'
+
+def generate_clustering_coefficient_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_value_map = nx.clustering(graph)
+    write_node_to_value_map_to_csv(node_to_value_map, csv_file)
+    return
+
+def generate_clustering_coefficient_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = ACTORS_CLUSTERING_COEFFICIENT_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_clustering_coefficient_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = DIRECTORS_CLUSTERING_COEFFICIENT_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_clustering_coefficient_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# PageRank
+
+ACTORS_PAGERANK_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_pagerank.csv'
+DIRECTORS_PAGERANK_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_pagerank.csv'
+
+def generate_pagerank_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_value_map = nx.pagerank(graph)
+    write_node_to_value_map_to_csv(node_to_value_map, csv_file)
+    return
+
+def generate_pagerank_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = ACTORS_PAGERANK_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_pagerank_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = DIRECTORS_PAGERANK_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_pagerank_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Closeness
+
+ACTORS_CLOSENESS_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_closeness.csv'
+DIRECTORS_CLOSENESS_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_closeness.csv'
+
+def generate_closeness_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_value_map = nx.closeness_centrality(graph) if len(graph.nodes) > 0 else dict()
+    write_node_to_value_map_to_csv(node_to_value_map, csv_file)
+    return
+
+def generate_closeness_centrality_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = ACTORS_CLOSENESS_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_closeness_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = DIRECTORS_CLOSENESS_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_closeness_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Betweenness
+
+ACTORS_BETWEENNESS_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_betweenness.csv'
+DIRECTORS_BETWEENNESS_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_betweenness.csv'
+
+def generate_betweenness_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_value_map = nx.betweenness_centrality(graph) if len(graph.nodes) > 0 else dict()
+    write_node_to_value_map_to_csv(node_to_value_map, csv_file)
+    return
+
+def generate_betweenness_centrality_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = ACTORS_BETWEENNESS_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_betweenness_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = DIRECTORS_BETWEENNESS_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_betweenness_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Eigenvector
+
+ACTORS_EIGENVECTOR_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_eigenvector.csv'
+DIRECTORS_EIGENVECTOR_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_eigenvector.csv'
+
+def generate_eigenvector_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_value_map = nx.eigenvector_centrality(graph) if len(graph.nodes) > 0 else dict() if len(graph.nodes) > 0 else dict()
+    write_node_to_value_map_to_csv(node_to_value_map, csv_file)
+    return
+
+def generate_eigenvector_centrality_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = ACTORS_EIGENVECTOR_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_eigenvector_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = DIRECTORS_EIGENVECTOR_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_eigenvector_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Degree
+
+ACTORS_DEGREE_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_degree.csv'
+DIRECTORS_DEGREE_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_degree.csv'
+
+def generate_degree_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_value_map = nx.degree_centrality(graph) if len(graph.nodes) > 0 else dict()
+    write_node_to_value_map_to_csv(node_to_value_map, csv_file)
+    return
+
+def generate_degree_centrality_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = ACTORS_DEGREE_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_degree_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = DIRECTORS_DEGREE_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_degree_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Katz
+
+KATZ_ALHPA = 0.01
+ACTORS_KATZ_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_katz.csv'
+DIRECTORS_KATZ_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_katz.csv'
+
+def generate_katz_csv(graph: nx.Graph, csv_file: str) -> None:
+    node_to_value_map = nx.katz_centrality(graph, KATZ_ALHPA)
+    write_node_to_value_map_to_csv(node_to_value_map, csv_file)
+    return
+
+def generate_katz_centrality_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        csv_file = ACTORS_KATZ_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_katz_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        csv_file = DIRECTORS_KATZ_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_katz_csv, args=(graph,csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+# Top-Level
+
+def generate_vertex_rankings_for_k_core_graphs(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> None:
+    processes: List[mp.Process] = []
+    processes = processes + generate_katz_centrality_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_hits_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_square_clustering_coefficient_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_clustering_coefficient_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_pagerank_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_closeness_centrality_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_betweenness_centrality_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_eigenvector_centrality_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_degree_centrality_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    processes = processes + generate_katz_centrality_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Vertex Ranking Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
         process.join()
     return
 
@@ -255,7 +514,8 @@ def preprocess_data() -> None:
     movies_graph, movies_df = load_raw_data()
     full_projected_actors_graph, full_projected_directors_graph = project_graphs(movies_graph, movies_df)
     k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map = generate_k_core_graphs(full_projected_actors_graph, full_projected_directors_graph)
-    generate_clusters_for_k_core_graphs(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    generate_communities_for_k_core_graphs(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    generate_vertex_rankings_for_k_core_graphs(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
     print()
     print('Done.')
     return
