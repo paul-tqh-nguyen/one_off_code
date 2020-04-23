@@ -32,8 +32,7 @@ PROJECTED_DIRECTORS_CSV = './output/projected_directors.csv'
 
 K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE = './output/projected_actors_k_core_%d.csv'
 K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE = './output/projected_directors_k_core_%d.csv'
-#K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
-K_CORE_CHOICES_FOR_K = [45]
+K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
 
 #################
 # Load Raw Data #
@@ -274,7 +273,7 @@ ACTORS_HITS_HUB_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_hits_hub.cs
 DIRECTORS_HITS_HUB_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_hits_hub.csv'
 
 def generate_hits_csv(graph: nx.Graph, hub_csv_file: str, authority_csv_file: str) -> None:
-    node_to_hub_value_map, node_to_authority_value_map = nx.hits(graph, normalized=True)
+    node_to_hub_value_map, node_to_authority_value_map = nx.hits(graph, max_iter=1000, normalized=True)
     write_node_to_value_map_to_csv(node_to_hub_value_map, hub_csv_file)
     write_node_to_value_map_to_csv(node_to_authority_value_map, authority_csv_file)
     return
@@ -421,7 +420,7 @@ ACTORS_EIGENVECTOR_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_eigenvec
 DIRECTORS_EIGENVECTOR_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_eigenvector.csv'
 
 def generate_eigenvector_csv(graph: nx.Graph, csv_file: str) -> None:
-    node_to_value_map = nx.eigenvector_centrality(graph) if len(graph.nodes) > 0 else dict() if len(graph.nodes) > 0 else dict()
+    node_to_value_map = nx.eigenvector_centrality(graph, max_iter=1000) if len(graph.nodes) > 0 else dict()
     write_node_to_value_map_to_csv(node_to_value_map, csv_file)
     return
 
