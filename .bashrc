@@ -77,11 +77,11 @@ fi
 
 alias ssh-cuda="ssh dgx.corp.continuum.io"
 
-alias init-impact="cd ~/code/impact_of_attention && conda env create ; conda activate impact"
+alias init-impact="source ~/.bashrc ; cd ~/code/impact_of_attention && conda env create ; conda activate impact"
 alias del-impact="~/code/impact_of_attention && conda env remove --name impact"
 alias fresh-impact="del-impact && init-impact"
 
-alias init-reuters="cd ~/code/reuters_topic_labelling && conda env create ; conda activate reuters"
+alias init-reuters="source ~/.bashrc ; cd ~/code/reuters_topic_labelling && conda env create ; conda activate reuters"
 alias del-reuters="~/code/reuters_topic_labelling && conda env remove --name reuters"
 alias fresh-reuters="del-reuters && init-reuters"
 
@@ -89,7 +89,7 @@ alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml="
 && yes | conda install pandas \
 && :"
 alias goto-mg="cd ~/code/metagraph/"
-alias init-mg="goto-mg && conda env create ; conda activate mg \
+alias init-mg="source ~/.bashrc ; goto-mg && conda env create ; conda activate mg \
 && install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml \
 && pre-commit install \
 && python setup.py develop \
@@ -98,11 +98,9 @@ alias init-mg="goto-mg && conda env create ; conda activate mg \
 alias del-mg="goto-mg && conda env remove --name mg"
 alias fresh-mg="del-mg && init-mg"
 
-alias install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
-&& yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \
-&& :"
+# yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1
 alias goto-mgc="cd ~/code/metagraph-cuda/"
-alias init-mgc="goto-mgc && conda env create ; conda activate mgc \
+alias init-mgc="source ~/.bashrc ; goto-mgc && conda env create ; conda activate mgc \
 && pre-commit install \
 && python setup.py develop \
 && :"
