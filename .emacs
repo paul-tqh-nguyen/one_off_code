@@ -145,7 +145,7 @@
     `(defun ,function-name ()
        (interactive)
        (let* ((username "pnguyen")
-	      (host "192.168.131.229")
+	      (host "dgx.corp.continuum.io")
 	      (buffer-name ,buffer-name)
 	      (default-directory (format "/ssh:%s@%s:" username host)))
 	 (start-remote-ssh-shell-buffer-with-name username host buffer-name)))))
