@@ -87,6 +87,7 @@ alias fresh-reuters="del-reuters && init-reuters"
 
 alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
 && yes | conda install pandas \
+&& yes | conda install -c conda-forge grblas \
 && :"
 alias goto-mg="cd ~/code/metagraph/"
 alias init-mg="goto-mg && conda env create ; conda activate mg && install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml && pre-commit install && python setup.py develop"
