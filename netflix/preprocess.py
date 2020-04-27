@@ -505,6 +505,57 @@ def generate_vertex_rankings_for_k_core_graphs(k_to_actor_k_core_graph_map: dict
         process.join()
     return
 
+#############################
+# Generate Kevin Bacon CSVs #
+#############################
+
+ACTORS_KEVIN_BACON_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_kevin_bacon.csv'
+DIRECTORS_KEVIN_BACON_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_kevin_bacon.csv'
+
+def write_kevin_bacon_rows_to_csv(kevin_bacon_rows: List[dict], csv_file: str) -> None:
+    kevin_bacon_df = pd.DataFrame(kevin_bacon_rows, index=False)
+    kevin_bacon_df.to_csv(csv_file)
+    return
+
+def generate_kevin_bacon_csv(graph: nx.Graph, kevin_bacon_csv_file: str) -> None:
+    connected_component_node_sets = nx.connected_components(graph)
+    kevin_bacon_rows: List[dict] = []
+    for node_set in connected_component_node_sets:
+        connected_component_graph = graph.subgraph(node_set)
+        connected_component_graph_size = len(connected_component_graph)
+        shortest_path_lengths_dict = dict(nx.all_pairs_shortest_path_length(connected_component_graph))
+        get_max_dist = lambda actor: max(shortest_path_lengths_dict[actor].values())
+        actors = list(shortest_path_lengths_dict.keys())
+        max_dists = list(map(get_max_dist, actors))
+        min_max_dist = min(max_dists)
+        kevin_bacon_rows = kevin_bacon_rows + [{"kevin_bacon": actor,
+                                                "max_dist": max_dist,
+                                                "connected_component_size": connected_component_graph_size,}
+                                               for actor, max_dist in zip(actors, max_dists)
+                                               if max_dist == min_max_dist]
+    write_kevin_bacon_rows_to_csv(kevin_bacon_rows,kevin_bacon_csv_file)
+    return
+
+def generate_kevin_bacon_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    for k, graph in k_to_actor_k_core_graph_map.items():
+        kevin_bacon_csv_file = ACTORS_KEVIN_BACON_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_kevin_bacon_csv, args=(graph,kevin_bacon_csv_file))
+        process.start()
+        processes.append(process)
+    for k, graph in k_to_director_k_core_graph_map.items():
+        kevin_bacon_csv_file = DIRECTORS_KEVIN_BACON_CSV_TEMPLATE%k
+        process = mp.Process(target=generate_kevin_bacon_csv, args=(graph,kevin_bacon_csv_file))
+        process.start()
+        processes.append(process)
+    return processes
+
+def generate_kevin_bacon_csvs(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> None:
+    processes: List[mp.Process] = []
+    processes = processes + generate_kevin_bacon_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Kevin Bacon CSV Generating Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+        process.join()
+
 ########
 # Main #
 ########
@@ -515,6 +566,7 @@ def preprocess_data() -> None:
     k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map = generate_k_core_graphs(full_projected_actors_graph, full_projected_directors_graph)
     generate_communities_for_k_core_graphs(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
     generate_vertex_rankings_for_k_core_graphs(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+    generate_kevin_bacon_csvs(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
     print()
     print('Done.')
     return
