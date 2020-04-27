@@ -1,35 +1,9 @@
-import pdb
-import traceback
-import sys
-import os
-import time
-import inspect
-import signal
-from collections import Counter
-from inspect import getfile, getsource, getsourcefile
-from inspect import getmodule
-from inspect import getdoc
-from inspect import signature
-from functools import reduce
-from contextlib import contextmanager
-from itertools import chain, combinations
-from typing import Iterable, Callable, Generator, List
-
-# Imports purely for accessibility, not necessarily use in these functions
-
-import random
-import re
-from statistics import mean
-
-import socket
-hostname = socket.gethostbyaddr(socket.gethostname())[0]
-if hostname == "demouser-DGX-Station":
-    import numpy as np
-    import networkx as nx
 
 # Start Up Prints
 
 def print_header() -> None:
+    import time
+    import os
     print(f'')
     print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
     print(f'Current Working Directory: {os.getcwd()}')
@@ -48,12 +22,70 @@ def test():
 
 print_header()
 
+# Imports purely for accessibility, not use in helper utilities
+
+import os
+import sys
+import random
+import re
+import time
+import math
+import multiprocessing
+from importlib import reload
+from inspect import getfile, getsource, getsourcefile
+from inspect import getmodule
+from inspect import getdoc
+from inspect import signature
+from statistics import mean
+from functools import reduce
+
+import socket
+hostname = socket.gethostbyaddr(socket.gethostname())[0]
+if hostname == "demouser-DGX-Station":
+    import numpy as np
+    import networkx as nx
+
 # Debugging Utilities
+
+import io
+from contextlib import contextmanager
+@contextmanager
+def std_out(stream: io.TextIOWrapper) -> None:
+    import sys
+    original_std_out = sys.stdout
+    sys.stdout = stream
+    yield
+    sys.stdout = original_std_out
+    return
+
+from contextlib import contextmanager
+@contextmanager
+def suppressed_output() -> None:
+    import sys
+    with open(os.devnull, 'w') as dev_null:
+        with std_out(dev_null):
+            yield
+    return
+
+from typing import Callable, Union
+from contextlib import contextmanager
+@contextmanager
+def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -> None:
+    import sys
+    from io import StringIO
+    temporary_std_out = StringIO()
+    with std_out(temporary_std_out):
+        yield
+    printed_output: str = temporary_std_out.getvalue()
+    if exitCallback is not None:
+        exitCallback(printed_output)
+    return
 
 def pid() -> int:
     return os.getpid()
 
 def file(obj) -> str:
+    import inspect
     try:
         file_location = inspect.getfile(obj)
         source_file_location = inspect.getsourcefile(obj)
@@ -66,6 +98,7 @@ def file(obj) -> str:
     return file_location
 
 def source(obj) -> None:
+    import inspect
     try:
         source_code = inspect.getsource(obj)
     except TypeError as err:
@@ -78,10 +111,27 @@ def module(obj):
     return getmodule(obj)
 
 def doc(obj) -> None:
+    import inspect
     print(inspect.getdoc(obj))
     return
 
+from typing import Iterable
+def p1(iterable: Iterable) -> None:
+    for e in iterable:
+        print(e)
+    return
+
+from typing import List
+def current_tensors() -> List:
+    import torch
+    import gc
+    return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
+
+from typing import Callable
 def debug_on_error(func: Callable) -> Callable:
+    import pdb
+    import traceback
+    import sys
     def decorating_function(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -95,24 +145,41 @@ def debug_on_error(func: Callable) -> Callable:
 
 TRACE_INDENT_LEVEL = 0
 TRACE_INDENTATION = '    '
-
+TRACE_VALUE_SIZE_LIMIT = 200
+from typing import Callable
 def trace(func: Callable) -> Callable:
+    from inspect import signature
+    import sys
+    import random
+    def human_readable_value(value) -> str:
+        readable_value = repr(value)
+        if len(readable_value) > TRACE_VALUE_SIZE_LIMIT:
+            readable_value = readable_value[:TRACE_VALUE_SIZE_LIMIT]+'...'
+        return readable_value
     def decorating_function(*args, **kwargs):
-        arg_values_string = ', '.join((f'{param_name}={value}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
+        arg_values_string = ', '.join((f'{param_name}={human_readable_value(value)}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
+        probably_unique_id = random.randint(10,99)
         global TRACE_INDENT_LEVEL, TRACE_INDENTATION
-        entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] {func.__name__}({arg_values_string})'
-        print(entry_line)
+        entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] {func.__name__}({arg_values_string})'
+        with std_out(sys.__stdout__):
+            print()
+            print(entry_line)
+            print()
         TRACE_INDENT_LEVEL += 1
         result = func(*args, **kwargs)
         TRACE_INDENT_LEVEL -= 1
-        print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}] returned {result}')
+        with std_out(sys.__stdout__):
+            print()
+            print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] returned {result}')
+            print()
         return result
     return decorating_function
 
-BOGUS_TOKEN = lambda x:x
-
+BOGUS_TOKEN = object()
 def dpn(expression_string: str, given_frame=None):
     """dpn == debug print name"""
+    import sys
+    import inspect
     try:
         frame = inspect.currentframe() if given_frame is None else given_frame
         prev_frame = frame.f_back
@@ -137,23 +204,22 @@ class __dpf_hack_by_paul__():
         pass
     
     def __getattr__(self, var_name):
+        import inspect
         frame = inspect.currentframe()
         return dpn(var_name, frame)
 
 dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
 
-def p1(iterable: Iterable) -> None:
-    for e in iterable:
-        print(e)
-    return
-
 # @todo make apropos methods
 
 # Timing Utilities
 
+from typing import Callable
+from contextlib import contextmanager
 @contextmanager
-def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None):
+def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None) -> None:
     """NB: This cannot be nested."""
+    import signal
     def _raise_timeout(*args, **kwargs):
         raise TimeoutError
     signal.signal(signal.SIGALRM, _raise_timeout)
@@ -165,9 +231,13 @@ def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None):
             functionToExecuteOnTimeout()
     finally:
         signal.signal(signal.SIGALRM, signal.SIG_IGN)
+    return
 
+from typing import Callable
+from contextlib import contextmanager
 @contextmanager
-def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
+def timer(section_name: str = None, exitCallback: Callable[[], None] = None) -> None:
+    import time
     start_time = time.time()
     yield
     end_time = time.time()
@@ -175,30 +245,46 @@ def timer(section_name: str = None, exitCallback: Callable[[], None] = None):
     if exitCallback != None:
         exitCallback(elapsed_time)
     elif section_name:
-        print('Execution of "{section_name}" took {elapsed_time} seconds.'.format(section_name=section_name, elapsed_time=elapsed_time))
+        print(f'{section_name} took {elapsed_time} seconds.')
     else:
-        print('Execution took {elapsed_time} seconds.'.format(elapsed_time=elapsed_time))
+        print(f'Execution took {elapsed_time} seconds.')
+    return
 
 # General Utilities
 
+from contextlib import contextmanager
+@contextmanager
+def temp_plt_figure(*args, **kwargs) -> None:
+    import matplotlib.pyplot as plt
+    figure = plt.figure(*args, **kwargs)
+    yield figure
+    plt.close(figure)
+    return
+
+from typing import List
 def only_one(items: List):
     assert isinstance(items, list)
     assert len(items) == 1
     return items[0]
 
+from typing import List
 def at_most_one(items: List):
     return only_one(items) if items else None
 
-def parallel_map(func: Callable, iterable: Iterable) -> List:
+from typing import List
+def parallel_map(*args, **kwargs) -> List:
+    import multiprocessing
     p = multiprocessing.Pool()
-    result = p.map(func, iterable)
+    result = p.map(*args, **kwargs)
     p.close()
     p.join()
     return result
 
+from typing import Iterable, Callable,  List
 def eager_map(func: Callable, iterable: Iterable) -> List:
     return list(map(func, iterable))
 
+from typing import Iterable, Callable, List
 def eager_filter(func: Callable, iterable: Iterable) -> List:
     return list(filter(func, iterable))
 
@@ -210,6 +296,7 @@ def implies(antecedent: bool, consequent: bool) -> bool:
 
 UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
 
+from typing import Generator
 def uniq(iterator: Iterable) -> Generator:
     previous = UNIQUE_BOGUS_RESULT_IDENTIFIER
     for value in iterator:
@@ -217,13 +304,15 @@ def uniq(iterator: Iterable) -> Generator:
             yield value
             previous = value
 
+from typing import Iterable 
 def powerset(iterable: Iterable) -> Iterable:
+    from itertools import chain, combinations
     items = list(iterable)
     number_of_items = len(items)
     subset_iterable = chain.from_iterable(combinations(items, length) for length in range(1, number_of_items+1))
     return subset_iterable
 
-def n_choose_k(n, k):
+def n_choose_k(n: int, k: int):
     k = min(k, n-k)
     numerator = reduce(int.__mul__, range(n, n-k, -1), 1)
     denominator = reduce(int.__mul__, range(1, k+1), 1)
@@ -235,10 +324,13 @@ def false(*args, **kwargs) -> bool:
 def current_timestamp_string() -> str:
     return time.strftime("%Y_%m_%d_%H_%M_%S")
 
+from typing import Iterable 
 def unzip(zipped_item: Iterable) -> Iterable:
     return zip(*zipped_item)
 
+from collections import Counter
 def histogram(iterator: Iterable) -> Counter:
+    from collections import Counter
     counter = Counter()
     for element in iterator:
         counter[element]+=1

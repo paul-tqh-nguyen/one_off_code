@@ -38,6 +38,32 @@
 (add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
 (setq sgml-attribute-offset 2) ;; @hack figure out why we have to this
 
+(defun javascript-printf-selected ()
+  (interactive)
+  (when (use-region-p)
+    (let* ((region-string (buffer-substring (region-beginning) (region-end)))
+	   (region-lines (split-string region-string "\n"))
+	   (number-of-region-lines (length region-lines))
+	   (current-line-index 0))
+      (delete-region (region-beginning) (region-end))
+      (dolist (region-line region-lines)
+	(let* ((index-of-first-non-white-space-character (string-match "[^\s-]" region-line))
+	       (no-indentation-region-line (if index-of-first-non-white-space-character (substring region-line index-of-first-non-white-space-character nil) region-line)))
+	  (if (null index-of-first-non-white-space-character)
+	      (insert region-line)
+	    (progn
+	      (dotimes (space-index index-of-first-non-white-space-character)
+	  	(insert " "))
+	      (insert (format "console.log(`%s ${%s}`);" no-indentation-region-line no-indentation-region-line))))
+	  (unless (eq current-line-index (1- number-of-region-lines))
+	    (insert "\n")
+	    (setq current-line-index (1+ current-line-index))))))))
+
+(add-hook 'rjsx-mode-hook
+	  (lambda ()
+	    (local-set-key (kbd "C-c p") 'javascript-printf-selected)))
+
+
 ;; Custom Functions
 
 (defun escape-quotes (@begin @end)
@@ -119,7 +145,7 @@
     `(defun ,function-name ()
        (interactive)
        (let* ((username "pnguyen")
-	      (host "192.168.131.229")
+	      (host "dgx.corp.continuum.io")
 	      (buffer-name ,buffer-name)
 	      (default-directory (format "/ssh:%s@%s:" username host)))
 	 (start-remote-ssh-shell-buffer-with-name username host buffer-name)))))
@@ -200,7 +226,7 @@
 	    (progn
 	      (dotimes (space-index index-of-first-non-white-space-character)
 	  	(insert " "))
-	      (insert (format "print(f'%s {%s}')" no-indentation-region-line no-indentation-region-line))))
+	      (insert (format "print(f\"%s {repr(%s)}\")" no-indentation-region-line no-indentation-region-line))))
 	  (unless (eq current-line-index (1- number-of-region-lines))
 	    (insert "\n")
 	    (setq current-line-index (1+ current-line-index))))))))

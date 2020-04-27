@@ -75,7 +75,7 @@ fi
 
 # Anaconda Utilities
 
-alias ssh-cuda="ssh 192.168.131.229"
+alias ssh-cuda="ssh dgx.corp.continuum.io"
 
 alias init-impact="cd ~/code/impact_of_attention && conda env create ; conda activate impact"
 alias del-impact="~/code/impact_of_attention && conda env remove --name impact"

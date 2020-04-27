@@ -1,0 +1,36 @@
+
+pnguyen@pnguyenmachine:/home/pnguyen/code/one_off_code/netflix$ ./preprocess.py && ./visualize.py 
+Original Number of Directors: 3062
+Original Number of Actors: 17975
+Initial raw data loading took 10.975723505020142 seconds.
+
+Started projection of actors.
+Started projection of directors.
+
+Number of Actors: 17975
+Actor graph projection took 23.09955382347107 seconds.
+
+Number of Directors: 3062
+Director graph projection took 21.061891794204712 seconds.
+
+Gathering Results from K-Core Process 13: 100%|██████████████████████████████████████████████████| 14/14 [00:02<00:00,  4.95it/s]
+Join K-Core Process 13: 100%|██████████████████████████████████████████████████| 14/14 [00:00<00:00, 12899.88it/s]
+K-core computation took 2.925619602203369 seconds.
+Join Community Process 27: 100%|██████████████████████████████████████████████████| 28/28 [00:04<00:00,  6.05it/s]
+Join Vertex Ranking Process 139: 100%|██████████████████████████████████████████████████| 140/140 [22:10<00:00,  9.50s/it]
+
+Done.
+Visualizing K-Core Data.
+Visualizing Label Propagation Data.
+Visualizing Louvain Data.
+Visualizing Hits Authority Data.
+Visualizing Hits Hub Data.
+Visualizing Square Clustering Coefficient Data.
+Visualizing Clustering Coefficient Data.
+Visualizing Pagerank Data.
+Visualizing Closeness Centrality Data.
+Visualizing Betweenness Centrality Data.
+Visualizing Eigenvector Centrality Data.
+Visualizing Degree Centrality Data.
+Visualizing Katz Centrality Data.
+pnguyen@pnguyenmachine:/home/pnguyen/code/one_off_code/netflix$ 
