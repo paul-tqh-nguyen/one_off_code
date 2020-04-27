@@ -513,8 +513,8 @@ ACTORS_KEVIN_BACON_CSV_TEMPLATE  = './output/projected_actors_k_core_%d_kevin_ba
 DIRECTORS_KEVIN_BACON_CSV_TEMPLATE  = './output/projected_directors_k_core_%d_kevin_bacon.csv'
 
 def write_kevin_bacon_rows_to_csv(kevin_bacon_rows: List[dict], csv_file: str) -> None:
-    kevin_bacon_df = pd.DataFrame(kevin_bacon_rows, index=False)
-    kevin_bacon_df.to_csv(csv_file)
+    kevin_bacon_df = pd.DataFrame(kevin_bacon_rows)
+    kevin_bacon_df.to_csv(csv_file, index=False)
     return
 
 def generate_kevin_bacon_csv(graph: nx.Graph, kevin_bacon_csv_file: str) -> None:
