@@ -20,7 +20,7 @@ function git-add-mod {
     git add $(git status | grep modified | cut -d":" -f2)
 }
 alias gam="git-add-mod"
-alias update-via-upstream="git pull upstream master && git push"
+alias update-via-upstream="git pull --rebase upstream master && git push"
 
 alias ipynb-to-py="jupyter nbconvert --to script"
 export PYTHONSTARTUP=$HOME/code/one_off_code/python_startup.py
@@ -89,7 +89,12 @@ alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml="
 && yes | conda install pandas \
 && :"
 alias goto-mg="cd ~/code/metagraph/"
-alias init-mg="goto-mg && conda env create ; conda activate mg && install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml && pre-commit install && python setup.py develop"
+alias init-mg="goto-mg && conda env create ; conda activate mg \
+&& install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml \
+&& pre-commit install \
+&& python setup.py develop \
+&& yes | conda install -c conda-forge grblas \
+&& :"
 alias del-mg="goto-mg && conda env remove --name mg"
 alias fresh-mg="del-mg && init-mg"
 
