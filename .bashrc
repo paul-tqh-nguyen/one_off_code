@@ -107,7 +107,11 @@ alias install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml=
 && yes | conda install pandas \
 && :"
 alias goto-mgc="cd ~/code/metagraph-cuda/"
-alias init-mgc="goto-mgc && conda env create ; conda activate mgc && install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml && pre-commit install && python setup.py develop"
+alias init-mgc="goto-mgc && conda env create ; conda activate mgc \
+&& install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml \
+&& pre-commit install && python setup.py develop
+&& yes | conda install -c conda-forge grblas \
+&& :"
 alias del-mgc="goto-mgc && conda env remove --name mgc"
 alias fresh-mgc="del-mgc && init-mgc"
 
