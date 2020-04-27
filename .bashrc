@@ -105,6 +105,7 @@ alias install-mgc-libraries-not-yet-confirmed-to-be-included-in-environment-yml=
 && yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \
 && yes | conda install numba \
 && yes | conda install pandas \
+&& yes | conda install scipy \
 && :"
 alias goto-mgc="cd ~/code/metagraph-cuda/"
 alias init-mgc="goto-mgc && conda env create ; conda activate mgc \
