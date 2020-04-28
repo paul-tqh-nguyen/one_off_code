@@ -89,7 +89,7 @@ alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml="
 
 && :"
 alias goto-mg="cd ~/code/metagraph/"
-alias init-mg="source ~/.bashrc ; for i in $(seq 1 100); do conda deactivate ; done ; goto-mg && conda env create ; conda activate mg \
+alias init-mg="source ~/.bashrc ; for i in \$(seq 1 5); do conda deactivate ; done ; goto-mg && conda env create ; conda activate mg \
 && yes | conda clean --packages --tarballs \
 && yes | conda install -c conda-forge grblas pandas \
 && pre-commit install \
@@ -100,7 +100,7 @@ alias fresh-mg="del-mg && init-mg"
 
 # yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1
 alias goto-mgc="cd ~/code/metagraph-cuda/"
-alias init-mgc="source ~/.bashrc ; for i in $(seq 1 100); do conda deactivate ; done ; goto-mgc && conda env create ; conda activate mgc \
+alias init-mgc="source ~/.bashrc ; for i in \$(seq 1 5); do conda deactivate ; done ; goto-mgc && conda env create ; conda activate mgc \
 && yes | conda clean --packages --tarballs \
 && yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \
 && yes | conda install numba==0.48.0 pandas==0.25.3 networkx numpy scipy conda-forge::grblas \
