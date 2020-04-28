@@ -98,7 +98,6 @@ alias init-mg="source ~/.bashrc ; for i in \$(seq 1 5); do conda deactivate ; do
 alias del-mg="for i in \$(seq 1 5); do conda deactivate ; done ; goto-mg && conda env remove --name mg"
 alias fresh-mg="del-mg && init-mg"
 
-# yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1
 alias goto-mgc="cd ~/code/metagraph-cuda/"
 alias init-mgc="source ~/.bashrc ; for i in \$(seq 1 5); do conda deactivate ; done ; goto-mgc && conda env create ; conda activate mgc \
 && yes | conda clean --packages --tarballs \
