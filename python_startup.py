@@ -39,9 +39,8 @@ from inspect import signature
 from statistics import mean
 from functools import reduce
 
-import socket
-hostname = socket.gethostbyaddr(socket.gethostname())[0]
-if hostname == "demouser-DGX-Station":
+
+if os.uname()[1] == "demouser-DGX-Station":
     import numpy as np
     import networkx as nx
 
