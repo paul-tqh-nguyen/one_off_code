@@ -78,11 +78,11 @@ fi
 alias ssh-cuda="ssh dgx.corp.continuum.io"
 
 alias init-impact="source ~/.bashrc ; cd ~/code/impact_of_attention && conda env create ; conda activate impact"
-alias del-impact="~/code/impact_of_attention && conda env remove --name impact"
+alias del-impact="for i in \$(seq 1 5); do conda deactivate ; done ; ~/code/impact_of_attention && conda env remove --name impact"
 alias fresh-impact="del-impact && init-impact"
 
 alias init-reuters="source ~/.bashrc ; cd ~/code/reuters_topic_labelling && conda env create ; conda activate reuters"
-alias del-reuters="~/code/reuters_topic_labelling && conda env remove --name reuters"
+alias del-reuters="for i in \$(seq 1 5); do conda deactivate ; done ; ~/code/reuters_topic_labelling && conda env remove --name reuters"
 alias fresh-reuters="del-reuters && init-reuters"
 
 alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml=": \
@@ -95,7 +95,7 @@ alias init-mg="source ~/.bashrc ; for i in \$(seq 1 5); do conda deactivate ; do
 && pre-commit install \
 && python setup.py develop \
 && :"
-alias del-mg="goto-mg && conda env remove --name mg"
+alias del-mg="for i in \$(seq 1 5); do conda deactivate ; done ; goto-mg && conda env remove --name mg"
 alias fresh-mg="del-mg && init-mg"
 
 # yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1
@@ -107,7 +107,7 @@ alias init-mgc="source ~/.bashrc ; for i in \$(seq 1 5); do conda deactivate ; d
 && pre-commit install \
 && python setup.py develop \
 && :"
-alias del-mgc="goto-mgc && conda env remove --name mgc"
+alias del-mgc="for i in \$(seq 1 5); do conda deactivate ; done ; goto-mgc && conda env remove --name mgc"
 alias fresh-mgc="del-mgc && init-mgc"
 
 if [ $(hostname) = "demouser-DGX-Station" ] ; then
