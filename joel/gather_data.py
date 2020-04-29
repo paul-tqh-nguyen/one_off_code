@@ -17,7 +17,7 @@ import traceback
 import time
 import warnings
 import pandas as pd
-from typing import List, Iterable
+from typing import List, Iterable, Callable
 
 from misc_utilities import *
 
@@ -29,7 +29,6 @@ UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
 MAX_NUMBER_OF_ASYNCHRONOUS_ATTEMPTS = 1000
 BROWSER_IS_HEADLESS = True
-BLOG_LOADING_TIMEOUT = 0 # i.e. no timeout
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
@@ -42,12 +41,19 @@ OUTPUT_CSV_FILE = './output.csv'
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
+async def _launch_browser():
+    browser = await pyppeteer.launch({'headless': BROWSER_IS_HEADLESS})
+    return browser
+
+BROWSER = EVENT_LOOP.run_until_complete(_launch_browser, [])
+
 def _attempt_task_until_success(coroutine, coroutine_args: List = [], max_number_of_attempts = MAX_NUMBER_OF_ASYNCHRONOUS_ATTEMPTS):
     result = UNIQUE_BOGUS_RESULT_IDENTIFIER
     for _ in range(max_number_of_attempts):
         task = coroutine(*coroutine_args)
         try:
-            results = EVENT_LOOP.run_until_complete(asyncio.gather(task))
+            future = asyncio.gather(task)
+            results = EVENT_LOOP.run_until_complete(future)
             if isinstance(results, list) and len(results) == 1:
                 result = results[0]
                 break
@@ -59,13 +65,6 @@ def _attempt_task_until_success(coroutine, coroutine_args: List = [], max_number
         warnings.warn(f'{time.strftime("%Y/%m/%d_%H:%M:%S")} Attempting to execute {coroutine} on {coroutine_args} failed.')
     return result
 
-async def _launch_browser_page():
-    browser = await pyppeteer.launch({'headless': BROWSER_IS_HEADLESS})
-    page = await browser.newPage()
-    return page
-
-BROWSER_PAGE = _attempt_task_until_success(_launch_browser_page, [])
-
 ################
 # Blog Scraper #
 ################
@@ -74,13 +73,13 @@ BROWSER_PAGE = _attempt_task_until_success(_launch_browser_page, [])
 
 async def _gather_month_links() -> List[str]:
     month_links: List[str] = []
-    await BROWSER_PAGE.goto(BLOG_ARCHIVE_URL)
-    await BROWSER_PAGE.waitForSelector("div.site-info")
-    month_lis = await BROWSER_PAGE.querySelectorAll('li.month')
+    await BROWSER.goto(BLOG_ARCHIVE_URL)
+    await BROWSER.waitForSelector("div.site-info")
+    month_lis = await BROWSER.querySelectorAll('li.month')
     for month_li in month_lis:
         anchors = await month_li.querySelectorAll('a')
         anchor = only_one(anchors)
-        link = await BROWSER_PAGE.evaluate('(anchor) => anchor.href', anchor)
+        link = await BROWSER.evaluate('(anchor) => anchor.href', anchor)
         month_links.append(link)
     return month_links
 
@@ -93,13 +92,13 @@ def gather_month_links() -> List[str]:
 
 async def _blog_links_from_month_link(month_link: str) -> List[str]:
     blog_links: List[str] = []
-    await BROWSER_PAGE.goto(month_link)
-    await BROWSER_PAGE.waitForSelector("div.site-info")
-    blog_h1s = await BROWSER_PAGE.querySelectorAll('h1.entry-title')
+    await BROWSER.goto(month_link)
+    await BROWSER.waitForSelector("div.site-info")
+    blog_h1s = await BROWSER.querySelectorAll('h1.entry-title')
     for blog_h1 in blog_h1s:
         anchors = await blog_h1.querySelectorAll('a')
         anchor = only_one(anchors)
-        link = await BROWSER_PAGE.evaluate('(anchor) => anchor.href', anchor)
+        link = await BROWSER.evaluate('(anchor) => anchor.href', anchor)
         blog_links.append(link)
     return blog_links
 
@@ -114,29 +113,44 @@ def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
 # Data from Blog Links
 
 async def _data_dict_from_blog_link(blog_link: str) -> dict:
+    print("_data_dict_from_blog_link 0.1")
     data_dict = {'blog_link': blog_link}
-    await BROWSER_PAGE.goto(blog_link, {'timeout': 0})
-    await BROWSER_PAGE.waitForSelector("div.site-info")
-    articles = await BROWSER_PAGE.querySelectorAll('article.post')
+    print("_data_dict_from_blog_link 0.2")
+    await BROWSER.goto(blog_link)
+    print("_data_dict_from_blog_link 0.3")
+    await BROWSER.waitForSelector("div.site-info")
+    print("_data_dict_from_blog_link 0.4")
+    articles = await BROWSER.querySelectorAll('article.post')
+    print("_data_dict_from_blog_link 0.5")
     article = only_one(articles)
+    
+    print("_data_dict_from_blog_link 1")
     
     entry_title_h1s = await article.querySelectorAll('h1.entry-title')
     entry_title_h1 = only_one(entry_title_h1s)
-    title = await BROWSER_PAGE.evaluate('(element) => element.textContent', entry_title_h1)
+    title = await BROWSER.evaluate('(element) => element.textContent', entry_title_h1)
     data_dict['title'] = title
+    
+    print("_data_dict_from_blog_link 2")
     
     entry_date_divs = await article.querySelectorAll('div.entry-date')
     entry_date_div = only_one(entry_date_divs)
     
+    print("_data_dict_from_blog_link 3")
+    
     posted_on_spans = await entry_date_div.querySelectorAll('span.posted-on')
     posted_on_span = only_one(posted_on_spans)
-    date = await BROWSER_PAGE.evaluate('(element) => element.textContent', posted_on_span)
+    date = await BROWSER.evaluate('(element) => element.textContent', posted_on_span)
     data_dict['date'] = date
+    
+    print("_data_dict_from_blog_link 4")
     
     author_spans = await entry_date_div.querySelectorAll('span.author')
     author_span = only_one(author_spans)
-    author = await BROWSER_PAGE.evaluate('(element) => element.textContent', author_span)
+    author = await BROWSER.evaluate('(element) => element.textContent', author_span)
     data_dict['author'] = author
+    
+    print("_data_dict_from_blog_link 5")
     
     entry_meta_divs = await article.querySelectorAll('div.entry-meta')
     entry_meta_div = only_one(entry_meta_divs)
@@ -144,13 +158,17 @@ async def _data_dict_from_blog_link(blog_link: str) -> dict:
     entry_meta_div_ul = only_one(entry_meta_div_uls)
     entry_meta_div_ul_lis = await entry_meta_div_ul.querySelectorAll('li.meta-cat')
     entry_meta_div_ul_li = only_one(entry_meta_div_ul_lis)
-    blog_tags_text = await BROWSER_PAGE.evaluate('(element) => element.textContent', entry_meta_div_ul_li)
+    blog_tags_text = await BROWSER.evaluate('(element) => element.textContent', entry_meta_div_ul_li)
     data_dict['blog_tags'] = blog_tags_text
+    
+    print("_data_dict_from_blog_link 6")
     
     entry_content_divs = await article.querySelectorAll('div.entry-content')
     entry_content_div = only_one(entry_content_divs)
-    blog_text = await BROWSER_PAGE.evaluate('(element) => element.textContent', entry_content_div)
+    blog_text = await BROWSER.evaluate('(element) => element.textContent', entry_content_div)
     data_dict['blog_text'] = blog_text
+    
+    print("_data_dict_from_blog_link 7")
     
     return data_dict
 
