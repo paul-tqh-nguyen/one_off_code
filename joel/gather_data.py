@@ -9,6 +9,11 @@
 
 import asyncio
 import pyppeteer
+import itertools
+import traceback
+import time
+import warnings
+import pandas as pd
 from typing import List, Iterable
 
 from misc_utilities import *
@@ -23,6 +28,8 @@ MAX_NUMBER_OF_ASYNCHRONOUS_ATTEMPTS = 10
 BROWSER_IS_HEADLESS = True
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
+
+OUTPUT_CSV_FILE = './output.csv'
 
 ##########################
 # Web Scraping Utilities #
@@ -39,13 +46,13 @@ def _attempt_task_until_success(coroutine, coroutine_args: List = [], max_number
             results = EVENT_LOOP.run_until_complete(asyncio.gather(task))
             if isinstance(results, list) and len(results) == 1:
                 result = results[0]
+                break
         except Exception as err:
-            print(f'Error: {err}') # @todo change this message
+            warnings.warn(f'{time.strftime("%Y/%m/%d_%H:%M:%S")} {err}')
+            traceback.print_exc()
             pass
-        if result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
-            print("Attempting to execute {coroutine} on {coroutine_args} failed.".format(coroutine=coroutine, coroutine_args=coroutine_args))
-        if result != UNIQUE_BOGUS_RESULT_IDENTIFIER:
-            break
+    if result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
+        warnings.warn(f'{time.strftime("%Y/%m/%d_%H:%M:%S")} Attempting to execute {coroutine} on {coroutine_args} failed.')
     return result
 
 async def _launch_browser_page():
@@ -73,6 +80,7 @@ async def _gather_month_links() -> List[str]:
         month_links.append(link)
     return month_links
 
+@trace
 def gather_month_links() -> List[str]:
     month_links = _attempt_task_until_success(_gather_month_links, [])
     return month_links
@@ -91,11 +99,13 @@ async def _blog_links_from_month_link(month_link: str) -> List[str]:
         blog_links.append(link)
     return blog_links
 
+@trace
 def blog_links_from_month_link(month_link: str) -> Iterable[str]:
     return _attempt_task_until_success(_blog_links_from_month_link, [month_link])
 
+@trace
 def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
-    return itertools.chain(map(blog_links_from_month_link, month_links))
+    return itertools.chain(*eager_map(blog_links_from_month_link, month_links))
 
 # Data from Blog Links
 
@@ -111,7 +121,8 @@ async def _data_dict_from_blog_link(blog_link: str) -> dict:
     title = await BROWSER_PAGE.evaluate('(element) => element.textContent', entry_title_h1)
     data_dict['title'] = title
     
-    entry_date_div = await article.querySelectorAll('div.entry-date')
+    entry_date_divs = await article.querySelectorAll('div.entry-date')
+    entry_date_div = only_one(entry_date_divs)
     
     posted_on_spans = await entry_date_div.querySelectorAll('span.posted-on')
     posted_on_span = only_one(posted_on_spans)
@@ -128,11 +139,9 @@ async def _data_dict_from_blog_link(blog_link: str) -> dict:
     entry_meta_div_uls = await entry_meta_div.querySelectorAll('ul.meta-list')
     entry_meta_div_ul = only_one(entry_meta_div_uls)
     entry_meta_div_ul_lis = await entry_meta_div_ul.querySelectorAll('li.meta-cat')
-    blog_tags: List[str] = []
-    for li in entry_meta_div_ul_lis:
-        blog_tag = await BROWSER_PAGE.evaluate('(element) => element.textContent', li)
-        blog_tags.append(blog_tag)
-    data_dict['blog_tags'] = blog_tags
+    entry_meta_div_ul_li = only_one(entry_meta_div_ul_lis)
+    blog_tags_text = await BROWSER_PAGE.evaluate('(element) => element.textContent', entry_meta_div_ul_li)
+    data_dict['blog_tags'] = blog_tags_text
     
     entry_content_divs = await article.querySelectorAll('div.entry-content')
     entry_content_div = only_one(entry_content_divs)
@@ -141,22 +150,28 @@ async def _data_dict_from_blog_link(blog_link: str) -> dict:
     
     return data_dict
 
+@trace
 def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
-    return _attempt_task_until_success(_data_dict_from_blog_link, [month_link])
+    return _attempt_task_until_success(_data_dict_from_blog_link, [blog_link])
 
+@trace
 def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
-    return itertools.chain(map(data_dict_from_blog_link, blog_links))
+    return eager_map(data_dict_from_blog_link, blog_links)
 
 ##########
 # Driver #
 ##########
 
-def main():
+@trace
+def gather_data():
     month_links = gather_month_links()
+    month_links = list(month_links)[:1] # @todo remove
     blog_links = blog_links_from_month_links(month_links)
+    blog_links = list(blog_links)[:1] # @todo remove
     rows = data_dicts_from_blog_links(blog_links)
-    results = rows
-    return results
+    df = pd.DataFrame(rows)
+    df.to_csv(OUTPUT_CSV_FILE, index=False)
+    return
 
 if __name__ == '__main__':
     main()

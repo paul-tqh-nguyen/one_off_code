@@ -285,6 +285,10 @@ from typing import Iterable, Callable,  List
 def eager_map(func: Callable, iterable: Iterable) -> List:
     return list(map(func, iterable))
 
+from typing import Iterable, Callable,  List
+def eager_map_reduce(func: Callable, iterable: Iterable) -> List:
+    return list(map(func, iterable))
+
 from typing import Iterable, Callable, List
 def eager_filter(func: Callable, iterable: Iterable) -> List:
     return list(filter(func, iterable))
@@ -323,6 +327,7 @@ def false(*args, **kwargs) -> bool:
     return False
 
 def current_timestamp_string() -> str:
+    import time
     return time.strftime("%Y_%m_%d_%H_%M_%S")
 
 from typing import Iterable 
