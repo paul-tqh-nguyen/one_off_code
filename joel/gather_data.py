@@ -3,6 +3,9 @@
 """
 """
 
+# @todo fill in doc string
+# @todo get rid of @trace decorators
+
 ###########
 # Imports #
 ###########
@@ -24,8 +27,9 @@ from misc_utilities import *
 
 UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
-MAX_NUMBER_OF_ASYNCHRONOUS_ATTEMPTS = 10
+MAX_NUMBER_OF_ASYNCHRONOUS_ATTEMPTS = 1000
 BROWSER_IS_HEADLESS = True
+BLOG_LOADING_TIMEOUT = 0 # i.e. no timeout
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
@@ -111,7 +115,7 @@ def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
 
 async def _data_dict_from_blog_link(blog_link: str) -> dict:
     data_dict = {'blog_link': blog_link}
-    await BROWSER_PAGE.goto(blog_link)
+    await BROWSER_PAGE.goto(blog_link, {'timeout': 0})
     await BROWSER_PAGE.waitForSelector("div.site-info")
     articles = await BROWSER_PAGE.querySelectorAll('article.post')
     article = only_one(articles)
@@ -164,15 +168,13 @@ def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
 
 @trace
 def gather_data():
-    with timer():
+    with timer("Data gathering"):
         month_links = gather_month_links()
-        month_links = list(month_links)[:1] # @todo remove
         blog_links = blog_links_from_month_links(month_links)
-        blog_links = list(blog_links)[:1] # @todo remove
         rows = data_dicts_from_blog_links(blog_links)
         df = pd.DataFrame(rows)
         df.to_csv(OUTPUT_CSV_FILE, index=False)
     return
 
 if __name__ == '__main__':
-    main()
+    gather_data()
