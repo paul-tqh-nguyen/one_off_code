@@ -18,7 +18,7 @@ import traceback
 import time
 import warnings
 import pandas as pd
-from typing import List, Iterable, Callable
+from typing import List, Tuple, Iterable, Callable, Awaitable
 
 from misc_utilities import *
 
@@ -28,11 +28,10 @@ from misc_utilities import *
 
 UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
+MAX_NUMBER_OF_BROWSER_CLOSE_ATTEMPTS = 1000
 MAX_NUMBER_OF_BROWSER_LAUNCH_ATTEMPTS = 1000
+NUMBER_OF_ATTEMPTS_PER_SLEEP = 10
 BROWSER_IS_HEADLESS = False
-TEMP_USER_DATA_DIR = './temp_user_data_dir/'
-if not os.path.isdir(TEMP_USER_DATA_DIR):
-    os.makedirs(TEMP_USER_DATA_DIR)
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
@@ -42,34 +41,55 @@ OUTPUT_CSV_FILE = './output.csv'
 # Web Scraping Utilities #
 ##########################
 
+def _sleeping_range(upper_bound: int):
+    for attempt_index in range(NUMBER_OF_ATTEMPTS_PER_SLEEP):
+        if attempt_index // 10 and attempt_index % 10 == 0:
+            time.sleep(60*(i//10))
+        yield attempt_index
+
 def assert_no_chrom(): # @todo get rid of this
     import subprocess
     try:
-        chrom_processes_info_string = subprocess.check_output('pgrep chrom', shell=True).decode('utf-8')
-        assert len(chrom_processes_info_string) == 0
+        pgrep_process = subprocess.Popen("pgrep chrom", shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        chrom_processes_string, _ = pgrep_process.communicate()
+        chrom_processes_string = chrom_processes_string.decode('utf-8')
+        chrom_processes = eager_map(int,chrom_processes_string.split())
+        assert len(chrom_processes) == 0
     except subprocess.CalledProcessError as err:
         assert err.args[0] == 1
 
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
-async def _launch_browser_page():
+async def _launch_browser_page() -> Tuple[pyppeteer.browser.Browser, pyppeteer.page.Page]:
     browser: pyppeteer.browser.Browser = await pyppeteer.launch({
         'headless': BROWSER_IS_HEADLESS,
-        'userDataDir': TEMP_USER_DATA_DIR,
-        'dumpio': True, 
     })
     page: pyppeteer.page.Page = await browser.newPage()
     return browser, page
 
-def scrape_function(func: Callable) -> Callable:
+async def _possibly_close_browser_and_page(browser: pyppeteer.browser.Browser, page: pyppeteer.page.Page) -> None:
+    for _ in _sleeping_range(MAX_NUMBER_OF_BROWSER_CLOSE_ATTEMPTS):
+        try:
+            if isinstance(page, pyppeteer.page.Page):
+                if not page.isClosed():
+                    await page.close()
+        except Exception as err:
+            warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {_possibly_close_browser_and_page} {err}')
+        try:
+            if isinstance(browser, pyppeteer.browser.Browser):
+                await browser.close()
+        except Exception as err:
+            warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {_possibly_close_browser_and_page} {err}')
+        break
+    return
+
+def scrape_function(func: Awaitable) -> Awaitable:
     async def decorating_function(*args, **kwargs):
         updated_kwargs = kwargs.copy()
         browser, page = None, None
         result = UNIQUE_BOGUS_RESULT_IDENTIFIER
-        for i in range(MAX_NUMBER_OF_BROWSER_LAUNCH_ATTEMPTS):
-            if i // 10 and i % 10 == 0:
-                time.sleep(60*(i//10))
+        for _ in _sleeping_range(MAX_NUMBER_OF_BROWSER_LAUNCH_ATTEMPTS):
             try:
                 browser, page = await _launch_browser_page()
                 updated_kwargs['page'] = page
@@ -80,15 +100,11 @@ def scrape_function(func: Callable) -> Callable:
                     pyppeteer.errors.PageError,
                     pyppeteer.errors.PyppeteerError,
                     pyppeteer.errors.TimeoutError) as err:
-                warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {err}')
+                warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {func} {err}')
             except Exception as err:
                 raise
             finally:
-                if isinstance(page, pyppeteer.page.Page):
-                    if not page.isClosed():
-                        await page.close()
-                if isinstance(browser, pyppeteer.browser.Browser):
-                    await browser.close()
+                await _possibly_close_browser_and_page(browser, page)
             if result != UNIQUE_BOGUS_RESULT_IDENTIFIER:
                 break
         assert_no_chrom()
