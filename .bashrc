@@ -91,7 +91,7 @@ alias install-mg-libraries-not-yet-confirmed-to-be-included-in-environment-yml="
 alias goto-mg="cd ~/code/metagraph/"
 alias init-mg="source ~/.bashrc ; for i in \$(seq 1 5); do conda deactivate ; done ; goto-mg && conda env create ; conda activate mg \
 && yes | conda clean --packages --tarballs \
-&& yes | conda install -c conda-forge grblas pandas \
+&& yes | conda install -c conda-forge grblas pandas jupyter \
 && pre-commit install \
 && python setup.py develop \
 && :"
@@ -102,7 +102,7 @@ alias goto-mgc="cd ~/code/metagraph-cuda/"
 alias init-mgc="source ~/.bashrc ; for i in \$(seq 1 5); do conda deactivate ; done ; goto-mgc && conda env create ; conda activate mgc \
 && yes | conda clean --packages --tarballs \
 && yes | conda install -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cugraph cudatoolkit=10.1 \
-&& yes | conda install numba==0.48.0 pandas==0.25.3 networkx numpy scipy conda-forge::grblas \
+&& yes | conda install numba==0.48.0 pandas==0.25.3 networkx numpy scipy conda-forge::grblas jupyter \
 && pre-commit install \
 && python setup.py develop \
 && :"
