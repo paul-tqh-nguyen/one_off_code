@@ -28,7 +28,7 @@ from misc_utilities import *
 UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
 MAX_NUMBER_OF_ASYNCHRONOUS_ATTEMPTS = 1000
-BROWSER_IS_HEADLESS = True
+BROWSER_IS_HEADLESS = False
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
@@ -41,29 +41,22 @@ OUTPUT_CSV_FILE = './output.csv'
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
-async def _launch_browser():
+async def _launch_browser_page():
     browser = await pyppeteer.launch({'headless': BROWSER_IS_HEADLESS})
-    return browser
+    page = await browser.newPage()
+    return browser, page
 
-BROWSER = EVENT_LOOP.run_until_complete(_launch_browser, [])
-
-def _attempt_task_until_success(coroutine, coroutine_args: List = [], max_number_of_attempts = MAX_NUMBER_OF_ASYNCHRONOUS_ATTEMPTS):
-    result = UNIQUE_BOGUS_RESULT_IDENTIFIER
-    for _ in range(max_number_of_attempts):
-        task = coroutine(*coroutine_args)
-        try:
-            future = asyncio.gather(task)
-            results = EVENT_LOOP.run_until_complete(future)
-            if isinstance(results, list) and len(results) == 1:
-                result = results[0]
-                break
-        except Exception as err:
-            warnings.warn(f'{time.strftime("%Y/%m/%d_%H:%M:%S")} {err}')
-            traceback.print_exc()
-            pass
-    if result == UNIQUE_BOGUS_RESULT_IDENTIFIER:
-        warnings.warn(f'{time.strftime("%Y/%m/%d_%H:%M:%S")} Attempting to execute {coroutine} on {coroutine_args} failed.')
-    return result
+def scrape_function(func: Callable) -> Callable:
+    async def decorating_function(*args, **kwargs):
+        updated_kwargs = kwargs.copy()
+        temp_event_loop = asyncio.new_event_loop()
+        browser, page = await _launch_browser_page()
+        updated_kwargs['page'] = page
+        result = await func(*args, **updated_kwargs)
+        await page.close()
+        await browser.close()
+        return result
+    return decorating_function
 
 ################
 # Blog Scraper #
@@ -71,40 +64,42 @@ def _attempt_task_until_success(coroutine, coroutine_args: List = [], max_number
 
 # Month Links
 
-async def _gather_month_links() -> List[str]:
+@scrape_function
+async def _gather_month_links(*, page) -> List[str]:
     month_links: List[str] = []
-    await BROWSER.goto(BLOG_ARCHIVE_URL)
-    await BROWSER.waitForSelector("div.site-info")
-    month_lis = await BROWSER.querySelectorAll('li.month')
+    await page.goto(BLOG_ARCHIVE_URL)
+    await page.waitForSelector("div.site-info")
+    month_lis = await page.querySelectorAll('li.month')
     for month_li in month_lis:
         anchors = await month_li.querySelectorAll('a')
         anchor = only_one(anchors)
-        link = await BROWSER.evaluate('(anchor) => anchor.href', anchor)
+        link = await page.evaluate('(anchor) => anchor.href', anchor)
         month_links.append(link)
     return month_links
 
 @trace
 def gather_month_links() -> List[str]:
-    month_links = _attempt_task_until_success(_gather_month_links, [])
+    month_links = EVENT_LOOP.run_until_complete(_gather_month_links())
     return month_links
 
 # Blog Links from Month Links
 
-async def _blog_links_from_month_link(month_link: str) -> List[str]:
+@scrape_function
+async def _blog_links_from_month_link(month_link: str, *, page) -> List[str]:
     blog_links: List[str] = []
-    await BROWSER.goto(month_link)
-    await BROWSER.waitForSelector("div.site-info")
-    blog_h1s = await BROWSER.querySelectorAll('h1.entry-title')
+    await page.goto(month_link)
+    await page.waitForSelector("div.site-info")
+    blog_h1s = await page.querySelectorAll('h1.entry-title')
     for blog_h1 in blog_h1s:
         anchors = await blog_h1.querySelectorAll('a')
         anchor = only_one(anchors)
-        link = await BROWSER.evaluate('(anchor) => anchor.href', anchor)
+        link = await page.evaluate('(anchor) => anchor.href', anchor)
         blog_links.append(link)
     return blog_links
 
 @trace
 def blog_links_from_month_link(month_link: str) -> Iterable[str]:
-    return _attempt_task_until_success(_blog_links_from_month_link, [month_link])
+    return EVENT_LOOP.run_until_complete(_blog_links_from_month_link(month_link))
 
 @trace
 def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
@@ -112,15 +107,16 @@ def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
 
 # Data from Blog Links
 
-async def _data_dict_from_blog_link(blog_link: str) -> dict:
+@scrape_function
+async def _data_dict_from_blog_link(blog_link: str, *, page) -> dict:
     print("_data_dict_from_blog_link 0.1")
     data_dict = {'blog_link': blog_link}
     print("_data_dict_from_blog_link 0.2")
-    await BROWSER.goto(blog_link)
+    await page.goto(blog_link)
     print("_data_dict_from_blog_link 0.3")
-    await BROWSER.waitForSelector("div.site-info")
+    await page.waitForSelector("div.site-info")
     print("_data_dict_from_blog_link 0.4")
-    articles = await BROWSER.querySelectorAll('article.post')
+    articles = await page.querySelectorAll('article.post')
     print("_data_dict_from_blog_link 0.5")
     article = only_one(articles)
     
@@ -128,7 +124,7 @@ async def _data_dict_from_blog_link(blog_link: str) -> dict:
     
     entry_title_h1s = await article.querySelectorAll('h1.entry-title')
     entry_title_h1 = only_one(entry_title_h1s)
-    title = await BROWSER.evaluate('(element) => element.textContent', entry_title_h1)
+    title = await page.evaluate('(element) => element.textContent', entry_title_h1)
     data_dict['title'] = title
     
     print("_data_dict_from_blog_link 2")
@@ -140,14 +136,14 @@ async def _data_dict_from_blog_link(blog_link: str) -> dict:
     
     posted_on_spans = await entry_date_div.querySelectorAll('span.posted-on')
     posted_on_span = only_one(posted_on_spans)
-    date = await BROWSER.evaluate('(element) => element.textContent', posted_on_span)
+    date = await page.evaluate('(element) => element.textContent', posted_on_span)
     data_dict['date'] = date
     
     print("_data_dict_from_blog_link 4")
     
     author_spans = await entry_date_div.querySelectorAll('span.author')
     author_span = only_one(author_spans)
-    author = await BROWSER.evaluate('(element) => element.textContent', author_span)
+    author = await page.evaluate('(element) => element.textContent', author_span)
     data_dict['author'] = author
     
     print("_data_dict_from_blog_link 5")
@@ -158,14 +154,14 @@ async def _data_dict_from_blog_link(blog_link: str) -> dict:
     entry_meta_div_ul = only_one(entry_meta_div_uls)
     entry_meta_div_ul_lis = await entry_meta_div_ul.querySelectorAll('li.meta-cat')
     entry_meta_div_ul_li = only_one(entry_meta_div_ul_lis)
-    blog_tags_text = await BROWSER.evaluate('(element) => element.textContent', entry_meta_div_ul_li)
+    blog_tags_text = await page.evaluate('(element) => element.textContent', entry_meta_div_ul_li)
     data_dict['blog_tags'] = blog_tags_text
     
     print("_data_dict_from_blog_link 6")
     
     entry_content_divs = await article.querySelectorAll('div.entry-content')
     entry_content_div = only_one(entry_content_divs)
-    blog_text = await BROWSER.evaluate('(element) => element.textContent', entry_content_div)
+    blog_text = await page.evaluate('(element) => element.textContent', entry_content_div)
     data_dict['blog_text'] = blog_text
     
     print("_data_dict_from_blog_link 7")
@@ -174,7 +170,7 @@ async def _data_dict_from_blog_link(blog_link: str) -> dict:
 
 @trace
 def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
-    return _attempt_task_until_success(_data_dict_from_blog_link, [blog_link])
+    return EVENT_LOOP.run_until_complete(_data_dict_from_blog_link(blog_link))
 
 @trace
 def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
