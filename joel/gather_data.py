@@ -164,13 +164,14 @@ def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
 
 @trace
 def gather_data():
-    month_links = gather_month_links()
-    month_links = list(month_links)[:1] # @todo remove
-    blog_links = blog_links_from_month_links(month_links)
-    blog_links = list(blog_links)[:1] # @todo remove
-    rows = data_dicts_from_blog_links(blog_links)
-    df = pd.DataFrame(rows)
-    df.to_csv(OUTPUT_CSV_FILE, index=False)
+    with timer():
+        month_links = gather_month_links()
+        month_links = list(month_links)[:1] # @todo remove
+        blog_links = blog_links_from_month_links(month_links)
+        blog_links = list(blog_links)[:1] # @todo remove
+        rows = data_dicts_from_blog_links(blog_links)
+        df = pd.DataFrame(rows)
+        df.to_csv(OUTPUT_CSV_FILE, index=False)
     return
 
 if __name__ == '__main__':
