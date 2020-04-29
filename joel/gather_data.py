@@ -47,18 +47,6 @@ def _sleeping_range(upper_bound: int):
             time.sleep(60*(i//10))
         yield attempt_index
 
-def assert_no_chrom(): # @todo get rid of this
-    import subprocess
-    try:
-        pgrep_process = subprocess.Popen("pgrep chrom", shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
-        chrom_processes_string, _ = pgrep_process.communicate()
-        chrom_processes_string = chrom_processes_string.decode('utf-8')
-        chrom_processes = eager_map(int,chrom_processes_string.split())
-        pgrep_process.terminate()
-        assert len(chrom_processes) == 0
-    except subprocess.CalledProcessError as err:
-        assert err.args[0] == 1
-
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
@@ -108,7 +96,7 @@ def scrape_function(func: Awaitable) -> Awaitable:
                 await _possibly_close_browser_and_page(browser, page)
             if result != UNIQUE_BOGUS_RESULT_IDENTIFIER:
                 break
-        assert_no_chrom()
+        import pgrep ; assert len(pgrep.pgrep('chrom')) == 0 # @todo get rid of this
         assert browser is not None
         assert page is not None
         return result
