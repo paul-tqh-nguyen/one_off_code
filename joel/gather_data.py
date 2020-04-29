@@ -50,10 +50,11 @@ def _sleeping_range(upper_bound: int):
 def assert_no_chrom(): # @todo get rid of this
     import subprocess
     try:
-        pgrep_process = subprocess.Popen("pgrep chrom", shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        pgrep_process = subprocess.Popen("pgrep chrom", shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
         chrom_processes_string, _ = pgrep_process.communicate()
         chrom_processes_string = chrom_processes_string.decode('utf-8')
         chrom_processes = eager_map(int,chrom_processes_string.split())
+        pgrep_process.terminate()
         assert len(chrom_processes) == 0
     except subprocess.CalledProcessError as err:
         assert err.args[0] == 1
