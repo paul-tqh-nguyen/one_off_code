@@ -66,7 +66,12 @@ def scrape_function(func: Callable) -> Callable:
                 browser, page = await _launch_browser_page()
                 updated_kwargs['page'] = page
                 result = await func(*args, **updated_kwargs)
-            except pyppeteer.errors.BrowserError as err:
+            except (pyppeteer.errors.BrowserError,
+                    pyppeteer.errors.ElementHandleError,
+                    pyppeteer.errors.NetworkError,
+                    pyppeteer.errors.PageError,
+                    pyppeteer.errors.PyppeteerError,
+                    pyppeteer.errors.TimeoutError) as err:
                 warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {err}')
             except Exception as err:
                 raise
