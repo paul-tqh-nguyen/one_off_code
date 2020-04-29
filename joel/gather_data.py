@@ -10,6 +10,7 @@
 # Imports #
 ###########
 
+import os
 import asyncio
 import pyppeteer
 import itertools
@@ -29,6 +30,9 @@ UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
 MAX_NUMBER_OF_BROWSER_LAUNCH_ATTEMPTS = 1000
 BROWSER_IS_HEADLESS = False
+TEMP_USER_DATA_DIR = './temp_user_data_dir/'
+if not os.path.isdir(TEMP_USER_DATA_DIR):
+    os.makedirs(TEMP_USER_DATA_DIR)
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
@@ -50,7 +54,11 @@ EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
 async def _launch_browser_page():
-    browser: pyppeteer.browser.Browser = await pyppeteer.launch({'headless': BROWSER_IS_HEADLESS})
+    browser: pyppeteer.browser.Browser = await pyppeteer.launch({
+        'headless': BROWSER_IS_HEADLESS,
+        'userDataDir': TEMP_USER_DATA_DIR,
+        'dumpio': True, 
+    })
     page: pyppeteer.page.Page = await browser.newPage()
     return browser, page
 
