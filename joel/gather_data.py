@@ -27,7 +27,7 @@ from misc_utilities import *
 
 UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
-MAX_NUMBER_OF_ASYNCHRONOUS_ATTEMPTS = 1000
+MAX_NUMBER_OF_BROWSER_LAUNCH_ATTEMPTS = 1000
 BROWSER_IS_HEADLESS = False
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
@@ -38,23 +38,49 @@ OUTPUT_CSV_FILE = './output.csv'
 # Web Scraping Utilities #
 ##########################
 
+def assert_no_chrom(): # @todo get rid of this
+    import subprocess
+    try:
+        chrom_processes_info_string = subprocess.check_output('pgrep chrom', shell=True).decode('utf-8')
+        assert len(chrom_processes_info_string) == 0
+    except subprocess.CalledProcessError as err:
+        assert err.args[0] == 1
+
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
 async def _launch_browser_page():
-    browser = await pyppeteer.launch({'headless': BROWSER_IS_HEADLESS})
-    page = await browser.newPage()
+    browser: pyppeteer.browser.Browser = await pyppeteer.launch({'headless': BROWSER_IS_HEADLESS})
+    page: pyppeteer.page.Page = await browser.newPage()
     return browser, page
 
 def scrape_function(func: Callable) -> Callable:
     async def decorating_function(*args, **kwargs):
         updated_kwargs = kwargs.copy()
-        temp_event_loop = asyncio.new_event_loop()
-        browser, page = await _launch_browser_page()
-        updated_kwargs['page'] = page
-        result = await func(*args, **updated_kwargs)
-        await page.close()
-        await browser.close()
+        browser, page = None, None
+        result = UNIQUE_BOGUS_RESULT_IDENTIFIER
+        for i in range(MAX_NUMBER_OF_BROWSER_LAUNCH_ATTEMPTS):
+            if i // 10 and i % 10 == 0:
+                time.sleep(60*(i//10))
+            try:
+                browser, page = await _launch_browser_page()
+                updated_kwargs['page'] = page
+                result = await func(*args, **updated_kwargs)
+            except pyppeteer.errors.BrowserError as err:
+                warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {err}')
+            except Exception as err:
+                raise
+            finally:
+                if isinstance(page, pyppeteer.page.Page):
+                    if not page.isClosed():
+                        await page.close()
+                if isinstance(browser, pyppeteer.browser.Browser):
+                    await browser.close()
+            if result != UNIQUE_BOGUS_RESULT_IDENTIFIER:
+                break
+        assert_no_chrom()
+        assert browser is not None
+        assert page is not None
         return result
     return decorating_function
 
@@ -85,7 +111,7 @@ def gather_month_links() -> List[str]:
 # Blog Links from Month Links
 
 @scrape_function
-async def _blog_links_from_month_link(month_link: str, *, page) -> List[str]:
+async def _blog_links_from_month_link(month_link: str, *, page: pyppeteer.page.Page) -> List[str]:
     blog_links: List[str] = []
     await page.goto(month_link)
     await page.waitForSelector("div.site-info")
@@ -108,7 +134,7 @@ def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
 # Data from Blog Links
 
 @scrape_function
-async def _data_dict_from_blog_link(blog_link: str, *, page) -> dict:
+async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page) -> dict:
     print("_data_dict_from_blog_link 0.1")
     data_dict = {'blog_link': blog_link}
     print("_data_dict_from_blog_link 0.2")

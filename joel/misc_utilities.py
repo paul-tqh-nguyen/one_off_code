@@ -34,6 +34,10 @@ def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -
         exitCallback(printed_output)
     return
 
+def shell(shell_command: str) -> str:
+    import subprocess
+    return subprocess.check_output(shell_command, shell=True).decode('utf-8')
+
 def pid() -> int:
     return os.getpid()
 
