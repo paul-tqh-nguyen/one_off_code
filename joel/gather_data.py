@@ -143,9 +143,8 @@ def blog_links_from_month_link(month_link: str) -> Iterable[str]:
 
 #@trace
 def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
-    blog_links = itertools.chain(*map(blog_links_from_month_link, month_links))
-    blog_links = tqdm_with_message(blog_links, post_yield_message_func = lambda index: f'Gathering blog link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
-    return blog_links
+    month_links = tqdm_with_message(month_links, post_yield_message_func = lambda index: f'Scraping month link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
+    return itertools.chain(*map(blog_links_from_month_link, month_links))
 
 # Data from Blog Links
 
