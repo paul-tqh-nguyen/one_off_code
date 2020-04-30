@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+# Debugging Utilities
+
 import io
 from contextlib import contextmanager
 @contextmanager
@@ -84,6 +86,25 @@ def current_tensors() -> List:
     import gc
     return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
 
+from tqdm import tqdm
+def _dummy_tqdm_message_func(index: int):
+    return ''
+def tqdm_with_message(iterable,
+                      pre_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
+                      post_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
+                      *args, **kwargs):
+    progress_bar_iterator = tqdm(iterable, *args, **kwargs)
+    for index, element in enumerate(progress_bar_iterator):
+        if pre_yield_message_func != _dummy_tqdm_message_func:
+            pre_yield_message = pre_yield_message_func(index)
+            progress_bar_iterator.set_description(pre_yield_message)
+            progress_bar_iterator.refresh()
+        yield element
+        if post_yield_message_func != _dummy_tqdm_message_func:
+            post_yield_message = post_yield_message_func(index)
+            progress_bar_iterator.set_description(post_yield_message)
+            progress_bar_iterator.refresh()
+
 from typing import Callable
 def debug_on_error(func: Callable) -> Callable:
     import pdb
@@ -167,6 +188,10 @@ class __dpf_hack_by_paul__():
 
 dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
 
+# @todo make apropos methods
+
+# Timing Utilities
+
 from typing import Callable
 from contextlib import contextmanager
 @contextmanager
@@ -203,6 +228,8 @@ def timer(section_name: str = None, exitCallback: Callable[[], None] = None) -> 
         print(f'Execution took {elapsed_time} seconds.')
     return
 
+# General Utilities
+
 from contextlib import contextmanager
 @contextmanager
 def temp_plt_figure(*args, **kwargs) -> None:
@@ -235,6 +262,10 @@ from typing import Iterable, Callable,  List
 def eager_map(func: Callable, iterable: Iterable) -> List:
     return list(map(func, iterable))
 
+from typing import Iterable, Callable,  List
+def eager_map_reduce(func: Callable, iterable: Iterable) -> List:
+    return list(map(func, iterable))
+
 from typing import Iterable, Callable, List
 def eager_filter(func: Callable, iterable: Iterable) -> List:
     return list(filter(func, iterable))
@@ -245,11 +276,11 @@ def identity(input):
 def implies(antecedent: bool, consequent: bool) -> bool:
     return not antecedent or consequent
 
-_UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
+UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
 
 from typing import Generator
 def uniq(iterator: Iterable) -> Generator:
-    previous = _UNIQUE_BOGUS_RESULT_IDENTIFIER
+    previous = UNIQUE_BOGUS_RESULT_IDENTIFIER
     for value in iterator:
         if previous != value:
             yield value
@@ -273,6 +304,7 @@ def false(*args, **kwargs) -> bool:
     return False
 
 def current_timestamp_string() -> str:
+    import time
     return time.strftime("%Y_%m_%d_%H_%M_%S")
 
 from typing import Iterable 
@@ -286,3 +318,4 @@ def histogram(iterator: Iterable) -> Counter:
     for element in iterator:
         counter[element]+=1
     return counter
+

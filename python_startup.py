@@ -27,6 +27,7 @@ print_header()
 import os
 import sys
 import random
+import time
 import re
 import time
 import math
@@ -135,6 +136,25 @@ def current_tensors() -> List:
     import torch
     import gc
     return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
+
+from tqdm import tqdm
+def _dummy_tqdm_message_func(index: int):
+    return ''
+def tqdm_with_message(iterable,
+                      pre_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
+                      post_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
+                      *args, **kwargs):
+    progress_bar_iterator = tqdm(iterable, *args, **kwargs)
+    for index, element in enumerate(progress_bar_iterator):
+        if pre_yield_message_func != _dummy_tqdm_message_func:
+            pre_yield_message = pre_yield_message_func(index)
+            progress_bar_iterator.set_description(pre_yield_message)
+            progress_bar_iterator.refresh()
+        yield element
+        if post_yield_message_func != _dummy_tqdm_message_func:
+            post_yield_message = post_yield_message_func(index)
+            progress_bar_iterator.set_description(post_yield_message)
+            progress_bar_iterator.refresh()
 
 from typing import Callable
 def debug_on_error(func: Callable) -> Callable:
@@ -349,3 +369,4 @@ def histogram(iterator: Iterable) -> Counter:
     for element in iterator:
         counter[element]+=1
     return counter
+

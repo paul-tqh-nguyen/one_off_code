@@ -110,14 +110,14 @@ async def _gather_month_links(*, page) -> List[str]:
     await page.goto(BLOG_ARCHIVE_URL)
     await page.waitForSelector("div.site-info")
     month_lis = await page.querySelectorAll('li.month')
-    for month_li in month_lis:
+    for month_li in tqdm_with_message(month_lis, post_yield_message_func = lambda index: f'Gathering mongth link {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
         anchors = await month_li.querySelectorAll('a')
         anchor = only_one(anchors)
         link = await page.evaluate('(anchor) => anchor.href', anchor)
         month_links.append(link)
     return month_links
 
-@trace
+#@trace
 def gather_month_links() -> List[str]:
     month_links = EVENT_LOOP.run_until_complete(_gather_month_links())
     return month_links
@@ -137,13 +137,15 @@ async def _blog_links_from_month_link(month_link: str, *, page: pyppeteer.page.P
         blog_links.append(link)
     return blog_links
 
-@trace
+#@trace
 def blog_links_from_month_link(month_link: str) -> Iterable[str]:
     return EVENT_LOOP.run_until_complete(_blog_links_from_month_link(month_link))
 
-@trace
+#@trace
 def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
-    return itertools.chain(*eager_map(blog_links_from_month_link, month_links))
+    blog_links = itertools.chain(*map(blog_links_from_month_link, month_links))
+    blog_links = tqdm_with_message(blog_links, post_yield_message_func = lambda index: f'Gathering blog link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
+    return blog_links
 
 # Data from Blog Links
 
@@ -197,13 +199,14 @@ async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page
     
     return data_dict
 
-@trace
+#@trace
 def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
     return EVENT_LOOP.run_until_complete(_data_dict_from_blog_link(blog_link))
 
-@trace
+#@trace
 def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
-    return eager_map(data_dict_from_blog_link, blog_links)
+    blog_links = tqdm_with_message(blog_links, post_yield_message_func = lambda index: f'Scraping blog_link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
+    return map(data_dict_from_blog_link, blog_links)
 
 ###################
 # Sanity Checking #
@@ -228,11 +231,11 @@ def sanity_check_output_csv_file() -> None:
 # Driver #
 ##########
 
-@trace
+#@trace
 def gather_data():
     with timer("Data gathering"):
         month_links = gather_month_links()
-        blog_links = blog_link_from_month_links(month_links)
+        blog_links = blog_links_from_month_links(month_links)
         rows = data_dicts_from_blog_links(blog_links)
         df = pd.DataFrame(rows)
         df.to_csv(OUTPUT_CSV_FILE, index=False)
