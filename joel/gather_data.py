@@ -161,10 +161,10 @@ async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page
     data_dict['title'] = title
     
     entry_date_divs = await article.querySelectorAll('div.entry-date')
-    entry_date_div = only_one(entry_date_divs)
-    
+    entry_date_div = only_one(entry_date_divs)    
     posted_on_spans = await entry_date_div.querySelectorAll('span.posted-on')
     posted_on_span = only_one(posted_on_spans)
+    
     published_times = await posted_on_span.querySelectorAll('time.published')
     published_time = only_one(published_times)
     published_date = await page.evaluate('(element) => element.getAttribute("datetime")', published_time)
@@ -205,6 +205,25 @@ def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
 def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
     return eager_map(data_dict_from_blog_link, blog_links)
 
+###################
+# Sanity Checking #
+###################
+
+def sanity_check_output_csv_file() -> None:
+    import re
+    import numpy as np
+    df = pd.read_csv(OUTPUT_CSV_FILE)
+    expected_columns = 'blog_link', 'title', 'published_date', 'updated_date', 'author', 'blog_tags', 'blog_text'
+    assert all(expected_column in df.columns for expected_column in expected_columns)
+    assert all(re.match(r'https://www.joelonsoftware.com/(199|200|201)[0-9]/[0-1][0-9]/[0-3][0-9]/.+/', blog_link) for blog_link in df.blog_link)
+    assert all(isinstance(title,str) for title in df.title)
+    assert all(re.match(r'(199|200|201)[0-9]-[0-1][0-9]-[0-9][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]\+[0-9][0-9]:[0-9][0-9]', published_date) for published_date in df.published_date)
+    assert all(re.match(r'(199|200|201)[0-9]-[0-1][0-9]-[0-9][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]\+[0-9][0-9]:[0-9][0-9]', updated_date) for updated_date in df.updated_date if updated_date and updated_date==updated_date)
+    assert all(df.author.unique() == np.array(['Joel Spolsky']))
+    assert all(isinstance(blog_tags,str) for blog_tags in df.blog_tags.unique())
+    assert all(isinstance(blog_text,str) for blog_text in df.blog_text)
+    return 
+
 ##########
 # Driver #
 ##########
@@ -213,10 +232,11 @@ def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
 def gather_data():
     with timer("Data gathering"):
         month_links = gather_month_links()
-        blog_links = blog_links_from_month_links(month_links)
+        blog_links = blog_link_from_month_links(month_links)
         rows = data_dicts_from_blog_links(blog_links)
         df = pd.DataFrame(rows)
         df.to_csv(OUTPUT_CSV_FILE, index=False)
+        sanity_check_output_csv_file()
     return
 
 if __name__ == '__main__':

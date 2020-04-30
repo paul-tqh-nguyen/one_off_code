@@ -35,6 +35,8 @@ import multiprocessing
 import functools
 import itertools
 import inspect
+import tqdm
+from tqdm import tqdm
 from importlib import reload
 from inspect import getfile, getsource, getsourcefile
 from inspect import getmodule
