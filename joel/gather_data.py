@@ -31,7 +31,7 @@ UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 MAX_NUMBER_OF_BROWSER_CLOSE_ATTEMPTS = 1000
 MAX_NUMBER_OF_BROWSER_RELAUNCH_ATTEMPTS = 1000
 NUMBER_OF_ATTEMPTS_PER_SLEEP = 3
-BROWSER_IS_HEADLESS = False
+BROWSER_IS_HEADLESS = True
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
@@ -149,44 +149,37 @@ def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
 
 @scrape_function
 async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page) -> dict:
-    print("_data_dict_from_blog_link 0.1")
     data_dict = {'blog_link': blog_link}
-    print("_data_dict_from_blog_link 0.2")
     await page.goto(blog_link)
-    print("_data_dict_from_blog_link 0.3")
     await page.waitForSelector("div.site-info")
-    print("_data_dict_from_blog_link 0.4")
     articles = await page.querySelectorAll('article.post')
-    print("_data_dict_from_blog_link 0.5")
     article = only_one(articles)
-    
-    print("_data_dict_from_blog_link 1")
     
     entry_title_h1s = await article.querySelectorAll('h1.entry-title')
     entry_title_h1 = only_one(entry_title_h1s)
     title = await page.evaluate('(element) => element.textContent', entry_title_h1)
     data_dict['title'] = title
     
-    print("_data_dict_from_blog_link 2")
-    
     entry_date_divs = await article.querySelectorAll('div.entry-date')
     entry_date_div = only_one(entry_date_divs)
     
-    print("_data_dict_from_blog_link 3")
-    
     posted_on_spans = await entry_date_div.querySelectorAll('span.posted-on')
     posted_on_span = only_one(posted_on_spans)
-    date = await page.evaluate('(element) => element.textContent', posted_on_span)
-    data_dict['date'] = date
-    
-    print("_data_dict_from_blog_link 4")
+    published_times = await posted_on_span.querySelectorAll('time.published')
+    published_time = only_one(published_times)
+    published_date = await page.evaluate('(element) => element.getAttribute("datetime")', published_time)
+    data_dict['published_date'] = published_date
+    updated_times = await posted_on_span.querySelectorAll('time.updated')
+    updated_time = at_most_one(updated_times)
+    updated_date = None
+    if updated_time:
+        updated_date = await page.evaluate('(element) => element.getAttribute("datetime")', updated_time)
+    data_dict['updated_date'] = updated_date
     
     author_spans = await entry_date_div.querySelectorAll('span.author')
     author_span = only_one(author_spans)
     author = await page.evaluate('(element) => element.textContent', author_span)
     data_dict['author'] = author
-    
-    print("_data_dict_from_blog_link 5")
     
     entry_meta_divs = await article.querySelectorAll('div.entry-meta')
     entry_meta_div = only_one(entry_meta_divs)
@@ -197,14 +190,10 @@ async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page
     blog_tags_text = await page.evaluate('(element) => element.textContent', entry_meta_div_ul_li)
     data_dict['blog_tags'] = blog_tags_text
     
-    print("_data_dict_from_blog_link 6")
-    
     entry_content_divs = await article.querySelectorAll('div.entry-content')
     entry_content_div = only_one(entry_content_divs)
     blog_text = await page.evaluate('(element) => element.textContent', entry_content_div)
     data_dict['blog_text'] = blog_text
-    
-    print("_data_dict_from_blog_link 7")
     
     return data_dict
 
