@@ -32,7 +32,7 @@ PROJECTED_DIRECTORS_CSV = './output/projected_directors.csv'
 
 K_CORE_PROJECTED_ACTORS_CSV_TEMPLATE = './output/projected_actors_k_core_%d.csv'
 K_CORE_PROJECTED_DIRECTORS_CSV_TEMPLATE = './output/projected_directors_k_core_%d.csv'
-K_CORE_CHOICES_FOR_K = [10, 20, 30, 45, 60, 75, 100]
+K_CORE_CHOICES_FOR_K = [0, 10, 20, 30, 45, 60, 75, 100]
 
 #################
 # Load Raw Data #
