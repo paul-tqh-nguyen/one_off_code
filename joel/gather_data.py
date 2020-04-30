@@ -29,8 +29,8 @@ from misc_utilities import *
 UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
 MAX_NUMBER_OF_BROWSER_CLOSE_ATTEMPTS = 1000
-MAX_NUMBER_OF_BROWSER_LAUNCH_ATTEMPTS = 1000
-NUMBER_OF_ATTEMPTS_PER_SLEEP = 10
+MAX_NUMBER_OF_BROWSER_RELAUNCH_ATTEMPTS = 1000
+NUMBER_OF_ATTEMPTS_PER_SLEEP = 3
 BROWSER_IS_HEADLESS = False
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
@@ -42,45 +42,44 @@ OUTPUT_CSV_FILE = './output.csv'
 ##########################
 
 def _sleeping_range(upper_bound: int):
-    for attempt_index in range(NUMBER_OF_ATTEMPTS_PER_SLEEP):
-        if attempt_index // 10 and attempt_index % 10 == 0:
-            time.sleep(60*(i//10))
+    for attempt_index in range(upper_bound):
+        if attempt_index // NUMBER_OF_ATTEMPTS_PER_SLEEP and attempt_index % NUMBER_OF_ATTEMPTS_PER_SLEEP == 0:
+            time.sleep(60*(i//NUMBER_OF_ATTEMPTS_PER_SLEEP))
         yield attempt_index
 
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
-async def _launch_browser_page() -> Tuple[pyppeteer.browser.Browser, pyppeteer.page.Page]:
-    browser: pyppeteer.browser.Browser = await pyppeteer.launch({
-        'headless': BROWSER_IS_HEADLESS,
-    })
-    page: pyppeteer.page.Page = await browser.newPage()
-    return browser, page
+async def _launch_browser() -> pyppeteer.browser.Browser:
+    browser: pyppeteer.browser.Browser = await pyppeteer.launch({'headless': BROWSER_IS_HEADLESS,})
+    return browser
 
-async def _possibly_close_browser_and_page(browser: pyppeteer.browser.Browser, page: pyppeteer.page.Page) -> None:
+BROWSER = EVENT_LOOP.run_until_complete(_launch_browser())
+
+async def _close_browser() -> None:
     for _ in _sleeping_range(MAX_NUMBER_OF_BROWSER_CLOSE_ATTEMPTS):
+        global BROWSER
         try:
-            if isinstance(page, pyppeteer.page.Page):
+            pages = await BROWSER.pages()
+            for page in pages:
                 if not page.isClosed():
                     await page.close()
+                assert page.isClosed()
+            await browser.close()
         except Exception as err:
-            warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {_possibly_close_browser_and_page} {err}')
-        try:
-            if isinstance(browser, pyppeteer.browser.Browser):
-                await browser.close()
-        except Exception as err:
-            warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {_possibly_close_browser_and_page} {err}')
+            warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {_close_browser} {err}')
         break
     return
 
 def scrape_function(func: Awaitable) -> Awaitable:
     async def decorating_function(*args, **kwargs):
-        updated_kwargs = kwargs.copy()
-        browser, page = None, None
         result = UNIQUE_BOGUS_RESULT_IDENTIFIER
-        for _ in _sleeping_range(MAX_NUMBER_OF_BROWSER_LAUNCH_ATTEMPTS):
+        global BROWSER
+        for _ in _sleeping_range(MAX_NUMBER_OF_BROWSER_RELAUNCH_ATTEMPTS):
             try:
-                browser, page = await _launch_browser_page()
+                updated_kwargs = kwargs.copy()
+                pages = await BROWSER.pages()
+                page = only_one(pages)
                 updated_kwargs['page'] = page
                 result = await func(*args, **updated_kwargs)
             except (pyppeteer.errors.BrowserError,
@@ -90,15 +89,12 @@ def scrape_function(func: Awaitable) -> Awaitable:
                     pyppeteer.errors.PyppeteerError,
                     pyppeteer.errors.TimeoutError) as err:
                 warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {func} {err}')
+                await _close_browser()
+                BROWSER = await _launch_browser()
             except Exception as err:
                 raise
-            finally:
-                await _possibly_close_browser_and_page(browser, page)
             if result != UNIQUE_BOGUS_RESULT_IDENTIFIER:
                 break
-        import pgrep ; assert len(pgrep.pgrep('chrom')) == 0 # @todo get rid of this
-        assert browser is not None
-        assert page is not None
         return result
     return decorating_function
 

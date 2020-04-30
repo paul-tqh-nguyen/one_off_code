@@ -127,7 +127,7 @@ def trace(func: Callable) -> Callable:
         TRACE_INDENT_LEVEL -= 1
         with std_out(sys.__stdout__):
             print()
-            print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] returned {result}')
+            print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] returned {human_readable_value(result)}')
             print()
         return result
     return decorating_function
