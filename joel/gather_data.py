@@ -189,6 +189,7 @@ def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
 
 #@trace
 def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
+    blog_links = blog_links if isinstance(blog_links, list) else list(blog_links)
     blog_links = tqdm_with_message(blog_links, post_yield_message_func = lambda index: f'Scraping blog link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
     return map(data_dict_from_blog_link, blog_links)
 
