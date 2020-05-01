@@ -75,7 +75,6 @@ def scrape_function(func: Awaitable) -> Awaitable:
                 warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} {func.__name__} {err}')
                 warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} Launching new page.')
                 await BROWSER.newPage()
-                pages = await BROWSER.pages() ; print(f"len(pages) {repr(len(pages))}")
             except pyppeteer.errors.TimeoutError as err:
                 warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} {func.__name__} {err}')
                 warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} Launching new browser.')
@@ -193,7 +192,7 @@ async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page
     
     return data_dict
 
-@trace
+#@trace
 def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
     return EVENT_LOOP.run_until_complete(_data_dict_from_blog_link(blog_link))
 
