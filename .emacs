@@ -131,6 +131,8 @@
  third
  fourth
  fifth
+
+ ssh-tunnel
  )
 
 (defun start-remote-ssh-shell-buffer-with-name (username host buffer-name)
@@ -162,6 +164,7 @@
  cuda-shell
  cuda-python
  cuda-test
+ jupyter
  )
 
 (defun start-cuda-shells ()
@@ -177,7 +180,10 @@
 		      shell
 		      
 		      cuda-python
-		      shell 
+		      shell
+
+		      jupyter
+		      shell
 		      )))
 
 ;; Start Up Shells
@@ -191,6 +197,8 @@
 		    third
 		    fourth
 		    fifth
+
+		    ssh-tunnel
 		    
 		    shell))
 
