@@ -1,4 +1,1166 @@
 node,label
+<<<<<<< HEAD
+Koji Sawai,0
+Hideki Futamura,0
+Frank O'Connor,0
+Shinji Aramaki,0
+Mamoru Oshii,0
+Hiroshi Yamazaki,0
+Koichi Mashimo,0
+Daisuke Nishio,0
+Toshiyuki Kanno,0
+Yasushi Muraki,0
+Tomoki Kyoda,0
+Joseph Chou,0
+Conrad Helten,1
+Karen J. Lloyd,1
+Denny Lu,1
+Hiroshi Aoyama,1
+Mark A.Z. Dippé,1
+Kazumi Fukushima,1
+Michael Goguen,1
+Tensai Okamura,1
+Thomas Astruc,1
+Stephen Donnelly,1
+Mario Cambi,1
+Sylvain Blais,1
+Mike Myhre,1
+Rick Morales,1
+Andrew Duncan,1
+Eondeok Han,1
+Mike Fetterly,1
+Eric Radomski,1
+Harry Chaskin,1
+Olly Reid,1
+Alfred Gimeno,1
+Steve Sacks,1
+Greg Richardson,1
+Leo Riley,1
+Sam Liu,1
+Victor Dal Chele,1
+Richard Rich,1
+Jeff Gill,1
+Audu Paden,1
+William Lau,1
+Evan Spiridellis,1
+Jayson Thiessen,1
+Dustin McKenzie,1
+Jim Stenstrum,1
+Steve Ball,1
+Mitch Schauer,1
+Adam Wood,1
+Ezekiel Norton,1
+Keiichi Hara,1
+Frank Paur,1
+Ishi Rudell,1
+Jun Falkenstein,1
+Rob Silvestri,1
+Mahmudul Islam,2
+Golam Kibria Farooki,2
+Nuhash Humayun,2
+Syed Saleh Ahmed Sobhan,2
+Rahat Rahman,2
+Tanvir Ahsan,2
+Robiul Alam Robi,2
+Abdullah Al Noor,2
+Mir Mukarram Hossain,2
+Syed Ahmed Shawki,2
+Krishnendu Chattopadhyay,2
+Rohit Jugraj,3
+Simranjit Singh Hundal,3
+Vikram Pradhan,3
+Vijay Kumar Arora,3
+Amitoj Mann,3
+Jagdeep Sidhu,3
+Gaurav Bavdankar,3
+Vipin Parashar,3
+Parveen Kumar,3
+Smeep Kang,3
+Manav Shah,3
+Mukesh Vohra,3
+Rai Yuvraj Bains,3
+Amarpreet G S Chabbra,3
+Jaivi Dhanda,3
+Sunil Thakur,3
+Nidhi Sharma,3
+Rana Ranbir,3
+Sukhbir Singh,3
+Atharv Baluja,3
+Ksshitij Chaudhary,3
+Baljit Singh Deo,3
+Jenna Laurenzo,4
+Michael Paul Stephenson,4
+Matt Reeves,4
+James Duffy,4
+Hiromasa Yonebayashi,4
+Kevin Reynolds,4
+Kathryn Bigelow,4
+Guillaume Renard,4
+Shane Acker,4
+Jeff Garlin,4
+John Crowley,4
+Gabriele Muccino,4
+Henry Selick,4
+Zoe Lister-Jones,4
+Nina Paley,4
+Leif Tilden,4
+Barry Jenkins,4
+Susanne Bier,4
+Richard Loncraine,4
+Troy Miller,4
+Meghan O'Hara,4
+Pete Travis,4
+Chris Nelson,4
+Christopher Nolan,4
+Dean Wellins,4
+Michael Kennedy,4
+Frank Miller,4
+Lynn Shelton,4
+Tim Blake Nelson,4
+Dennis Dugan,4
+Scott Marshall Smith,4
+Kevin Donovan,4
+Wolfgang Petersen,4
+Jon M. Chu,4
+Luke Snellin,4
+Peter Sattler,4
+Ira Sachs,4
+Annie Clark,4
+Michael Dowse,4
+Don Bluth,4
+Allan Ungar,4
+Chris Jenkins,4
+Terry Jones,4
+Chris Stokes,4
+Nancy Meyers,4
+Eric Idle,4
+Macon Blair,4
+David Wain,4
+Chris Buck,4
+Joan C. Gratz,4
+Brad Bird,4
+Scott Stewart,4
+Andrew Lau Wai-Keung,4
+Stuart Baird,4
+Anna Boden,4
+Bharat Nalluri,4
+Ryan Coogler,4
+Chris Renaud,4
+Dash Shaw,4
+Paul Reubens,4
+Christian Desmares,4
+Vic Armstrong,4
+Lennart Ruff,4
+Raja Gosnell,4
+John A. Davis,4
+David Cronenberg,4
+Danny Boyle,4
+Brian Smith,4
+Andrew C. Erin,4
+Tom Gianas,4
+Alexandre Aja,4
+Johnny Castuciano,4
+Les Mayfield,4
+Neil Jordan,4
+Gilles Paquet-Brenner,4
+Leslye Headland,4
+Ben Shelton,4
+Martin Campbell,4
+Chris Koch,4
+Albert Hughes,4
+Louis Leterrier,4
+Wes Craven,4
+Andrew Bujalski,4
+John Patrick Shanley,4
+Peter Chelsom,4
+David R. Ellis,4
+Brit McAdams,4
+Zack Snyder,4
+Jonathan van Tulleken,4
+Guy Ritchie,4
+David Mackenzie,4
+Ridley Scott,4
+Tom Tykwer,4
+Will Yapp,4
+Eli Craig,4
+Woody Allen,4
+Matt Kugelman,4
+Mark Raso,4
+Benedict Andrews,4
+Scott Zabielski,4
+Mike Disa,4
+John Schlesinger,4
+Lauren Miller Rogen,4
+Alan Rickman,4
+John Dahl,4
+Phillip Noyce,4
+Dominic Sena,4
+Peggy Holmes,4
+Christopher Smith,4
+Colin Teague,4
+Todd Phillips,4
+Jocelyn Moorhouse,4
+Holger Tappe,4
+Chris Kelly,4
+David E. Talbert,4
+Brendan Malloy,4
+Kevin Deters,4
+Emmett Malloy,4
+Anthony Russo,4
+Maria Pulera,4
+David Silberg,4
+Jani Lachauer,4
+G.J. Echternkamp,4
+Jay Chapman,4
+M.J. Bassett,4
+Alex Proyas,4
+Michael Tiddes,4
+Mark Landre Gould,4
+Alain Desrochers,4
+Johannes Roberts,4
+Max Martini,4
+Jonathan Baker,4
+Raymie Muzquiz,4
+Paul Demeyer,4
+David M. Rosenthal,4
+Peter Jackson,4
+Mark Herman,4
+David Grossman,4
+Gary Binkow,4
+Daniel Stamm,4
+Philippe Falardeau,4
+Antoine Bardou-Jacquet,4
+Florian Henckel von Donnersmarck,4
+Ric Roman Waugh,4
+Daniel Alfredson,4
+Rob Minkoff,4
+Jason Reitman,4
+Ian MacNaughton,4
+Tarsem Singh,4
+Marti Noxon,4
+Mark Dindal,4
+Randall Lobb,4
+John H. Lee,4
+Michael Gallagher,4
+Andy Tennant,4
+Gabe Ibáñez,4
+Dennie Gordon,4
+Mark Osborne,4
+Patrick Osborne,4
+Steven Brill,4
+Benjamin Arfmann,4
+Olivier Assayas,4
+Logan Kibens,4
+Karey Kirkpatrick,4
+Kazuaki Kiriya,4
+Spike Jonze,4
+Rob Burnett,4
+Lilly Wachowski,4
+George C. Wolfe,4
+Neill Blomkamp,4
+Frank Oz,4
+Allen Hughes,4
+Ethan Coen,4
+Victor Levin,4
+Bart Freundlich,4
+Atom Egoyan,4
+Osgood Perkins,4
+Shawn Levy,4
+Charles Stone III,4
+James Marsh,4
+Nora Ephron,4
+Noah Baumbach,4
+Troy Nixey,4
+Hugh WIlson,4
+Alejandro Agresti,4
+Darin Scott,4
+Jean-Marc Vallée,4
+Michael Bay,4
+Sian Heder,4
+Bryan Singer,4
+Karyn Kusama,4
+Gerard McMurray,4
+Don Michael Paul,4
+Robert Schwentke,4
+Claude Barras,4
+Brie Larson,4
+Adam Wingard,4
+Steven Soderbergh,4
+Eli Roth,4
+Dan Harris,4
+Steven Spielberg,4
+Bong Joon Ho,4
+Jarrad Paul,4
+Lauren MacMullan,4
+Sofia Coppola,4
+Andrew Loo,4
+Mahsun Kırmızıgül,4
+Oren Uziel,4
+Martin Scorsese,4
+Bruce Robinson,4
+Ed Gass-Donnelly,4
+Jeff Wadlow,4
+Gregory Hoblit,4
+Theo Davies,4
+Daniel Gray Longino,4
+Jamie M. Dagg,4
+Rob Reiner,4
+Akiva Schaffer,4
+Robert Luketic,4
+Mike Gunther,4
+Alethea Jones,4
+Jennifer M. Kroot,4
+Douglas McGrath,4
+Gus Van Sant,4
+Gary Fleder,4
+Kevin R. Adams,4
+Maya Forbes,4
+Jeff Baena,4
+Tony Scott,4
+Richard Bates Jr.,4
+Scott Aukerman,4
+John Musker,4
+Aubrey Powell,4
+Ron Oliver,4
+Chris Weitz,4
+Jonathan Mostow,4
+Bob Nelson,4
+Iain Softley,4
+David Mirkin,4
+Stu Livingston,4
+Mike Judge,4
+Clark Johnson,4
+Steven C. Miller,4
+Curtis Hanson,4
+Adam McKay,4
+Eva Vives,4
+Tom Hooper,4
+Lars von Trier,4
+Lana Wachowski,4
+James Ivory,4
+Taika Waititi,4
+Roger Spottiswoode,4
+Quentin Tarantino,4
+Chad Van De Keere,4
+Andrew Fleming,4
+Chester Tam,4
+Stephen Belber,4
+Brian De Palma,4
+Tim Hill,4
+Gore Verbinski,4
+Beeban Kidron,4
+Callie Khouri,4
+Jeff Tremaine,4
+Gideon Raff,4
+Mark Steven Johnson,4
+Louis J. Horvitz,4
+Sam Taylor-Johnson,4
+Matt Shakman,4
+Kevin Lima,4
+Paul Brizzi,4
+Steve Brill,4
+Antoine Fuqua,4
+Will Gluck,4
+Jorge Blanco,4
+Rusty Cundieff,4
+Joe Berlinger,4
+Ben Brewer,4
+Danny Leiner,4
+Fernando Coimbra,4
+Richard LaGravenese,4
+Rob LaDuca,4
+Marc Abraham,4
+Nicole Holofcener,4
+Simon Wincer,4
+Richard Curtis,4
+Susan Johnson,4
+Jay Russell,4
+Gary David Goldberg,4
+Lesli Linka Glatter,4
+Christian De Vita,4
+James Wan,4
+Jon Gunn,4
+Hayden Schlossberg,4
+Ava DuVernay,4
+Martin Zandvliet,4
+Pedro Morelli,4
+Marco Schnabel,4
+Sergio Pablos,4
+Craig Gillespie,4
+Mark Williams,4
+Stevie Wermers,4
+Gaby Dellal,4
+Ryan Fleck,4
+Vadim Jean,4
+Jill Culton,4
+Joe Ksander,4
+John Luessenhop,4
+Kyle Newman,4
+Ari Sandel,4
+John Hillcoat,4
+Marianna Palka,4
+Gillian Robespierre,4
+Robert Altman,4
+Miguel Arteta,4
+Dax Shepard,4
+Jonathan Sobol,4
+Mark Helfrich,4
+Jeffrey Nachmanoff,4
+Max Lang,4
+Adam Alleca,4
+Phil Weinstein,4
+Kasra Farahani,4
+Matt Piedmont,4
+Jonathan Hensleigh,4
+Rob W. King,4
+Peter Ramsey,4
+Kevin Munroe,4
+Bob Persichetti,4
+Gerard Barrett,4
+Scott Cooper,4
+Michael Radford,4
+Alex Garland,4
+Brian Levant,4
+M. Night Shyamalan,4
+Anne Fontaine,4
+Kevin Smith,4
+Sally Potter,4
+Ernie Barbarash,4
+Mark Henn,4
+Tommy Wirkola,4
+Sam Mendes,4
+Amber Tamblyn,4
+Chris Sivertson,4
+Patricia Rozema,4
+Ben Young,4
+Phil Morrison,4
+Julius Avery,4
+Kelly Reichardt,4
+Björn Stein,4
+Robert Smigel,4
+Ari Folman,4
+Phil Johnston,4
+Hoyt Yeatman,4
+Edward Zwick,4
+Ben Palmer,4
+Brett Ratner,4
+Ted Demme,4
+John R. Leonetti,4
+Greg Mottola,4
+Igor Kovalyov,4
+Jovanka Vuckovic,4
+Jay Surridge,4
+Barry Sonnenfeld,4
+Sarah Gavron,4
+Evan Katz,4
+Dennis Iliadis,4
+Lee Tamahori,4
+Will Graham,4
+Paul Weitz,4
+Oliver Stone,4
+Mathieu Kassovitz,4
+Seth Henrikson,4
+André Øvredal,4
+Anthony Minghella,4
+Paul Schrader,4
+Kevin MacDonald,4
+Jay Baruchel,4
+Tim Burton,4
+Fabrice Du Welz,4
+Norton Virgien,4
+Andrés Couturier,4
+Mike Newell,4
+David Ayer,4
+Joe Dante,4
+Michael Socha,4
+Rodolphe Guenoden,4
+Sam Raimi,4
+David Michôd,4
+Terry Gilliam,4
+Andy Fickman,4
+Roger Kumble,4
+John Lee Hancock,4
+Derek Cianfrance,4
+McG,4
+Mario Van Peebles,4
+Stig Bergqvist,4
+Rob Meyer,4
+Pierre Morel,4
+Rick Benattar,4
+Stacy Title,4
+James Foley,4
+Bruce McCulloch,4
+Vincent Perez,4
+Tim Johnson,4
+Byron Howard,4
+Jay Roach,4
+Shojiro Nishimi,4
+John Wells,4
+Mike Flanagan,4
+Dito Montiel,4
+Sean Penn,4
+Gil Kenan,4
+Simon Wells,4
+Michael D. Black,4
+Peter Lepeniotis,4
+Mike Gabriel,4
+Gonzalo López-Gallego,4
+Robert Rodriguez,4
+Stephanie Laing,4
+Lone Scherfig,4
+Marc Forster,4
+Steve Carr,4
+Ryan Polito,4
+Alex Brewer,4
+Roy Burdine,4
+Ritesh Batra,4
+Dan Gilroy,4
+Emanuel Hoss-Desmarais,4
+Claire Scanlon,4
+Roger Allers,4
+Simon J. Smith,4
+Victor Cook,4
+Julius Onah,4
+Joann Sfar,4
+Lawrence Kasdan,4
+Mike Mills,4
+Linas Phillips,4
+Alain Gagnol,4
+Ian Nelms,4
+Steve Loter,4
+David Leveaux,4
+Joshua Marston,4
+Peter Spirer,4
+Aaron Nee,4
+Roger Graef,4
+Jon Turteltaub,4
+Fernando Lebrija,4
+Kyle Newacheck,4
+Robert C. Ramirez,4
+Ron Clements,4
+Phyllida Lloyd,4
+James Gunn,4
+Michael Cuesta,4
+David Fincher,4
+John Fortenberry,4
+Paul W.S. Anderson,4
+Craig Brewer,4
+Paul Haggis,4
+Jennifer Lee,4
+Tommy O'Haver,4
+Ron Howard,4
+Kurt Wimmer,4
+David Koepp,4
+Francis Ford Coppola,4
+Adam Nee,4
+Massy Tadjedin,4
+Nick Cassavetes,4
+Bobby Roth,4
+Julie Taymor,4
+Richard Donner,4
+Larry Elikann,4
+James Rogan,4
+Lasse Hallström,4
+Anand Tucker,4
+Rob Cohen,4
+Genndy Tartakovsky,4
+Deniz Gamze Ergüven,4
+Jeremy Saulnier,4
+Brad Anderson,4
+Noam Murro,4
+Christian Charles,4
+Roman Coppola,4
+Nic Mathieu,4
+Tom Shadyac,4
+Andrew Douglas,4
+Elizabeth Banks,4
+Tony Leondis,4
+Eshom Nelms,4
+Sean Hanish,4
+Ivan Reitman,4
+Timothy Woodward Jr.,4
+Saul Dibb,4
+Jonathan Levine,4
+Eric Stoltz,4
+Kees Van Oostrum,4
+Patrik Forsberg,4
+Rodney Rothman,4
+Ricky Gervais,4
+Jean-Loup Felicioli,4
+Diego Luna,4
+Tamara Jenkins,4
+Randal Kleiser,4
+Chuck Russell,4
+Renny Harlin,4
+Mary Harron,4
+RZA,4
+Yorgos Lanthimos,4
+Harald Zwart,4
+Charles Martin Smith,4
+James Wong,4
+Castille Landon,4
+Wayne Orr,4
+Jonathan Demme,4
+Jeffrey W. Byrd,4
+Steven Knight,4
+Chris McCoy,4
+Kristian Levring,4
+Keenen Ivory Wayans,4
+Gary Wang,4
+Guillermo del Toro,4
+Wally Pfister,4
+Isaac Rentz,4
+Chris Williams,4
+Leslie Small,4
+Andrew Niccol,4
+Adam Shankman,4
+Joel Schumacher,4
+Timothy Reckart,4
+Fernando Meirelles,4
+Ken Marino,4
+Gary Michael Schultz,4
+Amy Poehler,4
+Erik White,4
+Joe Johnston,4
+Jared Stern,4
+J.F. Musial,4
+Jennifer Phang,4
+Terry Hughes,4
+George Clooney,4
+Peter Segal,4
+Bob Odenkirk,4
+Jason Winer,4
+Ken Kushner,4
+Sarah Smith,4
+Ben Wheatley,4
+Larry Latham,4
+Billy Ray,4
+Gaëtan Brizzi,4
+Tomm Moore,4
+Paul Thomas Anderson,4
+Joel Crawford,4
+Neil Armfield,4
+Frank Coraci,4
+Éric Warin,4
+Steve Boettcher,4
+Matthias Hoene,4
+Franck Ekinci,4
+Kieran Darcy-Smith,4
+Michael Polish,4
+Charlie McDowell,4
+Andy Goddard,4
+Rich Moore,4
+Richard Kelly,4
+Nicolas Winding Refn,4
+Ash Brannon,4
+John Stockwell,4
+Drake Doremus,4
+Brian A. Miller,4
+Robin Swicord,4
+Àlex Pastor,4
+John Scheinfeld,4
+Jesse V. Johnson,4
+Stacie Passon,4
+Jennifer Morrison,4
+Måns Mårlind,4
+Jon Hurwitz,4
+Zach Braff,4
+Matthew Vaughn,4
+Neil Burger,4
+Phil Nibbelink,4
+Dean Wright,4
+Roxanne Benjamin,4
+Duncan Jones,4
+Kelly Fremon Craig,4
+John Irvin,4
+Jay Chandrasekhar,4
+Peyton Reed,4
+Scott Hicks,4
+Marcus Raboy,4
+Alejandro G. Iñárritu,4
+Paul Andrew Williams,4
+Peter Farrelly,4
+Steve Antin,4
+Brian Helgeland,4
+Grant Heslov,4
+Julian Jarrold,4
+Clint Eastwood,4
+Greg Pritikin,4
+Philipp Stölzl,4
+Isaac Florentine,4
+Bill Plympton,4
+Roland Emmerich,4
+Alan J. Pakula,4
+Bo Welch,4
+John Maclean,4
+Toa Fraser,4
+Tom Ford,4
+Alexandre Espigares,4
+Rob Marshall,4
+John Sanford,4
+Andrew Stanton,4
+John Michael McDonagh,4
+William H. Macy,4
+Adam Smith,4
+Thomas Carter,4
+Stephen Daldry,4
+Austin Stark,4
+Michael Carney,4
+Philip G. Atwell,4
+Jon Avnet,4
+David O. Russell,4
+Peter Hewitt,4
+Andy Serkis,4
+Brad Peyton,4
+James Mangold,4
+Archie Borders,4
+Kurt Voelker,4
+Ross R. Shuman,4
+Joel Coen,4
+David Palmer,4
+James Ponsoldt,4
+Josh Vietze,4
+John Curran,4
+Jim Field Smith,4
+Barry Levinson,4
+Chris Robinson,4
+Robert Zemeckis,4
+David Soren,4
+Rian Johnson,4
+James L. Brooks,4
+Paul Solet,4
+Adam Nimoy,4
+Rita Coburn Whack,4
+Steve Hickner,4
+Michael Apted,4
+Neal Brennan,4
+Jennifer Kaytin Robinson,4
+David Lee Miller,4
+Joe Russo,4
+Christopher Guest,4
+Ruben Fleischer,4
+Mark Waters,4
+Jennifer Westcott,4
+Ekachai Uekrongtham,4
+Stephen Gyllenhaal,4
+David Pastor,4
+Tony Kaye,4
+Jody Hill,4
+J.C. Chandor,4
+Peter Hutchings,4
+Keoni Waxman,4
+Jesse Peretz,4
+Matthew Robinson,4
+Griffin Dunne,4
+Simon Curtis,4
+Mohammed Saeed Harib,4
+Edgar Wright,4
+John Kahrs,4
+Nicholas Stoller,4
+Andrzej Bartkowiak,4
+James McTeigue,4
+Eric Summer,4
+Scott Martin,4
+Nathan Greno,4
+Bob Hercules,4
+Ken Kwapis,4
+Andrew Mogel,4
+Kyle Patrick Alvarez,4
+Elaine Bogan,4
+Robert Vince,4
+Anne Fletcher,4
+Will Lowell,5
+Pamela Romanowsky,5
+Henrik Ruben Genz,5
+Shadae Lamar Smith,5
+Will Eubank,5
+Ryan Murphy,5
+Vanita Shastry,5
+Sarah Kruchowski,5
+Dave Dorsey,5
+William Eubank,5
+Ryan Moody,5
+Sarah Adina Smith,5
+Justin Kelly,5
+Robert Kouba,5
+Bobby Farrelly,5
+Mahin Ibrahim,5
+Mark Columbus,5
+Mark Rosman,5
+Werner Herzog,5
+Austin Kolodney,5
+Rolfe Kanefsky,5
+Alana Waksman,5
+Jon YonKondy,5
+Brandon Somerhalder,5
+Xu Zhang,5
+Harmony Korine,5
+Jeremy David White,5
+Simon Savelyev,5
+Ian MacAllister-McDonald,5
+Drue Metz,5
+Lauren Hoekstra,5
+David Beier,5
+Dan Bush,5
+Dennis Widmyer,6
+Adam Egypt Mortimer,6
+Gary Shore,6
+Anthony Scott Burns,6
+Terry Loane,6
+Nicolás López,6
+Alex Winter,6
+Kevin Kolsch,6
+Nicholas McCarthy,6
+Oliver Blackburn,6
+John Asher,6
+Faraz Haider,7
+Supavitra Babul,7
+Saket Chaudhary,7
+Manish Tiwary,7
+Devika Bhagat,7
+Indrajit Nattoji,7
+Nalan Kumarasamy,7
+Prawal Raman,7
+Shonali Bose,7
+Shakun Batra,7
+Bejoy Nambiar,7
+K.C. Bokadia,7
+A. L. Vijay,7
+Raj Amit Kumar,7
+Anurag Kashyap,7
+Pranav Singh,7
+Sachin Kamlakar Khot,7
+Samir Karnik,7
+Sartaj Singh Pannu,7
+Mahesh Bhatt,7
+Manish Gupta,7
+N. Linguswamy,7
+Sooraj R. Barjatya,7
+R. Balki,7
+Mahesh Manjrekar,7
+Ashutosh Gowariker,7
+Pooja Bhatt,7
+Anurag Singh,7
+Sameer Sharma,7
+Laxman Utekar,7
+Bedabrata Pain,7
+Meghna Gulzar,7
+Manika Sharma,7
+Jitendra Tiwari,7
+Nagesh Kukunoor,7
+Gauravv K Chawla,7
+Santosh Manjrekar,7
+Sagar Sarhadi,7
+Ribhu Dasgupta,7
+Tarun Mansukhani,7
+Gulzar,7
+A. Salaam,7
+Anurag Basu,7
+Sunil Sukthankar,7
+Biswajeet Bora,7
+Shekhar Kapur,7
+Vishal Bhardwaj,7
+Dharmendra Suresh Desai,7
+Aditya Sarpotdar,7
+Chandan Arora,7
+Sajid Khan,7
+Sohail Tatari,7
+Michael J. Bassett,7
+Karan Anshuman,7
+Lekh Tandon,7
+Sidharth Malhotra,7
+Karthik Subbaraj,7
+Satish Rajwade,7
+Rakeysh Omprakash Mehra,7
+Vipul Amrutlal Shah,7
+John Duigan,7
+Kedar Shinde,7
+Valli Bindana,7
+Basu Chatterjee,7
+Milind Rau,7
+Rajshree Ojha,7
+Chandra Barot,7
+Dharmesh Darshan,7
+Vijay Lalwani,7
+Deepti Naval,7
+Ajay Bhuyan,7
+Anant Balani,7
+Rajesh Mapuskar,7
+Abhijit Kokate,7
+Vikram Bhatt,7
+Anil V. Kumar,7
+Viju Mane,7
+Amitabha Singh,7
+Devashish Makhija,7
+Abhinav Shiv Tiwari,7
+Mohit Suri,7
+Robbie Grewal,7
+Kookie V. Gulati,7
+Nagraj Manjule,7
+Shree Narayan Singh,7
+Sanjiv Jaiswal,7
+Pankaj Batra,7
+Vivek Wagh,7
+Raj Nidimoru,7
+Sanjay Jadhav,7
+Srivinay Salian,7
+Santwana Bardoloi,7
+Raja Sen,7
+Mastan Alibhai Burmawalla,7
+Onir,7
+Harjit Singh,7
+Ashish R. Mohan,7
+Abbas Tyrewala,7
+Sudip Bandyopadhyay,7
+Gajendra Ahire,7
+Leena Yadav,7
+Syed Ahmad Afzal,7
+Sarthak Dasgupta,7
+Kushal Srivastava,7
+Raja Menon,7
+Samit Kakkad,7
+Abhishek Kapoor,7
+Santosh Sivan,7
+Abhishek Varman,7
+Shammi Kapoor,7
+Kamal Sahani,7
+Amaan Khan,7
+Krishna D.K.,7
+Sachin Kundalkar,7
+Balu Mahendra,7
+Farjad Nabi,7
+Ganesh Kadam,7
+Rajeev Patil,7
+Milan Luthria,7
+Shanker Raman,7
+Raj Kanwar,7
+Alo Sarkar,7
+Amit Roy,7
+Madhur Bhandarkar,7
+Abhishek Sharma,7
+Sachin,7
+Sriram Raghavan,7
+Avinash Das,7
+Pan Nalin,7
+Mikhil Musale,7
+Sudhir Mishra,7
+Ashu Trikha,7
+Aamir Khan,7
+Shreyas Talpade,7
+Vishal Mishra,7
+Umesh Ghadge,7
+N. Chandra,7
+Kunal Deshmukh,7
+Amit Rai,7
+Claude Lelouch,7
+Shashilal K. Nair,7
+Sachin Yardi,7
+Sushil Majumdar,7
+Anubhav Sinha,7
+Vikramaditya Motwane,7
+Partho Ghosh,7
+Farhan Akhtar,7
+Punit Malhotra,7
+Hrishikesh Mukherjee,7
+Raj Kaushal,7
+Puri Jagannadh,7
+Rucha Humnabadkar,7
+Meenu Gaur,7
+Tigmanshu Dhulia,7
+Khalid Mohamed,7
+Ashok Nanda,7
+Shaad Ali,7
+Rajkumar Santoshi,7
+Paritosh Painter,7
+Krish,7
+Sangeeth Sivan,7
+Amol Palekar,7
+Chandrakant Kanse,7
+Indra Kumar,7
+Satish Kaushik,7
+Sujoy Ghosh,7
+Dibakar Banerjee,7
+Imtiaz Ali,7
+Soumendra Padhi,7
+Raaghav Dar,7
+Nikhil Nagesh Bhat,7
+Gauri Shinde,7
+Partho Sen-Gupta,7
+Samar Khan,7
+Shanawaz Nellikunnil,7
+Umesh Mehra,7
+Shawn Arranha,7
+Nishikant Kamat,7
+Gurinder Chadha,7
+Yasir Nawaz,7
+Umesh Shukla,7
+Pa. Ranjith,7
+Reema Kagti,7
+Jasbir Bijendra Bhati,7
+Pratim D. Gupta,7
+Mani Ratnam,7
+Debaloy Dey,7
+Tanuja Chandra,7
+Sandeep Reddy Vanga,7
+Anu Menon,7
+Suparn Verma,7
+Sujeeth,7
+Jennifer Lynch,7
+Amar Gupte,7
+Shyam Benegal,7
+Shlok Sharma,7
+Remy Kohli,7
+Bhushan Patel,7
+Anand Tiwari,7
+K. Ramanlal,7
+Manmohan Desai,7
+Mahmood Farooqui,7
+Pia Sukanya,7
+K. Subhash,7
+Param Gill,7
+Gurudev Bhalla,7
+Rahat Kazmi,7
+Shelly Chopra Dhar,7
+Anthony D'Souza,7
+Avadhoot Gupte,7
+Raj Kumar Gupta,7
+Navaniat Singh,7
+Sameer Vidwans,7
+Radhika Rao,7
+Arnab Chaudhuri,7
+Ravi Jadhav,7
+Ram Gopal Varma,7
+Kabir Khan,7
+Nila Madhab Panda,7
+Anees Bazmee,7
+Aniruddha Roy Chowdhury,7
+Atanu Mukherjee,7
+Pramod Pawar,7
+S.S. Rajamouli,7
+Prem Soni,7
+Sudhish Kamath,7
+Mandeep Kumar,7
+Ranjit Tiwari,7
+Rahul Dholakia,7
+Vikas Bahl,7
+Abhinay Deo,7
+Saurabh Kabra,7
+Ajay Bahl,7
+Girish Joshi,7
+Prakash Mehra,7
+Prakash Jha,7
+Hemant Gaba,7
+Puneet Sira,7
+Prabhu Deva,7
+Rohit Shetty,7
+Aanand Rai,7
+Fuwad Khan,7
+Harry Baweja,7
+Chandrakant Kulkarni,7
+Satyajit Bhatkal,7
+Bauddhayan Mukherji,7
+Remo D'Souza,7
+Roland Joffé,7
+Nicholas Kharkongor,7
+Prakash Balwant Saini,7
+Ahishor Solomon,7
+Omung Kumar,7
+Shravan Kumar,7
+Ketan Mehta,7
+Ayaan Mukherji,7
+Manish Jha,7
+Ananth Narayan Mahadevan,7
+Sudesh Manjrekar,7
+Aziz Mirza,7
+Shakti Samanta,7
+Mukul Anand,7
+Kabir Sadanand,7
+Rajat Kapoor,7
+Subhash Ghai,7
+Karan Johar,7
+Ravi Udyawar,7
+Agnidev Chatterjee,7
+Manbhavan Singh,7
+Jeeva,7
+Surya S.J.,7
+Varun Narvekar,7
+Rajiv Mehra,7
+Latif Faiziyev,7
+Shashanka Ghosh,7
+Sanjay Gupta,7
+Amardeep Singh Gill,7
+Shirish Kunder,7
+Prabhuraj,7
+Habib Faisal,7
+Ajay Phansekar,7
+Chandra Prakash Dwivedi,7
+Kunal Kohli,7
+Vivek Agnihotri,7
+Vinay Sapru,7
+Tariq Khan,7
+Satish Manwar,7
+Sunil Kumar Agrawal,7
+Zoya Akhtar,7
+Mozez Singh,7
+Amar Kaushik,7
+Farah Khan,7
+Girish Malik,7
+Sumitra Bhave,7
+Gurmmeet Singh,7
+Soumitra Ranade,7
+Shoojit Sircar,7
+Nandita Das,7
+Kaizad Gustad,7
+Ashwiny Iyer Tiwari,7
+Ken Ghosh,7
+Prashant Nair,7
+Sandeep Mohan,7
+Apoorva Lakhia,7
+Mohammed Hussain,7
+Mohsin Ali,7
+Neeraj Pandey,7
+Manjeet Singh,7
+Anusha Rizvi,7
+Shivam Nair,7
+Abhishek Chaubey,7
+Akshay Akkineni,7
+Abhay Chopra,7
+Haissam Hussain,7
+Ahsan Rahim,7
+Stanley Tong,7
+Tinnu Anand,7
+Kavi Raz,7
+Sanjay Dayma,7
+Kundan Shah,7
+Aruna Raje,7
+Sanjay Soorkar,7
+Sai Paranjape,7
+Rajkumar Hirani,7
+Nikhil Advani,7
+Raj Kapoor,7
+Pawan Kripalani,7
+Rakesh Mehta,7
+Geetu Mohandas,7
+Renzil D'Silva,7
+Anil Sharma,7
+Praveen Nischol,7
+Raj N. Sippy,7
+Munish Bhardwaj,7
+Sanjay Leela Bhansali,7
+Krishna Vamshi,7
+Tanveer Khan,7
+Eeshwar Nivas,7
+Tejas Prabha Vijay Deoskar,7
+Qaushiq Mukherjee,7
+Santram Varma,7
+Priyadarshan,7
+Raman Kumar,7
+David Dhawan,7
+Girish Mohite,7
+Milind Dhaimade,7
+Sudhanshu Saria,7
+Abbas Alibhai Burmawalla,7
+=======
 Golam Kibria Farooki,0
 Syed Saleh Ahmed Sobhan,0
 Syed Ahmed Shawki,0
@@ -1159,3 +2321,4 @@ Ben Palmer,7
 Kelly Fremon Craig,7
 Ricky Gervais,7
 Jonathan Mostow,7
+>>>>>>> f7a2a63b0a8531c86fc2b20fd24478fd8187f0bf
