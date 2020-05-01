@@ -29,7 +29,7 @@ from misc_utilities import *
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 1000
 NUMBER_OF_ATTEMPTS_PER_SLEEP = 1
 SLEEPING_RANGE_SLEEP_TIME = 10
-BROWSER_IS_HEADLESS = False
+BROWSER_IS_HEADLESS = True
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
