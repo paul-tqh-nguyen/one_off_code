@@ -4,7 +4,7 @@
 """
 
 # @todo fill in doc string
-# @todo get rid of @trace decorators
+# @todo get rid of #@trace decorators
 
 ###########
 # Imports #
@@ -26,14 +26,11 @@ from misc_utilities import *
 # Globals #
 ###########
 
-UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
-
-MAX_NUMBER_OF_BROWSER_CLOSE_ATTEMPTS = 1000
-MAX_NUMBER_OF_BROWSER_RELAUNCH_ATTEMPTS = 1000
-NUMBER_OF_ATTEMPTS_PER_SLEEP = 3
+MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 1000
+NUMBER_OF_ATTEMPTS_PER_SLEEP = 1
+SLEEPING_RANGE_SLEEP_TIME = 10
 BROWSER_IS_HEADLESS = False
 
-ARBITRARY_URL = "https://www.google.com/"
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
 OUTPUT_CSV_FILE = './output.csv'
@@ -44,8 +41,8 @@ OUTPUT_CSV_FILE = './output.csv'
 
 def _sleeping_range(upper_bound: int):
     for attempt_index in range(upper_bound):
-        if attempt_index // NUMBER_OF_ATTEMPTS_PER_SLEEP and attempt_index % NUMBER_OF_ATTEMPTS_PER_SLEEP == 0:
-            time.sleep(60*(i//NUMBER_OF_ATTEMPTS_PER_SLEEP))
+        if attempt_index and attempt_index % NUMBER_OF_ATTEMPTS_PER_SLEEP == 0:
+            time.sleep(SLEEPING_RANGE_SLEEP_TIME*(attempt_index//NUMBER_OF_ATTEMPTS_PER_SLEEP))
         yield attempt_index
 
 EVENT_LOOP = asyncio.new_event_loop()
@@ -57,42 +54,16 @@ async def _launch_browser() -> pyppeteer.browser.Browser:
 
 BROWSER = EVENT_LOOP.run_until_complete(_launch_browser())
 
-async def _close_browser() -> None:
-    for _ in _sleeping_range(MAX_NUMBER_OF_BROWSER_CLOSE_ATTEMPTS):
-        global BROWSER
-        try:
-            print('_close_browser 1')
-            pages = await BROWSER.pages()
-            print('_close_browser 2')
-            for page in pages:
-                print('_close_browser 3')
-                if not page.isClosed():
-                    print('_close_browser 4')
-                    await page.goto(ARBITRARY_URL)
-                    print('_close_browser 4.1')
-                    await page.close()
-                    print('_close_browser 5')
-                print('_close_browser 6')
-                assert page.isClosed()
-                print('_close_browser 7')
-            print('_close_browser 8')
-            await browser.close()
-            print('_close_browser 9')
-        except Exception as err:
-            warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {_close_browser.__name__} {err}')
-        break
-    print('_close_browser 10')
-    return
-
 def scrape_function(func: Awaitable) -> Awaitable:
     async def decorating_function(*args, **kwargs):
-        result = UNIQUE_BOGUS_RESULT_IDENTIFIER
+        unique_bogus_result_identifier = object()
+        result = unique_bogus_result_identifier
         global BROWSER
-        for _ in _sleeping_range(MAX_NUMBER_OF_BROWSER_RELAUNCH_ATTEMPTS):
+        for _ in _sleeping_range(MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS):
             try:
                 updated_kwargs = kwargs.copy()
                 pages = await BROWSER.pages()
-                page = only_one(pages)
+                page = pages[-1]
                 updated_kwargs['page'] = page
                 result = await func(*args, **updated_kwargs)
             except (pyppeteer.errors.BrowserError,
@@ -102,15 +73,13 @@ def scrape_function(func: Awaitable) -> Awaitable:
                     pyppeteer.errors.PyppeteerError,
                     pyppeteer.errors.TimeoutError) as err:
                 warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {func.__name__} {err}')
-                print("Closing browser...")
-                await _close_browser()
-                print("Launching new browser...")
-                BROWSER = await _launch_browser()
-                print("New browser launched.")
+                await BROWSER.newPage()
             except Exception as err:
                 raise
-            if result != UNIQUE_BOGUS_RESULT_IDENTIFIER:
+            if result != unique_bogus_result_identifier:
                 break
+        if result == unique_bogus_result_identifier:
+            raise Exception
         return result
     return decorating_function
 
@@ -133,7 +102,7 @@ async def _gather_month_links(*, page) -> List[str]:
         month_links.append(link)
     return month_links
 
-@trace
+#@trace
 def gather_month_links() -> List[str]:
     month_links = EVENT_LOOP.run_until_complete(_gather_month_links())
     return month_links
@@ -153,11 +122,11 @@ async def _blog_links_from_month_link(month_link: str, *, page: pyppeteer.page.P
         blog_links.append(link)
     return blog_links
 
-@trace
+#@trace
 def blog_links_from_month_link(month_link: str) -> Iterable[str]:
     return EVENT_LOOP.run_until_complete(_blog_links_from_month_link(month_link))
 
-@trace
+#@trace
 def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
     month_links = tqdm_with_message(month_links, post_yield_message_func = lambda index: f'Scraping month link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
     return itertools.chain(*map(blog_links_from_month_link, month_links))
@@ -214,11 +183,11 @@ async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page
     
     return data_dict
 
-@trace
+#@trace
 def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
     return EVENT_LOOP.run_until_complete(_data_dict_from_blog_link(blog_link))
 
-@trace
+#@trace
 def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
     blog_links = tqdm_with_message(blog_links, post_yield_message_func = lambda index: f'Scraping blog link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
     return map(data_dict_from_blog_link, blog_links)
@@ -246,7 +215,7 @@ def sanity_check_output_csv_file() -> None:
 # Driver #
 ##########
 
-@trace
+#@trace
 def gather_data():
     with timer("Data gathering"):
         month_links = gather_month_links()

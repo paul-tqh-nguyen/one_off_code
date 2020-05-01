@@ -36,6 +36,7 @@ import multiprocessing
 import functools
 import itertools
 import inspect
+import signal
 import tqdm
 from tqdm import tqdm
 from importlib import reload
