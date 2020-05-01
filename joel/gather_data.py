@@ -73,10 +73,12 @@ def scrape_function(func: Awaitable) -> Awaitable:
                     pyppeteer.errors.PageError,
                     pyppeteer.errors.PyppeteerError) as err:
                 warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} {func.__name__} {err}')
+                warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} Launching new page.')
                 await BROWSER.newPage()
                 pages = await BROWSER.pages() ; print(f"len(pages) {repr(len(pages))}")
             except pyppeteer.errors.TimeoutError as err:
                 warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} {func.__name__} {err}')
+                warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} Launching new browser.')
                 browser_process = only_one([process for process in psutil.process_iter() if process.pid==BROWSER.process.pid])
                 for child_process in browser_process.children(recursive=True):
                     child_process.kill()
