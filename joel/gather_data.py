@@ -11,6 +11,7 @@
 ###########
 
 import os
+import psutil
 import asyncio
 import pyppeteer
 import itertools
@@ -70,10 +71,17 @@ def scrape_function(func: Awaitable) -> Awaitable:
                     pyppeteer.errors.ElementHandleError,
                     pyppeteer.errors.NetworkError,
                     pyppeteer.errors.PageError,
-                    pyppeteer.errors.PyppeteerError,
-                    pyppeteer.errors.TimeoutError) as err:
-                warnings.warn(f'{time.strftime("%m/%d/%Y_%H:%M:%S")} {func.__name__} {err}')
+                    pyppeteer.errors.PyppeteerError) as err:
+                warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} {func.__name__} {err}')
                 await BROWSER.newPage()
+                pages = await BROWSER.pages() ; print(f"len(pages) {repr(len(pages))}")
+            except pyppeteer.errors.TimeoutError as err:
+                warnings.warn(f'\n{time.strftime("%m/%d/%Y_%H:%M:%S")} {func.__name__} {err}')
+                browser_process = only_one([process for process in psutil.process_iter() if process.pid==BROWSER.process.pid])
+                for child_process in browser_process.children(recursive=True):
+                    child_process.kill()
+                browser_process.kill() # @hack memory leak ; this line doesn't actually kill the process (or maybe it just doesn't the PID?)
+                BROWSER = await _launch_browser()
             except Exception as err:
                 raise
             if result != unique_bogus_result_identifier:
@@ -183,7 +191,7 @@ async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page
     
     return data_dict
 
-#@trace
+@trace
 def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
     return EVENT_LOOP.run_until_complete(_data_dict_from_blog_link(blog_link))
 
