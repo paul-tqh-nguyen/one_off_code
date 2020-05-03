@@ -1,0 +1,319 @@
+#!/usr/bin/python3
+"#!/usr/bin/python3 -OO"
+
+"""
+"""
+
+# @todo fill in the doc string
+
+###########
+# Imports #
+###########
+
+import os
+import math
+import pandas as pd
+from typing import List, Callable, Tuple
+from functools import reduce
+from abc import ABC, abstractmethod
+from collections import OrderedDict
+
+from gather_data import OUTPUT_CSV_FILE as RAW_DATA_CSV_FILE
+from misc_utilities import *
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils import data
+
+###########
+# Globals #
+###########
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+NUM_WORKERS = 1 # 8
+
+INPUT_SEQUENCE_LENGTH = 100
+BATCH_SIZE = 64
+NUMBER_OF_EPOCHS = 400
+OUTPUT_DIRECTORY = './default_output'
+NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
+
+TRAINING_PORTION = 0.7
+VALIDATION_PORTION = 1-TRAINING_PORTION
+
+EMBEDDING_SIZE = 256
+ENCODING_HIDDEN_SIZE = 256
+NUMBER_OF_ENCODING_LAYERS = 2
+DROPOUT_PROBABILITY = 0.5
+
+#############
+# Load Data #
+#############
+
+class NumericalizedBlogDataset(data.Dataset):
+    def __init__(self, input_string_length):
+        self.input_string_length = input_string_length
+        self.x_data: List[str] = []
+        self.y_data: List[str] = []
+        raw_data_df = pd.read_csv(RAW_DATA_CSV_FILE)
+        self.idx2char = sorted(reduce(set.union, [set(blog) for blog in raw_data_df.blog_text]))
+        self.char2idx = {char:idx for idx, char in enumerate(self.idx2char)}
+        for blog_text in raw_data_df.blog_text:
+            if len(blog_text) > input_string_length:
+                for snippet_index in range(len(blog_text)-input_string_length):
+                    input_example = blog_text[snippet_index:snippet_index+input_string_length]
+                    input_example = [self.char2idx[char] for char in input_example]
+                    input_example = torch.Tensor(input_example).to(DEVICE)
+                    output_example = blog_text[snippet_index+input_string_length]
+                    output_example = self.char2idx[output_example]
+                    self.x_data.append(input_example)
+                    self.y_data.append(output_example)
+        assert len(self.x_data) == len(self.y_data)
+        
+    def __len__(self) -> int:
+        assert len(self.x_data) == len(self.y_data)
+        return len(self.x_data)
+    
+    def __getitem__(self, index) -> Tuple[torch.Tensor, int]:
+        x_datum = self.x_data[index]
+        y_datum = self.y_data[index]
+        return x_datum, y_datum
+    
+##########
+# Models #
+##########
+
+class LSTMNetwork(nn.Module):
+    def __init__(self, alphabet_size: int, embedding_size: int, encoding_hidden_size: int, number_of_encoding_layers: int, dropout_probability: float):
+        super().__init__()
+        if __debug__:
+            self.alphabet_size = alphabet_size
+            self.embedding_size = embedding_size
+            self.encoding_hidden_size = encoding_hidden_size
+            self.number_of_encoding_layers = number_of_encoding_layers
+        self.embedding_layers = nn.Sequential(OrderedDict([
+            ("embedding_layer", nn.Embedding(alphabet_size, embedding_size, max_norm=1.0)),
+            ("dropout_layer", nn.Dropout(dropout_probability)),
+        ]))
+        self.encoding_layers = nn.LSTM(embedding_size,
+                                       encoding_hidden_size,
+                                       num_layers=number_of_encoding_layers,
+                                       bidirectional=True,
+                                       dropout=dropout_probability)
+        self.prediction_layers = nn.Sequential(OrderedDict([
+            ("dropout_layer", nn.Dropout(dropout_probability)),
+            ("fully_connected_layer", nn.Linear(encoding_hidden_size*2, alphabet_size)),
+        ]))
+        self.to(DEVICE)
+    
+    def forward(self, batch: torch.tensor):
+        print(f"batch {repr(batch)}")
+        batch_size, sequence_length = tuple(batch.shape)
+        assert tuple(batch.shape) == (batch_size, sequence_length)
+
+        embedded_batch = self.embedding_layers(batch)
+        assert tuple(embedded_batch.shape) == (batch_size, sequence_length, self.embedding_size)
+        
+        if __debug__:
+            encoded_batch, (encoding_hidden_state, encoding_cell_state) = self.encoding_layers(embedded_batch)
+            encoded_batch, encoded_batch_lengths = nn.utils.rnn.pad_sequence(encoded_batch, batch_first=True)
+        else:
+            encoded_batch, _ = self.encoding_layers(embedded_batch)
+            encoded_batch, _ = nn.utils.rnn.pad_sequence(encoded_batch, batch_first=True)
+        assert tuple(encoded_batch.shape) == (batch_size, sequence_length, self.encoding_hidden_size*2)
+        assert tuple(encoding_hidden_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
+        assert tuple(encoding_cell_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
+        assert tuple(encoded_batch_lengths.shape) == (batch_size,)
+        assert (encoded_batch_lengths == sequence_length).all()
+
+        mean_batch = torch.mean(encoded_batch,dim=1)
+        assert tuple(mean_batch.shape) == (batch_size, self.encoding_hidden_size*2)
+        
+        prediction = self.prediction_layers(mean_batch)
+        assert tuple(prediction.shape) == (batch_size, self.output_size)
+        
+        return prediction
+
+##############
+# Predictors #
+##############
+
+class Predictor(ABC):
+    def __init__(self, output_directory: str, dataset: torch.utils.data.Dataset, number_of_epochs: int, batch_size: int, train_portion: float, validation_portion: float, **kwargs):
+        super().__init__()
+        self.best_valid_loss = float('inf')
+        
+        self.model_args = kwargs
+        self.number_of_epochs = number_of_epochs
+        self.batch_size = batch_size
+
+        self.dataset = dataset
+        self.train_portion = train_portion
+        self.validation_portion = validation_portion
+        assert math.isclose(1.0, self.validation_portion+self.train_portion)
+        number_of_training_examples = round(self.train_portion*len(self.dataset))
+        number_of_validation_examples = round(self.validation_portion*len(self.dataset))
+        assert number_of_training_examples+number_of_validation_examples == len(dataset), f"The dataset has size {dataset} while the number of training examples ({number_of_training_examples}) and the number of validation examples ({number_of_validation_examples}) sum to {number_of_training_examples+number_of_validation_examples}"
+        self.training_dataset, self.validation_dataset = torch.utils.data.random_split(dataset, [number_of_training_examples, number_of_validation_examples])
+        self.training_dataloader = data.DataLoader(self.training_dataset, batch_size=self.batch_size, shuffle=True, num_workers=NUM_WORKERS)
+        self.validation_dataloader = data.DataLoader(self.validation_dataset, batch_size=self.batch_size, shuffle=False, num_workers=NUM_WORKERS)
+
+        self.output_directory = output_directory
+        if not os.path.exists(self.output_directory):
+            os.makedirs(self.output_directory)
+        
+        self.initialize_model()
+    
+    @abstractmethod
+    def initialize_model(self) -> None:
+        pass
+    
+    def train_one_epoch(self) -> Tuple[float, float]:
+        epoch_loss = 0
+        epoch_accuracy = 0
+        number_of_training_batches = len(self.training_dataloader)
+        self.model.train()
+        for text_batch, next_characters in tqdm_with_message(self.training_dataloader, post_yield_message_func = lambda index: f'Training Accuracy {epoch_accuracy/(index+1):.8f}', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
+            self.optimizer.zero_grad()
+            predictions = self.model(text_batch)
+            loss = self.loss_function(predictions, next_characters)
+            accuracy = self.scores_of_discretized_values(predictions, next_characters)
+            loss.backward()
+            self.optimizer.step()
+            epoch_loss += loss.item()
+            epoch_accuracy += accuracy
+        epoch_loss /= number_of_training_batches
+        epoch_accuracy /= number_of_training_batches
+        return epoch_loss, epoch_accuracy
+    
+    def validate(self) -> Tuple[float, float]:
+        epoch_loss = 0
+        epoch_accuracy = 0
+        self.model.eval()
+        iterator_size = len(self.validation_dataloader)
+        with torch.no_grad():
+            for text_batch, next_characters in tqdm_with_message(self.validation_dataloader, post_yield_message_func = lambda index: f'Validation Accuracy {epoch_accuracy/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
+                predictions = self.model(text_batch)
+                loss = self.loss_function(predictions, next_characters)
+                accuracy = self.scores_of_discretized_values(predictions, next_characters)
+                epoch_loss += loss.item()
+                epoch_f1 += accuracy
+        epoch_loss /= iterator_size
+        epoch_accuracy /= iterator_size
+        return epoch_loss, epoch_accuracy
+    
+    def train(self) -> None:
+        self.print_hyperparameters()
+        best_saved_model_location = os.path.join(self.output_directory, 'best-model.pt')
+        most_recent_validation_accuracy_scores = [0]*NUMBER_OF_RELEVANT_RECENT_EPOCHS
+        print(f'Starting training')
+        for epoch_index in range(self.number_of_epochs):
+            print("\n")
+            print(f"Epoch {epoch_index}")
+            with timer(section_name=f"Epoch {epoch_index}"):
+                train_loss, train_accuracy = self.train_one_epoch()
+                valid_loss, valid_accuracy = self.validate()
+                print(f'\t Train Accuracy: {train_accuracy:.8f} | Train Loss: {train_loss:.8f}')
+                print(f'\t  Val. Accuracy: {valid_accuracy:.8f} |  Val. Loss: {valid_loss:.8f}')
+                if valid_loss < self.best_valid_loss:
+                    self.best_valid_loss = valid_loss
+                    self.save_parameters(best_saved_model_location)
+                    self.test(epoch_index, False)
+            print("\n")
+            if reduce(bool.__or__, (valid_accuracy > previous_accuracy for previous_f1 in most_recent_validation_accuracy_scores)):
+                most_recent_validation_accuracy_scores.pop(0)
+                most_recent_validation_accuracy_scores.append(valid_accuracy)
+            else:
+                print()
+                print(f"Validation is not better than any of the {NUMBER_OF_RELEVANT_RECENT_EPOCHS} recent epochs, so training is ending early due to apparent convergence.")
+                print()
+                break
+        self.load_parameters(best_saved_model_location)
+        self.test(epoch_index, True)
+        os.remove(best_saved_model_location)
+        return
+    
+    def print_hyperparameters(self) -> None:
+        print()
+        print(f"Model hyperparameters are:")
+        print(f'        number_of_epochs: {self.number_of_epochs}')
+        print(f'        batch_size: {self.batch_size}')
+        print(f'        alphabet_size: {len(self.dataset.idx2char)}')
+        print(f'        output_directory: {self.output_directory}')
+        for model_arg_name, model_arg_value in sorted(self.model_args.items()):
+            print(f'        {model_arg_name}: {model_arg_value.__name__ if hasattr(model_arg_value, "__name__") else str(model_arg_value)}')
+        print()
+        print(f'The model has {self.count_parameters()} trainable parameters.')
+        print(f"This processes's PID is {os.getpid()}.")
+        print()
+    
+    def count_parameters(self) -> int:
+        return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+    
+    def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:
+        if __debug__:
+            batch_size = y.shape[0]
+        assert batch_size <= self.batch_size
+        assert tuple(y.shape) == (batch_size, self.output_size)
+        assert tuple(y_hat.shape) == (batch_size, self.output_size)
+        y_hat_discretized = (y_hat == y_hat.max(dim=1)).int()
+        assert tuple(y_hat_discretized.shape) == tuple(y_hat.shape)
+        assert tuple(y_hat_discretized.shape) == tuple(y.shape)
+        accuracy = ((y_hat_discretized == y).bool().sum() / len(y.view(-1))).item()
+        return accuracy
+    
+    def save_parameters(self, parameter_file_location: str) -> None:
+        torch.save(self.model.state_dict(), parameter_file_location)
+        return
+    
+    def load_parameters(self, parameter_file_location: str) -> None:
+        self.model.load_state_dict(torch.load(parameter_file_location))
+        return
+    
+    def predict_next_character(self, input_string: str) -> str:
+        self.model.eval()
+        padded_input_string = (len(self.dataset[0])-len(input_string))*' '+input_string
+        indexed = [self.dataset.char2idx(char) for char in input_string]
+        tensor = torch.LongTensor(indexed).to(DEVICE)
+        assert tuple(tensor.shape) == (len(input_string),)
+        tensor = tensor.view(1,-1)
+        assert tuple(tensor.shape) == (1, len(input_string))
+        predictions = self.model(tensor)
+        assert tuple(predictions.shape) == (1, self.alphabet_size)
+        prediction = predictions[0]
+        assert tuple(prediction.shape) == (self.dataset.alphabet_size,)
+        next_character_index = torch.argmax(prediction.squeeze())
+        next_character = self.dataset.idx2char[next_character_index]
+        assert len(next_character)==1
+        return next_character
+
+class LSTMPredictor(Predictor):
+    def initialize_model(self) -> None:
+        embedding_size = self.model_args['embedding_size']
+        encoding_hidden_size = self.model_args['encoding_hidden_size']
+        number_of_encoding_layers = self.model_args['number_of_encoding_layers']
+        dropout_probability = self.model_args['dropout_probability']
+        alphabet_size = len(self.dataset.idx2char)
+        self.model = LSTMNetwork(alphabet_size, embedding_size, encoding_hidden_size, number_of_encoding_layers, dropout_probability)
+        self.optimizer = optim.Adam(self.model.parameters())
+        self.loss_function = nn.CrossEntropyLoss()
+        return
+
+###############
+# Main Driver #
+###############
+
+@debug_on_error
+def main() -> None:
+    dataset = NumericalizedBlogDataset(INPUT_SEQUENCE_LENGTH)
+    predictor = LSTMPredictor(OUTPUT_DIRECTORY, dataset, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAINING_PORTION, VALIDATION_PORTION,
+                              embedding_size=EMBEDDING_SIZE,
+                              encoding_hidden_size=ENCODING_HIDDEN_SIZE, 
+                              number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
+                              dropout_probability=DROPOUT_PROBABILITY)
+    predictor.train()
+    return
+
+if __name__ == '__main__':
+    main()
