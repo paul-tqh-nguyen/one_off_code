@@ -31,7 +31,7 @@ from torch.utils import data
 ###########
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-NUM_WORKERS = 1 # 8
+NUM_WORKERS = 8
 
 INPUT_SEQUENCE_LENGTH = 100
 BATCH_SIZE = 64
@@ -42,8 +42,8 @@ NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
 TRAINING_PORTION = 0.7
 VALIDATION_PORTION = 1-TRAINING_PORTION
 
-EMBEDDING_SIZE = 256
-ENCODING_HIDDEN_SIZE = 256
+EMBEDDING_SIZE = 64
+ENCODING_HIDDEN_SIZE = 64
 NUMBER_OF_ENCODING_LAYERS = 2
 DROPOUT_PROBABILITY = 0.5
 
@@ -51,35 +51,33 @@ DROPOUT_PROBABILITY = 0.5
 # Load Data #
 #############
 
-class NumericalizedBlogDataset(data.Dataset):
-    def __init__(self, input_string_length):
-        self.input_string_length = input_string_length
-        self.x_data: List[str] = []
-        self.y_data: List[str] = []
-        raw_data_df = pd.read_csv(RAW_DATA_CSV_FILE)
-        self.idx2char = sorted(reduce(set.union, [set(blog) for blog in raw_data_df.blog_text]))
-        self.char2idx = {char:idx for idx, char in enumerate(self.idx2char)}
-        for blog_text in raw_data_df.blog_text:
-            if len(blog_text) > input_string_length:
-                for snippet_index in range(len(blog_text)-input_string_length):
-                    input_example = blog_text[snippet_index:snippet_index+input_string_length]
-                    input_example = [self.char2idx[char] for char in input_example]
-                    input_example = torch.Tensor(input_example).to(DEVICE)
-                    output_example = blog_text[snippet_index+input_string_length]
-                    output_example = self.char2idx[output_example]
-                    self.x_data.append(input_example)
-                    self.y_data.append(output_example)
-        assert len(self.x_data) == len(self.y_data)
-        
-    def __len__(self) -> int:
-        assert len(self.x_data) == len(self.y_data)
-        return len(self.x_data)
-    
-    def __getitem__(self, index) -> Tuple[torch.Tensor, int]:
-        x_datum = self.x_data[index]
-        y_datum = self.y_data[index]
-        return x_datum, y_datum
-    
+@trace
+def initialize_numericalized_blog_dataset(input_string_length: int) -> data.Dataset:
+    x_data: List[str] = []
+    y_data: List[str] = []
+    raw_data_df = pd.read_csv(RAW_DATA_CSV_FILE)
+    idx2char = sorted(reduce(set.union, [set(blog) for blog in raw_data_df.blog_text]))
+    char2idx = {char:idx for idx, char in enumerate(idx2char)}
+    for blog_text in raw_data_df.blog_text:
+        if len(blog_text) > input_string_length:
+            for snippet_index in range(len(blog_text)-input_string_length):
+                input_example = blog_text[snippet_index:snippet_index+input_string_length]
+                input_example = [char2idx[char] for char in input_example]
+                output_example = blog_text[snippet_index+input_string_length]
+                output_example = char2idx[output_example]
+                x_data.append(input_example)
+                y_data.append(output_example)
+    assert len(x_data) == len(y_data)
+    x_data_tensor = torch.tensor(x_data)
+    y_data_tensor = torch.tensor(y_data)
+    dataset = data.TensorDataset(x_data_tensor, y_data_tensor)
+    dataset.raw_data_df = raw_data_df
+    dataset.input_string_length = input_string_length
+    dataset.idx2char = idx2char
+    dataset.char2idx = char2idx
+    dataset.alphabet_size = len(idx2char)
+    return dataset
+
 ##########
 # Models #
 ##########
@@ -89,6 +87,7 @@ class LSTMNetwork(nn.Module):
         super().__init__()
         if __debug__:
             self.alphabet_size = alphabet_size
+            self.output_size = alphabet_size
             self.embedding_size = embedding_size
             self.encoding_hidden_size = encoding_hidden_size
             self.number_of_encoding_layers = number_of_encoding_layers
@@ -100,6 +99,7 @@ class LSTMNetwork(nn.Module):
                                        encoding_hidden_size,
                                        num_layers=number_of_encoding_layers,
                                        bidirectional=True,
+                                       batch_first=True,
                                        dropout=dropout_probability)
         self.prediction_layers = nn.Sequential(OrderedDict([
             ("dropout_layer", nn.Dropout(dropout_probability)),
@@ -108,7 +108,6 @@ class LSTMNetwork(nn.Module):
         self.to(DEVICE)
     
     def forward(self, batch: torch.tensor):
-        print(f"batch {repr(batch)}")
         batch_size, sequence_length = tuple(batch.shape)
         assert tuple(batch.shape) == (batch_size, sequence_length)
 
@@ -117,15 +116,11 @@ class LSTMNetwork(nn.Module):
         
         if __debug__:
             encoded_batch, (encoding_hidden_state, encoding_cell_state) = self.encoding_layers(embedded_batch)
-            encoded_batch, encoded_batch_lengths = nn.utils.rnn.pad_sequence(encoded_batch, batch_first=True)
         else:
             encoded_batch, _ = self.encoding_layers(embedded_batch)
-            encoded_batch, _ = nn.utils.rnn.pad_sequence(encoded_batch, batch_first=True)
         assert tuple(encoded_batch.shape) == (batch_size, sequence_length, self.encoding_hidden_size*2)
         assert tuple(encoding_hidden_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
         assert tuple(encoding_cell_state.shape) == (self.number_of_encoding_layers*2, batch_size, self.encoding_hidden_size)
-        assert tuple(encoded_batch_lengths.shape) == (batch_size,)
-        assert (encoded_batch_lengths == sequence_length).all()
 
         mean_batch = torch.mean(encoded_batch,dim=1)
         assert tuple(mean_batch.shape) == (batch_size, self.encoding_hidden_size*2)
@@ -149,6 +144,7 @@ class Predictor(ABC):
         self.batch_size = batch_size
 
         self.dataset = dataset
+        self.alphabet_size = dataset.alphabet_size
         self.train_portion = train_portion
         self.validation_portion = validation_portion
         assert math.isclose(1.0, self.validation_portion+self.train_portion)
@@ -169,12 +165,26 @@ class Predictor(ABC):
     def initialize_model(self) -> None:
         pass
     
+    @property
+    def output_size(self) -> int:
+        return len(self.dataset.idx2char)
+
+    @property
+    def input_string_length(self) -> int:
+        return self.dataset.input_string_length
+    
+    @property
+    def dataset_size(self) -> int:
+        return len(self.dataset)
+    
     def train_one_epoch(self) -> Tuple[float, float]:
         epoch_loss = 0
         epoch_accuracy = 0
         number_of_training_batches = len(self.training_dataloader)
         self.model.train()
-        for text_batch, next_characters in tqdm_with_message(self.training_dataloader, post_yield_message_func = lambda index: f'Training Accuracy {epoch_accuracy/(index+1):.8f}', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
+        for text_batch, next_characters in tqdm_with_message(self.training_dataloader, post_yield_message_func = lambda index: f'Training Loss {epoch_loss/(index+1):.8f}', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
+            text_batch = text_batch.to(DEVICE)
+            next_characters = next_characters.to(DEVICE)
             self.optimizer.zero_grad()
             predictions = self.model(text_batch)
             loss = self.loss_function(predictions, next_characters)
@@ -194,11 +204,13 @@ class Predictor(ABC):
         iterator_size = len(self.validation_dataloader)
         with torch.no_grad():
             for text_batch, next_characters in tqdm_with_message(self.validation_dataloader, post_yield_message_func = lambda index: f'Validation Accuracy {epoch_accuracy/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
+                text_batch = text_batch.to(DEVICE)
+                next_characters = next_characters.to(DEVICE)
                 predictions = self.model(text_batch)
                 loss = self.loss_function(predictions, next_characters)
                 accuracy = self.scores_of_discretized_values(predictions, next_characters)
                 epoch_loss += loss.item()
-                epoch_f1 += accuracy
+                epoch_accuracy += accuracy
         epoch_loss /= iterator_size
         epoch_accuracy /= iterator_size
         return epoch_loss, epoch_accuracy
@@ -221,7 +233,7 @@ class Predictor(ABC):
                     self.save_parameters(best_saved_model_location)
                     self.test(epoch_index, False)
             print("\n")
-            if reduce(bool.__or__, (valid_accuracy > previous_accuracy for previous_f1 in most_recent_validation_accuracy_scores)):
+            if reduce(bool.__or__, (valid_accuracy > previous_accuracy for previous_accuracy in most_recent_validation_accuracy_scores)):
                 most_recent_validation_accuracy_scores.pop(0)
                 most_recent_validation_accuracy_scores.append(valid_accuracy)
             else:
@@ -239,8 +251,12 @@ class Predictor(ABC):
         print(f"Model hyperparameters are:")
         print(f'        number_of_epochs: {self.number_of_epochs}')
         print(f'        batch_size: {self.batch_size}')
-        print(f'        alphabet_size: {len(self.dataset.idx2char)}')
+        print(f'        train_portion: {self.train_portion}')
+        print(f'        validation_portion: {self.validation_portion}')
+        print(f'        dataset_size: {self.dataset_size}')
+        print(f'        alphabet_size: {self.alphabet_size}')
         print(f'        output_directory: {self.output_directory}')
+        print(f'        output_size: {self.output_size}')
         for model_arg_name, model_arg_value in sorted(self.model_args.items()):
             print(f'        {model_arg_name}: {model_arg_value.__name__ if hasattr(model_arg_value, "__name__") else str(model_arg_value)}')
         print()
@@ -255,10 +271,9 @@ class Predictor(ABC):
         if __debug__:
             batch_size = y.shape[0]
         assert batch_size <= self.batch_size
-        assert tuple(y.shape) == (batch_size, self.output_size)
+        assert tuple(y.shape) == (batch_size,)
         assert tuple(y_hat.shape) == (batch_size, self.output_size)
-        y_hat_discretized = (y_hat == y_hat.max(dim=1)).int()
-        assert tuple(y_hat_discretized.shape) == tuple(y_hat.shape)
+        y_hat_discretized = y_hat.argmax(dim=1)
         assert tuple(y_hat_discretized.shape) == tuple(y.shape)
         accuracy = ((y_hat_discretized == y).bool().sum() / len(y.view(-1))).item()
         return accuracy
@@ -280,9 +295,9 @@ class Predictor(ABC):
         tensor = tensor.view(1,-1)
         assert tuple(tensor.shape) == (1, len(input_string))
         predictions = self.model(tensor)
-        assert tuple(predictions.shape) == (1, self.alphabet_size)
+        assert tuple(predictions.shape) == (1, self.output_size)
         prediction = predictions[0]
-        assert tuple(prediction.shape) == (self.dataset.alphabet_size,)
+        assert tuple(prediction.shape) == (self.output_size,)
         next_character_index = torch.argmax(prediction.squeeze())
         next_character = self.dataset.idx2char[next_character_index]
         assert len(next_character)==1
@@ -294,8 +309,7 @@ class LSTMPredictor(Predictor):
         encoding_hidden_size = self.model_args['encoding_hidden_size']
         number_of_encoding_layers = self.model_args['number_of_encoding_layers']
         dropout_probability = self.model_args['dropout_probability']
-        alphabet_size = len(self.dataset.idx2char)
-        self.model = LSTMNetwork(alphabet_size, embedding_size, encoding_hidden_size, number_of_encoding_layers, dropout_probability)
+        self.model = LSTMNetwork(self.alphabet_size, embedding_size, encoding_hidden_size, number_of_encoding_layers, dropout_probability)
         self.optimizer = optim.Adam(self.model.parameters())
         self.loss_function = nn.CrossEntropyLoss()
         return
@@ -306,7 +320,7 @@ class LSTMPredictor(Predictor):
 
 @debug_on_error
 def main() -> None:
-    dataset = NumericalizedBlogDataset(INPUT_SEQUENCE_LENGTH)
+    dataset = initialize_numericalized_blog_dataset(INPUT_SEQUENCE_LENGTH)
     predictor = LSTMPredictor(OUTPUT_DIRECTORY, dataset, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAINING_PORTION, VALIDATION_PORTION,
                               embedding_size=EMBEDDING_SIZE,
                               encoding_hidden_size=ENCODING_HIDDEN_SIZE, 
