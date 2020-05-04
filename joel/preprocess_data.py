@@ -113,7 +113,7 @@ def preprocess_blog_text(blog_text: str) -> str:
 
 def preprocess_data() -> None:
     df = pd.read_csv(RAW_CSV_FILE)
-    df[['blog_text']] = df[['blog_text']].apply(preprocess_blog_text)
+    df.blog_text = df.blog_text.apply(preprocess_blog_text)
     df.to_csv(PREPROCESSED_CSV_FILE, index=False)
     return
 
