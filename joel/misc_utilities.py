@@ -2,6 +2,17 @@
 
 # Debugging Utilities
 
+from contextlib import contextmanager
+@contextmanager
+def safe_cuda_memory():
+    try:
+        yield
+    except RuntimeError as err:
+        if 'CUDA out of memory' not in str(err):
+            raise
+        else:
+            print("CUDA ran out of memory.")
+
 import io
 from contextlib import contextmanager
 @contextmanager

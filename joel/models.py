@@ -40,7 +40,7 @@ OUTPUT_DIRECTORY = './default_output'
 INPUT_SEQUENCE_LENGTH = 100
 BATCH_SIZE = 64
 NUMBER_OF_EPOCHS = 3
-NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
+NUMBER_OF_RELEVANT_RECENT_EPOCHS = 3
 MAX_DATASET_SIZE = None
 
 TRAINING_PORTION = 0.7
@@ -72,13 +72,12 @@ def input_output_pairs_from_blog_text(inputs) -> List[Tuple[List[int], int]]:
     return pairs
 
 def input_output_pairs_from_blog_texts(blog_texts: List[str], char2idx: dict, input_string_length: int) -> None:
-    return reduce(list.__add__, parallel_map(input_output_pairs_from_blog_text, zip(blog_texts, itertools.repeat(char2idx), itertools.repeat(input_string_length))))
+    return reduce(list.__add__, eager_map(input_output_pairs_from_blog_text, zip(blog_texts, itertools.repeat(char2idx), itertools.repeat(input_string_length))))
 
 def initialize_numericalized_blog_dataset(input_string_length: int) -> data.Dataset:
     x_data: List[str] = []
     y_data: List[str] = []
     preprocessed_data_df = pd.read_csv(PREPROCESSED_CSV_FILE)
-    print(f"preprocessed_data_df.blog_text[0] {repr(preprocessed_data_df.blog_text[0])}")
     blog_texts = [blog_text for blog_text in preprocessed_data_df.blog_text if len(blog_text) > input_string_length]
     idx2char = sorted(reduce(set.union, [set(blog) for blog in blog_texts]))
     char2idx = {char:idx for idx, char in enumerate(idx2char)}
@@ -153,7 +152,7 @@ class LSTMNetwork(nn.Module):
 ##############
 
 class Predictor(ABC):
-    def __init__(self, output_directory: str, dataset: torch.utils.data.Dataset, number_of_epochs: int, batch_size: int, train_portion: float, validation_portion: float, **kwargs):
+    def __init__(self, output_directory: str, input_sequence_length: int, number_of_epochs: int, batch_size: int, train_portion: float, validation_portion: float, **kwargs):
         super().__init__()
         self.best_valid_loss = float('inf')
         
@@ -161,15 +160,14 @@ class Predictor(ABC):
         self.number_of_epochs = number_of_epochs
         self.batch_size = batch_size
 
-        self.dataset = dataset
-        self.alphabet_size = dataset.alphabet_size
+        self.dataset = initialize_numericalized_blog_dataset(input_sequence_length)
         self.train_portion = train_portion
         self.validation_portion = validation_portion
         assert math.isclose(1.0, self.validation_portion+self.train_portion)
         number_of_training_examples = round(self.train_portion*len(self.dataset))
-        number_of_validation_examples = oround(self.validation_portion*len(self.dataset))
-        assert number_of_training_examples+number_of_validation_examples == len(dataset), f'The dataset has size {dataset} while the number of training examples ({number_of_training_examples}) and the number of validation examples ({number_of_validation_examples}) sum to {number_of_training_examples+number_of_validation_examples}'
-        self.training_dataset, self.validation_dataset = torch.utils.data.random_split(dataset, [number_of_training_examples, number_of_validation_examples])
+        number_of_validation_examples = round(self.validation_portion*len(self.dataset))
+        assert number_of_training_examples+number_of_validation_examples == len(self.dataset), f'The dataset has size {len(self.dataset)} while the number of training examples ({number_of_training_examples}) and the number of validation examples ({number_of_validation_examples}) sum to {number_of_training_examples+number_of_validation_examples}'
+        self.training_dataset, self.validation_dataset = torch.utils.data.random_split(self.dataset, [number_of_training_examples, number_of_validation_examples])
         self.training_dataloader = data.DataLoader(self.training_dataset, batch_size=self.batch_size, shuffle=True, num_workers=NUM_WORKERS)
         self.validation_dataloader = data.DataLoader(self.validation_dataset, batch_size=self.batch_size, shuffle=False, num_workers=NUM_WORKERS)
 
@@ -184,8 +182,12 @@ class Predictor(ABC):
         pass
     
     @property
+    def alphabet_size(self) -> int:
+        return self.dataset.alphabet_size
+    
+    @property
     def output_size(self) -> int:
-        return len(self.dataset.idx2char)
+        return self.dataset.alphabet_size
 
     @property
     def input_string_length(self) -> int:
@@ -249,7 +251,7 @@ class Predictor(ABC):
                 if valid_loss < self.best_valid_loss:
                     self.best_valid_loss = valid_loss
                     self.save_parameters(best_saved_model_location)
-                    self.save_current_model_information(epoch_index, train_loss, train_accuracy, valid_loss, valid_accuracy)
+                    self.save_current_model_information(epoch_index, train_loss, train_accuracy, valid_loss, valid_accuracy, False)
             print('\n')
             if any(valid_loss < previous_loss for previous_loss in most_recent_validation_loss_scores):
                 most_recent_validation_loss_scores.pop(0)
@@ -259,6 +261,7 @@ class Predictor(ABC):
                 print(f'Validation is not better than any of the {NUMBER_OF_RELEVANT_RECENT_EPOCHS} recent epochs, so training is ending early due to apparent convergence.')
                 print()
                 break
+        self.save_current_model_information(epoch_index, train_loss, train_accuracy, valid_loss, valid_accuracy, True)
         return
     
     def print_hyperparameters(self) -> None:
@@ -293,8 +296,15 @@ class Predictor(ABC):
         accuracy = ((y_hat_discretized == y).bool().sum() / len(y.view(-1))).item()
         return accuracy
     
-    def save_current_model_information(self, epoch_index: int, train_loss: float, train_accuracy: float, valid_loss: float, valid_accuracy: float) -> None:
-        model_info_json_file_location = os.path.join(self.output_directory, 'model_info.json')
+    def save_current_model_information(self, epoch_index: int, train_loss: float, train_accuracy: float, valid_loss: float, valid_accuracy: float, is_final_result: bool) -> None:
+        model_info_json_file_location = os.path.join(self.output_directory, 'final_model_info.json' if is_final_result else 'model_info.json')
+        if not os.path.isfile('global_best_model_score.json'):
+            log_current_model_as_best = True
+        else:
+            with open('global_best_model_score.json', 'r') as current_global_best_model_score_json_file:
+                current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
+                current_global_best_model_loss: float = current_global_best_model_score_dict['best_valid_loss']
+                log_current_model_as_best = current_global_best_model_loss > self.best_valid_loss
         with open(model_info_json_file_location, 'w') as model_info_json_file:
             model_info_dict = {
                 'number_of_epochs': self.number_of_epochs,
@@ -378,11 +388,8 @@ class LSTMPredictor(Predictor):
 # Main Driver #
 ###############
 
-def main() -> None:
-    with timer():
-        dataset = initialize_numericalized_blog_dataset(INPUT_SEQUENCE_LENGTH)
-    exit()
-    predictor = LSTMPredictor(OUTPUT_DIRECTORY, dataset, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAINING_PORTION, VALIDATION_PORTION,
+def train_model() -> None:
+    predictor = LSTMPredictor(OUTPUT_DIRECTORY, INPUT_SEQUENCE_LENGTH, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAINING_PORTION, VALIDATION_PORTION,
                               embedding_size=EMBEDDING_SIZE,
                               encoding_hidden_size=ENCODING_HIDDEN_SIZE, 
                               number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
@@ -391,4 +398,4 @@ def main() -> None:
     return
 
 if __name__ == '__main__':
-    main()
+    train_model()
