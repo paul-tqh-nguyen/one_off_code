@@ -258,6 +258,15 @@ def parallel_map(*args, **kwargs) -> List:
     p.join()
     return result
 
+from typing import List
+def parallel_mapcar(func, *args) -> List:
+    import multiprocessing
+    p = multiprocessing.Pool()
+    result = p.starmap(func, zip(*args))
+    p.close()
+    p.join()
+    return result
+
 from typing import Iterable, Callable,  List
 def eager_map(func: Callable, iterable: Iterable) -> List:
     return list(map(func, iterable))

@@ -1,8 +1,8 @@
 #!/usr/bin/python3
-"#!/usr/bin/python3 -OO"
+'#!/usr/bin/python3 -OO'
 
-"""
-"""
+'''
+'''
 
 # @todo fill in the doc string
 
@@ -12,13 +12,15 @@
 
 import os
 import math
+import json
+import itertools
 import pandas as pd
 from typing import List, Callable, Tuple
 from functools import reduce
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
-from gather_data import OUTPUT_CSV_FILE as RAW_DATA_CSV_FILE
+from preprocess_data import PREPROCESSED_CSV_FILE
 from misc_utilities import *
 
 import torch
@@ -32,12 +34,14 @@ from torch.utils import data
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 NUM_WORKERS = 8
+NUMBER_OF_PREDICTED_CHARACTERS_TO_DEMONSTRATE = 10
 
+OUTPUT_DIRECTORY = './default_output'
 INPUT_SEQUENCE_LENGTH = 100
 BATCH_SIZE = 64
-NUMBER_OF_EPOCHS = 400
-OUTPUT_DIRECTORY = './default_output'
+NUMBER_OF_EPOCHS = 3
 NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
+MAX_DATASET_SIZE = None
 
 TRAINING_PORTION = 0.7
 VALIDATION_PORTION = 1-TRAINING_PORTION
@@ -51,27 +55,41 @@ DROPOUT_PROBABILITY = 0.5
 # Load Data #
 #############
 
+def _input_output_pairs_from_blog_text(blog_text: str, char2idx: dict, input_string_length: int) -> List[Tuple[List[int], int]]:
+    pairs: List[Tuple[List[int], int]] = []
+    for snippet_index in range(len(blog_text)-input_string_length):
+        input_example = blog_text[snippet_index:snippet_index+input_string_length]
+        input_example = [char2idx[char] for char in input_example]
+        output_example = blog_text[snippet_index+input_string_length]
+        output_example = char2idx[output_example]
+        input_output_pair = (input_example, output_example)
+        pairs.append(input_output_pair)
+    return pairs
+
+def input_output_pairs_from_blog_text(inputs) -> List[Tuple[List[int], int]]:
+    blog_text, char2idx, input_string_length = inputs
+    pairs = _input_output_pairs_from_blog_text(blog_text, char2idx, input_string_length)
+    return pairs
+
+def input_output_pairs_from_blog_texts(blog_texts: List[str], char2idx: dict, input_string_length: int) -> None:
+    return reduce(list.__add__, eager_map(input_output_pairs_from_blog_text, zip(blog_texts, itertools.repeat(char2idx), itertools.repeat(input_string_length))))
+
 @trace
 def initialize_numericalized_blog_dataset(input_string_length: int) -> data.Dataset:
     x_data: List[str] = []
     y_data: List[str] = []
-    raw_data_df = pd.read_csv(RAW_DATA_CSV_FILE)
-    idx2char = sorted(reduce(set.union, [set(blog) for blog in raw_data_df.blog_text]))
+    preprocessed_data_df = pd.read_csv(PREPROCESSED_CSV_FILE)
+    blog_texts = (blog_text for blog_text in preprocessed_data_df.blog_text if len(blog_text) > input_string_length)
+    idx2char = sorted(reduce(set.union, [set(blog) for blog in blog_texts]))
     char2idx = {char:idx for idx, char in enumerate(idx2char)}
-    for blog_text in raw_data_df.blog_text:
-        if len(blog_text) > input_string_length:
-            for snippet_index in range(len(blog_text)-input_string_length):
-                input_example = blog_text[snippet_index:snippet_index+input_string_length]
-                input_example = [char2idx[char] for char in input_example]
-                output_example = blog_text[snippet_index+input_string_length]
-                output_example = char2idx[output_example]
-                x_data.append(input_example)
-                y_data.append(output_example)
+    input_output_pairs = input_output_pairs_from_blog_texts(blog_texts, char2idx, input_string_length)
+    if MAX_DATASET_SIZE is not None:
+        input_output_pairs = input_output_pairs[:MAX_DATASET_SIZE]
+    x_data, y_data = zip(*input_output_pairs)
     assert len(x_data) == len(y_data)
     x_data_tensor = torch.tensor(x_data)
     y_data_tensor = torch.tensor(y_data)
     dataset = data.TensorDataset(x_data_tensor, y_data_tensor)
-    dataset.raw_data_df = raw_data_df
     dataset.input_string_length = input_string_length
     dataset.idx2char = idx2char
     dataset.char2idx = char2idx
@@ -92,8 +110,8 @@ class LSTMNetwork(nn.Module):
             self.encoding_hidden_size = encoding_hidden_size
             self.number_of_encoding_layers = number_of_encoding_layers
         self.embedding_layers = nn.Sequential(OrderedDict([
-            ("embedding_layer", nn.Embedding(alphabet_size, embedding_size, max_norm=1.0)),
-            ("dropout_layer", nn.Dropout(dropout_probability)),
+            ('embedding_layer', nn.Embedding(alphabet_size, embedding_size, max_norm=1.0)),
+            ('dropout_layer', nn.Dropout(dropout_probability)),
         ]))
         self.encoding_layers = nn.LSTM(embedding_size,
                                        encoding_hidden_size,
@@ -102,8 +120,8 @@ class LSTMNetwork(nn.Module):
                                        batch_first=True,
                                        dropout=dropout_probability)
         self.prediction_layers = nn.Sequential(OrderedDict([
-            ("dropout_layer", nn.Dropout(dropout_probability)),
-            ("fully_connected_layer", nn.Linear(encoding_hidden_size*2, alphabet_size)),
+            ('dropout_layer', nn.Dropout(dropout_probability)),
+            ('fully_connected_layer', nn.Linear(encoding_hidden_size*2, alphabet_size)),
         ]))
         self.to(DEVICE)
     
@@ -149,8 +167,8 @@ class Predictor(ABC):
         self.validation_portion = validation_portion
         assert math.isclose(1.0, self.validation_portion+self.train_portion)
         number_of_training_examples = round(self.train_portion*len(self.dataset))
-        number_of_validation_examples = round(self.validation_portion*len(self.dataset))
-        assert number_of_training_examples+number_of_validation_examples == len(dataset), f"The dataset has size {dataset} while the number of training examples ({number_of_training_examples}) and the number of validation examples ({number_of_validation_examples}) sum to {number_of_training_examples+number_of_validation_examples}"
+        number_of_validation_examples = oround(self.validation_portion*len(self.dataset))
+        assert number_of_training_examples+number_of_validation_examples == len(dataset), f'The dataset has size {dataset} while the number of training examples ({number_of_training_examples}) and the number of validation examples ({number_of_validation_examples}) sum to {number_of_training_examples+number_of_validation_examples}'
         self.training_dataset, self.validation_dataset = torch.utils.data.random_split(dataset, [number_of_training_examples, number_of_validation_examples])
         self.training_dataloader = data.DataLoader(self.training_dataset, batch_size=self.batch_size, shuffle=True, num_workers=NUM_WORKERS)
         self.validation_dataloader = data.DataLoader(self.validation_dataset, batch_size=self.batch_size, shuffle=False, num_workers=NUM_WORKERS)
@@ -203,7 +221,7 @@ class Predictor(ABC):
         self.model.eval()
         iterator_size = len(self.validation_dataloader)
         with torch.no_grad():
-            for text_batch, next_characters in tqdm_with_message(self.validation_dataloader, post_yield_message_func = lambda index: f'Validation Accuracy {epoch_accuracy/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
+            for text_batch, next_characters in tqdm_with_message(self.validation_dataloader, post_yield_message_func = lambda index: f'Validation Loss {epoch_loss/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
                 text_batch = text_batch.to(DEVICE)
                 next_characters = next_characters.to(DEVICE)
                 predictions = self.model(text_batch)
@@ -218,12 +236,12 @@ class Predictor(ABC):
     def train(self) -> None:
         self.print_hyperparameters()
         best_saved_model_location = os.path.join(self.output_directory, 'best-model.pt')
-        most_recent_validation_accuracy_scores = [0]*NUMBER_OF_RELEVANT_RECENT_EPOCHS
+        most_recent_validation_loss_scores = [float('inf')]*NUMBER_OF_RELEVANT_RECENT_EPOCHS
         print(f'Starting training')
         for epoch_index in range(self.number_of_epochs):
-            print("\n")
-            print(f"Epoch {epoch_index}")
-            with timer(section_name=f"Epoch {epoch_index}"):
+            print('\n')
+            print(f'Epoch {epoch_index}')
+            with timer(section_name=f'Epoch {epoch_index}'):
                 train_loss, train_accuracy = self.train_one_epoch()
                 valid_loss, valid_accuracy = self.validate()
                 print(f'\t Train Accuracy: {train_accuracy:.8f} | Train Loss: {train_loss:.8f}')
@@ -231,24 +249,21 @@ class Predictor(ABC):
                 if valid_loss < self.best_valid_loss:
                     self.best_valid_loss = valid_loss
                     self.save_parameters(best_saved_model_location)
-                    self.test(epoch_index, False)
-            print("\n")
-            if reduce(bool.__or__, (valid_accuracy > previous_accuracy for previous_accuracy in most_recent_validation_accuracy_scores)):
-                most_recent_validation_accuracy_scores.pop(0)
-                most_recent_validation_accuracy_scores.append(valid_accuracy)
+                    self.save_current_model_information(epoch_index, train_loss, train_accuracy, valid_loss, valid_accuracy)
+            print('\n')
+            if any(valid_loss < previous_loss for previous_loss in most_recent_validation_loss_scores):
+                most_recent_validation_loss_scores.pop(0)
+                most_recent_validation_loss_scores.append(valid_loss)
             else:
                 print()
-                print(f"Validation is not better than any of the {NUMBER_OF_RELEVANT_RECENT_EPOCHS} recent epochs, so training is ending early due to apparent convergence.")
+                print(f'Validation is not better than any of the {NUMBER_OF_RELEVANT_RECENT_EPOCHS} recent epochs, so training is ending early due to apparent convergence.')
                 print()
                 break
-        self.load_parameters(best_saved_model_location)
-        self.test(epoch_index, True)
-        os.remove(best_saved_model_location)
         return
     
     def print_hyperparameters(self) -> None:
         print()
-        print(f"Model hyperparameters are:")
+        print(f'Model hyperparameters are:')
         print(f'        number_of_epochs: {self.number_of_epochs}')
         print(f'        batch_size: {self.batch_size}')
         print(f'        train_portion: {self.train_portion}')
@@ -261,7 +276,7 @@ class Predictor(ABC):
             print(f'        {model_arg_name}: {model_arg_value.__name__ if hasattr(model_arg_value, "__name__") else str(model_arg_value)}')
         print()
         print(f'The model has {self.count_parameters()} trainable parameters.')
-        print(f"This processes's PID is {os.getpid()}.")
+        print(f'This processes has PID {os.getpid()}.')
         print()
     
     def count_parameters(self) -> int:
@@ -278,6 +293,30 @@ class Predictor(ABC):
         accuracy = ((y_hat_discretized == y).bool().sum() / len(y.view(-1))).item()
         return accuracy
     
+    def save_current_model_information(self, epoch_index: int, train_loss: float, train_accuracy: float, valid_loss: float, valid_accuracy: float) -> None:
+        model_info_json_file_location = os.path.join(self.output_directory, 'model_info.json')
+        with open(model_info_json_file_location, 'w') as model_info_json_file:
+            model_info_dict = {
+                'number_of_epochs': self.number_of_epochs,
+                'batch_size': self.batch_size,
+                'dataset_size': len(self.dataset),
+                'train_portion': self.train_portion,
+                'validation_portion': self.validation_portion,
+                'number_of_training_examples': len(self.training_dataset),
+                'number_of_validation_examples': len(self.validation_dataset),
+                'output_directory': self.output_directory,
+                'best_valid_loss': self.best_valid_loss,
+                'epoch_index': epoch_index,
+                'train_loss': train_loss,
+                'train_accuracy': train_accuracy,
+                'valid_loss': valid_loss,
+                'valid_accuracy': valid_accuracy,
+            }
+            for model_arg_name, model_arg_value in sorted(self.model_args.items()):
+                model_info_dict[model_arg_name] = model_arg_value.__name__ if hasattr(model_arg_value, '__name__') else str(model_arg_value)
+            json.dump(model_info_dict, model_info_json_file)
+        return 
+    
     def save_parameters(self, parameter_file_location: str) -> None:
         torch.save(self.model.state_dict(), parameter_file_location)
         return
@@ -288,8 +327,9 @@ class Predictor(ABC):
     
     def predict_next_character(self, input_string: str) -> str:
         self.model.eval()
-        padded_input_string = (len(self.dataset[0])-len(input_string))*' '+input_string
-        indexed = [self.dataset.char2idx(char) for char in input_string]
+        expected_string_length = len(self.dataset[0])
+        padded_input_string = input_string[-expected_string_length:] if len(input_string) > expected_string_length else (expected_string_length-len(input_string))*' '+input_string
+        indexed = [self.dataset.char2idx[char] for char in input_string]
         tensor = torch.LongTensor(indexed).to(DEVICE)
         assert tuple(tensor.shape) == (len(input_string),)
         tensor = tensor.view(1,-1)
@@ -302,6 +342,26 @@ class Predictor(ABC):
         next_character = self.dataset.idx2char[next_character_index]
         assert len(next_character)==1
         return next_character
+
+    def append_predicted_next_characters(self, input_string: str, number_of_next_characters: int = 10) -> str:
+        output_string = input_string
+        for _ in range(number_of_next_characters):
+            output_string = output_string+self.predict_next_character(output_string)
+        return output_string
+    
+    def _demonstrate_example(self, dataset: data.Dataset, example_index: int) -> None:
+        input_tensor = dataset[example_index][0]
+        input_string = ''.join([self.dataset.idx2char[idx.item()] for idx in input_tensor])
+        new_string = self.append_predicted_next_characters(input_string, NUMBER_OF_PREDICTED_CHARACTERS_TO_DEMONSTRATE)
+        print(f'Input String    {repr(input_string)}')
+        print(f'Extended String {repr(new_string)}')
+        return 
+    
+    def demonstrate_training_example(self, example_index: int) -> None:
+        return self._demonstrate_example(self.training_dataset, example_index)
+    
+    def demonstrate_validation_example(self, example_index: int) -> None:
+        return self._demonstrate_example(self.validation_dataset, example_index)
 
 class LSTMPredictor(Predictor):
     def initialize_model(self) -> None:
@@ -320,7 +380,9 @@ class LSTMPredictor(Predictor):
 
 @debug_on_error
 def main() -> None:
-    dataset = initialize_numericalized_blog_dataset(INPUT_SEQUENCE_LENGTH)
+    with timer():
+        dataset = initialize_numericalized_blog_dataset(INPUT_SEQUENCE_LENGTH)
+    exit()
     predictor = LSTMPredictor(OUTPUT_DIRECTORY, dataset, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAINING_PORTION, VALIDATION_PORTION,
                               embedding_size=EMBEDDING_SIZE,
                               encoding_hidden_size=ENCODING_HIDDEN_SIZE, 

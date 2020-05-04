@@ -4,7 +4,7 @@
 """
 
 # @todo fill in doc string
-# @todo get rid of #@trace decorators
+# @todo fill in the doc string
 
 ###########
 # Imports #
@@ -15,7 +15,6 @@ import psutil
 import asyncio
 import pyppeteer
 import itertools
-import traceback
 import time
 import warnings
 import pandas as pd
@@ -34,7 +33,7 @@ BROWSER_IS_HEADLESS = True
 
 BLOG_ARCHIVE_URL = "https://www.joelonsoftware.com/archives/"
 
-OUTPUT_CSV_FILE = './output.csv'
+OUTPUT_CSV_FILE = './raw_data.csv'
 
 ##########################
 # Web Scraping Utilities #
@@ -111,7 +110,6 @@ async def _gather_month_links(*, page) -> List[str]:
         month_links.append(link)
     return month_links
 
-#@trace
 def gather_month_links() -> List[str]:
     month_links = EVENT_LOOP.run_until_complete(_gather_month_links())
     return month_links
@@ -131,11 +129,9 @@ async def _blog_links_from_month_link(month_link: str, *, page: pyppeteer.page.P
         blog_links.append(link)
     return blog_links
 
-#@trace
 def blog_links_from_month_link(month_link: str) -> Iterable[str]:
     return EVENT_LOOP.run_until_complete(_blog_links_from_month_link(month_link))
 
-#@trace
 def blog_links_from_month_links(month_links: Iterable[str]) -> Iterable[str]:
     month_links = tqdm_with_message(month_links, post_yield_message_func = lambda index: f'Scraping month link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
     return itertools.chain(*map(blog_links_from_month_link, month_links))
@@ -192,11 +188,9 @@ async def _data_dict_from_blog_link(blog_link: str, *, page: pyppeteer.page.Page
     
     return data_dict
 
-#@trace
 def data_dict_from_blog_link(blog_link: str) -> Iterable[dict]:
     return EVENT_LOOP.run_until_complete(_data_dict_from_blog_link(blog_link))
 
-#@trace
 def data_dicts_from_blog_links(blog_links: Iterable[str]) -> Iterable[dict]:
     blog_links = blog_links if isinstance(blog_links, list) else list(blog_links)
     blog_links = tqdm_with_message(blog_links, post_yield_message_func = lambda index: f'Scraping blog link {index}', bar_format='{l_bar}{bar:50}{r_bar}')
@@ -225,8 +219,7 @@ def sanity_check_output_csv_file() -> None:
 # Driver #
 ##########
 
-#@trace
-def gather_data():
+def gather_data() -> None:
     with timer("Data gathering"):
         month_links = gather_month_links()
         blog_links = blog_links_from_month_links(month_links)
