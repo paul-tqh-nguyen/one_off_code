@@ -72,14 +72,14 @@ def input_output_pairs_from_blog_text(inputs) -> List[Tuple[List[int], int]]:
     return pairs
 
 def input_output_pairs_from_blog_texts(blog_texts: List[str], char2idx: dict, input_string_length: int) -> None:
-    return reduce(list.__add__, eager_map(input_output_pairs_from_blog_text, zip(blog_texts, itertools.repeat(char2idx), itertools.repeat(input_string_length))))
+    return reduce(list.__add__, parallel_map(input_output_pairs_from_blog_text, zip(blog_texts, itertools.repeat(char2idx), itertools.repeat(input_string_length))))
 
-@trace
 def initialize_numericalized_blog_dataset(input_string_length: int) -> data.Dataset:
     x_data: List[str] = []
     y_data: List[str] = []
     preprocessed_data_df = pd.read_csv(PREPROCESSED_CSV_FILE)
-    blog_texts = (blog_text for blog_text in preprocessed_data_df.blog_text if len(blog_text) > input_string_length)
+    print(f"preprocessed_data_df.blog_text[0] {repr(preprocessed_data_df.blog_text[0])}")
+    blog_texts = [blog_text for blog_text in preprocessed_data_df.blog_text if len(blog_text) > input_string_length]
     idx2char = sorted(reduce(set.union, [set(blog) for blog in blog_texts]))
     char2idx = {char:idx for idx, char in enumerate(idx2char)}
     input_output_pairs = input_output_pairs_from_blog_texts(blog_texts, char2idx, input_string_length)
@@ -378,7 +378,6 @@ class LSTMPredictor(Predictor):
 # Main Driver #
 ###############
 
-@debug_on_error
 def main() -> None:
     with timer():
         dataset = initialize_numericalized_blog_dataset(INPUT_SEQUENCE_LENGTH)
