@@ -164,6 +164,10 @@
  cuda-shell
  cuda-python
  cuda-test
+ cuda-second
+ cuda-third
+ cuda-fourth
+ cuda-fifth
  jupyter
  )
 
@@ -181,7 +185,19 @@
 		      
 		      cuda-python
 		      shell
-
+		      
+		      cuda-second
+		      shell
+		      
+		      cuda-third
+		      shell
+		      
+		      cuda-fourth
+		      shell
+		      
+		      cuda-fifth
+		      shell
+		      
 		      jupyter
 		      shell
 		      )))
