@@ -250,8 +250,8 @@ def temp_plt_figure(*args, **kwargs) -> None:
     plt.close(figure)
     return
 
-from typing import List, Iterable
-def only_one(items: List):
+from typing import Iterable
+def only_one(items: Iterable):
     assert isinstance(items, Iterable)
     assert len(items) == 1
     return items[0]
