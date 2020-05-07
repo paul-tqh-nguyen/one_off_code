@@ -310,11 +310,13 @@ class Predictor(ABC):
                 'number_of_epochs': self.number_of_epochs,
                 'batch_size': self.batch_size,
                 'dataset_size': len(self.dataset),
+                'input_sequence_length': input_sequence_length,
                 'train_portion': self.train_portion,
                 'validation_portion': self.validation_portion,
                 'number_of_training_examples': len(self.training_dataset),
                 'number_of_validation_examples': len(self.validation_dataset),
                 'output_directory': self.output_directory,
+                'number_of_parameters': self.count_parameters(), 
                 'best_valid_loss': self.best_valid_loss,
                 'epoch_index': epoch_index,
                 'train_loss': train_loss,
@@ -334,6 +336,11 @@ class Predictor(ABC):
     def load_parameters(self, parameter_file_location: str) -> None:
         self.model.load_state_dict(torch.load(parameter_file_location))
         return
+
+    @classmethod
+    @abstractmethod
+    def init_via_check_point_directory(self, check_point_directory: str) -> None:
+        pass
     
     def predict_next_character(self, input_string: str) -> str:
         self.model.eval()
@@ -383,6 +390,28 @@ class LSTMPredictor(Predictor):
         self.optimizer = optim.Adam(self.model.parameters())
         self.loss_function = nn.CrossEntropyLoss()
         return
+
+    @classmethod
+    def init_via_check_point_directory(cls, check_point_directory: str, output_directory) -> LSTMPredictor:
+        pt_file_location = os.path.join(check_point_directory, 'best-model.pt')
+        model_info_json_file_location = os.path.join(check_point_directory, 'model_info.json')
+        assert os.path.isfile(pt_file_location)
+        assert os.path.isfile(model_info_json_file_location)
+        with open(model_info_json_file_location) as model_info_file_handle:
+            hyperparameter_specification = json.load(model_info_file_handle)
+            input_sequence_length = int(hyperparameter_specification['input_sequence_length'])
+            number_of_epochs = int(hyperparameter_specification['number_of_epochs'])
+            batch_size = int(hyperparameter_specification['batch_size'])
+            train_portion = float(hyperparameter_specification['train_portion'] )
+            validation_portion = float(hyperparameter_specification['validation_portion'])
+            model_args = dict()
+            model_args['embedding_size'] = int(hyperparameter_specification['embedding_size'])
+            model_args['encoding_hidden_size'] = int(hyperparameter_specification['encoding_hidden_size'])
+            model_args['number_of_encoding_layers'] = int(hyperparameter_specification['number_of_encoding_layers'])
+            model_args['dropout_probability'] = float(hyperparameter_specification['dropout_probability'])
+        predictor = cls(output_directory, input_sequence_length, number_of_epochs, batch_size, train_portion, validation_portion, **model_args)
+        predictor.model.load_state_dict(torch.load(pt_file_location))
+        return predictor
 
 ###############
 # Main Driver #
