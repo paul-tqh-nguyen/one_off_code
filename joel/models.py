@@ -392,7 +392,7 @@ class LSTMPredictor(Predictor):
         return
 
     @classmethod
-    def init_via_check_point_directory(cls, check_point_directory: str, output_directory) -> LSTMPredictor:
+    def init_via_check_point_directory(cls, check_point_directory: str, output_directory) -> Predictor:
         pt_file_location = os.path.join(check_point_directory, 'best-model.pt')
         model_info_json_file_location = os.path.join(check_point_directory, 'model_info.json')
         assert os.path.isfile(pt_file_location)
