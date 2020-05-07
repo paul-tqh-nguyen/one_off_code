@@ -14,6 +14,7 @@ import os
 import math
 import json
 import itertools
+import random
 import pandas as pd
 from typing import List, Callable, Tuple
 from functools import reduce
@@ -25,6 +26,7 @@ from misc_utilities import *
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils import data
 
@@ -34,7 +36,7 @@ from torch.utils import data
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 NUM_WORKERS = 8
-NUMBER_OF_PREDICTED_CHARACTERS_TO_DEMONSTRATE = 10
+NUMBER_OF_PREDICTED_CHARACTERS_TO_DEMONSTRATE = 200
 
 OUTPUT_DIRECTORY = './default_output'
 INPUT_SEQUENCE_LENGTH = 100
@@ -351,15 +353,25 @@ class Predictor(ABC):
         assert tuple(tensor.shape) == (len(input_string),)
         tensor = tensor.view(1,-1)
         assert tuple(tensor.shape) == (1, len(input_string))
-        predictions = self.model(tensor)
+        predictions = self.model(tensor).detach()
         assert tuple(predictions.shape) == (1, self.output_size)
         prediction = predictions[0]
         assert tuple(prediction.shape) == (self.output_size,)
-        next_character_index = torch.argmax(prediction.squeeze())
+        print(f"prediction {repr(prediction)}")
+        while True:
+            next_character_probabilities = F.softmax(prediction.clone())
+            next_character_probabilities = F.softmax((next_character_probabilities > torch.rand(self.output_size)).int() * next_character_probabilities)
+            print(f"next_character_probabilities {repr(next_character_probabilities)}")
+            if not next_character_probabilities.sum():
+                next_character_probabilities = F.softmax(prediction.clone())
+            elif len(next_character_probabilities) == 1:
+                next_character_index = only_one(only_one(torch.where(next_character_probabilities)))
+                break
+        #next_character_index = torch.argmax(prediction.squeeze())
         next_character = self.dataset.idx2char[next_character_index]
         assert len(next_character)==1
         return next_character
-
+    
     def append_predicted_next_characters(self, input_string: str, number_of_next_characters: int = 10) -> str:
         output_string = input_string
         for _ in range(number_of_next_characters):
