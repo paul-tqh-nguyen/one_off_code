@@ -357,16 +357,10 @@ class Predictor(ABC):
         assert tuple(predictions.shape) == (1, self.output_size)
         prediction = predictions[0]
         assert tuple(prediction.shape) == (self.output_size,)
-        print(f"prediction {repr(prediction)}")
-        while True:
-            next_character_probabilities = F.softmax(prediction.clone())
-            next_character_probabilities = F.softmax((next_character_probabilities > torch.rand(self.output_size)).int() * next_character_probabilities)
-            print(f"next_character_probabilities {repr(next_character_probabilities)}")
-            if not next_character_probabilities.sum():
-                next_character_probabilities = F.softmax(prediction.clone())
-            elif len(next_character_probabilities) == 1:
-                next_character_index = only_one(only_one(torch.where(next_character_probabilities)))
-                break
+        next_character_probabilities = F.softmax(prediction.clone())
+        next_character_probabilities = (next_character_probabilities > torch.rand(self.output_size).to(DEVICE)).int() * next_character_probabilities
+        print(f"next_character_probabilities.bool() {repr(next_character_probabilities.bool())}")
+        next_character_index = random.choice(only_one(torch.where(next_character_probabilities)))
         #next_character_index = torch.argmax(prediction.squeeze())
         next_character = self.dataset.idx2char[next_character_index]
         assert len(next_character)==1
