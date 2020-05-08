@@ -63,6 +63,9 @@
 	  (lambda ()
 	    (local-set-key (kbd "C-c p") 'javascript-printf-selected)))
 
+(add-hook 'html-mode-hook
+	  (lambda ()
+	    (local-set-key (kbd "C-M-q") 'indent-region)))
 
 ;; Custom Functions
 
