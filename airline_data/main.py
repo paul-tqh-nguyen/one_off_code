@@ -10,6 +10,7 @@
 # Imports #
 ###########
 
+import os
 import multiprocessing as mp
 import networkx as nx
 import pandas as pd
@@ -109,52 +110,53 @@ def draw_graph_to_file(output_location: str, graph: nx.Graph, **kwargs) -> None:
         figure.savefig(output_location)
     return
 
-def write_node_to_label_map_to_csv(node_to_label_map: dict, csv_file: str) -> None:
+def write_passenger_flow_vertex_ranking_to_csv(node_to_label_map: dict, city_market_id_info_df: dict, csv_file: str) -> None:
     if len(node_to_label_map) == 0:
         with open(csv_file, 'w') as f:
             f.write('node,label')
     else:
-        label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index')
-        label_df.to_csv(csv_file, index_label='node', header=['label'])
+        label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index').rename(columns={0:'value'})
+        label_df = label_df.join(city_market_id_info_df).sort_values('value', ascending=False)
+        label_df.to_csv(csv_file, index_label='CITY_MARKET_ID')
     return
 
-def visualize_passenger_flow_graph(passenger_flow_graph: nx.DiGraph) -> None:
-    draw_graph_to_file('passenger_flow_graph.png', passenger_flow_graph)
+def visualize_passenger_flow_graph(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
+    draw_graph_to_file('./output_data/passenger_flow_graph.png', passenger_flow_graph)
     return
 
-def visualize_passenger_flow_graph_betweenness_centrality(passenger_flow_graph: nx.DiGraph) -> None:
+def visualize_passenger_flow_graph_betweenness_centrality(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
     betweenness_centrality = nx.betweenness_centrality(passenger_flow_graph)
-    draw_graph_to_file('betweenness_centrality.png', passenger_flow_graph, node_to_value_map=betweenness_centrality)
-    write_node_to_label_map_to_csv(betweenness_centrality, 'betweenness_centrality.csv')
+    draw_graph_to_file('./output_data/betweenness_centrality.png', passenger_flow_graph, node_to_value_map=betweenness_centrality)
+    write_passenger_flow_vertex_ranking_to_csv(betweenness_centrality, city_market_id_info_df, './output_data/betweenness_centrality.csv')
     return
 
-def visualize_passenger_flow_graph_eigenvector_centrality(passenger_flow_graph: nx.DiGraph) -> None:
+def visualize_passenger_flow_graph_eigenvector_centrality(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
     eigenvector_centrality = nx.eigenvector_centrality(passenger_flow_graph, max_iter=1000)
-    draw_graph_to_file('eigenvector_centrality.png', passenger_flow_graph, node_to_value_map=eigenvector_centrality)
-    write_node_to_label_map_to_csv(eigenvector_centrality, 'eigenvector_centrality.csv')
+    draw_graph_to_file('./output_data/eigenvector_centrality.png', passenger_flow_graph, node_to_value_map=eigenvector_centrality)
+    write_passenger_flow_vertex_ranking_to_csv(eigenvector_centrality, city_market_id_info_df, './output_data/eigenvector_centrality.csv')
     return
 
-def visualize_passenger_flow_graph_hits(passenger_flow_graph: nx.DiGraph) -> None:
+def visualize_passenger_flow_graph_hits(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
     node_to_hub_value_map, node_to_authority_value_map = nx.hits(passenger_flow_graph, max_iter=1000, normalized=True)
-    draw_graph_to_file('hits_hub.png', passenger_flow_graph, node_to_value_map=node_to_hub_value_map)
-    draw_graph_to_file('hits_authority.png', passenger_flow_graph, node_to_value_map=node_to_authority_value_map)
-    write_node_to_label_map_to_csv(node_to_hub_value_map, 'hits_hub.csv')
-    write_node_to_label_map_to_csv(node_to_authority_value_map, 'hits_authority.csv')
+    draw_graph_to_file('./output_data/hits_hub.png', passenger_flow_graph, node_to_value_map=node_to_hub_value_map)
+    draw_graph_to_file('./output_data/hits_authority.png', passenger_flow_graph, node_to_value_map=node_to_authority_value_map)
+    write_passenger_flow_vertex_ranking_to_csv(node_to_hub_value_map, city_market_id_info_df, './output_data/hits_hub.csv')
+    write_passenger_flow_vertex_ranking_to_csv(node_to_authority_value_map, city_market_id_info_df, './output_data/hits_authority.csv')
     return
 
-def visualize_passenger_flow_graph_katz(passenger_flow_graph: nx.DiGraph) -> None:
+def visualize_passenger_flow_graph_katz(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
     katz_centrality = nx.katz_centrality(passenger_flow_graph, KATZ_ALHPA)
-    draw_graph_to_file('katz_centrality.png', passenger_flow_graph, node_to_value_map=katz_centrality)
-    write_node_to_label_map_to_csv(katz_centrality, 'katz_centrality.csv')
+    draw_graph_to_file('./output_data/katz_centrality.png', passenger_flow_graph, node_to_value_map=katz_centrality)
+    write_passenger_flow_vertex_ranking_to_csv(katz_centrality, city_market_id_info_df, './output_data/katz_centrality.csv')
     return
 
-def visualize_passenger_flow_graph_pagerank(passenger_flow_graph: nx.DiGraph) -> None:
+def visualize_passenger_flow_graph_pagerank(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
     pagerank = nx.pagerank(passenger_flow_graph)
-    draw_graph_to_file('pagerank.png', passenger_flow_graph, node_to_value_map=pagerank)
-    write_node_to_label_map_to_csv(pagerank, 'pagerank.csv')
+    draw_graph_to_file('./output_data/pagerank.png', passenger_flow_graph, node_to_value_map=pagerank)
+    write_passenger_flow_vertex_ranking_to_csv(pagerank, city_market_id_info_df, './output_data/pagerank.csv')
     return
 
-def visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph: nx.DiGraph) -> None:
+def visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
     processes: List[mp.Process] = []
     visualization_functions = [
         visualize_passenger_flow_graph,
@@ -164,8 +166,10 @@ def visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph: nx.DiGr
         visualize_passenger_flow_graph_katz,
         visualize_passenger_flow_graph_pagerank,
     ]
+    if not os.path.isdir('./output_data/'):
+        os.makedirs('./output_data/')
     for visualization_function in visualization_functions:
-        process = mp.Process(target=visualization_function, args=(passenger_flow_graph,))
+        process = mp.Process(target=visualization_function, args=(passenger_flow_graph, city_market_id_info_df))
         process.start()
         processes.append(process)
     for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
@@ -177,11 +181,12 @@ def visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph: nx.DiGr
 # Driver #
 ##########
 
+@debug_on_error
 def main() -> None:
     raw_data_df = pd.read_csv(RAW_DATA_CSV)
     passenger_flow_df, city_market_id_info_df = preprocess_data(raw_data_df)
     passenger_flow_graph = nx.from_pandas_edgelist(passenger_flow_df, source='ORIGIN_CITY_MARKET_ID', target='DEST_CITY_MARKET_ID', edge_attr='PASSENGERS', create_using=nx.DiGraph)
-    visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph)
+    visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph, city_market_id_info_df)
     return
 
 if __name__ == '__main__':
