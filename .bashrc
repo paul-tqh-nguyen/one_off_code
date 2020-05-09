@@ -4,6 +4,7 @@
 export PS1="\u@\h:\`pwd\`$ "
 alias lt="ls -ltr"
 alias yes="yes | head -n 1000"
+alias untar="tar -xvf"
 
 alias update-settings="pushd ~/code/one_off_code/ ; git pull; git add python_startup.py .emacs .bashrc ; git commit -m \"Update .bashrc and .emacs and python_startup.py files. Timestamp: $(date +\"%T\")\" ; git push ; source ~/code/one_off_code/.bashrc  ; popd"
 alias store-git-credentials="git config --global credential.helper store"
