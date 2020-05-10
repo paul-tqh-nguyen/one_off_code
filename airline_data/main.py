@@ -110,12 +110,16 @@ def draw_graph_to_file(output_location: str, graph: nx.Graph, **kwargs) -> None:
         figure.savefig(output_location)
     return
 
-def write_passenger_flow_vertex_ranking_to_csv(node_to_label_map: dict, city_market_id_info_df: dict, csv_file: str) -> None:
-    if len(node_to_label_map) == 0:
+##################
+# Vertex Ranking #
+##################
+
+def write_passenger_flow_vertex_ranking_to_csv(node_to_value_map: dict, city_market_id_info_df: dict, csv_file: str) -> None:
+    if len(node_to_value_map) == 0:
         with open(csv_file, 'w') as f:
             f.write('node,label')
     else:
-        label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index').rename(columns={0:'value'})
+        label_df = pd.DataFrame.from_dict(node_to_value_map, orient='index').rename(columns={0:'value'})
         label_df = label_df.join(city_market_id_info_df).sort_values('value', ascending=False)
         label_df.to_csv(csv_file, index_label='CITY_MARKET_ID')
     return
@@ -176,6 +180,78 @@ def visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph: nx.DiGr
         process.join()
     return
 
+#######################
+# Community Detection #
+#######################
+
+def write_passenger_flow_community_to_csv(node_to_label_map: dict, city_market_id_info_df: dict, csv_file: str) -> None:
+    if len(node_to_label_map) == 0:
+        with open(csv_file, 'w') as f:
+            f.write('node,label')
+    else:
+        label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index')
+        label_df.to_csv(csv_file, index_label='node', header=['label'])
+    return
+
+# # Label Propagation
+
+# def generate_label_propagation_csv(graph: nx.Graph, csv_file: str) -> None:
+#     communities = nx.algorithms.community.label_propagation.label_propagation_communities(graph)
+#     node_to_label_map = dict()
+#     for label, nodes in enumerate(communities):
+#         for node in nodes:
+#             assert node not in node_to_label_map
+#             node_to_label_map[node] = label
+#     write_node_to_label_map_to_csv(node_to_label_map, csv_file)
+#     return
+
+# def generate_label_propagation_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+#     processes: List[mp.Process] = []
+#     for k, graph in k_to_actor_k_core_graph_map.items():
+#         csv_file = ACTORS_LABEL_PROP_CSV_TEMPLATE%k
+#         process = mp.Process(target=generate_label_propagation_csv, args=(graph,csv_file))
+#         process.start()
+#         processes.append(process)
+#     for k, graph in k_to_director_k_core_graph_map.items():
+#         csv_file = DIRECTORS_LABEL_PROP_CSV_TEMPLATE%k
+#         process = mp.Process(target=generate_label_propagation_csv, args=(graph,csv_file))
+#         process.start()
+#         processes.append(process)
+#     return processes
+
+# # Louvain
+
+# ACTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_actors_k_core_%d_louvain.csv'
+# DIRECTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_directors_k_core_%d_louvain.csv'
+
+# def generate_louvain_csv(graph: nx.Graph, csv_file: str) -> None:
+#     node_to_label_map = community_louvain.best_partition(graph)
+#     write_node_to_label_map_to_csv(node_to_label_map, csv_file)
+#     return
+
+# def generate_louvain_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
+#     processes: List[mp.Process] = []
+#     for k, graph in k_to_actor_k_core_graph_map.items():
+#         csv_file = ACTORS_LOUVAIN_CSV_TEMPLATE%k
+#         process = mp.Process(target=generate_louvain_csv, args=(graph,csv_file))
+#         process.start()
+#         processes.append(process)
+#     for k, graph in k_to_director_k_core_graph_map.items():
+#         csv_file = DIRECTORS_LOUVAIN_CSV_TEMPLATE%k
+#         process = mp.Process(target=generate_louvain_csv, args=(graph,csv_file))
+#         process.start()
+#         processes.append(process)
+#     return processes
+
+# # Top-Level
+
+# def generate_communities_for_k_core_graphs(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> None:
+#     processes: List[mp.Process] = []
+#     processes = processes + generate_label_propagation_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+#     processes = processes + generate_louvain_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
+#     for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Community Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+#         process.join()
+#     return
 
 ##########
 # Driver #
