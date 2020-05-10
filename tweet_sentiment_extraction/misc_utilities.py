@@ -1,58 +1,4 @@
 
-# Start Up Prints
-
-def print_header() -> None:
-    import time
-    import os
-    print(f'')
-    print(f'Start time: {time.strftime("%Y/%m/%d %H:%M:%S")}')
-    print(f'Current Working Directory: {os.getcwd()}')
-    print(f'')
-    print(f'''Useful Forms:
-
-import metagraph_cuda.tests.algorithms.test_pagerank ; from importlib import reload ; reload(metagraph_cuda.tests.algorithms.test_pagerank) ; from metagraph_cuda.tests.algorithms.test_pagerank import *
-
-os.chdir(os.path.expanduser('~/code/one_off_code/cugraph_experiments/')); import test_community, importlib; importlib.reload(test_community); from test_community import * 
-
-@debug_on_error
-def test():
-    return test_katz_centrality_undirected()
-''')
-    return
-
-print_header()
-
-# Imports purely for accessibility, not use in helper utilities
-
-import os
-import sys
-import random
-import time
-import re
-import time
-import math
-import json
-import subprocess
-import multiprocessing
-import functools
-import itertools
-import inspect
-import signal
-import tqdm
-from tqdm import tqdm
-from importlib import reload
-from inspect import getfile, getsource, getsourcefile
-from inspect import getmodule
-from inspect import getdoc
-from inspect import signature
-from statistics import mean
-from functools import reduce
-
-
-if os.uname()[1] == "demouser-DGX-Station":
-    import numpy as np
-    import networkx as nx
-
 # Debugging Utilities
 
 import io
@@ -130,11 +76,6 @@ def doc(obj) -> None:
 from typing import Iterable
 def p1(iterable: Iterable) -> None:
     for e in iterable:
-        print(e)
-    return
-
-def pdir(arbitrary_object: object) -> None:
-    for e in dir(arbitrary_object):
         print(e)
     return
 
