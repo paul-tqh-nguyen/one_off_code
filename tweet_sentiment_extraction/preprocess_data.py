@@ -118,8 +118,7 @@ def preprocess_data() -> None:
     numericalize_selected_text_series = training_data_df[['text', 'selected_text']].apply(lambda row: numericalize_selected_text(row[0], row[1]), axis=1)
     assert isinstance(numericalize_selected_text_series, pd.Series)
     training_data_df['numericalize_selected_text'] = numericalize_selected_text_series
-    if __debug__:
-        print(f"{len(training_data_df[training_data_df.numericalize_selected_text.map(sum) == 0])} out of {len(training_data_df)} unhandled cases likely due to selected text starting or ending within a word.")
+    print(f"{len(training_data_df[training_data_df.numericalize_selected_text.map(sum) == 0])} out of {len(training_data_df)} unhandled cases likely due to selected text starting or ending within a word.")
     training_data_df = training_data_df[training_data_df.numericalize_selected_text.map(sum) > 0]
     training_data_df.to_json(PREPROCESSED_TRAINING_DATA_JSON_FILE, orient='records', lines=True)
     return

@@ -45,7 +45,6 @@ GOAL_NUMBER_OF_OVERSAMPLED_DATAPOINTS = 0
 PORTION_OF_WORDS_TO_CROP_TO_UNK_FOR_DATA_AUGMENTATION = 0.30
 
 SENTIMENTS = ['positive', 'neutral', 'negative']
-SENTIMENT_TO_TENSOR = { sentiment: torch.tensor(i) for i, sentiment in enumerate(SENTIMENTS) }
 
 ####################
 # Helper Utilities #
@@ -60,20 +59,20 @@ def _safe_count_tensor_division(dividend: torch.Tensor, divisor: torch.Tensor) -
     assert not tensor_has_nan(answer)
     return answer
 
-def soft_f1_loss(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-    batch_size, output_size = tuple(y.shape)
-    assert tuple(y.shape) == (batch_size, output_size)
-    assert tuple(y_hat.shape) == (batch_size, output_size)
-    true_positive_sum = (y_hat * y.float()).sum(dim=0)
-    false_positive_sum = (y_hat * (1-y.float())).sum(dim=0)
-    false_negative_sum = ((1-y_hat) * y.float()).sum(dim=0)
-    soft_recall = true_positive_sum / (true_positive_sum + false_negative_sum + 1e-16)
-    soft_precision = true_positive_sum / (true_positive_sum + false_positive_sum + 1e-16)
-    soft_f1 = 2 * soft_precision * soft_recall / (soft_precision + soft_recall + 1e-16)
-    mean_soft_f1 = torch.mean(soft_f1)
-    loss = 1-mean_soft_f1
-    assert not tensor_has_nan(loss)
-    return loss
+# def soft_f1_loss(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+#     batch_size, output_size = tuple(y.shape)
+#     assert tuple(y.shape) == (batch_size, output_size)
+#     assert tuple(y_hat.shape) == (batch_size, output_size)
+#     true_positive_sum = (y_hat * y.float()).sum(dim=0)
+#     false_positive_sum = (y_hat * (1-y.float())).sum(dim=0)
+#     false_negative_sum = ((1-y_hat) * y.float()).sum(dim=0)
+#     soft_recall = true_positive_sum / (true_positive_sum + false_negative_sum + 1e-16)
+#     soft_precision = true_positive_sum / (true_positive_sum + false_positive_sum + 1e-16)
+#     soft_f1 = 2 * soft_precision * soft_recall / (soft_precision + soft_recall + 1e-16)
+#     mean_soft_f1 = torch.mean(soft_f1)
+#     loss = 1-mean_soft_f1
+#     assert not tensor_has_nan(loss)
+#     return loss
 
 class NumericalizedBatchIterator:
     def __init__(self, non_numericalized_iterator: Iterable, x_attribute_name: str, y_attribute_names: List[str]):
@@ -91,10 +90,10 @@ class NumericalizedBatchIterator:
         return len(self.non_numericalized_iterator)
 
 #######################
-# Abstract Classifier #
+# Abstract Predictor #
 #######################
 
-class Classifier(ABC):
+class Predictor(ABC):
     def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: float, validation_portion: float, testing_portion: float, max_vocab_size: int, pre_trained_embedding_specification: str, **kwargs):
         super().__init__()
         self.best_valid_loss = float('inf')
@@ -114,7 +113,7 @@ class Classifier(ABC):
             os.makedirs(self.output_directory)
         
         self.load_data()
-        self.reset_f1_threshold()
+        self.reset_jaccard_threshold()
         self.initialize_model()
         
     def load_data(self):
@@ -218,7 +217,6 @@ class Classifier(ABC):
             'max_vocab_size': self.max_vocab_size,
             'vocab_size': len(self.text_field.vocab), 
             'pre_trained_embedding_specification': self.pre_trained_embedding_specification,
-            'output_size': self.output_size,
             'train_portion': self.train_portion,
             'validation_portion': self.validation_portion,
             'testing_portion': self.testing_portion,
@@ -278,7 +276,6 @@ class Classifier(ABC):
         print(f'        max_vocab_size: {self.max_vocab_size}')
         print(f'        vocab_size: {len(self.text_field.vocab)}')
         print(f'        pre_trained_embedding_specification: {self.pre_trained_embedding_specification}')
-        print(f'        output_size: {self.output_size}')
         print(f'        output_directory: {self.output_directory}')
         for model_arg_name, model_arg_value in sorted(self.model_args.items()):
             print(f'        {model_arg_name}: {model_arg_value.__name__ if hasattr(model_arg_value, "__name__") else str(model_arg_value)}')
@@ -356,7 +353,7 @@ class Classifier(ABC):
         return mean_jaccard_index
     
     def select_substring(self, input_string: str, sentiment: str) -> str:
-        assert sentiment in SENTIMENT_TO_TENSOR
+        assert sentiment in SENTIMENTS
         self.model.eval()
         preprocessed_input_string, preprocessed_token_index_to_position_info_map = preprocess_data.preprocess_tweet(input_string)
         preprocessed_tokens = self.text_field.tokenize(preprocessed_input_string)
@@ -365,10 +362,9 @@ class Classifier(ABC):
         input_string_tensor = torch.LongTensor(indexed).to(DEVICE)
         input_string_tensor = input_string_tensor.view(1,-1)
         length_tensor = torch.LongTensor(lengths).to(DEVICE)
-        sentiment_tensor = SENTIMENT_TO_TENSOR[sentiment]
         assert 'last_jaccard_threshold' in vars(self), "Model has not been trained yet and Jaccard threshold has not been optimized."
         threshold = self.last_jaccard_threshold
-        predictions = self.model(input_string_tensor, length_tensor, sentiment_tensor)
+        predictions = self.model(input_string_tensor, length_tensor, sentiment)
         assert tuple(predictions.shape) == (1, len(indexed))
         prediction = predictions[0]
         discretized_prediction = prediction > threshold
