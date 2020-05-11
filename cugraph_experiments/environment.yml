@@ -1,4 +1,4 @@
-name: mgc
+name: test-metagraph
 dependencies:
 # dev environment
   - python=3.7
@@ -8,3 +8,11 @@ dependencies:
   - black
   - conda-forge::pre-commit
   - setuptools
+
+# other dependencies
+  - importlib_metadata
+  - numpy
+  - networkx
+  - scipy
+  - conda-forge::grblas
+  - numba==0.48.0 

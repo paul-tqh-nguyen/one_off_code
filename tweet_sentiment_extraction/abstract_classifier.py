@@ -94,7 +94,7 @@ class NumericalizedBatchIterator:
 #######################
 
 class Predictor(ABC):
-    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: float, validation_portion: float, testing_portion: float, max_vocab_size: int, pre_trained_embedding_specification: str, **kwargs):
+    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: float, validation_portion: float, max_vocab_size: int, pre_trained_embedding_specification: str, **kwargs):
         super().__init__()
         self.best_valid_loss = float('inf')
         
@@ -106,7 +106,6 @@ class Predictor(ABC):
         
         self.train_portion = train_portion
         self.validation_portion = validation_portion
-        self.testing_portion = testing_portion
         
         self.output_directory = output_directory
         if not os.path.exists(self.output_directory):
@@ -139,7 +138,7 @@ class Predictor(ABC):
         self.text_field.build_vocab(self.training_data, max_size = self.max_vocab_size, vectors = self.pre_trained_embedding_specification, unk_init = torch.Tensor.normal_)
         assert self.text_field.vocab.vectors.shape[0] <= self.max_vocab_size+4
         assert self.text_field.vocab.vectors.shape[1] == self.embedding_size
-        self.training_iterator, self.validation_iterator, self.testing_iterator = data.BucketIterator.splits(
+        self.training_iterator, self.validation_iterator = data.BucketIterator.splits(
             (self.training_data, self.validation_data),
             batch_size = self.batch_size,
             sort_key=lambda x: len(x.text),
@@ -148,7 +147,6 @@ class Predictor(ABC):
             device = DEVICE)
         self.training_iterator = NumericalizedBatchIterator(self.training_iterator, 'text', self.topics)
         self.validation_iterator = NumericalizedBatchIterator(self.validation_iterator, 'text', self.topics)
-        self.testing_iterator = NumericalizedBatchIterator(self.testing_iterator, 'text', self.topics)
         self.pad_idx = self.text_field.vocab.stoi[self.text_field.pad_token]
         self.unk_idx = self.text_field.vocab.stoi[self.text_field.unk_token]
         return
@@ -184,14 +182,14 @@ class Predictor(ABC):
         epoch_jaccard /= number_of_training_batches
         return epoch_loss, epoch_jaccard
     
-    def evaluate(self, iterator: Iterable, iterator_is_test_set: bool) -> Tuple[float, float]:
+    def evaluate(self, iterator: Iterable) -> Tuple[float, float]:
         epoch_loss = 0
         epoch_jaccard = 0
         self.model.eval()
         self.optimize_jaccard_threshold()
         iterator_size = len(iterator)
         with torch.no_grad():
-            for (text_batch, text_lengths), labels in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'{"Testing" if iterator_is_test_set else "Validation"} Jaccard {epoch_jaccard/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
+            for (text_batch, text_lengths), labels in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'Validation Jaccard {epoch_jaccard/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
                 predictions = self.model(text_batch, text_lengths).squeeze(1)
                 loss = self.loss_function(predictions, labels)
                 jaccard = self.scores_of_discretized_values(predictions, labels)
@@ -202,50 +200,61 @@ class Predictor(ABC):
         epoch_jaccard /= iterator_size
         return epoch_loss, epoch_jaccard
     
-    def validate(self) -> Tuple[float, float]:
-        return self.evaluate(self.validation_iterator, False)
-    
-    def test(self, epoch_index: int, result_is_from_final_run: bool) -> None:
-        test_loss, test_jaccard = self.evaluate(self.testing_iterator, True)
-        print(f'\t  Test Jaccard: {test_jaccard:.8f} |  Test Loss: {test_loss:.8f}')
+    def validate(self, epoch_index: int, result_is_from_final_run: bool) -> Tuple[float, float]:
+        valid_loss, valid_jaccard = self.evaluate(self.validation_iterator, True)
         if not os.path.isfile('global_best_model_score.json'):
             log_current_model_as_best = True
         else:
             with open('global_best_model_score.json', 'r') as current_global_best_model_score_json_file:
                 current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
-                current_global_best_model_jaccard: float = current_global_best_model_score_dict['test_jaccard']
-                log_current_model_as_best = current_global_best_model_jaccard < test_jaccard
+                current_global_best_model_jaccard: float = current_global_best_model_score_dict['valid_jaccard']
+                log_current_model_as_best = current_global_best_model_jaccard < valid_jaccard
         self_score_dict = {
+            'valid_jaccard': valid_jaccard,
+            'valid_loss': valid_loss,
             'best_valid_loss': self.best_valid_loss,
             'number_of_epochs': self.number_of_epochs,
             'most_recently_completed_epoch_index': epoch_index,
             'batch_size': self.batch_size,
             'max_vocab_size': self.max_vocab_size,
-            'vocab_size': len(self.text_field.vocab), 
+            'vocab_size': self.vocab_size, 
             'pre_trained_embedding_specification': self.pre_trained_embedding_specification,
             'train_portion': self.train_portion,
             'validation_portion': self.validation_portion,
-            'testing_portion': self.testing_portion,
             'number_of_parameters': self.count_parameters(),
-            'test_jaccard': test_jaccard,
-            'test_loss': test_loss,
         }
         self_score_dict.update({(key, value.__name__ if hasattr(value, '__name__') else str(value)) for key, value in self.model_args.items()})
         if log_current_model_as_best:
             with open('global_best_model_score.json', 'w') as outfile:
                 json.dump(self_score_dict, outfile)
-        latest_model_score_location = os.path.join(self.output_directory, 'latest_model_score.json')
-        with open(latest_model_score_location, 'w') as outfile:
+        with open(self.latest_model_score_location, 'w') as outfile:
             json.dump(self_score_dict, outfile)
         if result_is_from_final_run:
-            os.remove(latest_model_score_location)
-            with open(os.path.join(self.output_directory, 'final_model_score.json'), 'w') as outfile:
+            with open(self.final_model_score_location, 'w') as outfile:
                 json.dump(self_score_dict, outfile)
-        return
+        if valid_loss < self.best_valid_loss:
+            self.best_valid_loss = valid_loss
+            self.save_parameters(self.best_saved_model_location)
+        return valid_loss, valid_jaccard
+
+    @property
+    def vocab_size(self) -> str:
+        return len(self.text_field.vocab)
+    
+    @property
+    def best_saved_model_location(self) -> str:
+        return os.path.join(self.output_directory, 'best-model.pt')
+    
+    @property
+    def latest_model_score_location(self) -> str:
+        return os.path.join(self.output_directory, 'latest_model_score.json')
+    
+    @property
+    def final_model_score_location(self) -> str:
+        return os.path.join(self.output_directory, 'final_model_score.json')
     
     def train(self) -> None:
         self.print_hyperparameters()
-        best_saved_model_location = os.path.join(self.output_directory, 'best-model.pt')
         most_recent_validation_jaccard_scores = [0]*NUMBER_OF_RELEVANT_RECENT_EPOCHS
         print(f'Starting training')
         for epoch_index in range(self.number_of_epochs):
@@ -253,13 +262,9 @@ class Predictor(ABC):
             print(f"Epoch {epoch_index}")
             with timer(section_name=f"Epoch {epoch_index}"):
                 train_loss, train_jaccard = self.train_one_epoch()
-                valid_loss, valid_jaccard = self.validate()
+                valid_loss, valid_jaccard = self.validate(epoch_index, False)
                 print(f'\t   Training Jaccard: {train_jaccard:.8f} |   Training Loss: {train_loss:.8f}')
                 print(f'\t Validation Jaccard: {valid_jaccard:.8f} | Validation Loss: {valid_loss:.8f}')
-                if valid_loss < self.best_valid_loss:
-                    self.best_valid_loss = valid_loss
-                    self.save_parameters(best_saved_model_location)
-                    self.test(epoch_index, False)
             print("\n")
             if reduce(bool.__or__, (valid_jaccard > previous_jaccard for previous_jaccard in most_recent_validation_jaccard_scores)):
                 most_recent_validation_jaccard_scores.pop(0)
@@ -269,9 +274,8 @@ class Predictor(ABC):
                 print(f"Validation is not better than any of the {NUMBER_OF_RELEVANT_RECENT_EPOCHS} recent epochs, so training is ending early due to apparent convergence.")
                 print()
                 break
-        self.load_parameters(best_saved_model_location)
-        self.test(epoch_index, True)
-        os.remove(best_saved_model_location)
+        self.load_parameters(self.best_saved_model_location)
+        self.validate(epoch_index, True)
         return
     
     def print_hyperparameters(self) -> None:
@@ -280,7 +284,7 @@ class Predictor(ABC):
         print(f'        number_of_epochs: {self.number_of_epochs}')
         print(f'        batch_size: {self.batch_size}')
         print(f'        max_vocab_size: {self.max_vocab_size}')
-        print(f'        vocab_size: {len(self.text_field.vocab)}')
+        print(f'        vocab_size: {self.vocab_size}')
         print(f'        pre_trained_embedding_specification: {self.pre_trained_embedding_specification}')
         print(f'        output_directory: {self.output_directory}')
         for model_arg_name, model_arg_value in sorted(self.model_args.items()):
@@ -350,9 +354,9 @@ class Predictor(ABC):
         intersection_count = (y_hat_discretized & y).sum(dim=0)
         union_count = y_hat_discretized.sum(dim=0) + y.sum(dim=0) - intersection_count
         jaccard_index = _safe_count_tensor_division(intersection_count, union_count)
-        assert tuple(intersection_count.shape) = (batch_size,)
-        assert tuple(union_count.shape) = (batch_size,)
-        assert tuple(jaccard_index.shape) = (batch_size,)
+        assert tuple(intersection_count.shape) == (batch_size,)
+        assert tuple(union_count.shape) == (batch_size,)
+        assert tuple(jaccard_index.shape) == (batch_size,)
         mean_jaccard_index = jaccard_index.mean().item()
         assert isinstance(mean_jaccard_index, float)
         assert mean_jaccard_index == 0.0 or 0.0 not in (intersection_count.sum(), union_count.sum())
