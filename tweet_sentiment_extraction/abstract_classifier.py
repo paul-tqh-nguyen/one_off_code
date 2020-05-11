@@ -117,27 +117,33 @@ class Predictor(ABC):
         self.initialize_model()
         
     def load_data(self):
-        self.text_field = data.Field(tokenize = str.split, include_lengths = True, batch_first = True)
-        self.label_field = data.LabelField(dtype = torch.long)
+        self.text_field = data.Field(include_lengths = True, batch_first = True)
+        self.label_field = data.Field(use_vocab=False, batch_first=True, is_target=True)
+        self.sentiment_field = data.RawField()
         self.misc_field = data.RawField()
         self.all_data = data.dataset.TabularDataset(
             path=preprocess_data.PREPROCESSED_TRAINING_DATA_JSON_FILE,
             format='json',
             fields={
-                ,
+                "preprocessed_input_string": ("preprocessed_input_string", self.text_field),
+                "numericalized_selected_text" : ("numericalized_selected_text", self.label_field),
+                "sentiment": ("sentiment", self.sentiment_field),
+                
+                "textID": ("text_id", self.misc_field),
+                "text": ("text", self.misc_field),
+                "selected_text": ("selected_text", self.misc_field),
+                "token_index_to_position_info_map": ("token_index_to_position_info_map", self.misc_field),
             })
-        self.training_data, self.validation_data, self.testing_data = self.all_data.split(split_ratio=[self.train_portion, self.validation_portion, self.testing_portion], random_state = random.seed(SEED))
-        self.balance_training_data()
+        self.training_data, self.validation_data = self.all_data.split(split_ratio=[self.train_portion, self.validation_portion], random_state = random.seed(SEED))
         self.embedding_size = torchtext.vocab.pretrained_aliases[self.pre_trained_embedding_specification]().dim
         self.text_field.build_vocab(self.training_data, max_size = self.max_vocab_size, vectors = self.pre_trained_embedding_specification, unk_init = torch.Tensor.normal_)
-        self.label_field.build_vocab(self.training_data)
-        assert self.text_field.vocab.vectors.shape[0] <= self.max_vocab_size+2
+        assert self.text_field.vocab.vectors.shape[0] <= self.max_vocab_size+4
         assert self.text_field.vocab.vectors.shape[1] == self.embedding_size
         self.training_iterator, self.validation_iterator, self.testing_iterator = data.BucketIterator.splits(
-            (self.training_data, self.validation_data, self.testing_data),
+            (self.training_data, self.validation_data),
             batch_size = self.batch_size,
             sort_key=lambda x: len(x.text),
-            sort_within_batch = True,
+            sort_within_batch=True,
             repeat=False,
             device = DEVICE)
         self.training_iterator = NumericalizedBatchIterator(self.training_iterator, 'text', self.topics)
