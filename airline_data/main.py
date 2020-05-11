@@ -11,6 +11,7 @@
 ###########
 
 import os
+import random
 import multiprocessing as mp
 import networkx as nx
 import pandas as pd
@@ -68,6 +69,9 @@ def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 # Visualization Utilities #
 ###########################
 
+def random_hex_color() -> str:
+    return '#'+''.join(("%02X" % random.randint(0,255) for _ in range(3)))
+
 def draw_graph_to_file(output_location: str, graph: nx.Graph, **kwargs) -> None:
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
         plot = figure.add_subplot(111)
@@ -83,13 +87,13 @@ def draw_graph_to_file(output_location: str, graph: nx.Graph, **kwargs) -> None:
                 label_to_nodes_map = kwargs['label_to_nodes_map']
             elif 'node_to_label_map' in kwargs:
                 label_to_nodes_map = dict()
-                for node, label in kwargs['node_to_label_map']:
+                for node, label in kwargs['node_to_label_map'].items():
                     if label in label_to_nodes_map:
                         label_to_nodes_map[label].append(node)
                     else:
                         label_to_nodes_map[label] = [node]
             else:
-                assert 'label_to_nodes_map' in kwargs or 'node_to_label_map' in kwargs:
+                assert 'label_to_nodes_map' in kwargs or 'node_to_label_map' in kwargs
             for label, nodes in label_to_nodes_map.items():
                 node_color = random_hex_color()
                 nx.draw_networkx_nodes(graph,
@@ -181,7 +185,7 @@ def write_shared_passenger_community_to_csv(node_to_label_map: dict, city_market
         with open(csv_file, 'w') as f:
             f.write('node,label')
     else:
-        label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index)').rename(columns={0:'value'})
+        label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index').rename(columns={0:'label'})
         label_df = label_df.join(city_market_id_info_df).sort_values('label', ascending=False)
         label_df.to_csv(csv_file, index_label='CITY_MARKET_ID')
     return
@@ -194,13 +198,13 @@ def visualize_shared_passenger_graph_label_propagation(shared_passenger_graph: n
             assert node not in node_to_label_map
             node_to_label_map[node] = label
     draw_graph_to_file('./output_data/label_propagation.png', shared_passenger_graph, node_to_label_map=node_to_label_map)
-    write_shared_passenger_community_to_csv(node_to_label_map, './output_data/label_propagation.csv')
+    write_shared_passenger_community_to_csv(node_to_label_map, city_market_id_info_df, './output_data/label_propagation.csv')
     return
 
 def visualize_shared_passenger_graph_louvain(shared_passenger_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
     node_to_label_map = community_louvain.best_partition(shared_passenger_graph)
     draw_graph_to_file('./output_data/louvain.png', shared_passenger_graph, node_to_label_map=node_to_label_map)
-    write_shared_passenger_community_to_csv(node_to_label_map, './output_data/louvain.csv')
+    write_shared_passenger_community_to_csv(node_to_label_map, city_market_id_info_df, './output_data/louvain.csv')
     return
 
 ############################
