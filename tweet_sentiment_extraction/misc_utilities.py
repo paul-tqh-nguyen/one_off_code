@@ -85,14 +85,14 @@ def current_tensors() -> List:
     import gc
     return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
 
-from tqdm import tqdm
+import tqdm
 def _dummy_tqdm_message_func(index: int):
     return ''
 def tqdm_with_message(iterable,
                       pre_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
                       post_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
                       *args, **kwargs):
-    progress_bar_iterator = tqdm(iterable, *args, **kwargs)
+    progress_bar_iterator = tqdm.tqdm(iterable, *args, **kwargs)
     for index, element in enumerate(progress_bar_iterator):
         if pre_yield_message_func != _dummy_tqdm_message_func:
             pre_yield_message = pre_yield_message_func(index)

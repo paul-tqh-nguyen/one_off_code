@@ -74,8 +74,8 @@ def _safe_count_tensor_division(dividend: torch.Tensor, divisor: torch.Tensor) -
 #     assert not tensor_has_nan(loss)
 #     return loss
 
-class NumericalizedBatchIterator:
-    def __init__(self, non_numericalized_iterator: Iterable, x_attribute_name: str, y_attribute_names: List[str]):
+class BatchIterator:
+    def __init__(self, non_numericalized_iterator: Iterable, x_attribute_name: str, y_attribute_name: str):
         self.non_numericalized_iterator = non_numericalized_iterator
         self.x_attribute_name: str = x_attribute_name
         self.y_attribute_names: List[str] = y_attribute_names
@@ -83,7 +83,7 @@ class NumericalizedBatchIterator:
     def __iter__(self):
         for non_numericalized_batch in self.non_numericalized_iterator:
             x = getattr(non_numericalized_batch, self.x_attribute_name)
-            y = torch.cat([getattr(non_numericalized_batch, y_attribute_name).unsqueeze(1) for y_attribute_name in self.y_attribute_names], dim=1).float()
+            y = getattr(non_numericalized_batch, self.y_attribute_name)
             yield (x, y)
             
     def __len__(self):
@@ -145,8 +145,8 @@ class Predictor(ABC):
             sort_within_batch=True,
             repeat=False,
             device = DEVICE)
-        self.training_iterator = NumericalizedBatchIterator(self.training_iterator, 'text', self.topics)
-        self.validation_iterator = NumericalizedBatchIterator(self.validation_iterator, 'text', self.topics)
+        self.training_iterator = BatchIterator(self.training_iterator, 'preprocessed_input_string', 'numericalized_selected_text')
+        self.validation_iterator = BatchIterator(self.validation_iterator, 'preprocessed_input_string', 'numericalized_selected_text')
         self.pad_idx = self.text_field.vocab.stoi[self.text_field.pad_token]
         self.unk_idx = self.text_field.vocab.stoi[self.text_field.unk_token]
         return
