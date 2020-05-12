@@ -48,8 +48,11 @@ def initialize_tokenizer() -> Callable:
     return tokenizer
 TOKENIZER = initialize_tokenizer()
 
-SPECIAL_CHARACTER_TO_PREPROCESSED_VALUE_MAP = {
+SPECIAL_CHARACTER_SENTINEL = '9'
+
+SPECIAL_CHARACTER_TO_NORMALIZED_VALUE_MAP = {
     '″': '"',
+    '´': "'",
     '′': "'",
     '”': '"',
     '“': '"',
@@ -70,19 +73,20 @@ SPECIAL_CHARACTER_TO_PREPROCESSED_VALUE_MAP = {
     'ë': 'e',
     'ì': 'i',
     'ï': 'i',
+    '¡': 'i',
     'ö': 'o',
     'Ø': 'o',
     'ñ': 'n',
     'ü': 'u',
     '×': 'x',
     # Exotic characters
-    '¿': '9',
-    '©': '9',
-    '®': '9',
-    '»': '9',
-    '«': '9',
-    '…': '9',
-    '½': '9',
+    '¿': SPECIAL_CHARACTER_SENTINEL,
+    '©': SPECIAL_CHARACTER_SENTINEL,
+    '®': SPECIAL_CHARACTER_SENTINEL,
+    '»': SPECIAL_CHARACTER_SENTINEL,
+    '«': SPECIAL_CHARACTER_SENTINEL,
+    '…': SPECIAL_CHARACTER_SENTINEL,
+    '½': SPECIAL_CHARACTER_SENTINEL,
 }
 
 TRAINING_DATA_CSV_FILE = './data/train.csv'
@@ -171,43 +175,47 @@ def normalize_string_white_space(input_string: str) -> str:
     normalized_input_string = normalized_input_string.strip()
     return normalized_input_string
 
-def preprocess_special_characters(input_string: str) -> str:
+def normalize_special_characters(input_string: str) -> str:
     output_string = input_string
-    for special_character, preprocessed_character in SPECIAL_CHARACTER_TO_PREPROCESSED_VALUE_MAP.items():
-        output_string = output_string.replace(special_character, preprocessed_character)
+    for special_character, normalized_character in SPECIAL_CHARACTER_TO_NORMALIZED_VALUE_MAP.items():
+        output_string = output_string.replace(special_character, normalized_character)
     return output_string
 
 def preprocess_string(input_string: str) -> str:
-    preprocessd_input_string = input_string
-    preprocessd_input_string = preprocess_special_characters(preprocessd_input_string)
-    preprocessd_input_string = preprocessd_input_string.lower()
-    assert len(preprocessd_input_string) == len(input_string)
-    preprocessd_input_string = normalize_string_white_space(preprocessd_input_string)
-    assert is_ascii(preprocessd_input_string)
-    return preprocessd_input_string
+    preprocessed_input_string = input_string
+    preprocessed_input_string = preprocessed_input_string.lower()
+    preprocessed_input_string = normalize_string_white_space(preprocessed_input_string)
+    preprocessed_input_string = normalize_special_characters(preprocessed_input_string)
+    assert is_ascii(preprocessed_input_string)
+    return preprocessed_input_string
 
 def preprocess_tweet(input_string: str) -> Tuple[str, List[dict]]:
     current_input_string_position = 0
     token_index_to_position_info_map = {}
-    normalized_input_string = normalize_string_white_space(input_string)
-    input_string_tokens = TOKENIZER(normalized_input_string)
+    white_space_normalized_input_string = normalize_string_white_space(input_string)
+    special_character_normalized_input_string = normalize_special_characters(input_string)
+    normalized_input_string = normalize_special_characters(white_space_normalized_input_string)
+    assert len(white_space_normalized_input_string) == len(normalized_input_string)
+    normalized_input_string_tokens = TOKENIZER(normalized_input_string)
     preprocessed_input_string = preprocess_string(input_string)
     preprocessed_tokens = TOKENIZER(preprocessed_input_string)
     assert len(preprocessed_input_string) == len(normalized_input_string)
-    assert len(input_string_tokens) == len(preprocessed_tokens)
-    for token_index, (token, preprocessed_token) in enumerate(zip(input_string_tokens, preprocessed_tokens)):
+    assert len(normalized_input_string_tokens) == len(preprocessed_tokens)
+    for token_index, (normalized_token, preprocessed_token) in enumerate(zip(normalized_input_string_tokens, preprocessed_tokens)):
         for _ in range(len(input_string)):
-            if input_string[current_input_string_position] != token[0]:
+            if special_character_normalized_input_string[current_input_string_position] != normalized_token[0]:
                 current_input_string_position +=1
             else:
                 break
         token_start = current_input_string_position
-        current_input_string_position += len(token)
+        current_input_string_position += len(normalized_token)
         token_end = current_input_string_position
-        assert token[0] == input_string[token_start]
-        assert token[-1] == input_string[token_end-1]
+        assert normalized_token[0] == normalize_special_characters(input_string[token_start])
+        assert normalized_token[-1] == normalize_special_characters(input_string[token_end-1])
+        assert normalized_token == special_character_normalized_input_string[token_start:token_end]
         assert current_input_string_position <= len(input_string)
-        token_index_to_position_info_map[token_index] = {'token_original_start_position': token_start, 'token_original_end_position': token_end, 'original_token': token, 'preprocessed_token': preprocessed_token}
+        original_token = input_string[token_start:token_end]
+        token_index_to_position_info_map[token_index] = {'token_original_start_position': token_start, 'token_original_end_position': token_end, 'original_token': original_token, 'preprocessed_token': preprocessed_token}
     preprocessed_input_string = ' '.join(preprocessed_tokens)
     return (preprocessed_input_string, token_index_to_position_info_map)
 
@@ -254,6 +262,7 @@ def preprocess_data() -> None:
     #training_data_df = training_data_df[training_data_df.textID == 'c2c5b285b9']
     #training_data_df = training_data_df[training_data_df.textID == 'a395c6210f']
     #training_data_df = training_data_df[training_data_df.textID == 'be7fcd20df']
+    #training_data_df = training_data_df[27000:]
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
     print()
     print('Preprocessing tweets...')
@@ -274,7 +283,7 @@ def preprocess_data() -> None:
     assert isinstance(numericalized_selected_text_series, pd.Series)
     training_data_df['numericalized_selected_text'] = numericalized_selected_text_series
     print(f'''{len(training_data_df[training_data_df.numericalized_selected_text.map(lambda x: 0 if x=='' else int(x)) == 0])} out of {len(training_data_df)} '''
-          '''unhandled cases likely due to selected text starting or ending within a word.''')
+          '''entirely unhandled cases likely due to selected text starting or ending within a word.''')
     training_data_df = training_data_df[training_data_df.numericalized_selected_text.str.contains('1')]
     training_data_df.to_json(PREPROCESSED_TRAINING_DATA_JSON_FILE, orient='records', lines=True)
     print()
