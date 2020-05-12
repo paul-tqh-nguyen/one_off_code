@@ -236,10 +236,13 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
 # Main Driver #
 ###############
 
+@debug_on_error
 def preprocess_data() -> None:
     training_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
     #training_data_df = training_data_df[training_data_df.textID == 'c2c5b285b9']
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
+    print()
+    print('Preprocessing tweets...')
     if PREPROCESS_TEXT_IN_PARALLEL:
         with concurrent.futures.ProcessPoolExecutor(mp.cpu_count()) as pool:
             text_series_preprocessed = pd.Series(pool.map(preprocess_tweet, training_data_df.text, chunksize=1000))
@@ -247,10 +250,12 @@ def preprocess_data() -> None:
         text_series_preprocessed = training_data_df.text.progress_map(preprocess_tweet)
     preprocessed_input_string_series = text_series_preprocessed.progress_map(lambda pair: pair[0])
     token_index_to_position_info_map_series = text_series_preprocessed.progress_map(lambda pair: pair[1])
-    assert all(preprocessed_input_string_series.progress_map(lambda x: isinstance(x, str)))
-    assert all(token_index_to_position_info_map_series.progress_map(lambda x: isinstance(x, dict)))
+    assert all(preprocessed_input_string_series.map(lambda x: isinstance(x, str)))
+    assert all(token_index_to_position_info_map_series.map(lambda x: isinstance(x, dict)))
     training_data_df['preprocessed_input_string'] = preprocessed_input_string_series
     training_data_df['token_index_to_position_info_map'] = token_index_to_position_info_map_series
+    print()
+    print('Numericalizing selected texts...')
     numericalized_selected_text_series = training_data_df[['preprocessed_input_string', 'selected_text']].progress_apply(lambda row: numericalize_selected_text(row[0], row[1]), axis=1)
     assert isinstance(numericalized_selected_text_series, pd.Series)
     training_data_df['numericalized_selected_text'] = numericalized_selected_text_series
@@ -258,6 +263,8 @@ def preprocess_data() -> None:
           '''unhandled cases likely due to selected text starting or ending within a word.''')
     training_data_df = training_data_df[training_data_df.numericalized_selected_text.str.contains('1')]
     training_data_df.to_json(PREPROCESSED_TRAINING_DATA_JSON_FILE, orient='records', lines=True)
+    print()
+    print(f'Preprocessed data saved to {PREPROCESSED_TRAINING_DATA_JSON_FILE} with {len(training_data_df)} entries.')
     assert sanity_check_training_data_json_file()
     return
 
