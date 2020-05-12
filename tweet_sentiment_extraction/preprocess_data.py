@@ -58,6 +58,7 @@ SPECIAL_CHARACTER_TO_PREPROCESSED_VALUE_MAP = {
     '—': '-',
     '–': '-',
     'Å': 'A',
+    'Â': 'A',
     'à': 'a',
     'â': 'a',
     'å': 'a',
@@ -73,13 +74,15 @@ SPECIAL_CHARACTER_TO_PREPROCESSED_VALUE_MAP = {
     'Ø': 'o',
     'ñ': 'n',
     'ü': 'u',
-    '©': 'c',
-    '®': 'R',
-    '»': '>',
-    '«': '<',
     '×': 'x',
-    '…': '.',
-    '½': '1',
+    # Exotic characters
+    '¿': '9',
+    '©': '9',
+    '®': '9',
+    '»': '9',
+    '«': '9',
+    '…': '9',
+    '½': '9',
 }
 
 TRAINING_DATA_CSV_FILE = './data/train.csv'
@@ -91,15 +94,24 @@ PREPROCESS_TEXT_IN_PARALLEL = False
 # Sanity Checking Utilities #
 #############################
 
+def is_ascii(input_string: str) -> bool:
+    return all(ord(character) < 128 for character in input_string)
+
 def selected_text_position_validity(preprocessed_input_string: str, preprocessed_selected_text: str) -> Tuple[bool, bool]:
+    assert '  ' not in preprocessed_input_string
+    assert '  ' not in preprocessed_selected_text
+    preprocessed_input_string_tokens = TOKENIZER(preprocessed_input_string)
+    preprocessed_selected_text_tokens = TOKENIZER(preprocessed_selected_text)
+    assert ' '.join(preprocessed_input_string_tokens) == preprocessed_input_string
+    assert ' '.join(preprocessed_selected_text_tokens) == preprocessed_selected_text
     preprocessed_selected_text_match = next(re.finditer(re.escape(preprocessed_selected_text), preprocessed_input_string))
     preprocessed_selected_text_start_position, preprocessed_selected_text_end_position = (preprocessed_selected_text_match.start(), preprocessed_selected_text_match.end())
     selected_text_starts_in_middle_of_word = False
     if preprocessed_selected_text_start_position > 0:
-        selected_text_starts_in_middle_of_word = preprocessed_input_string[preprocessed_selected_text_start_position-1].isalnum()
+        selected_text_starts_in_middle_of_word = preprocessed_input_string[preprocessed_selected_text_start_position-1] != ' '
     selected_text_ends_in_middle_of_word = False
     if preprocessed_selected_text_end_position<len(preprocessed_input_string):
-        selected_text_ends_in_middle_of_word = preprocessed_input_string[preprocessed_selected_text_end_position].isalnum()
+        selected_text_ends_in_middle_of_word = preprocessed_input_string[preprocessed_selected_text_end_position] != ' '
     return selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word
 
 def sanity_check_training_data_json_file() -> bool:
@@ -108,8 +120,6 @@ def sanity_check_training_data_json_file() -> bool:
         with open(PREPROCESSED_TRAINING_DATA_JSON_FILE, 'r') as json_file_handle:
             for row_text in tqdm.tqdm(json_file_handle.readlines()):
                 row_data = json.loads(row_text)
-                if row_data['textID'] != 'c2c5b285b9':
-                    continue
                 original_text = row_data['text']
                 selected_text = row_data['selected_text']
                 token_index_to_position_info_map = row_data['token_index_to_position_info_map']
@@ -154,14 +164,15 @@ def pervasively_replace(input_string: str, old: str, new: str) -> str:
 
 def normalize_string_white_space(input_string: str) -> str:
     normalized_input_string = input_string
+    normalized_input_string = normalized_input_string.replace('\xa0',' ')
     normalized_input_string = pervasively_replace(normalized_input_string, '\t', ' ')
     normalized_input_string = pervasively_replace(normalized_input_string, '\n', ' ')
     normalized_input_string = pervasively_replace(normalized_input_string, '  ',' ')
     normalized_input_string = normalized_input_string.strip()
     return normalized_input_string
 
-def preprocess_special_characters(blog_text: str) -> str:
-    output_string = blog_text
+def preprocess_special_characters(input_string: str) -> str:
+    output_string = input_string
     for special_character, preprocessed_character in SPECIAL_CHARACTER_TO_PREPROCESSED_VALUE_MAP.items():
         output_string = output_string.replace(special_character, preprocessed_character)
     return output_string
@@ -172,6 +183,7 @@ def preprocess_string(input_string: str) -> str:
     preprocessd_input_string = preprocessd_input_string.lower()
     assert len(preprocessd_input_string) == len(input_string)
     preprocessd_input_string = normalize_string_white_space(preprocessd_input_string)
+    assert is_ascii(preprocessd_input_string)
     return preprocessd_input_string
 
 def preprocess_tweet(input_string: str) -> Tuple[str, List[dict]]:
@@ -240,6 +252,8 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
 def preprocess_data() -> None:
     training_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
     #training_data_df = training_data_df[training_data_df.textID == 'c2c5b285b9']
+    #training_data_df = training_data_df[training_data_df.textID == 'a395c6210f']
+    #training_data_df = training_data_df[training_data_df.textID == 'be7fcd20df']
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
     print()
     print('Preprocessing tweets...')
