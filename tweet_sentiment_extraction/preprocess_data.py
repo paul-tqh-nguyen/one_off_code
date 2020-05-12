@@ -32,20 +32,55 @@ import torchtext
 
 tqdm.tqdm.pandas()
 
+SIMPLE_URL_RE = re.compile(r'''^https?://''')
+
 def initialize_tokenizer() -> Callable:
     nlp = spacy.load('en')
     prefix_re = re.compile(r'''^['''+re.escape(string.punctuation)+r''']''')
     suffix_re = re.compile(r'''['''+re.escape(string.punctuation)+r''']$''')
     infix_re = re.compile(r'''['''+re.escape(string.punctuation)+r''']''')
-    simple_url_re = re.compile(r'''^https?://''')
     nlp.tokenizer = Tokenizer(nlp.vocab,
                               prefix_search=prefix_re.search,
                               suffix_search=suffix_re.search,
                               infix_finditer=infix_re.finditer,
-                              token_match=simple_url_re.match)
+                              token_match=SIMPLE_URL_RE.match)
     tokenizer = lambda input_string: [t.text for t in nlp(input_string)]
     return tokenizer
 TOKENIZER = initialize_tokenizer()
+
+SPECIAL_CHARACTER_TO_PREPROCESSED_VALUE_MAP = {
+    '″': '"',
+    '′': "'",
+    '”': '"',
+    '“': '"',
+    '’': "'",
+    '‘': "'",
+    '—': '-',
+    '–': '-',
+    'Å': 'A',
+    'à': 'a',
+    'â': 'a',
+    'å': 'a',
+    'ā': 'a',
+    'ç': 'c',
+    'è': 'e',
+    'é': 'e',
+    'ê': 'e',
+    'ë': 'e',
+    'ì': 'i',
+    'ï': 'i',
+    'ö': 'o',
+    'Ø': 'o',
+    'ñ': 'n',
+    'ü': 'u',
+    '©': 'c',
+    '®': 'R',
+    '»': '>',
+    '«': '<',
+    '×': 'x',
+    '…': '.',
+    '½': '1',
+}
 
 TRAINING_DATA_CSV_FILE = './data/train.csv'
 PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
@@ -125,29 +160,30 @@ def normalize_string_white_space(input_string: str) -> str:
     normalized_input_string = normalized_input_string.strip()
     return normalized_input_string
 
-def preprocess_token(token: str) -> str:
-    print('\n'*3)
-    preprocessed_token = token
-    print(f"preprocessed_token {repr(preprocessed_token)}")
-    preprocessed_token = unicodedata.normalize('NFKD', preprocessed_token).encode('ascii', 'ignore').decode('utf-8')
-    print(f"preprocessed_token {repr(preprocessed_token)}")
-    preprocessed_token = preprocessed_token.lower()
-    assert len(token) == len(preprocessed_token)
-    print(f"token {repr(token)}")
-    print(f"preprocessed_token {repr(preprocessed_token)}")
-    assert len(set(string.punctuation).union(set(preprocessed_token))) == 0
-    assert ' ' not in preprocessed_token
-    return preprocessed_token
+def preprocess_special_characters(blog_text: str) -> str:
+    output_string = blog_text
+    for special_character, preprocessed_character in SPECIAL_CHARACTER_TO_PREPROCESSED_VALUE_MAP.items():
+        output_string = output_string.replace(special_character, preprocessed_character)
+    return output_string
 
-@trace
+def preprocess_string(input_string: str) -> str:
+    preprocessd_input_string = input_string
+    preprocessd_input_string = preprocess_special_characters(preprocessd_input_string)
+    preprocessd_input_string = preprocessd_input_string.lower()
+    assert len(preprocessd_input_string) == len(input_string)
+    preprocessd_input_string = normalize_string_white_space(preprocessd_input_string)
+    return preprocessd_input_string
+
 def preprocess_tweet(input_string: str) -> Tuple[str, List[dict]]:
     current_input_string_position = 0
     token_index_to_position_info_map = {}
     normalized_input_string = normalize_string_white_space(input_string)
     input_string_tokens = TOKENIZER(normalized_input_string)
-    preprocessed_tokens = eager_map(preprocess_token, input_string_tokens)
+    preprocessed_input_string = preprocess_string(input_string)
+    preprocessed_tokens = TOKENIZER(preprocessed_input_string)
+    assert len(preprocessed_input_string) == len(normalized_input_string)
+    assert len(input_string_tokens) == len(preprocessed_tokens)
     for token_index, (token, preprocessed_token) in enumerate(zip(input_string_tokens, preprocessed_tokens)):
-        print(f"(token_index, preprocessed_token) {repr((token_index, preprocessed_token))}")
         for _ in range(len(input_string)):
             if input_string[current_input_string_position] != token[0]:
                 current_input_string_position +=1
@@ -163,7 +199,6 @@ def preprocess_tweet(input_string: str) -> Tuple[str, List[dict]]:
     preprocessed_input_string = ' '.join(preprocessed_tokens)
     return (preprocessed_input_string, token_index_to_position_info_map)
 
-@trace
 def numericalize_selected_text(preprocessed_input_string: str, selected_text: str) -> str:
     assert isinstance(preprocessed_input_string, str)
     assert isinstance(selected_text, str)
@@ -178,7 +213,6 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
     current_sentence_position = 0
     numericalized_text = [0]*len(preprocessed_input_string_tokens)
     for preprocessed_token_index, preprocessed_input_string_token in enumerate(preprocessed_input_string_tokens):
-        print(f"(preprocessed_token_index, preprocessed_input_string_token) {repr((preprocessed_token_index, preprocessed_input_string_token))}")
         if current_sentence_position == preprocessed_selected_text_start_position:
             assert current_sentence_position == preprocessed_selected_text_start_position or selected_text_starts_in_middle_of_word
             numericalized_text[preprocessed_token_index] = 1
@@ -187,8 +221,6 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
             numericalized_text[preprocessed_token_index] = 1
         current_sentence_position += len(preprocessed_input_string_token)
         if current_sentence_position >= preprocessed_selected_text_end_position:
-            print(f"preprocessed_input_string_token {repr(preprocessed_input_string_token)}")
-            print(f"list(zip(range(999), preprocessed_input_string_tokens, numericalized_text)) {repr(list(zip(range(999), preprocessed_input_string_tokens, numericalized_text)))}")
             assert current_sentence_position == preprocessed_selected_text_end_position or selected_text_ends_in_middle_of_word
             assert numericalized_text[preprocessed_token_index] == 1 or selected_text_starts_in_middle_of_word
             break
@@ -206,7 +238,7 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
 
 def preprocess_data() -> None:
     training_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
-    training_data_df = training_data_df[training_data_df.textID == 'c2c5b285b9']
+    #training_data_df = training_data_df[training_data_df.textID == 'c2c5b285b9']
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
     if PREPROCESS_TEXT_IN_PARALLEL:
         with concurrent.futures.ProcessPoolExecutor(mp.cpu_count()) as pool:
