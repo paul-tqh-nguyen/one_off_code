@@ -11,10 +11,13 @@
 ###########
 
 import os
+import random
 import multiprocessing as mp
 import networkx as nx
 import pandas as pd
+import community as community_louvain
 from typing import Tuple
+
 
 from misc_utilities import *
 
@@ -66,6 +69,9 @@ def preprocess_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 # Visualization Utilities #
 ###########################
 
+def random_hex_color() -> str:
+    return '#'+''.join(("%02X" % random.randint(0,255) for _ in range(3)))
+
 def draw_graph_to_file(output_location: str, graph: nx.Graph, **kwargs) -> None:
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
         plot = figure.add_subplot(111)
@@ -76,8 +82,18 @@ def draw_graph_to_file(output_location: str, graph: nx.Graph, **kwargs) -> None:
                                alpha=1.0,
                                edge_color=EDGE_COLOR)
         assert len(kwargs) <= 1
-        if 'label_to_nodes_map' in kwargs:
-            label_to_nodes_map = kwargs['label_to_nodes_map']
+        if 'label_to_nodes_map' in kwargs or 'node_to_label_map' in kwargs:
+            if 'label_to_nodes_map' in kwargs:
+                label_to_nodes_map = kwargs['label_to_nodes_map']
+            elif 'node_to_label_map' in kwargs:
+                label_to_nodes_map = dict()
+                for node, label in kwargs['node_to_label_map'].items():
+                    if label in label_to_nodes_map:
+                        label_to_nodes_map[label].append(node)
+                    else:
+                        label_to_nodes_map[label] = [node]
+            else:
+                assert 'label_to_nodes_map' in kwargs or 'node_to_label_map' in kwargs
             for label, nodes in label_to_nodes_map.items():
                 node_color = random_hex_color()
                 nx.draw_networkx_nodes(graph,
@@ -100,7 +116,7 @@ def draw_graph_to_file(output_location: str, graph: nx.Graph, **kwargs) -> None:
                                            node_size=MINIMUM_NODE_SIZE+NODE_SIZE_GROWTH_POTENTIAL*normalized_value,
                                            ax=plot)
         else:
-            assert len(kwargs)==0
+            assert len(kwargs)==0, f"Unhandled args: {kwargs}"
             nx.draw_networkx_nodes(graph,
                                    layout,
                                    nodelist=graph.nodes,
@@ -119,9 +135,9 @@ def write_passenger_flow_vertex_ranking_to_csv(node_to_value_map: dict, city_mar
         with open(csv_file, 'w') as f:
             f.write('node,label')
     else:
-        label_df = pd.DataFrame.from_dict(node_to_value_map, orient='index').rename(columns={0:'value'})
-        label_df = label_df.join(city_market_id_info_df).sort_values('value', ascending=False)
-        label_df.to_csv(csv_file, index_label='CITY_MARKET_ID')
+        value_df = pd.DataFrame.from_dict(node_to_value_map, orient='index').rename(columns={0:'value'})
+        value_df = value_df.join(city_market_id_info_df).sort_values('value', ascending=False)
+        value_df.to_csv(csv_file, index_label='CITY_MARKET_ID')
     return
 
 def visualize_passenger_flow_graph(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
@@ -160,7 +176,42 @@ def visualize_passenger_flow_graph_pagerank(passenger_flow_graph: nx.DiGraph, ci
     write_passenger_flow_vertex_ranking_to_csv(pagerank, city_market_id_info_df, './output_data/pagerank.csv')
     return
 
-def visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
+#######################
+# Community Detection #
+#######################
+
+def write_shared_passenger_community_to_csv(node_to_label_map: dict, city_market_id_info_df: dict, csv_file: str) -> None:
+    if len(node_to_label_map) == 0:
+        with open(csv_file, 'w') as f:
+            f.write('node,label')
+    else:
+        label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index').rename(columns={0:'label'})
+        label_df = label_df.join(city_market_id_info_df).sort_values('label', ascending=False)
+        label_df.to_csv(csv_file, index_label='CITY_MARKET_ID')
+    return
+
+def visualize_shared_passenger_graph_label_propagation(shared_passenger_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
+    communities = nx.algorithms.community.label_propagation.label_propagation_communities(shared_passenger_graph)
+    node_to_label_map = dict()
+    for label, nodes in enumerate(communities):
+        for node in nodes:
+            assert node not in node_to_label_map
+            node_to_label_map[node] = label
+    draw_graph_to_file('./output_data/label_propagation.png', shared_passenger_graph, node_to_label_map=node_to_label_map)
+    write_shared_passenger_community_to_csv(node_to_label_map, city_market_id_info_df, './output_data/label_propagation.csv')
+    return
+
+def visualize_shared_passenger_graph_louvain(shared_passenger_graph: nx.DiGraph, city_market_id_info_df: dict) -> None:
+    node_to_label_map = community_louvain.best_partition(shared_passenger_graph)
+    draw_graph_to_file('./output_data/louvain.png', shared_passenger_graph, node_to_label_map=node_to_label_map)
+    write_shared_passenger_community_to_csv(node_to_label_map, city_market_id_info_df, './output_data/louvain.csv')
+    return
+
+############################
+# High-Level Functionality #
+############################
+
+def visualize_passenger_flow_graph_processes(passenger_flow_graph: nx.DiGraph, city_market_id_info_df: dict) -> List[mp.Process]:
     processes: List[mp.Process] = []
     visualization_functions = [
         visualize_passenger_flow_graph,
@@ -176,82 +227,31 @@ def visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph: nx.DiGr
         process = mp.Process(target=visualization_function, args=(passenger_flow_graph, city_market_id_info_df))
         process.start()
         processes.append(process)
-    for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
-        process.join()
-    return
+    return processes
 
-#######################
-# Community Detection #
-#######################
+def visualize_shared_passenger_graph_analyses(shared_passenger_graph: nx.DiGraph, city_market_id_info_df: dict) -> List[mp.Process]:
+    processes: List[mp.Process] = []
+    visualization_functions = [
+        visualize_shared_passenger_graph_label_propagation,
+        visualize_shared_passenger_graph_louvain,
+    ]
+    if not os.path.isdir('./output_data/'):
+        os.makedirs('./output_data/')
+    for visualization_function in visualization_functions:
+        process = mp.Process(target=visualization_function, args=(shared_passenger_graph, city_market_id_info_df))
+        process.start()
+        processes.append(process)
+    return processes
 
-def write_passenger_flow_community_to_csv(node_to_label_map: dict, city_market_id_info_df: dict, csv_file: str) -> None:
-    if len(node_to_label_map) == 0:
-        with open(csv_file, 'w') as f:
-            f.write('node,label')
-    else:
-        label_df = pd.DataFrame.from_dict(node_to_label_map, orient='index')
-        label_df.to_csv(csv_file, index_label='node', header=['label'])
-    return
-
-# # Label Propagation
-
-# def generate_label_propagation_csv(graph: nx.Graph, csv_file: str) -> None:
-#     communities = nx.algorithms.community.label_propagation.label_propagation_communities(graph)
-#     node_to_label_map = dict()
-#     for label, nodes in enumerate(communities):
-#         for node in nodes:
-#             assert node not in node_to_label_map
-#             node_to_label_map[node] = label
-#     write_node_to_label_map_to_csv(node_to_label_map, csv_file)
-#     return
-
-# def generate_label_propagation_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
-#     processes: List[mp.Process] = []
-#     for k, graph in k_to_actor_k_core_graph_map.items():
-#         csv_file = ACTORS_LABEL_PROP_CSV_TEMPLATE%k
-#         process = mp.Process(target=generate_label_propagation_csv, args=(graph,csv_file))
-#         process.start()
-#         processes.append(process)
-#     for k, graph in k_to_director_k_core_graph_map.items():
-#         csv_file = DIRECTORS_LABEL_PROP_CSV_TEMPLATE%k
-#         process = mp.Process(target=generate_label_propagation_csv, args=(graph,csv_file))
-#         process.start()
-#         processes.append(process)
-#     return processes
-
-# # Louvain
-
-# ACTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_actors_k_core_%d_louvain.csv'
-# DIRECTORS_LOUVAIN_CSV_TEMPLATE = './output/projected_directors_k_core_%d_louvain.csv'
-
-# def generate_louvain_csv(graph: nx.Graph, csv_file: str) -> None:
-#     node_to_label_map = community_louvain.best_partition(graph)
-#     write_node_to_label_map_to_csv(node_to_label_map, csv_file)
-#     return
-
-# def generate_louvain_processes(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> List[mp.Process]:
-#     processes: List[mp.Process] = []
-#     for k, graph in k_to_actor_k_core_graph_map.items():
-#         csv_file = ACTORS_LOUVAIN_CSV_TEMPLATE%k
-#         process = mp.Process(target=generate_louvain_csv, args=(graph,csv_file))
-#         process.start()
-#         processes.append(process)
-#     for k, graph in k_to_director_k_core_graph_map.items():
-#         csv_file = DIRECTORS_LOUVAIN_CSV_TEMPLATE%k
-#         process = mp.Process(target=generate_louvain_csv, args=(graph,csv_file))
-#         process.start()
-#         processes.append(process)
-#     return processes
-
-# # Top-Level
-
-# def generate_communities_for_k_core_graphs(k_to_actor_k_core_graph_map: dict, k_to_director_k_core_graph_map: dict) -> None:
-#     processes: List[mp.Process] = []
-#     processes = processes + generate_label_propagation_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
-#     processes = processes + generate_louvain_processes(k_to_actor_k_core_graph_map, k_to_director_k_core_graph_map)
-#     for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Community Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
-#         process.join()
-#     return
+def passenger_flow_graph_to_shared_passenger_graph(passenger_flow_graph: nx.DiGraph) -> nx.Graph:
+    shared_passenger_graph = nx.Graph()
+    for start_node, destination_node, edge_attributes in passenger_flow_graph.edges.data():
+        undirected_edge = (start_node, destination_node)
+        if undirected_edge in shared_passenger_graph:
+            shared_passenger_graph[start_node][destination_node]['PASSENGERS'] = min(shared_passenger_graph[start_node][destination_node]['PASSENGERS'], edge_attributes['PASSENGERS'])
+        else:
+            shared_passenger_graph.add_edge(start_node, destination_node, **edge_attributes)
+    return shared_passenger_graph
 
 ##########
 # Driver #
@@ -262,7 +262,12 @@ def main() -> None:
     raw_data_df = pd.read_csv(RAW_DATA_CSV)
     passenger_flow_df, city_market_id_info_df = preprocess_data(raw_data_df)
     passenger_flow_graph = nx.from_pandas_edgelist(passenger_flow_df, source='ORIGIN_CITY_MARKET_ID', target='DEST_CITY_MARKET_ID', edge_attr='PASSENGERS', create_using=nx.DiGraph)
-    visualize_passenger_flow_graph_vertex_rankings(passenger_flow_graph, city_market_id_info_df)
+    shared_passenger_graph = passenger_flow_graph_to_shared_passenger_graph(passenger_flow_graph)
+    processes: List[mp.Process] = []
+    processes = processes + visualize_passenger_flow_graph_processes(passenger_flow_graph, city_market_id_info_df)
+    processes = processes + visualize_shared_passenger_graph_analyses(shared_passenger_graph, city_market_id_info_df)
+    for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Join Process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+        process.join()
     return
 
 if __name__ == '__main__':
