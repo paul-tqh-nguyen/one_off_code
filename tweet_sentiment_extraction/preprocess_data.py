@@ -15,6 +15,7 @@ import re
 import spacy
 import string
 import unicodedata
+import tqdm
 import pandas as pd
 import multiprocessing as mp
 import concurrent.futures
@@ -28,6 +29,8 @@ import torchtext
 ###########
 # Globals #
 ###########
+
+tqdm.tqdm.pandas()
 
 def initialize_tokenizer() -> Callable:
     nlp = spacy.load('en')
@@ -45,21 +48,21 @@ TOKENIZER = initialize_tokenizer()
 TRAINING_DATA_CSV_FILE = './data/train.csv'
 PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
 
+PREPROCESS_TEXT_IN_PARALLEL = False
+
 #############################
 # Sanity Checking Utilities #
 #############################
 
-def selected_text_position_validity(input_string: str, selected_text: str) -> Tuple[bool, bool]:
-    normalized_input_string = normalize_string_white_space(input_string)
-    normalized_selected_text = normalize_string_white_space(selected_text)
-    normalized_selected_text_match = next(re.finditer(re.escape(normalized_selected_text), normalized_input_string))
-    normalized_selected_text_start_position, normalized_selected_text_end_position = (normalized_selected_text_match.start(), normalized_selected_text_match.end())
+def selected_text_position_validity(preprocessed_input_string: str, preprocessed_selected_text: str) -> Tuple[bool, bool]:
+    preprocessed_selected_text_match = next(re.finditer(re.escape(preprocessed_selected_text), preprocessed_input_string))
+    preprocessed_selected_text_start_position, preprocessed_selected_text_end_position = (preprocessed_selected_text_match.start(), preprocessed_selected_text_match.end())
     selected_text_starts_in_middle_of_word = False
-    if normalized_selected_text_start_position > 0: 
-        selected_text_starts_in_middle_of_word = normalized_input_string[normalized_selected_text_start_position].isalnum()
+    if preprocessed_selected_text_start_position > 0: 
+        selected_text_starts_in_middle_of_word = preprocessed_input_string[preprocessed_selected_text_start_position-1].isalnum()
     selected_text_ends_in_middle_of_word = False
-    if normalized_selected_text_end_position<len(normalized_input_string):
-        selected_text_ends_in_middle_of_word = normalized_input_string[normalized_selected_text_end_position].isalnum()
+    if preprocessed_selected_text_end_position<len(preprocessed_input_string):
+        selected_text_ends_in_middle_of_word = preprocessed_input_string[preprocessed_selected_text_end_position].isalnum()
     return selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word
 
 def sanity_check_training_data_json_file() -> bool:
@@ -74,7 +77,9 @@ def sanity_check_training_data_json_file() -> bool:
                 numericalized_selected_text = row_data['numericalized_selected_text']
                 selected_token_indices = [token_index for token_index, is_selected in enumerate(numericalized_selected_text) if is_selected == '1']
                 reconstructed_selected_text = reconstruct_selected_text_from_token_indices(selected_token_indices, original_text, token_index_to_position_info_map)
-                selected_text_is_bogus = any(selected_text_position_validity(original_text, selected_text))
+                preprocessed_input_string, _ = preprocess_tweet(original_text)
+                preprocessed_selected_text, _ = preprocess_tweet(selected_text)
+                selected_text_is_bogus = any(selected_text_position_validity(preprocessed_input_string, preprocessed_selected_text))
                 assert (selected_text_is_bogus or reconstructed_selected_text == selected_text), f'\nReconstructed {repr(reconstructed_selected_text)}\nas opposed to {repr(selected_text)}\nfrom          {repr(original_text)}'
     return True
 
@@ -144,13 +149,12 @@ def preprocess_tweet(input_string: str) -> Tuple[str, List[dict]]:
     preprocessed_input_string = ' '.join(preprocessed_tokens)
     return (preprocessed_input_string, token_index_to_position_info_map)
 
-def numericalize_selected_text(input_string: str, selected_text: str) -> str:
-    if __debug__:
-        selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word = selected_text_position_validity(input_string, selected_text)
-    assert isinstance(input_string, str)
+def numericalize_selected_text(preprocessed_input_string: str, selected_text: str) -> str:
+    assert isinstance(preprocessed_input_string, str)
     assert isinstance(selected_text, str)
-    preprocessed_input_string, _ = preprocess_tweet(input_string)
     preprocessed_selected_text, _ = preprocess_tweet(selected_text)
+    if __debug__:
+        selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word = selected_text_position_validity(preprocessed_input_string, preprocessed_selected_text)
     assert preprocessed_selected_text in preprocessed_input_string
     preprocessed_input_string_tokens = TOKENIZER(preprocessed_input_string)
     preprocessed_selected_text_match = next(re.finditer(re.escape(preprocessed_selected_text), preprocessed_input_string))
@@ -203,17 +207,20 @@ def numericalize_selected_text(input_string: str, selected_text: str) -> str:
 @debug_on_error
 def preprocess_data() -> None:
     training_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
-    training_data_df = training_data_df[:100]
+    training_data_df = training_data_df
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
-    with concurrent.futures.ProcessPoolExecutor(mp.cpu_count()) as pool:
-        text_series_preprocessed = pd.Series(pool.map(preprocess_tweet, training_data_df.text, chunksize=1000))
-    preprocessed_input_string_series = text_series_preprocessed.map(lambda pair: pair[0])
-    token_index_to_position_info_map_series = text_series_preprocessed.map(lambda pair: pair[1])
-    assert all(preprocessed_input_string_series.map(lambda x: isinstance(x, str)))
-    assert all(token_index_to_position_info_map_series.map(lambda x: isinstance(x, dict)))
+    if PREPROCESS_TEXT_IN_PARALLEL:
+        with concurrent.futures.ProcessPoolExecutor(mp.cpu_count()) as pool:
+            text_series_preprocessed = pd.Series(pool.map(preprocess_tweet, training_data_df.text, chunksize=1000))
+    else:
+        text_series_preprocessed = training_data_df.text.progress_map(preprocess_tweet)
+    preprocessed_input_string_series = text_series_preprocessed.progress_map(lambda pair: pair[0])
+    token_index_to_position_info_map_series = text_series_preprocessed.progress_map(lambda pair: pair[1])
+    assert all(preprocessed_input_string_series.progress_map(lambda x: isinstance(x, str)))
+    assert all(token_index_to_position_info_map_series.progress_map(lambda x: isinstance(x, dict)))
     training_data_df['preprocessed_input_string'] = preprocessed_input_string_series
     training_data_df['token_index_to_position_info_map'] = token_index_to_position_info_map_series
-    numericalized_selected_text_series = training_data_df[['text', 'selected_text']].apply(lambda row: numericalize_selected_text(row[0], row[1]), axis=1)
+    numericalized_selected_text_series = training_data_df[['preprocessed_input_string', 'selected_text']].progress_apply(lambda row: numericalize_selected_text(row[0], row[1]), axis=1)
     assert isinstance(numericalized_selected_text_series, pd.Series)
     training_data_df['numericalized_selected_text'] = numericalized_selected_text_series
     print(f'''{len(training_data_df[training_data_df.numericalized_selected_text.map(lambda x: 0 if x=='' else int(x)) == 0])} out of {len(training_data_df)} '''
