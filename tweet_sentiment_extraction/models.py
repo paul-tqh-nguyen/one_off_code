@@ -131,8 +131,6 @@ class RNNPredictor(Predictor):
 # Main Driver #
 ###############
 
-#NUMBER_OF_EPOCHS = 1 # @todo remove this
-
 @debug_on_error
 def main() -> None:
     predictor = RNNPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, MAX_VOCAB_SIZE, PRE_TRAINED_EMBEDDING_SPECIFICATION,

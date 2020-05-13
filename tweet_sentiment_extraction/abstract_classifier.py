@@ -46,7 +46,7 @@ SENTIMENTS = ['positive', 'negative', 'neutral']
 
 NON_TRAINING_BATCH_SIZE = 256
 
-NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 10
+NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 30
 JACCARD_INDEX_GOOD_SCORE_THRESHOLD = 0.5
 
 ####################
@@ -444,30 +444,32 @@ class Predictor(ABC):
         assert data_set_spec in ['training', 'validation']
         data = self.training_data if data_set_spec == 'training' else self.validation_data
         print('\n'*8)
-        print('Here are some {data_set_spec} examples run through our model.')
+        print(f'Here are some {data_set_spec} examples run through our model.')
         print('\n'*2)
         approximate_number_of_examples_per_sentiment = math.ceil(NUMBER_OF_EXAMPLES_TO_DEMONSTRATE/len(SENTIMENTS))
         sentiment_to_sentiment_example_count = {sentiment: approximate_number_of_examples_per_sentiment for sentiment in SENTIMENTS}
         sentiment_to_sentiment_example_count['neutral'] = NUMBER_OF_EXAMPLES_TO_DEMONSTRATE - approximate_number_of_examples_per_sentiment*(len(SENTIMENTS)-1)
         for sentiment in SENTIMENTS:
             sentiment_example_count = sentiment_to_sentiment_example_count[sentiment]
+            print()
+            print(f'Examples for {sentiment} tweets.')
+            print()
             for sentiment_example_index in range(sentiment_example_count):
-                show_good_example = sentiment_example_index > sentiment_example_count // 2
+                show_good_example = sentiment_example_index >= sentiment_example_count // 2
                 show_bad_example = not show_good_example
                 for _ in range(len(data)):
                     example, example_index = self._random_example_for_sentiment(data, sentiment)
                     text, sentiment, predicted_substring, jaccard_score = self._evaluate_example(example)
                     example_fits_score_quality = (show_good_example and jaccard_score > JACCARD_INDEX_GOOD_SCORE_THRESHOLD) or (show_bad_example and jaccard_score < JACCARD_INDEX_GOOD_SCORE_THRESHOLD)
-                    if not example_fits_score_quality:
-                        continue
-                    print(f'example_index       {repr(example_index)}')
-                    print(f'sentiment           {repr(sentiment)}')
-                    print(f'text                {repr(text)}')
-                    print(f'predicted_substring {repr(predicted_substring)}')
-                    print(f'true_substring      {repr(example.selected_text)}')
-                    print(f'jaccard_score       {repr(jaccard_score)}')
-                    print()
-                    break
+                    if example_fits_score_quality:
+                        break
+                print(f'example_index       {repr(example_index)}')
+                print(f'sentiment           {repr(sentiment)}')
+                print(f'text                {repr(text)}')
+                print(f'predicted_substring {repr(predicted_substring)}')
+                print(f'true_substring      {repr(example.selected_text)}')
+                print(f'jaccard_score       {repr(jaccard_score)}')
+                print()
                 assert example_fits_score_quality
         return
 
