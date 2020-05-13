@@ -172,6 +172,9 @@
  cuda-fourth
  cuda-fifth
  jupyter
+ gpu-1
+ gpu-2
+ gpu-3
  )
 
 (defun start-cuda-shells ()
@@ -202,6 +205,15 @@
 		      shell
 		      
 		      jupyter
+		      shell
+		      
+		      gpu-1
+		      shell
+		      
+		      gpu-2
+		      shell
+		      
+		      gpu-3
 		      shell
 		      )))
 
