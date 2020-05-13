@@ -32,12 +32,12 @@ TRAIN_PORTION = 0.75
 VALIDATION_PORTION = 1-TRAIN_PORTION
 NUMBER_OF_EPOCHS = 100
 
-BATCH_SIZE = 128
-MAX_VOCAB_SIZE = 15_000
+BATCH_SIZE = 32
+MAX_VOCAB_SIZE = 250_000
 PRE_TRAINED_EMBEDDING_SPECIFICATION = 'fasttext.en.300d'
 
-SENTIMENT_EMBEDDING_SIZE = 256
-ENCODING_HIDDEN_SIZE = 256
+SENTIMENT_EMBEDDING_SIZE = 512
+ENCODING_HIDDEN_SIZE = 512
 NUMBER_OF_ENCODING_LAYERS = 2
 DROPOUT_PROBABILITY = 0.5
 
@@ -72,7 +72,7 @@ class RNNNetwork(nn.Module):
             ("sigmoid_layer", nn.Sigmoid()),
         ]))
         self.to(DEVICE)
-
+    
     def forward(self, text_batch: torch.Tensor, text_lengths: torch.Tensor, sentiments: List[str]):
         if __debug__:
             max_sequence_length = max(text_lengths)
@@ -106,7 +106,7 @@ class RNNNetwork(nn.Module):
         
         prediction = self.prediction_layers(concatenated_batch)
         assert tuple(prediction.shape) == (batch_size, max_sequence_length, 1)
-        prediction = prediction.squeeze()
+        prediction = prediction.view(batch_size, max_sequence_length)
         assert tuple(prediction.shape) == (batch_size, max_sequence_length)
         
         return prediction
@@ -131,6 +131,8 @@ class RNNPredictor(Predictor):
 # Main Driver #
 ###############
 
+NUMBER_OF_EPOCHS = 1 # @todo remove this
+
 @debug_on_error
 def main() -> None:
     predictor = RNNPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, MAX_VOCAB_SIZE, PRE_TRAINED_EMBEDDING_SPECIFICATION,
@@ -139,6 +141,8 @@ def main() -> None:
                              number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
                              dropout_probability=DROPOUT_PROBABILITY)
     predictor.train()
+    predictor.demonstrate_training_examples()
+    predictor.demonstrate_validation_examples()
     return 
 
 if __name__ == '__main__':

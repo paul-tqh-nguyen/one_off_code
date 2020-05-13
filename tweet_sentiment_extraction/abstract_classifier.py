@@ -40,11 +40,11 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = __debug__
 torch.backends.cudnn.benchmark = not __debug__
 
-NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
-GOAL_NUMBER_OF_OVERSAMPLED_DATAPOINTS = 0
-PORTION_OF_WORDS_TO_CROP_TO_UNK_FOR_DATA_AUGMENTATION = 0.30
+NUMBER_OF_RELEVANT_RECENT_EPOCHS = 1
 
 SENTIMENTS = ['positive', 'neutral', 'negative']
+
+NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 10
 
 ####################
 # Helper Utilities #
@@ -155,6 +155,7 @@ class Predictor(ABC):
             batch_size = self.batch_size,
             sort_key=lambda x: len(x.preprocessed_input_string),
             sort_within_batch=True,
+            shuffle=True,
             repeat=False,
             device = DEVICE)
         self.training_iterator = BatchIterator(self.training_iterator, 'preprocessed_input_string', 'sentiment', 'numericalized_selected_text')
@@ -233,6 +234,7 @@ class Predictor(ABC):
             'train_portion': self.train_portion,
             'validation_portion': self.validation_portion,
             'number_of_parameters': self.count_parameters(),
+            'number_of_unk_words': self.number_of_unk_words,
         }
         self_score_dict.update({(key, value.__name__ if hasattr(value, '__name__') else str(value)) for key, value in self.model_args.items()})
         if log_current_model_as_best:
@@ -263,6 +265,13 @@ class Predictor(ABC):
     @property
     def final_model_score_location(self) -> str:
         return os.path.join(self.output_directory, 'final_model_score.json')
+
+    @property
+    def number_of_unk_words(self) -> int:
+        if 'training_unk_words' not in vars(self):
+            self.determine_training_unknown_words()
+            assert 'training_unk_words' in vars(self)
+        return len(self.training_unk_words)
     
     def train(self) -> None:
         self.print_hyperparameters()
@@ -277,7 +286,7 @@ class Predictor(ABC):
                 print(f'\t   Training Jaccard: {train_jaccard:.8f} |   Training Loss: {train_loss:.8f}')
                 print(f'\t Validation Jaccard: {valid_jaccard:.8f} | Validation Loss: {valid_loss:.8f}')
             print("\n")
-            if reduce(bool.__or__, (valid_jaccard > previous_jaccard for previous_jaccard in most_recent_validation_jaccard_scores)):
+            if any(valid_jaccard > previous_jaccard for previous_jaccard in most_recent_validation_jaccard_scores):
                 most_recent_validation_jaccard_scores.pop(0)
                 most_recent_validation_jaccard_scores.append(valid_jaccard)
             else:
@@ -298,6 +307,7 @@ class Predictor(ABC):
         print(f'        vocab_size: {self.vocab_size}')
         print(f'        pre_trained_embedding_specification: {self.pre_trained_embedding_specification}')
         print(f'        output_directory: {self.output_directory}')
+        print(f'        number_of_unk_words: {self.number_of_unk_words}')
         for model_arg_name, model_arg_value in sorted(self.model_args.items()):
             print(f'        {model_arg_name}: {model_arg_value.__name__ if hasattr(model_arg_value, "__name__") else str(model_arg_value)}')
         print()
@@ -378,7 +388,7 @@ class Predictor(ABC):
         assert sentiment in SENTIMENTS
         self.model.eval()
         preprocessed_input_string, preprocessed_token_index_to_position_info_map = preprocess_data.preprocess_tweet(input_string)
-        preprocessed_tokens = self.text_field.tokenize(preprocessed_input_string)
+        preprocessed_tokens = preprocess_data.TOKENIZER(preprocessed_input_string)
         indexed = [self.text_field.vocab.stoi[t] for t in preprocessed_tokens]
         lengths = [len(indexed)]
         input_string_tensor = torch.LongTensor(indexed).to(DEVICE)
@@ -386,23 +396,41 @@ class Predictor(ABC):
         length_tensor = torch.LongTensor(lengths).to(DEVICE)
         assert 'last_jaccard_threshold' in vars(self), "Model has not been trained yet and Jaccard threshold has not been optimized."
         threshold = self.last_jaccard_threshold
-        predictions = self.model(input_string_tensor, length_tensor, sentiment)
+        predictions = self.model(input_string_tensor, length_tensor, [sentiment])
         assert tuple(predictions.shape) == (1, len(indexed))
         prediction = predictions[0]
         discretized_prediction = prediction > threshold
-        preprocessed_token_is_included_bools = eager_map(torch.Tensor.item, discretized_prediction)
-        assert len(discretized_prediction) == len(tokenized)
-        selected_tokens: List[str] = []
-        for preprocessed_token_index, (preprocessed_token, preprocessed_token_is_included) in enumerate(zip(preprocessed_tokens, preprocessed_token_is_included_bools)):
-            if preprocessed_token_is_included:
-                position_info = preprocessed_token_index_to_position_info_map[str(preprocessed_token_index)]
-                token_original_start_position = position_info['token_original_start_position']
-                token_original_end_position = position_info['token_original_end_position']
-                original_token = position_info['original_token']
-                assert position_info['preprocessed_token'] == preprocessed_token
-                selected_tokens.append(original_token)
-        selected_substring = ' '.join(selected_tokens)
+        selected_token_indices = eager_map(torch.Tensor.item, only_one(torch.nonzero(discretized_prediction, as_tuple=True)))
+        selected_substring = reconstruct_selected_text_from_token_indices(selected_token_indices, input_string, preprocessed_token_index_to_position_info_map)
         return selected_substring
+
+    def _evaluate_example(self, dataset: torchtext.data.dataset.Dataset, example_index: int) -> Tuple[str, str, str]:
+        example = self.training_data[example_index]
+        return example.text, example.sentiment, self.select_substring(example.text, example.sentiment)
+
+    def demonstrate_training_examples(self) -> None:
+        print()
+        print('Here are some training examples run through our model.')
+        for example_index in range(NUMBER_OF_EXAMPLES_TO_DEMONSTRATE):
+            text, sentiment, predicted_substring = self._evaluate_example(self.training_data, example_index)
+            print(f'example_index {repr(example_index)}')
+            print(f'text {repr(text)}')
+            print(f'sentiment {repr(sentiment)}')
+            print(f'predicted_substring {repr(predicted_substring)}')
+            print()
+        return
+    
+    def demonstrate_validation_examples(self) -> None:
+        print()
+        print('Here are some validation examples run through our model.')
+        for example_index in range(NUMBER_OF_EXAMPLES_TO_DEMONSTRATE):
+            text, sentiment, predicted_substring = self._evaluate_example(self.validation_data, example_index)
+            print(f'example_index {repr(example_index)}')
+            print(f'text {repr(text)}')
+            print(f'sentiment {repr(sentiment)}')
+            print(f'predicted_substring {repr(predicted_substring)}')
+            print()
+        return
 
 ###############
 # Main Driver #
