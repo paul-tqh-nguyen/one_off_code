@@ -131,7 +131,7 @@ class RNNPredictor(Predictor):
 # Main Driver #
 ###############
 
-NUMBER_OF_EPOCHS = 1 # @todo remove this
+#NUMBER_OF_EPOCHS = 1 # @todo remove this
 
 @debug_on_error
 def main() -> None:
@@ -141,6 +141,7 @@ def main() -> None:
                              number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
                              dropout_probability=DROPOUT_PROBABILITY)
     predictor.train()
+    predictor.load_parameters(predictor.best_saved_model_location)
     predictor.demonstrate_training_examples()
     predictor.demonstrate_validation_examples()
     return 

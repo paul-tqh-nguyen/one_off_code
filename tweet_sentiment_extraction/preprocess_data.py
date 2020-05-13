@@ -127,7 +127,8 @@ def sanity_check_training_data_json_file() -> bool:
                 row_data = json.loads(row_text)
                 original_text = row_data['text']
                 selected_text = row_data['selected_text']
-                token_index_to_position_info_map = row_data['token_index_to_position_info_map']
+                token_index_to_position_info_map_json = row_data['token_index_to_position_info_map']
+                token_index_to_position_info_map = {int(token_index_as_string): position_info for token_index_as_string, position_info in token_index_to_position_info_map_json.items()}
                 numericalized_selected_text = row_data['numericalized_selected_text']
                 selected_token_indices = [token_index for token_index, is_selected in enumerate(numericalized_selected_text) if is_selected == '1']
                 reconstructed_selected_text = reconstruct_selected_text_from_token_indices(selected_token_indices, original_text, token_index_to_position_info_map)
@@ -146,7 +147,7 @@ def reconstruct_selected_text_from_token_indices(token_indices: List[int], origi
     selected_text_substrings: List[str] = []
     previous_end_position = None
     for token_index in token_indices:
-        token_position_data = token_index_to_position_info_map[str(token_index)]
+        token_position_data = token_index_to_position_info_map[token_index]
         token_original_start_position = token_position_data['token_original_start_position']
         token_original_end_position = token_position_data['token_original_end_position']
         selected_text_substring = original_text[token_original_start_position:token_original_end_position]

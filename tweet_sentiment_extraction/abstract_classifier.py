@@ -40,15 +40,25 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = __debug__
 torch.backends.cudnn.benchmark = not __debug__
 
-NUMBER_OF_RELEVANT_RECENT_EPOCHS = 1
+NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
 
-SENTIMENTS = ['positive', 'neutral', 'negative']
+SENTIMENTS = ['positive', 'negative', 'neutral']
+
+NON_TRAINING_BATCH_SIZE = 256
 
 NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 10
+JACCARD_INDEX_GOOD_SCORE_THRESHOLD = 0.5
 
 ####################
 # Helper Utilities #
 ####################
+
+def jaccard_index_over_strings(str1: str, str2: str): 
+    a = set(str1.lower().split()) 
+    b = set(str2.lower().split())
+    c = a.intersection(b)
+    return float(len(c)) / (len(a) + len(b) - len(c))
+
 
 def tensor_has_nan(tensor: torch.Tensor) -> bool:
     return (tensor != tensor).any().item()
@@ -123,7 +133,7 @@ class Predictor(ABC):
         def pad_and_batch(original_batch: List[torch.Tensor]) -> torch.Tensor:
             batch_size: int = len(original_batch)
             max_len: int = max(map(len, original_batch))
-            assert batch_size <= self.batch_size
+            assert batch_size <= NON_TRAINING_BATCH_SIZE
             batch = torch.zeros((batch_size, max_len))
             for tensor_index, single_tensor in enumerate(original_batch):
                 batch[tensor_index,:len(single_tensor)] = single_tensor
@@ -150,9 +160,9 @@ class Predictor(ABC):
         self.text_field.build_vocab(self.training_data, max_size = self.max_vocab_size, vectors = self.pre_trained_embedding_specification, unk_init = torch.Tensor.normal_)
         assert self.text_field.vocab.vectors.shape[0] <= self.max_vocab_size+4
         assert self.text_field.vocab.vectors.shape[1] == self.embedding_size
-        self.training_iterator, self.validation_iterator = data.BucketIterator.splits(
-            (self.training_data, self.validation_data),
-            batch_size = self.batch_size,
+        self.training_iterator, self.validation_iterator, self.jaccard_threshold_iterator = data.BucketIterator.splits(
+            (self.training_data, self.validation_data, self.training_data),
+            batch_sizes = (self.batch_size, NON_TRAINING_BATCH_SIZE, NON_TRAINING_BATCH_SIZE),
             sort_key=lambda x: len(x.preprocessed_input_string),
             sort_within_batch=True,
             shuffle=True,
@@ -160,6 +170,7 @@ class Predictor(ABC):
             device = DEVICE)
         self.training_iterator = BatchIterator(self.training_iterator, 'preprocessed_input_string', 'sentiment', 'numericalized_selected_text')
         self.validation_iterator = BatchIterator(self.validation_iterator, 'preprocessed_input_string', 'sentiment', 'numericalized_selected_text')
+        self.jaccard_threshold_iterator = BatchIterator(self.jaccard_threshold_iterator, 'preprocessed_input_string', 'sentiment', 'numericalized_selected_text')
         self.pad_idx = self.text_field.vocab.stoi[self.text_field.pad_token]
         self.unk_idx = self.text_field.vocab.stoi[self.text_field.unk_token]
         return
@@ -184,6 +195,10 @@ class Predictor(ABC):
         for (text_batch, text_lengths), sentiments, labels in tqdm_with_message(self.training_iterator, post_yield_message_func = lambda index: f'Training Jaccard {epoch_jaccard/(index+1):.8f}', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
             self.optimizer.zero_grad()
             predictions = self.model(text_batch, text_lengths, sentiments)
+            assert predictions.shape[0] <= self.batch_size
+            assert predictions.shape[0] == text_lengths.shape[0]
+            assert predictions.shape[0] == len(sentiments)
+            assert predictions.shape == labels.shape
             loss = self.loss_function(predictions, labels)
             jaccard = self.scores_of_discretized_values(predictions, labels)
             loss.backward()
@@ -203,6 +218,10 @@ class Predictor(ABC):
         with torch.no_grad():
             for (text_batch, text_lengths), sentiments, labels in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'Validation Jaccard {epoch_jaccard/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
                 predictions = self.model(text_batch, text_lengths, sentiments)
+                assert predictions.shape[0] <= NON_TRAINING_BATCH_SIZE
+                assert predictions.shape[0] == text_lengths.shape[0]
+                assert predictions.shape[0] == len(sentiments)
+                assert predictions.shape == labels.shape
                 loss = self.loss_function(predictions, labels)
                 jaccard = self.scores_of_discretized_values(predictions, labels)
                 epoch_loss += loss.item()
@@ -329,12 +348,12 @@ class Predictor(ABC):
     def optimize_jaccard_threshold(self) -> None:
         self.model.eval()
         with torch.no_grad():
-            number_of_training_batches = len(self.training_iterator)
+            number_of_training_batches = len(self.jaccard_threshold_iterator)
             training_sum_of_positives = 0.0
             training_sum_of_negatives = 0.0
             training_count_of_positives = 0.0
             training_count_of_negatives = 0.0
-            for (text_batch, text_lengths), sentiments, labels in tqdm_with_message(self.training_iterator, post_yield_message_func = lambda index: f'Optimizing Jaccard Threshold', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
+            for (text_batch, text_lengths), sentiments, labels in tqdm_with_message(self.jaccard_threshold_iterator, post_yield_message_func = lambda index: f'Optimizing Jaccard Threshold', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
                 predictions = self.model(text_batch, text_lengths, sentiments)
                 if __debug__:
                     batch_size = len(text_lengths)
@@ -371,7 +390,6 @@ class Predictor(ABC):
         assert (y-y.int()).sum()==0
         assert y_hat.shape == y.shape
         batch_size, max_sequence_length = y.shape
-        assert batch_size <= self.batch_size
         y_hat_discretized = (y_hat > self.jaccard_threshold)
         intersection_count = (y_hat_discretized & y.bool()).sum(dim=1)
         union_count = y_hat_discretized.sum(dim=1) + y.sum(dim=1) - intersection_count
@@ -401,35 +419,64 @@ class Predictor(ABC):
         prediction = predictions[0]
         discretized_prediction = prediction > threshold
         selected_token_indices = eager_map(torch.Tensor.item, only_one(torch.nonzero(discretized_prediction, as_tuple=True)))
-        selected_substring = reconstruct_selected_text_from_token_indices(selected_token_indices, input_string, preprocessed_token_index_to_position_info_map)
+        selected_substring = preprocess_data.reconstruct_selected_text_from_token_indices(selected_token_indices, input_string, preprocessed_token_index_to_position_info_map)
         return selected_substring
 
-    def _evaluate_example(self, dataset: torchtext.data.dataset.Dataset, example_index: int) -> Tuple[str, str, str]:
-        example = self.training_data[example_index]
-        return example.text, example.sentiment, self.select_substring(example.text, example.sentiment)
+    def _evaluate_example(self, example: torchtext.data.example.Example) -> Tuple[str, str, str, float]:
+        predicted_substring = self.select_substring(example.text, example.sentiment)
+        jaccard_score = jaccard_index_over_strings(example.selected_text, predicted_substring)
+        return example.text, example.sentiment, predicted_substring, jaccard_score
+
+    def _random_example_for_sentiment(self, data: torchtext.data.dataset.Dataset, sentiment: str) -> Tuple[torchtext.data.example.Example, int]:
+        assert sentiment in SENTIMENTS
+        example_for_sentiment_found = False
+        for _ in range(len(data)):
+            example_index = random.randrange(len(data))
+            example = data[example_index]
+            if example.sentiment == sentiment:
+                example_for_sentiment_found = True
+                break
+        if not example_for_sentiment_found:
+            raise Exception(f"Could not find relevant {sentiment} example sufficiently quickly.")
+        return example, example_index
+    
+    def _demonstrate_examples(self, data_set_spec: str) -> None:
+        assert data_set_spec in ['training', 'validation']
+        data = self.training_data if data_set_spec == 'training' else self.validation_data
+        print('\n'*8)
+        print('Here are some {data_set_spec} examples run through our model.')
+        print('\n'*2)
+        approximate_number_of_examples_per_sentiment = math.ceil(NUMBER_OF_EXAMPLES_TO_DEMONSTRATE/len(SENTIMENTS))
+        sentiment_to_sentiment_example_count = {sentiment: approximate_number_of_examples_per_sentiment for sentiment in SENTIMENTS}
+        sentiment_to_sentiment_example_count['neutral'] = NUMBER_OF_EXAMPLES_TO_DEMONSTRATE - approximate_number_of_examples_per_sentiment*(len(SENTIMENTS)-1)
+        for sentiment in SENTIMENTS:
+            sentiment_example_count = sentiment_to_sentiment_example_count[sentiment]
+            for sentiment_example_index in range(sentiment_example_count):
+                show_good_example = sentiment_example_index > sentiment_example_count // 2
+                show_bad_example = not show_good_example
+                for _ in range(len(data)):
+                    example, example_index = self._random_example_for_sentiment(data, sentiment)
+                    text, sentiment, predicted_substring, jaccard_score = self._evaluate_example(example)
+                    example_fits_score_quality = (show_good_example and jaccard_score > JACCARD_INDEX_GOOD_SCORE_THRESHOLD) or (show_bad_example and jaccard_score < JACCARD_INDEX_GOOD_SCORE_THRESHOLD)
+                    if not example_fits_score_quality:
+                        continue
+                    print(f'example_index       {repr(example_index)}')
+                    print(f'sentiment           {repr(sentiment)}')
+                    print(f'text                {repr(text)}')
+                    print(f'predicted_substring {repr(predicted_substring)}')
+                    print(f'true_substring      {repr(example.selected_text)}')
+                    print(f'jaccard_score       {repr(jaccard_score)}')
+                    print()
+                    break
+                assert example_fits_score_quality
+        return
 
     def demonstrate_training_examples(self) -> None:
-        print()
-        print('Here are some training examples run through our model.')
-        for example_index in range(NUMBER_OF_EXAMPLES_TO_DEMONSTRATE):
-            text, sentiment, predicted_substring = self._evaluate_example(self.training_data, example_index)
-            print(f'example_index {repr(example_index)}')
-            print(f'text {repr(text)}')
-            print(f'sentiment {repr(sentiment)}')
-            print(f'predicted_substring {repr(predicted_substring)}')
-            print()
+        self._demonstrate_examples('training')
         return
     
     def demonstrate_validation_examples(self) -> None:
-        print()
-        print('Here are some validation examples run through our model.')
-        for example_index in range(NUMBER_OF_EXAMPLES_TO_DEMONSTRATE):
-            text, sentiment, predicted_substring = self._evaluate_example(self.validation_data, example_index)
-            print(f'example_index {repr(example_index)}')
-            print(f'text {repr(text)}')
-            print(f'sentiment {repr(sentiment)}')
-            print(f'predicted_substring {repr(predicted_substring)}')
-            print()
+        self._demonstrate_examples('validation')
         return
 
 ###############
