@@ -21,7 +21,7 @@ from functools import reduce
 from typing import List, Tuple, Set, Callable, Iterable
 
 import preprocess_data
-from misc_utilities import eager_map, eager_filter, timer, tqdm_with_message
+from misc_utilities import *
 
 import torch
 import torch.nn as nn
@@ -78,7 +78,7 @@ class BatchIterator:
     def __init__(self, non_numericalized_iterator: Iterable, x_attribute_name: str, y_attribute_name: str):
         self.non_numericalized_iterator = non_numericalized_iterator
         self.x_attribute_name: str = x_attribute_name
-        self.y_attribute_names: List[str] = y_attribute_names
+        self.y_attribute_name: str = y_attribute_name
         
     def __iter__(self):
         for non_numericalized_batch in self.non_numericalized_iterator:
@@ -116,8 +116,17 @@ class Predictor(ABC):
         self.initialize_model()
         
     def load_data(self):
-        self.text_field = data.Field(include_lengths = True, batch_first = True)
-        self.label_field = data.Field(use_vocab=False, batch_first=True, is_target=True)
+        self.text_field = data.Field(include_lengths=True, batch_first=True)
+        label_preprocessing_pipeline = data.Pipeline(convert_token=lambda x: torch.tensor(eager_map(int, x)))
+        def pad_and_batch(original_batch: List[torch.Tensor]) -> torch.Tensor:
+            batch_size: int = len(original_batch)
+            max_len: int = max(map(len, original_batch))
+            assert batch_size == self.batch_size
+            batch = torch.zeros((batch_size, max_len))
+            for tensor_index, single_tensor in enumerate(original_batch):
+                batch[tensor_index,:len(single_tensor)] = single_tensor
+            return batch
+        self.label_field = data.RawField(preprocessing=label_preprocessing_pipeline, postprocessing=pad_and_batch, is_target=True)
         self.sentiment_field = data.RawField()
         self.misc_field = data.RawField()
         self.all_data = data.dataset.TabularDataset(
@@ -144,6 +153,7 @@ class Predictor(ABC):
             sort_key=lambda x: len(x.text),
             sort_within_batch=True,
             repeat=False,
+            shuffle=True,
             device = DEVICE)
         self.training_iterator = BatchIterator(self.training_iterator, 'preprocessed_input_string', 'numericalized_selected_text')
         self.validation_iterator = BatchIterator(self.validation_iterator, 'preprocessed_input_string', 'numericalized_selected_text')

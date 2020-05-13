@@ -259,10 +259,6 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
 @debug_on_error
 def preprocess_data() -> None:
     training_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
-    #training_data_df = training_data_df[training_data_df.textID == 'c2c5b285b9']
-    #training_data_df = training_data_df[training_data_df.textID == 'a395c6210f']
-    #training_data_df = training_data_df[training_data_df.textID == 'be7fcd20df']
-    #training_data_df = training_data_df[27000:]
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
     print()
     print('Preprocessing tweets...')

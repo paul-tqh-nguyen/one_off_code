@@ -15,6 +15,7 @@ from typing import List, Callable, Iterable
 from collections import OrderedDict
 
 from abstract_classifier import Predictor, DEVICE, SENTIMENTS
+from misc_utilities import *
 
 import torch
 import torch.nn as nn
@@ -112,11 +113,12 @@ class RNNNetwork(nn.Module):
 
 class RNNPredictor(Predictor):
     def initialize_model(self) -> None:
+        self.sentiment_embedding_size = self.model_args['sentiment_embedding_size']
         self.encoding_hidden_size = self.model_args['encoding_hidden_size']
         self.number_of_encoding_layers = self.model_args['number_of_encoding_layers']
         self.dropout_probability = self.model_args['dropout_probability']
         vocab_size = len(self.text_field.vocab)
-        self.model = RNNNetwork(vocab_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
+        self.model = RNNNetwork(vocab_size, self.sentiment_embedding_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
         self.optimizer = optim.Adam(self.model.parameters())
         self.loss_function = nn.BCELoss().to(DEVICE)
         return
@@ -125,8 +127,10 @@ class RNNPredictor(Predictor):
 # Main Driver #
 ###############
 
+@debug_on_error
 def main() -> None:
     predictor = RNNPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, MAX_VOCAB_SIZE, PRE_TRAINED_EMBEDDING_SPECIFICATION,
+                             sentiment_embedding_size=SENTIMENT_EMBEDDING_SIZE, 
                              encoding_hidden_size=ENCODING_HIDDEN_SIZE,
                              number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
                              dropout_probability=DROPOUT_PROBABILITY)
