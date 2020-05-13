@@ -34,12 +34,12 @@ from torchtext import data
 # Misc. Globals & Global State Initializations #
 ################################################
 
-SEED = 1234
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+SEED = 1234 if __debug__ else os.getpid()
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = __debug__
 torch.backends.cudnn.benchmark = not __debug__
+
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
 GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION = 'global_best_model_score.json'
@@ -74,10 +74,11 @@ def _safe_count_tensor_division(dividend: torch.Tensor, divisor: torch.Tensor) -
     return answer
 
 def soft_jaccard_loss(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    assert (y-y.int()).sum().item() == 0
     epsilon = 1e-16 
     batch_size, max_sequence_length = tuple(y.shape)
-    assert tuple(y.shape) == (batch_size, output_size)
-    assert tuple(y_hat.shape) == (batch_size, output_size)
+    assert tuple(y.shape) == (batch_size, max_sequence_length)
+    assert tuple(y_hat.shape) == (batch_size, max_sequence_length)
     true_positive_sum = (y_hat * y.float()).sum(dim=1)
     false_positive_sum = (y_hat * (1-y.float())).sum(dim=1)
     false_negative_sum = ((1-y_hat) * y.float()).sum(dim=1)
@@ -89,23 +90,23 @@ def soft_jaccard_loss(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     
     assert not tensor_has_nan(true_positive_sum)
     assert tuple(true_positive_sum.shape) == (batch_size,)
-    assert all(0<=true_positive_sum) and all(true_positive_sum<=1)
+    assert all(0<=true_positive_sum)
     
     assert not tensor_has_nan(false_positive_sum)
     assert tuple(false_positive_sum.shape) == (batch_size,)
-    assert all(0<=false_positive_sum) and all(false_positive_sum<=1)
+    assert all(0<=false_positive_sum)
     
     assert not tensor_has_nan(false_negative_sum)
     assert tuple(false_negative_sum.shape) == (batch_size,)
-    assert all(0<=false_negative_sum) and all(false_negative_sum<=1)
+    assert all(0<=false_negative_sum)
     
     assert not tensor_has_nan(soft_intersection)
     assert tuple(soft_intersection.shape) == (batch_size,)
-    assert all(0<=soft_intersection) and all(soft_intersection<=1)
+    assert all(0<=soft_intersection)
     
     assert not tensor_has_nan(soft_union)
     assert tuple(soft_union.shape) == (batch_size,)
-    assert all(0<=soft_union) and all(soft_union<=1)
+    assert all(0<=soft_union)
     
     assert not tensor_has_nan(soft_jaccard_score)
     assert tuple(soft_jaccard_score.shape) == (batch_size,)
@@ -202,7 +203,7 @@ class Predictor(ABC):
             batch_sizes = (self.batch_size, NON_TRAINING_BATCH_SIZE, NON_TRAINING_BATCH_SIZE),
             sort_key=lambda x: len(x.preprocessed_input_string),
             sort_within_batch=True,
-            shuffle=True,
+            shuffle=(not __debug__),
             repeat=False,
             device = DEVICE)
         self.training_iterator = BatchIterator(self.training_iterator, 'preprocessed_input_string', 'sentiment', 'numericalized_selected_text')

@@ -118,6 +118,7 @@ class LSTMSentimentConcatenationNetwork(nn.Module):
 
 class LSTMSentimentConcatenationPredictor(Predictor):
     def initialize_model(self) -> None:
+        self.loss_function_spec = self.model_args['loss_function_spec']
         self.sentiment_embedding_size = self.model_args['sentiment_embedding_size']
         self.encoding_hidden_size = self.model_args['encoding_hidden_size']
         self.number_of_encoding_layers = self.model_args['number_of_encoding_layers']
@@ -125,7 +126,8 @@ class LSTMSentimentConcatenationPredictor(Predictor):
         vocab_size = len(self.text_field.vocab)
         self.model = LSTMSentimentConcatenationNetwork(vocab_size, self.sentiment_embedding_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
         self.optimizer = optim.Adam(self.model.parameters())
-        self.loss_function = nn.BCELoss().to(DEVICE) # soft_jaccard_loss
+        assert self.loss_function_spec in ['BCELoss', 'soft_jaccard_loss'] 
+        self.loss_function = soft_jaccard_loss if self.loss_function_spec == 'soft_jaccard_loss' else nn.BCELoss().to(DEVICE)
         return
 
 ###############
@@ -135,13 +137,14 @@ class LSTMSentimentConcatenationPredictor(Predictor):
 @debug_on_error
 def train_model() -> None:
     predictor = LSTMSentimentConcatenationPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, MAX_VOCAB_SIZE, PRE_TRAINED_EMBEDDING_SPECIFICATION,
+                                                    loss_function_spec='soft_jaccard_loss',
                                                     sentiment_embedding_size=SENTIMENT_EMBEDDING_SIZE, 
                                                     encoding_hidden_size=ENCODING_HIDDEN_SIZE,
                                                     number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
                                                     dropout_probability=DROPOUT_PROBABILITY)
     predictor.train()
     predictor.load_parameters(predictor.best_saved_model_location)
-    predictor.demonstrate_training_examples()
+    # predictor.demonstrate_training_examples()
     predictor.demonstrate_validation_examples()
     return 
 
