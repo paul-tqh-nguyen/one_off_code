@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from typing import List, Tuple, Set, Callable, Iterable
 
+import sys ; sys.path.append("..")
 import preprocess_data
 from misc_utilities import *
 
@@ -40,11 +41,14 @@ torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = __debug__
 torch.backends.cudnn.benchmark = not __debug__
 
+FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
+GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION = 'global_best_model_score.json'
+
 NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
 
 SENTIMENTS = ['positive', 'negative', 'neutral']
 
-NON_TRAINING_BATCH_SIZE = 256
+NON_TRAINING_BATCH_SIZE = 1024
 
 NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 30
 JACCARD_INDEX_GOOD_SCORE_THRESHOLD = 0.5
@@ -233,10 +237,10 @@ class Predictor(ABC):
     
     def validate(self, epoch_index: int, result_is_from_final_run: bool) -> Tuple[float, float]:
         valid_loss, valid_jaccard = self.evaluate(self.validation_iterator)
-        if not os.path.isfile('global_best_model_score.json'):
+        if not os.path.isfile(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION):
             log_current_model_as_best = True
         else:
-            with open('global_best_model_score.json', 'r') as current_global_best_model_score_json_file:
+            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'r') as current_global_best_model_score_json_file:
                 current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
                 current_global_best_model_jaccard: float = current_global_best_model_score_dict['valid_jaccard']
                 log_current_model_as_best = current_global_best_model_jaccard < valid_jaccard
@@ -257,7 +261,7 @@ class Predictor(ABC):
         }
         self_score_dict.update({(key, value.__name__ if hasattr(value, '__name__') else str(value)) for key, value in self.model_args.items()})
         if log_current_model_as_best:
-            with open('global_best_model_score.json', 'w') as outfile:
+            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
                 json.dump(self_score_dict, outfile)
         with open(self.latest_model_score_location, 'w') as outfile:
             json.dump(self_score_dict, outfile)
@@ -283,7 +287,7 @@ class Predictor(ABC):
     
     @property
     def final_model_score_location(self) -> str:
-        return os.path.join(self.output_directory, 'final_model_score.json')
+        return os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME)
 
     @property
     def number_of_unk_words(self) -> int:
@@ -445,13 +449,13 @@ class Predictor(ABC):
         data = self.training_data if data_set_spec == 'training' else self.validation_data
         print('\n'*8)
         print(f'Here are some {data_set_spec} examples run through our model.')
-        print('\n'*2)
+        print()
         approximate_number_of_examples_per_sentiment = math.ceil(NUMBER_OF_EXAMPLES_TO_DEMONSTRATE/len(SENTIMENTS))
         sentiment_to_sentiment_example_count = {sentiment: approximate_number_of_examples_per_sentiment for sentiment in SENTIMENTS}
         sentiment_to_sentiment_example_count['neutral'] = NUMBER_OF_EXAMPLES_TO_DEMONSTRATE - approximate_number_of_examples_per_sentiment*(len(SENTIMENTS)-1)
         for sentiment in SENTIMENTS:
             sentiment_example_count = sentiment_to_sentiment_example_count[sentiment]
-            print()
+            print('\n'*2)
             print(f'Examples for {sentiment} tweets.')
             print()
             for sentiment_example_index in range(sentiment_example_count):

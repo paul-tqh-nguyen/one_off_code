@@ -14,8 +14,9 @@ from functools import reduce
 from typing import List, Callable, Iterable
 from collections import OrderedDict
 
-from abstract_classifier import Predictor, DEVICE, SENTIMENTS
+import sys ; sys.path.append("..")
 from misc_utilities import *
+from .abstract_predictor import Predictor, DEVICE, SENTIMENTS
 
 import torch
 import torch.nn as nn
@@ -33,7 +34,7 @@ VALIDATION_PORTION = 1-TRAIN_PORTION
 NUMBER_OF_EPOCHS = 100
 
 BATCH_SIZE = 32
-MAX_VOCAB_SIZE = 250_000
+MAX_VOCAB_SIZE = 25_000
 PRE_TRAINED_EMBEDDING_SPECIFICATION = 'fasttext.en.300d'
 
 SENTIMENT_EMBEDDING_SIZE = 512
@@ -45,7 +46,7 @@ DROPOUT_PROBABILITY = 0.5
 # Models #
 ##########
 
-class RNNNetwork(nn.Module):
+class LSTMSentimentConcatenationNetwork(nn.Module):
     def __init__(self, vocab_size: int, sentiment_size: int, embedding_size: int, encoding_hidden_size: int, number_of_encoding_layers: int, dropout_probability: float, pad_idx: int, unk_idx: int, initial_embedding_vectors: torch.Tensor):
         super().__init__()
         if __debug__:
@@ -115,14 +116,14 @@ class RNNNetwork(nn.Module):
 # Predictors #
 ##############
 
-class RNNPredictor(Predictor):
+class LSTMSentimentConcatenationPredictor(Predictor):
     def initialize_model(self) -> None:
         self.sentiment_embedding_size = self.model_args['sentiment_embedding_size']
         self.encoding_hidden_size = self.model_args['encoding_hidden_size']
         self.number_of_encoding_layers = self.model_args['number_of_encoding_layers']
         self.dropout_probability = self.model_args['dropout_probability']
         vocab_size = len(self.text_field.vocab)
-        self.model = RNNNetwork(vocab_size, self.sentiment_embedding_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
+        self.model = LSTMSentimentConcatenationNetwork(vocab_size, self.sentiment_embedding_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
         self.optimizer = optim.Adam(self.model.parameters())
         self.loss_function = nn.BCELoss().to(DEVICE)
         return
@@ -132,12 +133,12 @@ class RNNPredictor(Predictor):
 ###############
 
 @debug_on_error
-def main() -> None:
-    predictor = RNNPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, MAX_VOCAB_SIZE, PRE_TRAINED_EMBEDDING_SPECIFICATION,
-                             sentiment_embedding_size=SENTIMENT_EMBEDDING_SIZE, 
-                             encoding_hidden_size=ENCODING_HIDDEN_SIZE,
-                             number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
-                             dropout_probability=DROPOUT_PROBABILITY)
+def train_model() -> None:
+    predictor = LSTMSentimentConcatenationPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, MAX_VOCAB_SIZE, PRE_TRAINED_EMBEDDING_SPECIFICATION,
+                                                    sentiment_embedding_size=SENTIMENT_EMBEDDING_SIZE, 
+                                                    encoding_hidden_size=ENCODING_HIDDEN_SIZE,
+                                                    number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
+                                                    dropout_probability=DROPOUT_PROBABILITY)
     predictor.train()
     predictor.load_parameters(predictor.best_saved_model_location)
     predictor.demonstrate_training_examples()
@@ -145,4 +146,4 @@ def main() -> None:
     return 
 
 if __name__ == '__main__':
-    main()
+    train_model()
