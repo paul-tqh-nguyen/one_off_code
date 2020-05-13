@@ -73,20 +73,53 @@ def _safe_count_tensor_division(dividend: torch.Tensor, divisor: torch.Tensor) -
     assert not tensor_has_nan(answer)
     return answer
 
-# def soft_f1_loss(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-#     batch_size, output_size = tuple(y.shape)
-#     assert tuple(y.shape) == (batch_size, output_size)
-#     assert tuple(y_hat.shape) == (batch_size, output_size)
-#     true_positive_sum = (y_hat * y.float()).sum(dim=0)
-#     false_positive_sum = (y_hat * (1-y.float())).sum(dim=0)
-#     false_negative_sum = ((1-y_hat) * y.float()).sum(dim=0)
-#     soft_recall = true_positive_sum / (true_positive_sum + false_negative_sum + 1e-16)
-#     soft_precision = true_positive_sum / (true_positive_sum + false_positive_sum + 1e-16)
-#     soft_f1 = 2 * soft_precision * soft_recall / (soft_precision + soft_recall + 1e-16)
-#     mean_soft_f1 = torch.mean(soft_f1)
-#     loss = 1-mean_soft_f1
-#     assert not tensor_has_nan(loss)
-#     return loss
+def soft_jaccard_loss(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    epsilon = 1e-16 
+    batch_size, max_sequence_length = tuple(y.shape)
+    assert tuple(y.shape) == (batch_size, output_size)
+    assert tuple(y_hat.shape) == (batch_size, output_size)
+    true_positive_sum = (y_hat * y.float()).sum(dim=1)
+    false_positive_sum = (y_hat * (1-y.float())).sum(dim=1)
+    false_negative_sum = ((1-y_hat) * y.float()).sum(dim=1)
+    soft_intersection = true_positive_sum
+    soft_union = false_positive_sum + true_positive_sum + false_negative_sum
+    soft_jaccard_score = soft_intersection / (soft_union + epsilon)
+    soft_jaccard_loss = 1-soft_jaccard_score
+    mean_soft_jaccard_loss = soft_jaccard_loss.mean()
+    
+    assert not tensor_has_nan(true_positive_sum)
+    assert tuple(true_positive_sum.shape) == (batch_size,)
+    assert all(0<=true_positive_sum) and all(true_positive_sum<=1)
+    
+    assert not tensor_has_nan(false_positive_sum)
+    assert tuple(false_positive_sum.shape) == (batch_size,)
+    assert all(0<=false_positive_sum) and all(false_positive_sum<=1)
+    
+    assert not tensor_has_nan(false_negative_sum)
+    assert tuple(false_negative_sum.shape) == (batch_size,)
+    assert all(0<=false_negative_sum) and all(false_negative_sum<=1)
+    
+    assert not tensor_has_nan(soft_intersection)
+    assert tuple(soft_intersection.shape) == (batch_size,)
+    assert all(0<=soft_intersection) and all(soft_intersection<=1)
+    
+    assert not tensor_has_nan(soft_union)
+    assert tuple(soft_union.shape) == (batch_size,)
+    assert all(0<=soft_union) and all(soft_union<=1)
+    
+    assert not tensor_has_nan(soft_jaccard_score)
+    assert tuple(soft_jaccard_score.shape) == (batch_size,)
+    assert all(0<=soft_jaccard_score) and all(soft_jaccard_score<=1)
+    
+    assert not tensor_has_nan(soft_jaccard_loss)
+    assert tuple(soft_jaccard_loss.shape) == (batch_size,)
+    assert all(0<=soft_jaccard_loss) and all(soft_jaccard_loss<=1)
+    
+    assert not tensor_has_nan(mean_soft_jaccard_loss)
+    assert tuple(mean_soft_jaccard_loss.shape) == ()
+    assert 0 < mean_soft_jaccard_loss.item() and mean_soft_jaccard_loss.item() < 1
+    
+    return mean_soft_jaccard_loss
 
 class BatchIterator:
     def __init__(self, example_iterator: Iterable, text_attribute_name: str, sentiment_attribute_name: str, label_attribute_name: str):
@@ -112,7 +145,7 @@ class BatchIterator:
 class Predictor(ABC):
     def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: float, validation_portion: float, max_vocab_size: int, pre_trained_embedding_specification: str, **kwargs):
         super().__init__()
-        self.best_valid_loss = float('inf')
+        self.best_valid_jaccard = -1
         
         self.model_args = kwargs
         self.number_of_epochs = number_of_epochs
@@ -247,7 +280,7 @@ class Predictor(ABC):
         self_score_dict = {
             'valid_jaccard': valid_jaccard,
             'valid_loss': valid_loss,
-            'best_valid_loss': self.best_valid_loss,
+            'best_valid_jaccard': self.best_valid_jaccard,
             'number_of_epochs': self.number_of_epochs,
             'most_recently_completed_epoch_index': epoch_index,
             'batch_size': self.batch_size,
@@ -268,9 +301,10 @@ class Predictor(ABC):
         if result_is_from_final_run:
             with open(self.final_model_score_location, 'w') as outfile:
                 json.dump(self_score_dict, outfile)
-        if valid_loss < self.best_valid_loss:
-            self.best_valid_loss = valid_loss
+        if valid_jaccard > self.best_valid_jaccard:
+            self.best_valid_jaccard = valid_jaccard
             self.save_parameters(self.best_saved_model_location)
+            print(f'Best model so far saved to {self.best_saved_model_location}')
         return valid_loss, valid_jaccard
 
     @property

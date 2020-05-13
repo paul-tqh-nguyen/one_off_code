@@ -16,7 +16,7 @@ from collections import OrderedDict
 
 import sys ; sys.path.append("..")
 from misc_utilities import *
-from .abstract_predictor import Predictor, DEVICE, SENTIMENTS
+from .abstract_predictor import Predictor, DEVICE, SENTIMENTS, soft_jaccard_loss
 
 import torch
 import torch.nn as nn
@@ -125,7 +125,7 @@ class LSTMSentimentConcatenationPredictor(Predictor):
         vocab_size = len(self.text_field.vocab)
         self.model = LSTMSentimentConcatenationNetwork(vocab_size, self.sentiment_embedding_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
         self.optimizer = optim.Adam(self.model.parameters())
-        self.loss_function = nn.BCELoss().to(DEVICE)
+        self.loss_function = nn.BCELoss().to(DEVICE) # soft_jaccard_loss
         return
 
 ###############
