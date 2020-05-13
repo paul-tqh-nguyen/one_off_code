@@ -53,7 +53,7 @@ class RNNNetwork(nn.Module):
             self.embedding_size = embedding_size
             self.encoding_hidden_size = encoding_hidden_size
             self.number_of_encoding_layers = number_of_encoding_layers
-        self.sentiment_vectors = {sentiment: nn.Parameter(torch.nn.functional.normalize(torch.randn([sentiment_size]), dim=0)) for sentiment in SENTIMENTS}
+        self.sentiment_to_sentiment_vector_map = {sentiment: nn.Parameter(torch.nn.functional.normalize(torch.randn([sentiment_size]), dim=0)).to(DEVICE) for sentiment in SENTIMENTS}
         self.embedding_layers = nn.Sequential(OrderedDict([
             ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=pad_idx, max_norm=1.0)),
             ("dropout_layer", nn.Dropout(dropout_probability)),
@@ -73,13 +73,15 @@ class RNNNetwork(nn.Module):
         ]))
         self.to(DEVICE)
 
-    def forward(self, text_batch: torch.Tensor, text_lengths: torch.Tensor, sentiment: str):
-        sentiment_vector = self.sentiment_vectors[sentiment]
+    def forward(self, text_batch: torch.Tensor, text_lengths: torch.Tensor, sentiments: List[str]):
         if __debug__:
             max_sequence_length = max(text_lengths)
             batch_size = text_batch.shape[0]
         assert tuple(text_batch.shape) == (batch_size, max_sequence_length)
         assert tuple(text_lengths.shape) == (batch_size,)
+        
+        sentiment_vectors = torch.stack([self.sentiment_to_sentiment_vector_map[sentiment] for sentiment in sentiments])
+        assert tuple(sentiment_vectors.shape) == (batch_size, self.sentiment_size)
 
         embedded_batch = self.embedding_layers(text_batch)
         assert tuple(embedded_batch.shape) == (batch_size, max_sequence_length, self.embedding_size)
@@ -97,12 +99,14 @@ class RNNNetwork(nn.Module):
         assert tuple(encoded_batch_lengths.shape) == (batch_size,)
         assert (encoded_batch_lengths.to(text_lengths.device) == text_lengths).all()
 
-        duplicated_sentiment_vectors = sentiment_vector.repeat(batch_size, max_sequence_length).view(batch_size, max_sequence_length, -1)
+        duplicated_sentiment_vectors = sentiment_vectors.repeat(1, max_sequence_length).view(batch_size, max_sequence_length, -1)
         assert tuple(duplicated_sentiment_vectors.shape) == (batch_size, max_sequence_length, self.sentiment_size)
         concatenated_batch = torch.torch.cat((encoded_batch, duplicated_sentiment_vectors), dim=2)
         assert tuple(concatenated_batch.shape) == (batch_size, max_sequence_length, self.sentiment_size+self.encoding_hidden_size*2)
         
         prediction = self.prediction_layers(concatenated_batch)
+        assert tuple(prediction.shape) == (batch_size, max_sequence_length, 1)
+        prediction = prediction.squeeze()
         assert tuple(prediction.shape) == (batch_size, max_sequence_length)
         
         return prediction

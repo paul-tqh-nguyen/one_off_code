@@ -75,19 +75,21 @@ def _safe_count_tensor_division(dividend: torch.Tensor, divisor: torch.Tensor) -
 #     return loss
 
 class BatchIterator:
-    def __init__(self, non_numericalized_iterator: Iterable, x_attribute_name: str, y_attribute_name: str):
-        self.non_numericalized_iterator = non_numericalized_iterator
-        self.x_attribute_name: str = x_attribute_name
-        self.y_attribute_name: str = y_attribute_name
+    def __init__(self, example_iterator: Iterable, text_attribute_name: str, sentiment_attribute_name: str, label_attribute_name: str):
+        self.example_iterator = example_iterator
+        self.text_attribute_name: str = text_attribute_name
+        self.sentiment_attribute_name = sentiment_attribute_name
+        self.label_attribute_name: str = label_attribute_name
         
     def __iter__(self):
-        for non_numericalized_batch in self.non_numericalized_iterator:
-            x = getattr(non_numericalized_batch, self.x_attribute_name)
-            y = getattr(non_numericalized_batch, self.y_attribute_name)
-            yield (x, y)
+        for example_batch in self.example_iterator:
+            text = getattr(example_batch, self.text_attribute_name)
+            sentiment = getattr(example_batch, self.sentiment_attribute_name)
+            label = getattr(example_batch, self.label_attribute_name)
+            yield (text, sentiment, label)
             
     def __len__(self):
-        return len(self.non_numericalized_iterator)
+        return len(self.example_iterator)
 
 #######################
 # Abstract Predictor #
@@ -121,10 +123,11 @@ class Predictor(ABC):
         def pad_and_batch(original_batch: List[torch.Tensor]) -> torch.Tensor:
             batch_size: int = len(original_batch)
             max_len: int = max(map(len, original_batch))
-            assert batch_size == self.batch_size
+            assert batch_size <= self.batch_size
             batch = torch.zeros((batch_size, max_len))
             for tensor_index, single_tensor in enumerate(original_batch):
                 batch[tensor_index,:len(single_tensor)] = single_tensor
+            batch = batch.to(DEVICE)
             return batch
         self.label_field = data.RawField(preprocessing=label_preprocessing_pipeline, postprocessing=pad_and_batch, is_target=True)
         self.sentiment_field = data.RawField()
@@ -133,14 +136,14 @@ class Predictor(ABC):
             path=preprocess_data.PREPROCESSED_TRAINING_DATA_JSON_FILE,
             format='json',
             fields={
-                "preprocessed_input_string": ("preprocessed_input_string", self.text_field),
-                "numericalized_selected_text" : ("numericalized_selected_text", self.label_field),
-                "sentiment": ("sentiment", self.sentiment_field),
+                'preprocessed_input_string': ('preprocessed_input_string', self.text_field),
+                'numericalized_selected_text' : ('numericalized_selected_text', self.label_field),
+                'sentiment': ('sentiment', self.sentiment_field),
                 
-                "textID": ("text_id", self.misc_field),
-                "text": ("text", self.misc_field),
-                "selected_text": ("selected_text", self.misc_field),
-                "token_index_to_position_info_map": ("token_index_to_position_info_map", self.misc_field),
+                'textID': ('text_id', self.misc_field),
+                'text': ('text', self.misc_field),
+                'selected_text': ('selected_text', self.misc_field),
+                'token_index_to_position_info_map': ('token_index_to_position_info_map', self.misc_field),
             })
         self.training_data, self.validation_data = self.all_data.split(split_ratio=[self.train_portion, self.validation_portion], random_state = random.seed(SEED))
         self.embedding_size = torchtext.vocab.pretrained_aliases[self.pre_trained_embedding_specification]().dim
@@ -150,13 +153,12 @@ class Predictor(ABC):
         self.training_iterator, self.validation_iterator = data.BucketIterator.splits(
             (self.training_data, self.validation_data),
             batch_size = self.batch_size,
-            sort_key=lambda x: len(x.text),
+            sort_key=lambda x: len(x.preprocessed_input_string),
             sort_within_batch=True,
             repeat=False,
-            shuffle=True,
             device = DEVICE)
-        self.training_iterator = BatchIterator(self.training_iterator, 'preprocessed_input_string', 'numericalized_selected_text')
-        self.validation_iterator = BatchIterator(self.validation_iterator, 'preprocessed_input_string', 'numericalized_selected_text')
+        self.training_iterator = BatchIterator(self.training_iterator, 'preprocessed_input_string', 'sentiment', 'numericalized_selected_text')
+        self.validation_iterator = BatchIterator(self.validation_iterator, 'preprocessed_input_string', 'sentiment', 'numericalized_selected_text')
         self.pad_idx = self.text_field.vocab.stoi[self.text_field.pad_token]
         self.unk_idx = self.text_field.vocab.stoi[self.text_field.unk_token]
         return
@@ -178,10 +180,9 @@ class Predictor(ABC):
         epoch_jaccard = 0
         number_of_training_batches = len(self.training_iterator)
         self.model.train()
-        for (text_batch, text_lengths), labels in tqdm_with_message(self.training_iterator, post_yield_message_func = lambda index: f'Training Jaccard {epoch_jaccard/(index+1):.8f}', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
-            text_batch = self.augment_training_data_sample(text_batch)
+        for (text_batch, text_lengths), sentiments, labels in tqdm_with_message(self.training_iterator, post_yield_message_func = lambda index: f'Training Jaccard {epoch_jaccard/(index+1):.8f}', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
             self.optimizer.zero_grad()
-            predictions = self.model(text_batch, text_lengths)
+            predictions = self.model(text_batch, text_lengths, sentiments)
             loss = self.loss_function(predictions, labels)
             jaccard = self.scores_of_discretized_values(predictions, labels)
             loss.backward()
@@ -199,8 +200,8 @@ class Predictor(ABC):
         self.optimize_jaccard_threshold()
         iterator_size = len(iterator)
         with torch.no_grad():
-            for (text_batch, text_lengths), labels in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'Validation Jaccard {epoch_jaccard/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
-                predictions = self.model(text_batch, text_lengths).squeeze(1)
+            for (text_batch, text_lengths), sentiments, labels in tqdm_with_message(iterator, post_yield_message_func = lambda index: f'Validation Jaccard {epoch_jaccard/(index+1):.8f}', total=iterator_size, bar_format='{l_bar}{bar:50}{r_bar}'):
+                predictions = self.model(text_batch, text_lengths, sentiments)
                 loss = self.loss_function(predictions, labels)
                 jaccard = self.scores_of_discretized_values(predictions, labels)
                 epoch_loss += loss.item()
@@ -211,7 +212,7 @@ class Predictor(ABC):
         return epoch_loss, epoch_jaccard
     
     def validate(self, epoch_index: int, result_is_from_final_run: bool) -> Tuple[float, float]:
-        valid_loss, valid_jaccard = self.evaluate(self.validation_iterator, True)
+        valid_loss, valid_jaccard = self.evaluate(self.validation_iterator)
         if not os.path.isfile('global_best_model_score.json'):
             log_current_model_as_best = True
         else:
@@ -323,17 +324,17 @@ class Predictor(ABC):
             training_sum_of_negatives = 0.0
             training_count_of_positives = 0.0
             training_count_of_negatives = 0.0
-            for (text_batch, text_lengths), labels in tqdm_with_message(self.training_iterator, post_yield_message_func = lambda index: f'Optimizing Jaccard Threshold', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
-                predictions = self.model(text_batch, text_lengths)
+            for (text_batch, text_lengths), sentiments, labels in tqdm_with_message(self.training_iterator, post_yield_message_func = lambda index: f'Optimizing Jaccard Threshold', total=number_of_training_batches, bar_format='{l_bar}{bar:50}{r_bar}'):
+                predictions = self.model(text_batch, text_lengths, sentiments)
                 if __debug__:
                     batch_size = len(text_lengths)
                     max_sequence_length = text_lengths.max().item()
                 assert tuple(predictions.data.shape) == (batch_size, max_sequence_length)
                 assert tuple(labels.shape) == (batch_size, max_sequence_length)
-                training_sum_of_positives += (predictions.data * labels).sum(dim=0).item()
-                training_count_of_positives += labels.sum(dim=0).item()
-                training_sum_of_negatives += (predictions.data * (1-labels)).sum(dim=0).item()
-                training_count_of_negatives += (1-labels).sum(dim=0).item()
+                training_sum_of_positives += (predictions.data * labels).sum().item()
+                training_count_of_positives += labels.sum().item()
+                training_sum_of_negatives += (predictions.data * (1-labels)).sum().item()
+                training_count_of_negatives += (1-labels).sum().item()
                 assert training_sum_of_positives == training_sum_of_positives
                 assert training_sum_of_negatives == training_sum_of_negatives
                 assert training_count_of_positives == training_count_of_positives
@@ -357,12 +358,13 @@ class Predictor(ABC):
         return 
     
     def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:
+        assert (y-y.int()).sum()==0
         assert y_hat.shape == y.shape
         batch_size, max_sequence_length = y.shape
         assert batch_size <= self.batch_size
         y_hat_discretized = (y_hat > self.jaccard_threshold)
-        intersection_count = (y_hat_discretized & y).sum(dim=0)
-        union_count = y_hat_discretized.sum(dim=0) + y.sum(dim=0) - intersection_count
+        intersection_count = (y_hat_discretized & y.bool()).sum(dim=1)
+        union_count = y_hat_discretized.sum(dim=1) + y.sum(dim=1) - intersection_count
         jaccard_index = _safe_count_tensor_division(intersection_count, union_count)
         assert tuple(intersection_count.shape) == (batch_size,)
         assert tuple(union_count.shape) == (batch_size,)
