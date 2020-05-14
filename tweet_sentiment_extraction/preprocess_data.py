@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+ #!/usr/bin/python3
 '#!/usr/bin/python3 -OO'
 
 '''
@@ -62,6 +62,10 @@ TOKENIZER = initialize_tokenizer()
 
 URL_SPECIAL_TOKEN = '<URL_LINK>'
 
+SPECIAL_TOKENS = {
+    URL_SPECIAL_TOKEN,
+}
+
 SPECIAL_CHARACTER_SENTINEL = '9'
 
 SPECIAL_CHARACTER_TO_NORMALIZED_VALUE_MAP = {
@@ -107,53 +111,6 @@ SPECIAL_CHARACTER_TO_NORMALIZED_VALUE_MAP = {
 # Sanity Checking Utilities #
 #############################
 
-def is_ascii(input_string: str) -> bool:
-    return all(ord(character) < 128 for character in input_string)
-
-def selected_text_position_validity(preprocessed_input_string: str, preprocessed_selected_text: str) -> Tuple[bool, bool]:
-    assert '  ' not in preprocessed_input_string
-    assert '  ' not in preprocessed_selected_text
-    preprocessed_selected_text_tokens = preprocessed_selected_text.split()
-    assert ' '.join(preprocessed_selected_text_tokens) == preprocessed_selected_text
-    if len(preprocessed_selected_text_tokens) == 1:
-        preprocessed_input_string_tokens = preprocessed_input_string.split()
-        assert ' '.join(preprocessed_input_string_tokens) == preprocessed_input_string
-        selected_text_starts_in_middle_of_word = preprocessed_selected_text not in preprocessed_input_string_tokens
-        selected_text_ends_in_middle_of_word = selected_text_starts_in_middle_of_word
-    else:
-        selected_text_starts_in_middle_of_word = not (' '+preprocessed_selected_text in preprocessed_input_string or preprocessed_selected_text == preprocessed_input_string[:len(preprocessed_selected_text)])
-        selected_text_ends_in_middle_of_word = not (preprocessed_selected_text+' ' in preprocessed_input_string or preprocessed_selected_text == preprocessed_input_string[-len(preprocessed_selected_text):])
-    # selected_text_starts_in_middle_of_word = None
-    # selected_text_ends_in_middle_of_word = None
-    # preprocessed_input_string_tokens = preprocessed_input_string.split()
-    # preprocessed_selected_text_tokens = preprocessed_selected_text.split()
-    # if len(preprocessed_selected_text_tokens)==1:
-    #     if only_one(preprocessed_selected_text_tokens) in preprocessed_input_string_tokens:
-    #         selected_text_starts_in_middle_of_word = False
-    #         selected_text_ends_in_middle_of_word = False
-    #     else:
-    #         selected_text_starts_in_middle_of_word = True
-    #         selected_text_ends_in_middle_of_word = True
-    # else:
-    #     for candidate_start_index in range(len(preprocessed_input_string_tokens)):
-    #         candidate_end_index = candidate_start_index+len(preprocessed_selected_text_tokens)-1
-    #         if candidate_end_index<=len(preprocessed_input_string_tokens):
-    #             if preprocessed_input_string_tokens[candidate_start_index:candidate_end_index] == preprocessed_selected_text_tokens[:-1]:
-    #                 assert selected_text_starts_in_middle_of_word is None, 'Multiple occurences of sequences similar to selected text not yet handled.'
-    #                 selected_text_starts_in_middle_of_word = False
-    #     if selected_text_starts_in_middle_of_word is None:
-    #         selected_text_starts_in_middle_of_word = True
-    #     for candidate_end_index_minus_one in range(len(preprocessed_input_string_tokens)):
-    #         candidate_end_index = candidate_end_index_minus_one + 1
-    #         candidate_start_index = candidate_end_index-len(preprocessed_selected_text_tokens)+1
-    #         if candidate_start_index>=0:
-    #             if preprocessed_input_string_tokens[candidate_start_index:candidate_end_index] == preprocessed_selected_text_tokens[1:]:
-    #                 assert selected_text_ends_in_middle_of_word is None, 'Multiple occurences of sequences similar to selected text not yet handled.'
-    #                 selected_text_ends_in_middle_of_word = False
-    #     if selected_text_ends_in_middle_of_word is None:
-    #         selected_text_ends_in_middle_of_word = True
-    return selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word
-
 def sanity_check_training_data_json_file() -> bool:
     if __debug__:
         import json
@@ -167,10 +124,29 @@ def sanity_check_training_data_json_file() -> bool:
                 numericalized_selected_text = row_data['numericalized_selected_text']
                 selected_token_indices = [token_index for token_index, is_selected in enumerate(numericalized_selected_text) if is_selected == '1']
                 reconstructed_selected_text = reconstruct_selected_text_from_token_indices(selected_token_indices, original_text, token_index_to_position_info_map)
+                reconstructed_selected_text_sufficiently_matches_selected_text = jaccard_index_over_strings(reconstructed_selected_text, selected_text) == 1
+                
                 preprocessed_input_string, _ = preprocess_tweet(original_text)
                 preprocessed_selected_text, _ = preprocess_tweet(selected_text)
                 selected_text_is_bogus = any(selected_text_position_validity(preprocessed_input_string, preprocessed_selected_text))
-                assert (selected_text_is_bogus or reconstructed_selected_text.lower() == selected_text.lower()), f'\nReconstructed {repr(reconstructed_selected_text)}\nas opposed to {repr(selected_text)}\nfrom          {repr(original_text)}'
+
+                preprocessed_selected_text_tokens = preprocessed_selected_text.split()
+                preprocessed_selected_text_start_token = preprocessed_selected_text_tokens[0]
+                preprocessed_selected_text_end_token = preprocessed_selected_text_tokens[-1]
+                selected_text_is_possibly_bogus = (
+                    (not reconstructed_selected_text_sufficiently_matches_selected_text) and \
+                    (selected_text_is_bogus or SPECIAL_TOKENS.intersection({preprocessed_selected_text_start_token, preprocessed_selected_text_end_token}))
+                )
+                selected_text_needs_manual_review = selected_text_is_possibly_bogus and not selected_text_is_bogus and not reconstructed_selected_text_sufficiently_matches_selected_text
+                if selected_text_needs_manual_review:
+                    print(f'''
+
+Please manually review that the reconstructed text {repr(reconstructed_selected_text)}
+is sufficiently similar to the selected text       {repr(selected_text)}
+
+''')
+                assert (reconstructed_selected_text_sufficiently_matches_selected_text or selected_text_is_bogus or selected_text_needs_manual_review), \
+                    f'\nReconstructed {repr(reconstructed_selected_text)}\nas opposed to {repr(selected_text)}\nfrom          {repr(original_text)}'
     return True
 
 ############################
@@ -224,6 +200,9 @@ def preprocess_token(input_token: str) -> str:
         preprocessed_token = URL_SPECIAL_TOKEN
     return preprocessed_token
 
+def is_ascii(input_string: str) -> bool:
+    return all(ord(character) < 128 for character in input_string)
+
 def preprocess_and_tokenize_string(input_string: str) -> str:
     preprocessed_input_string = input_string
     preprocessed_input_string = preprocessed_input_string.lower()
@@ -260,7 +239,30 @@ def preprocess_tweet(input_string: str) -> Tuple[str, List[dict]]:
         original_token = input_string[token_start:token_end]
         token_index_to_position_info_map[token_index] = {'token_original_start_position': token_start, 'token_original_end_position': token_end, 'original_token': original_token, 'preprocessed_token': preprocessed_token}
     preprocessed_input_string = ' '.join(preprocessed_tokens)
-    return (preprocessed_input_string, token_index_to_position_info_map)
+    return preprocessed_input_string, token_index_to_position_info_map
+
+###################################
+# Text Numericalization Utilities #
+###################################
+
+def selected_text_position_validity(preprocessed_input_string: str, preprocessed_selected_text: str) -> Tuple[bool, bool]:
+    assert '  ' not in preprocessed_input_string
+    assert '  ' not in preprocessed_selected_text
+    preprocessed_selected_text_tokens = preprocessed_selected_text.split()
+    assert ' '.join(preprocessed_selected_text_tokens) == preprocessed_selected_text
+    if len(preprocessed_selected_text_tokens) == 1:
+        preprocessed_input_string_tokens = preprocessed_input_string.split()
+        assert ' '.join(preprocessed_input_string_tokens) == preprocessed_input_string
+        preprocessed_selected_text_token = only_one(preprocessed_selected_text_tokens)
+        selected_text_starts_in_middle_of_word = preprocessed_selected_text_token not in preprocessed_input_string_tokens
+        selected_text_ends_in_middle_of_word = selected_text_starts_in_middle_of_word
+    else:
+        # @todo this doesn't properly handle the case where the end cuts off in the middle of a URL or other special token
+        selected_text_starts_in_middle_of_word = ' '+preprocessed_selected_text not in preprocessed_input_string and preprocessed_selected_text != preprocessed_input_string[:len(preprocessed_selected_text)]
+         # @todo this doesn't handle the case where the start cuts off in the middle of a url.
+         # @todo this doesn't handle the case where the end cuts off in the middle of a url.
+        selected_text_ends_in_middle_of_word = preprocessed_selected_text+' ' not in preprocessed_input_string and preprocessed_selected_text != preprocessed_input_string[-len(preprocessed_selected_text):]
+    return selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word
 
 def numericalize_selected_text(preprocessed_input_string: str, selected_text: str) -> str:
     assert isinstance(preprocessed_input_string, str)
@@ -272,28 +274,14 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
     if selected_text_ends_in_middle_of_word:
         preprocessed_selected_text = ' '.join(preprocessed_selected_text.split()[:-1])
     assert preprocessed_selected_text in preprocessed_input_string
-    assert preprocessed_selected_text in preprocessed_input_string
+    preprocessed_selected_text_tokens = preprocessed_selected_text.split()
     preprocessed_input_string_tokens = preprocessed_input_string.split()
-    preprocessed_selected_text_match = next(re.finditer(re.escape(preprocessed_selected_text), preprocessed_input_string))
-    preprocessed_selected_text_start_position, preprocessed_selected_text_end_position = (preprocessed_selected_text_match.start(), preprocessed_selected_text_match.end())
-    assert preprocessed_input_string[preprocessed_selected_text_start_position:preprocessed_selected_text_end_position] == preprocessed_selected_text
-    current_sentence_position = 0
     numericalized_text = [0]*len(preprocessed_input_string_tokens)
-    for preprocessed_token_index, preprocessed_input_string_token in enumerate(preprocessed_input_string_tokens):
-        if current_sentence_position == preprocessed_selected_text_start_position:
-            assert current_sentence_position == preprocessed_selected_text_start_position or selected_text_starts_in_middle_of_word
-            numericalized_text[preprocessed_token_index] = 1
-        elif current_sentence_position > preprocessed_selected_text_start_position:
-            assert numericalized_text[preprocessed_token_index-1]==1 or selected_text_starts_in_middle_of_word
-            numericalized_text[preprocessed_token_index] = 1
-        current_sentence_position += len(preprocessed_input_string_token)
-        if current_sentence_position >= preprocessed_selected_text_end_position:
-            assert current_sentence_position == preprocessed_selected_text_end_position or selected_text_ends_in_middle_of_word
-            assert numericalized_text[preprocessed_token_index] == 1 or selected_text_starts_in_middle_of_word
+    for preprocessed_token_index in range(len(preprocessed_input_string_tokens)):
+        if preprocessed_selected_text_tokens == preprocessed_input_string_tokens[preprocessed_token_index:preprocessed_token_index+len(preprocessed_selected_text_tokens)]:
+            for numericalized_text_index in range(preprocessed_token_index,preprocessed_token_index+len(preprocessed_selected_text_tokens)):
+                numericalized_text[numericalized_text_index] = 1
             break
-        if current_sentence_position<len(preprocessed_input_string):
-            if preprocessed_input_string[current_sentence_position] == ' ':
-                current_sentence_position += 1
     assert len(list(uniq(numericalized_text))) <= 3
     numericalized_text_as_string = ''.join(map(str, numericalized_text))
     assert len(numericalized_text_as_string) == len(preprocessed_input_string_tokens)
@@ -306,8 +294,9 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
 @debug_on_error
 def preprocess_data() -> None:
     training_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
+    training_data_df.selected_text = training_data_df.selected_text.replace(np.nan, '', regex=True)
     # training_data_df = training_data_df[training_data_df.textID=="bb30655041"]
-    training_data_df = training_data_df[:1000]
+    # training_data_df = training_data_df[:1000]
     # training_data_df = training_data_df[training_data_df.textID=="6e0c6d75b1"]
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
     print()
