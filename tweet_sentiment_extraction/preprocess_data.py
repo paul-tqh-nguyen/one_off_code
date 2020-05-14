@@ -41,7 +41,7 @@ SIMPLE_URL_RE = re.compile(r'''(?i)\b((?:https?:(?:/{1,3}|[a-z0-9%])|[a-z0-9.\-]
 
 def is_url(input_string: str) -> bool:
     match = SIMPLE_URL_RE.match(input_string)
-    if match:
+    if match: # Adding '$' to the end of the regexp causes severe slowdowns
         start_index, end_index = match.span()
         return start_index == 0 and end_index == len(input_string)
     return False
