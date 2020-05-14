@@ -44,10 +44,9 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
 GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION = 'global_best_model_score.json'
 
-NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
-
 SENTIMENTS = ['positive', 'negative', 'neutral']
 
+NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
 NON_TRAINING_BATCH_SIZE = 1024
 
 NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 30
@@ -56,6 +55,12 @@ JACCARD_INDEX_GOOD_SCORE_THRESHOLD = 0.5
 ####################
 # Helper Utilities #
 ####################
+
+def determine_number_of_relevant_recent_epochs(training_data: torchtext.data.dataset.Dataset, batch_size: int) -> int:
+    number_of_iterations_per_epoch = len(training_data) / batch_size
+    number_of_epochs_per_iteration = number_of_iterations_per_epoch ** -1
+    number_of_relevant_recent_epochs = math.ceil(number_of_epochs_per_iteration * NUMBER_OF_RELEVANT_RECENT_ITERATIONS)
+    return number_of_relevant_recent_epochs
 
 def tensor_has_nan(tensor: torch.Tensor) -> bool:
     return (tensor != tensor).any().item()
@@ -324,7 +329,8 @@ class Predictor(ABC):
     
     def train(self) -> None:
         self.print_hyperparameters()
-        most_recent_validation_jaccard_scores = [0]*NUMBER_OF_RELEVANT_RECENT_EPOCHS
+        number_of_relevant_recent_epochs = determine_number_of_relevant_recent_epochs(self.training_data, self.batch_size)
+        most_recent_validation_jaccard_scores = [0]*number_of_relevant_recent_epochs
         print(f'Starting training')
         for epoch_index in range(self.number_of_epochs):
             print("\n")
@@ -340,7 +346,7 @@ class Predictor(ABC):
                 most_recent_validation_jaccard_scores.append(valid_jaccard)
             else:
                 print()
-                print(f"Validation is not better than any of the {NUMBER_OF_RELEVANT_RECENT_EPOCHS} recent epochs, so training is ending early due to apparent convergence.")
+                print(f"Validation is not better than any of the {number_of_relevant_recent_epochs} recent epochs, so training is ending early due to apparent convergence.")
                 print()
                 break
         self.load_parameters(self.best_saved_model_location)

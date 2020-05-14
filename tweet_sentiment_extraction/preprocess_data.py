@@ -130,6 +130,7 @@ def sanity_check_training_data_json_file() -> bool:
                 preprocessed_selected_text, _ = preprocess_tweet(selected_text)
                 selected_text_is_bogus = any(selected_text_position_validity(preprocessed_input_string, preprocessed_selected_text))
 
+                # @todo handle the cases revealed by this section
                 preprocessed_selected_text_tokens = preprocessed_selected_text.split()
                 preprocessed_selected_text_start_token = preprocessed_selected_text_tokens[0]
                 preprocessed_selected_text_end_token = preprocessed_selected_text_tokens[-1]
@@ -145,6 +146,7 @@ Please manually review that the reconstructed text {repr(reconstructed_selected_
 is sufficiently similar to the selected text       {repr(selected_text)}
 
 ''')
+                
                 assert (reconstructed_selected_text_sufficiently_matches_selected_text or selected_text_is_bogus or selected_text_needs_manual_review), \
                     f'\nReconstructed {repr(reconstructed_selected_text)}\nas opposed to {repr(selected_text)}\nfrom          {repr(original_text)}'
     return True
@@ -295,9 +297,6 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
 def preprocess_data() -> None:
     training_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
     training_data_df.selected_text = training_data_df.selected_text.replace(np.nan, '', regex=True)
-    # training_data_df = training_data_df[training_data_df.textID=="bb30655041"]
-    # training_data_df = training_data_df[:1000]
-    # training_data_df = training_data_df[training_data_df.textID=="6e0c6d75b1"]
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
     print()
     print('Preprocessing tweets...')
