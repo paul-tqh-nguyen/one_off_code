@@ -32,7 +32,11 @@ import torchtext
 
 tqdm.tqdm.pandas()
 
-SIMPLE_URL_RE = re.compile(r'''^https?://''')
+TRAINING_DATA_CSV_FILE = './data/train.csv'
+PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
+
+PREPROCESS_TEXT_IN_PARALLEL = False
+
 SIMPLE_URL_RE = re.compile(r'''(?i)\b((?:https?:(?:/{1,3}|[a-z0-9%])|[a-z0-9.\-]+[.](?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)/)(?:[^\s()<>{}\[\]]+|\([^\s()]*?\([^\s()]+\)[^\s()]*?\)|\([^\s]+?\))+(?:\([^\s()]*?\([^\s()]+\)[^\s()]*?\)|\([^\s]+?\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’])|(?:(?<!@)[a-z0-9]+(?:[.\-][a-z0-9]+)*[.](?:com|net|org|edu|gov|mil|aero|asia|biz|cat|coop|info|int|jobs|mobi|museum|name|post|pro|tel|travel|xxx|ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|Ja|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)\b/?(?!@)))''')
 
 def initialize_tokenizer() -> Callable:
@@ -48,6 +52,8 @@ def initialize_tokenizer() -> Callable:
     tokenizer = lambda input_string: [t.text for t in nlp(input_string)]
     return tokenizer
 TOKENIZER = initialize_tokenizer()
+
+URL_SPECIAL_TOKEN = '<URL_LINK>'
 
 SPECIAL_CHARACTER_SENTINEL = '9'
 
@@ -89,11 +95,6 @@ SPECIAL_CHARACTER_TO_NORMALIZED_VALUE_MAP = {
     '…': SPECIAL_CHARACTER_SENTINEL,
     '½': SPECIAL_CHARACTER_SENTINEL,
 }
-
-TRAINING_DATA_CSV_FILE = './data/train.csv'
-PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
-
-PREPROCESS_TEXT_IN_PARALLEL = False
 
 #############################
 # Sanity Checking Utilities #
@@ -183,13 +184,21 @@ def normalize_special_characters(input_string: str) -> str:
         output_string = output_string.replace(special_character, normalized_character)
     return output_string
 
-def preprocess_string(input_string: str) -> str:
+def preprocess_token(input_token: str) -> str:
+    preprocessed_token = input_token
+    if SIMPLE_URL_RE.match(preprocessed_token):
+        preprocessed_token = URL_SPECIAL_TOKEN
+    return preprocessed_token
+
+def preprocess_and_tokenize_string(input_string: str) -> str:
     preprocessed_input_string = input_string
     preprocessed_input_string = preprocessed_input_string.lower()
     preprocessed_input_string = normalize_string_white_space(preprocessed_input_string)
     preprocessed_input_string = normalize_special_characters(preprocessed_input_string)
     assert is_ascii(preprocessed_input_string)
-    return preprocessed_input_string
+    preprocessed_tokens = TOKENIZER(preprocessed_input_string)
+    preprocessed_tokens = eager_map(preprocess_token, preprocessed_tokens)
+    return preprocessed_tokens
 
 def preprocess_tweet(input_string: str) -> Tuple[str, List[dict]]:
     current_input_string_position = 0
@@ -199,9 +208,7 @@ def preprocess_tweet(input_string: str) -> Tuple[str, List[dict]]:
     normalized_input_string = normalize_special_characters(white_space_normalized_input_string)
     assert len(white_space_normalized_input_string) == len(normalized_input_string)
     normalized_input_string_tokens = TOKENIZER(normalized_input_string)
-    preprocessed_input_string = preprocess_string(input_string)
-    preprocessed_tokens = TOKENIZER(preprocessed_input_string)
-    assert len(preprocessed_input_string) == len(normalized_input_string)
+    preprocessed_tokens = preprocess_and_tokenize_string(input_string)
     assert len(normalized_input_string_tokens) == len(preprocessed_tokens)
     for token_index, (normalized_token, preprocessed_token) in enumerate(zip(normalized_input_string_tokens, preprocessed_tokens)):
         for _ in range(len(input_string)):

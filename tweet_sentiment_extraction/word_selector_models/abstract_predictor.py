@@ -118,7 +118,7 @@ def soft_jaccard_loss(y_hat: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     
     assert not tensor_has_nan(mean_soft_jaccard_loss)
     assert tuple(mean_soft_jaccard_loss.shape) == ()
-    assert 0 < mean_soft_jaccard_loss.item() and mean_soft_jaccard_loss.item() < 1
+    assert 0 <= mean_soft_jaccard_loss.item() and mean_soft_jaccard_loss.item() <= 1
     
     return mean_soft_jaccard_loss
 
@@ -443,7 +443,7 @@ class Predictor(ABC):
         assert sentiment in SENTIMENTS
         self.model.eval()
         preprocessed_input_string, preprocessed_token_index_to_position_info_map = preprocess_data.preprocess_tweet(input_string)
-        preprocessed_tokens = preprocess_data.TOKENIZER(preprocessed_input_string)
+        preprocessed_tokens = preprocessed_input_string.split()
         indexed = [self.text_field.vocab.stoi[t] for t in preprocessed_tokens]
         lengths = [len(indexed)]
         input_string_tensor = torch.LongTensor(indexed).to(DEVICE)
