@@ -1,0 +1,1 @@
+only about 8k words that occur more than once ; this is part of the reason that preprocessing isn't so useful. We don't need a large vocabulary bc we can't really get one. 
