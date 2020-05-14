@@ -113,18 +113,45 @@ def is_ascii(input_string: str) -> bool:
 def selected_text_position_validity(preprocessed_input_string: str, preprocessed_selected_text: str) -> Tuple[bool, bool]:
     assert '  ' not in preprocessed_input_string
     assert '  ' not in preprocessed_selected_text
-    preprocessed_input_string_tokens = preprocessed_input_string.split()
     preprocessed_selected_text_tokens = preprocessed_selected_text.split()
-    assert ' '.join(preprocessed_input_string_tokens) == preprocessed_input_string
     assert ' '.join(preprocessed_selected_text_tokens) == preprocessed_selected_text
-    preprocessed_selected_text_match = next(re.finditer(re.escape(preprocessed_selected_text), preprocessed_input_string))
-    preprocessed_selected_text_start_position, preprocessed_selected_text_end_position = (preprocessed_selected_text_match.start(), preprocessed_selected_text_match.end())
-    selected_text_starts_in_middle_of_word = False
-    if preprocessed_selected_text_start_position > 0:
-        selected_text_starts_in_middle_of_word = preprocessed_input_string[preprocessed_selected_text_start_position-1] != ' '
-    selected_text_ends_in_middle_of_word = False
-    if preprocessed_selected_text_end_position<len(preprocessed_input_string):
-        selected_text_ends_in_middle_of_word = preprocessed_input_string[preprocessed_selected_text_end_position] != ' '
+    if len(preprocessed_selected_text_tokens) == 1:
+        preprocessed_input_string_tokens = preprocessed_input_string.split()
+        assert ' '.join(preprocessed_input_string_tokens) == preprocessed_input_string
+        selected_text_starts_in_middle_of_word = preprocessed_selected_text not in preprocessed_input_string_tokens
+        selected_text_ends_in_middle_of_word = selected_text_starts_in_middle_of_word
+    else:
+        selected_text_starts_in_middle_of_word = not (' '+preprocessed_selected_text in preprocessed_input_string or preprocessed_selected_text == preprocessed_input_string[:len(preprocessed_selected_text)])
+        selected_text_ends_in_middle_of_word = not (preprocessed_selected_text+' ' in preprocessed_input_string or preprocessed_selected_text == preprocessed_input_string[-len(preprocessed_selected_text):])
+    # selected_text_starts_in_middle_of_word = None
+    # selected_text_ends_in_middle_of_word = None
+    # preprocessed_input_string_tokens = preprocessed_input_string.split()
+    # preprocessed_selected_text_tokens = preprocessed_selected_text.split()
+    # if len(preprocessed_selected_text_tokens)==1:
+    #     if only_one(preprocessed_selected_text_tokens) in preprocessed_input_string_tokens:
+    #         selected_text_starts_in_middle_of_word = False
+    #         selected_text_ends_in_middle_of_word = False
+    #     else:
+    #         selected_text_starts_in_middle_of_word = True
+    #         selected_text_ends_in_middle_of_word = True
+    # else:
+    #     for candidate_start_index in range(len(preprocessed_input_string_tokens)):
+    #         candidate_end_index = candidate_start_index+len(preprocessed_selected_text_tokens)-1
+    #         if candidate_end_index<=len(preprocessed_input_string_tokens):
+    #             if preprocessed_input_string_tokens[candidate_start_index:candidate_end_index] == preprocessed_selected_text_tokens[:-1]:
+    #                 assert selected_text_starts_in_middle_of_word is None, 'Multiple occurences of sequences similar to selected text not yet handled.'
+    #                 selected_text_starts_in_middle_of_word = False
+    #     if selected_text_starts_in_middle_of_word is None:
+    #         selected_text_starts_in_middle_of_word = True
+    #     for candidate_end_index_minus_one in range(len(preprocessed_input_string_tokens)):
+    #         candidate_end_index = candidate_end_index_minus_one + 1
+    #         candidate_start_index = candidate_end_index-len(preprocessed_selected_text_tokens)+1
+    #         if candidate_start_index>=0:
+    #             if preprocessed_input_string_tokens[candidate_start_index:candidate_end_index] == preprocessed_selected_text_tokens[1:]:
+    #                 assert selected_text_ends_in_middle_of_word is None, 'Multiple occurences of sequences similar to selected text not yet handled.'
+    #                 selected_text_ends_in_middle_of_word = False
+    #     if selected_text_ends_in_middle_of_word is None:
+    #         selected_text_ends_in_middle_of_word = True
     return selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word
 
 def sanity_check_training_data_json_file() -> bool:
@@ -239,8 +266,12 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
     assert isinstance(preprocessed_input_string, str)
     assert isinstance(selected_text, str)
     preprocessed_selected_text, _ = preprocess_tweet(selected_text)
-    if __debug__:
-        selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word = selected_text_position_validity(preprocessed_input_string, preprocessed_selected_text)
+    selected_text_starts_in_middle_of_word, selected_text_ends_in_middle_of_word = selected_text_position_validity(preprocessed_input_string, preprocessed_selected_text)
+    if selected_text_starts_in_middle_of_word:
+        preprocessed_selected_text = ' '.join(preprocessed_selected_text.split()[1:])
+    if selected_text_ends_in_middle_of_word:
+        preprocessed_selected_text = ' '.join(preprocessed_selected_text.split()[:-1])
+    assert preprocessed_selected_text in preprocessed_input_string
     assert preprocessed_selected_text in preprocessed_input_string
     preprocessed_input_string_tokens = preprocessed_input_string.split()
     preprocessed_selected_text_match = next(re.finditer(re.escape(preprocessed_selected_text), preprocessed_input_string))
@@ -275,6 +306,9 @@ def numericalize_selected_text(preprocessed_input_string: str, selected_text: st
 @debug_on_error
 def preprocess_data() -> None:
     training_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
+    # training_data_df = training_data_df[training_data_df.textID=="bb30655041"]
+    training_data_df = training_data_df[:1000]
+    # training_data_df = training_data_df[training_data_df.textID=="6e0c6d75b1"]
     training_data_df[['text', 'selected_text']] = training_data_df[['text', 'selected_text']].fillna(value='')
     print()
     print('Preprocessing tweets...')
