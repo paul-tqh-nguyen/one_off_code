@@ -36,6 +36,7 @@ NUMBER_OF_EPOCHS = 100
 BATCH_SIZE = 32
 MAX_VOCAB_SIZE = 25_000
 PRE_TRAINED_EMBEDDING_SPECIFICATION = 'fasttext.en.300d'
+LOSS_FUNCTION_SPEC = 'BCELoss' # 'soft_jaccard_loss'
 
 SENTIMENT_EMBEDDING_SIZE = 512
 ENCODING_HIDDEN_SIZE = 512
@@ -137,7 +138,7 @@ class LSTMSentimentConcatenationPredictor(Predictor):
 @debug_on_error
 def train_model() -> None:
     predictor = LSTMSentimentConcatenationPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, MAX_VOCAB_SIZE, PRE_TRAINED_EMBEDDING_SPECIFICATION,
-                                                    loss_function_spec='soft_jaccard_loss',
+                                                    loss_function_spec=LOSS_FUNCTION_SPEC,
                                                     sentiment_embedding_size=SENTIMENT_EMBEDDING_SIZE, 
                                                     encoding_hidden_size=ENCODING_HIDDEN_SIZE,
                                                     number_of_encoding_layers=NUMBER_OF_ENCODING_LAYERS,
