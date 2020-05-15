@@ -81,13 +81,13 @@ def LSTMScaledDotProductAttentionPredictor_generator() -> Generator:
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)
     
-    batch_size_choices = [1, 32, 256, 512, 1024]
+    batch_size_choices = [1, 32, 256]
     max_vocab_size_choices = [10_000, 25_000]
     pre_trained_embedding_specification_choices = ['charngram.100d', 'fasttext.en.300d', 'fasttext.simple.300d', 'glove.42B.300d', 'glove.840B.300d', 'glove.twitter.27B.25d', 'glove.twitter.27B.50d', 'glove.twitter.27B.100d', 'glove.twitter.27B.200d', 'glove.6B.50d', 'glove.6B.100d', 'glove.6B.200d', 'glove.6B.300d']
 
-    sentiment_size_choices = [128, 256, 512, 1024]
-    encoding_hidden_size_choices = [128, 256, 512, 1024]
-    number_of_encoding_layers_choices = [2,4]
+    sentiment_size_choices = [32, 64, 128, 256]
+    encoding_hidden_size_choices = [32, 64, 128, 256]
+    number_of_encoding_layers_choices = [1, 2,4]
     dropout_probability_choices = [0.5]
 
     loss_function_spec_choices = ['BCELoss', 'soft_jaccard_loss']

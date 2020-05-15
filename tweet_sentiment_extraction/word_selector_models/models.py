@@ -218,6 +218,7 @@ class LSTMScaledDotProductAttentionNetwork(nn.Module):
         assert (encoded_batch_lengths.to(text_lengths.device) == text_lengths).all()
         
         attended_batch = self.attend(encoded_batch, sentiment_vectors, text_lengths)
+        #attended_batch = encoded_batch
         assert tuple(attended_batch.shape) == (batch_size, max_sequence_length, self.encoding_hidden_size*2)
         
         prediction = self.prediction_layers(attended_batch)
@@ -282,14 +283,14 @@ def get_default_LSTMSentimentConcatenationPredictor() -> LSTMSentimentConcatenat
                                                dropout_probability=dropout_probability)
 
 def get_default_LSTMScaledDotProductAttentionPredictor() -> LSTMScaledDotProductAttentionPredictor:
-    batch_size = 8
-    max_vocab_size = 25_000
+    batch_size = 1
+    max_vocab_size = 10_000
     pre_trained_embedding_specification = 'fasttext.en.300d'
     loss_function_spec = 'soft_jaccard_loss'
     
-    sentiment_size = 256
-    encoding_hidden_size = 256
-    number_of_encoding_layers = 2
+    sentiment_size = 64
+    encoding_hidden_size = 64
+    number_of_encoding_layers = 1
     dropout_probability = 0.5
     
     return LSTMScaledDotProductAttentionPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, batch_size, TRAIN_PORTION, VALIDATION_PORTION, max_vocab_size, pre_trained_embedding_specification,
