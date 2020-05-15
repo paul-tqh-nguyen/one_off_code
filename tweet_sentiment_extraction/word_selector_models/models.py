@@ -42,6 +42,11 @@ NUMBER_OF_EPOCHS = 100
 class LSTMSentimentConcatenationNetwork(nn.Module):
     def __init__(self, vocab_size: int, sentiment_size: int, embedding_size: int, encoding_hidden_size: int, number_of_encoding_layers: int, dropout_probability: float, pad_idx: int, unk_idx: int, initial_embedding_vectors: torch.Tensor):
         super().__init__()
+        if __debug__:
+            self.sentiment_size = sentiment_size
+            self.embedding_size = embedding_size
+            self.encoding_hidden_size = encoding_hidden_size
+            self.number_of_encoding_layers = number_of_encoding_layers
         self.sentiment_to_sentiment_vector_map = {sentiment: nn.Parameter(torch.nn.functional.normalize(torch.randn([sentiment_size]), dim=0)).to(DEVICE) for sentiment in SENTIMENTS}
         self.embedding_layers = nn.Sequential(OrderedDict([
             ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=pad_idx, max_norm=1.0)),
@@ -61,11 +66,6 @@ class LSTMSentimentConcatenationNetwork(nn.Module):
             ("sigmoid_layer", nn.Sigmoid()),
         ]))
         self.to(DEVICE)
-        if __debug__:
-            self.sentiment_size = sentiment_size
-            self.embedding_size = embedding_size
-            self.encoding_hidden_size = encoding_hidden_size
-            self.number_of_encoding_layers = number_of_encoding_layers
     
     def forward(self, text_batch: torch.Tensor, text_lengths: torch.Tensor, sentiments: List[str]):
         if __debug__:
@@ -108,9 +108,13 @@ class LSTMSentimentConcatenationNetwork(nn.Module):
 # Attention Networks
 
 class LSTMScaledDotProductAttentionNetwork(nn.Module):
-    def __init__(self, vocab_size: int, embedding_size: int, encoding_hidden_size: int, number_of_encoding_layers: int, dropout_probability: float, pad_idx: int, unk_idx: int, initial_embedding_vectors: torch.Tensor):
+    def __init__(self, vocab_size: int, sentiment_size: int, embedding_size: int, encoding_hidden_size: int, number_of_encoding_layers: int, dropout_probability: float, pad_idx: int, unk_idx: int, initial_embedding_vectors: torch.Tensor):
         super().__init__()
-        sentiment_size = 2*encoding_hidden_size
+        if __debug__:
+            self.sentiment_size = sentiment_size
+            self.embedding_size = embedding_size
+            self.encoding_hidden_size = encoding_hidden_size
+            self.number_of_encoding_layers = number_of_encoding_layers
         self.sentiment_to_sentiment_vector_map = {sentiment: nn.Parameter(torch.nn.functional.normalize(torch.randn([sentiment_size]), dim=0)).to(DEVICE) for sentiment in SENTIMENTS}
         self.embedding_layers = nn.Sequential(OrderedDict([
             ("embedding_layer", nn.Embedding(vocab_size, embedding_size, padding_idx=pad_idx, max_norm=1.0)),
@@ -124,49 +128,67 @@ class LSTMScaledDotProductAttentionNetwork(nn.Module):
                                        num_layers=number_of_encoding_layers,
                                        bidirectional=True,
                                        dropout=dropout_probability)
+        self.attention_query_generating_layers = nn.Sequential(OrderedDict([
+            ("dropout_layer", nn.Dropout(dropout_probability)),
+            ("fully_connected_layer", nn.Linear(sentiment_size+encoding_hidden_size*2, encoding_hidden_size*2)),
+            ("sigmoid_layer", nn.ReLU()),
+        ]))
         self.prediction_layers = nn.Sequential(OrderedDict([
             ("dropout_layer", nn.Dropout(dropout_probability)),
             ("fully_connected_layer", nn.Linear(encoding_hidden_size*2, 1)),
             ("sigmoid_layer", nn.Sigmoid()),
         ]))
         self.to(DEVICE)
-        if __debug__:
-            self.sentiment_size = sentiment_size
-            self.embedding_size = embedding_size
-            self.encoding_hidden_size = encoding_hidden_size
-            self.number_of_encoding_layers = number_of_encoding_layers
     
     def attend(self, encoded_batch: torch.Tensor, sentiment_vectors: torch.Tensor, text_lengths: torch.Tensor) -> torch.Tensor:
         batch_size = sentiment_vectors.shape[0]
         max_sequence_length = max(text_lengths)
+        encoding_hidden_size_times_two = encoded_batch.shape[2]
         assert tuple(encoded_batch.shape) == (batch_size, max_sequence_length, self.encoding_hidden_size*2)
         assert tuple(sentiment_vectors.shape) == (batch_size, self.sentiment_size)
-        
-        sentiment_size = sentiment_vectors.shape[1]
-        duplicated_sentiment_vectors_transposed = sentiment_vectors.unsqueeze(-1).expand(batch_size, sentiment_size, max_sequence_length)
-        assert tuple(duplicated_sentiment_vectors_transposed.shape) == (batch_size, self.sentiment_size, max_sequence_length)
-        
-        dot_products = encoded_batch.bmm(duplicated_sentiment_vectors)
-        assert tuple(dot_products.shape) == (batch_size, max_sequence_length, max_sequence_length)
-        assert tuple(dot_products.unique(dim=2).shape) == (batch_size, max_sequence_length, 1)
-        
-        scaled_dot_products = dot_products / torch.sqrt(torch.tensor(sentiment_size, dtype=float))
-        assert tuple(scaled_dot_products.shape) == (batch_size, max_sequence_length, max_sequence_length)
-        assert tuple(scaled_dot_products.unique(dim=2).shape) == (batch_size, max_sequence_length, 1)
-        
-        pre_softmax_attention_weights = scaled_dot_products[:,:,1]
-        assert tuple(pre_softmax_attention_weights.shape) == (batch_size, max_sequence_length)
-        
-        attention_weights = F.softmax(pre_softmax_attention_weights, dim=1)
-        assert tuple(attention_weights.shape) == (batch_size, max_sequence_length)
-        encoded_batch_hidden_size = encoded_batch.shape[2]
-        assert encoded_batch_hidden_size == sentiment_size
-        attention_weights = attention_weights.unsqueeze(-1).expand(batch_size, max_sequence_length, encoded_batch_hidden_size)
-        assert tuple(attention_weights.shape) == (batch_size, max_sequence_length, encoded_batch_hidden_size)
-        
-        attended_batch = torch.sum(encoded_batch * attention_weights, dim=1)
-        assert tuple(attended_batch.shape) == (batch_size, encoded_batch_hidden_size)
-        
+
+        attended_batch = Variable(torch.zeros(batch_size, max_sequence_length, encoding_hidden_size_times_two).to(encoded_batch.device))
+
+        for batch_index in range(batch_size):
+            sequence_length = text_lengths[batch_index]
+            encoded_matrix = encoded_batch[batch_index, :sequence_length, :]
+            assert tuple(encoded_matrix.shape) == (sequence_length, self.encoding_hidden_size*2)
+
+            sentiment_vector = sentiment_vectors[batch_index]
+            assert tuple(sentiment_vector.shape) == (self.sentiment_size,)
+            
+            for word_index in range(sequence_length):
+                encoded_word_concatenated_with_sentiment_vector = torch.cat([encoded_matrix[word_index],sentiment_vector])
+                assert tuple(encoded_word_concatenated_with_sentiment_vector.shape) == (self.sentiment_size+self.encoding_hidden_size*2,)
+                query_vector = self.attention_query_generating_layers(encoded_word_concatenated_with_sentiment_vector)
+                assert tuple(query_vector.shape) == (self.encoding_hidden_size*2,)
+
+                duplicated_query_vector_transposed = query_vector.unsqueeze(1).expand(encoding_hidden_size_times_two, sequence_length)
+                assert tuple(duplicated_query_vector_transposed.shape) == (self.encoding_hidden_size*2, sequence_length)
+                
+                dot_products = encoded_matrix.mm(duplicated_query_vector_transposed)
+                assert tuple(dot_products.shape) == (sequence_length, sequence_length)
+                assert tuple(dot_products.unique(dim=1).shape) == (sequence_length, 1)
+                dot_products = dot_products[:,0]
+
+                scaled_dot_products = dot_products / torch.sqrt(torch.tensor(encoding_hidden_size_times_two, dtype=float))
+                assert tuple(scaled_dot_products.shape) == (sequence_length,)
+                
+                attention_weights = F.softmax(scaled_dot_products, dim=0)
+                assert tuple(attention_weights.shape) == (sequence_length,)
+                attention_weights = attention_weights.unsqueeze(1).expand(sequence_length, encoding_hidden_size_times_two)
+                        
+                attended_word = torch.sum(encoded_matrix * attention_weights, dim=0)
+                assert tuple(attended_word.shape) == (self.encoding_hidden_size*2,)
+
+                attended_batch[batch_index, word_index, :encoding_hidden_size_times_two] = attended_word
+
+        if __debug__:
+            for batch_index, text_length_tensor in enumerate(text_lengths):
+                text_length = text_length_tensor.item()
+                assert attended_batch[batch_index, text_length:, :].sum().item() == 0
+
+        assert tuple(attended_batch.shape) == (batch_size, max_sequence_length, self.encoding_hidden_size*2)
         return attended_batch
     
     def forward(self, text_batch: torch.Tensor, text_lengths: torch.Tensor, sentiments: List[str]):
@@ -196,9 +218,11 @@ class LSTMScaledDotProductAttentionNetwork(nn.Module):
         assert (encoded_batch_lengths.to(text_lengths.device) == text_lengths).all()
         
         attended_batch = self.attend(encoded_batch, sentiment_vectors, text_lengths)
-        assert tuple(attended_batch.shape) == (batch_size, self.encoding_hidden_size*2)
+        assert tuple(attended_batch.shape) == (batch_size, max_sequence_length, self.encoding_hidden_size*2)
         
         prediction = self.prediction_layers(attended_batch)
+        assert tuple(prediction.shape) == (batch_size, max_sequence_length, 1)
+        prediction = prediction.squeeze(2)
         assert tuple(prediction.shape) == (batch_size, max_sequence_length)
         
         return prediction
@@ -210,25 +234,26 @@ class LSTMScaledDotProductAttentionNetwork(nn.Module):
 class LSTMSentimentConcatenationPredictor(Predictor):
     def initialize_model(self) -> None:
         self.loss_function_spec = self.model_args['loss_function_spec']
-        self.sentiment_embedding_size = self.model_args['sentiment_embedding_size']
+        self.sentiment_size = self.model_args['sentiment_size']
         self.encoding_hidden_size = self.model_args['encoding_hidden_size']
         self.number_of_encoding_layers = self.model_args['number_of_encoding_layers']
         self.dropout_probability = self.model_args['dropout_probability']
         vocab_size = len(self.text_field.vocab)
-        self.model = LSTMSentimentConcatenationNetwork(vocab_size, self.sentiment_embedding_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
+        self.model = LSTMSentimentConcatenationNetwork(vocab_size, self.sentiment_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
         self.optimizer = optim.Adam(self.model.parameters())
         assert self.loss_function_spec in ['BCELoss', 'soft_jaccard_loss'] 
         self.loss_function = soft_jaccard_loss if self.loss_function_spec == 'soft_jaccard_loss' else nn.BCELoss().to(DEVICE)
         return
 
-class LSTMScaledDotProductAttentionNetwork(Predictor):
+class LSTMScaledDotProductAttentionPredictor(Predictor):
     def initialize_model(self) -> None:
         self.loss_function_spec = self.model_args['loss_function_spec']
+        self.sentiment_size = self.model_args['sentiment_size']
         self.encoding_hidden_size = self.model_args['encoding_hidden_size']
         self.number_of_encoding_layers = self.model_args['number_of_encoding_layers']
         self.dropout_probability = self.model_args['dropout_probability']
         vocab_size = len(self.text_field.vocab)
-        self.model = LSTMScaledDotProductAttentionNetwork(vocab_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
+        self.model = LSTMScaledDotProductAttentionNetwork(vocab_size, self.sentiment_size, self.embedding_size, self.encoding_hidden_size, self.number_of_encoding_layers, self.dropout_probability, self.pad_idx, self.unk_idx, self.text_field.vocab.vectors)
         self.optimizer = optim.Adam(self.model.parameters())
         assert self.loss_function_spec in ['BCELoss', 'soft_jaccard_loss'] 
         self.loss_function = soft_jaccard_loss if self.loss_function_spec == 'soft_jaccard_loss' else nn.BCELoss().to(DEVICE)
@@ -244,37 +269,39 @@ def get_default_LSTMSentimentConcatenationPredictor() -> LSTMSentimentConcatenat
     pre_trained_embedding_specification = 'fasttext.en.300d'
     loss_function_spec = 'soft_jaccard_loss'
 
-    sentiment_embedding_size = 512
+    sentiment_size = 512
     encoding_hidden_size = 512
     number_of_encoding_layers = 2
     dropout_probability = 0.5
 
     return LSTMSentimentConcatenationPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, batch_size, TRAIN_PORTION, VALIDATION_PORTION, max_vocab_size, pre_trained_embedding_specification,
                                                loss_function_spec=loss_function_spec,
-                                               sentiment_embedding_size=sentiment_embedding_size, 
+                                               sentiment_size=sentiment_size, 
                                                encoding_hidden_size=encoding_hidden_size,
                                                number_of_encoding_layers=number_of_encoding_layers,
                                                dropout_probability=dropout_probability)
 
-def get_default_LSTMScaledDotProductAttentionNetwork() -> LSTMScaledDotProductAttentionNetwork:
-    batch_size = 32
+def get_default_LSTMScaledDotProductAttentionPredictor() -> LSTMScaledDotProductAttentionPredictor:
+    batch_size = 8
     max_vocab_size = 25_000
     pre_trained_embedding_specification = 'fasttext.en.300d'
     loss_function_spec = 'soft_jaccard_loss'
     
-    encoding_hidden_size = 512
+    sentiment_size = 256
+    encoding_hidden_size = 256
     number_of_encoding_layers = 2
     dropout_probability = 0.5
     
-    return LSTMScaledDotProductAttentionNetwork(OUTPUT_DIR, NUMBER_OF_EPOCHS, batch_size, TRAIN_PORTION, VALIDATION_PORTION, max_vocab_size, pre_trained_embedding_specification,
-                                                loss_function_spec=loss_function_spec,
-                                                encoding_hidden_size=encoding_hidden_size,
-                                                number_of_encoding_layers=number_of_encoding_layers,
-                                                dropout_probability=dropout_probability)
+    return LSTMScaledDotProductAttentionPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, batch_size, TRAIN_PORTION, VALIDATION_PORTION, max_vocab_size, pre_trained_embedding_specification,
+                                                  loss_function_spec=loss_function_spec,
+                                                  sentiment_size=sentiment_size, 
+                                                  encoding_hidden_size=encoding_hidden_size,
+                                                  number_of_encoding_layers=number_of_encoding_layers,
+                                                  dropout_probability=dropout_probability)
 
 @debug_on_error
 def train_model() -> None:
-    predictor = get_default_LSTMScaledDotProductAttentionNetwork()
+    predictor = get_default_LSTMScaledDotProductAttentionPredictor()
     predictor.train()
     predictor.load_parameters(predictor.best_saved_model_location)
     # predictor.demonstrate_training_examples()
