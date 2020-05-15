@@ -141,7 +141,7 @@ class LSTMScaledDotProductAttentionNetwork(nn.Module):
         self.to(DEVICE)
     
     def attend(self, encoded_batch: torch.Tensor, sentiment_vectors: torch.Tensor, text_lengths: torch.Tensor) -> torch.Tensor:
-        batch_size = sentiment_vectors.shape[0]
+        batch_size = text_lengths.shape[0]
         max_sequence_length = max(text_lengths)
         encoding_hidden_size_times_two = encoded_batch.shape[2]
         assert tuple(encoded_batch.shape) == (batch_size, max_sequence_length, self.encoding_hidden_size*2)
@@ -162,30 +162,22 @@ class LSTMScaledDotProductAttentionNetwork(nn.Module):
                 assert tuple(encoded_word_concatenated_with_sentiment_vector.shape) == (self.sentiment_size+self.encoding_hidden_size*2,)
                 query_vector = self.attention_query_generating_layers(encoded_word_concatenated_with_sentiment_vector)
                 assert tuple(query_vector.shape) == (self.encoding_hidden_size*2,)
+                query_vector = query_vector.unsqueeze(0)
+                assert tuple(query_vector.shape) == (1, self.encoding_hidden_size*2)
 
-                # duplicated_query_vector_transposed = query_vector.unsqueeze(1).expand(encoding_hidden_size_times_two, sequence_length)
-                # assert tuple(duplicated_query_vector_transposed.shape) == (self.encoding_hidden_size*2, sequence_length)
-                
-                dot_product = query_vector.unsqueeze(0).mm(encoded_matrix.t())
+                dot_product = query_vector.mm(encoded_matrix.t())
                 assert tuple(dot_product.shape) == (1, sequence_length)
                 dot_product = dot_product.squeeze(0)
                 assert tuple(dot_product.shape) == (sequence_length,)
                 
-                # dot_products = encoded_matrix.mm(duplicated_query_vector_transposed)
-                # assert tuple(dot_products.shape) == (sequence_length, sequence_length)
-                # assert tuple(dot_products.unique(dim=1).shape) == (sequence_length, 1)
-                # dot_products = dot_products[:,0]
-
                 scaled_dot_product = dot_product / torch.sqrt(torch.tensor(encoding_hidden_size_times_two, dtype=float))
                 assert tuple(scaled_dot_product.shape) == (sequence_length,)
 
-                # scaled_dot_products = dot_products / torch.sqrt(torch.tensor(encoding_hidden_size_times_two, dtype=float))
-                # assert tuple(scaled_dot_products.shape) == (sequence_length,)
-
-                # attention_weights = F.softmax(scaled_dot_products, dim=0)
                 attention_weights = F.softmax(scaled_dot_product, dim=0)
                 assert tuple(attention_weights.shape) == (sequence_length,)
+                assert torch.isclose(attention_weights.sum(), torch.tensor(1.0))
                 attention_weights = attention_weights.unsqueeze(1).expand(sequence_length, encoding_hidden_size_times_two)
+                assert tuple(attention_weights.shape) == (sequence_length, self.encoding_hidden_size*2)
                         
                 attended_word = torch.sum(encoded_matrix * attention_weights, dim=0)
                 assert tuple(attended_word.shape) == (self.encoding_hidden_size*2,)
