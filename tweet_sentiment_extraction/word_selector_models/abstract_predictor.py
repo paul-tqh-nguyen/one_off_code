@@ -209,7 +209,7 @@ class Predictor(ABC):
     def determine_training_unknown_words(self) -> None:
         pretrained_embedding_vectors_torchtext = torchtext.vocab.pretrained_aliases[self.pre_trained_embedding_specification]()
         tokens = reduce(set.union, (set(example.preprocessed_input_string) for example in self.training_data))
-        self.training_unk_words = {token for token in tokens if token not in pretrained_embedding_vectors_torchtext.stoi}
+        self.training_oov_words = {token for token in tokens if token not in pretrained_embedding_vectors_torchtext.stoi}
         return
     
     @abstractmethod
@@ -284,7 +284,7 @@ class Predictor(ABC):
             'train_portion': self.train_portion,
             'validation_portion': self.validation_portion,
             'number_of_parameters': self.count_parameters(),
-            'number_of_unk_words': self.number_of_unk_words,
+            'number_of_oov_words': self.number_of_oov_words,
         }
         self_score_dict.update({(key, value.__name__ if hasattr(value, '__name__') else str(value)) for key, value in self.model_args.items()})
         if log_current_model_as_best:
@@ -318,11 +318,11 @@ class Predictor(ABC):
         return os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME)
 
     @property
-    def number_of_unk_words(self) -> int:
-        if 'training_unk_words' not in vars(self):
+    def number_of_oov_words(self) -> int:
+        if 'training_oov_words' not in vars(self):
             self.determine_training_unknown_words()
-            assert 'training_unk_words' in vars(self)
-        return len(self.training_unk_words)
+            assert 'training_oov_words' in vars(self)
+        return len(self.training_oov_words)
 
     @property
     def number_of_relevant_recent_epochs(self) -> int:
@@ -369,11 +369,11 @@ class Predictor(ABC):
         print(f'        vocab_size: {self.vocab_size}')
         print(f'        pre_trained_embedding_specification: {self.pre_trained_embedding_specification}')
         print(f'        output_directory: {self.output_directory}')
-        print(f'        number_of_unk_words: {self.number_of_unk_words}')
+        print(f'        number_of_oov_words: {self.number_of_oov_words}')
         for model_arg_name, model_arg_value in sorted(self.model_args.items()):
             print(f'        {model_arg_name}: {model_arg_value.__name__ if hasattr(model_arg_value, "__name__") else str(model_arg_value)}')
         print()
-        print(f'The model has {self.count_parameters()} trainable parameters.')
+        print(f'The model has {self.count_parameters():,} trainable parameters.')
         print(f"This processes's PID is {os.getpid()}.")
         print()
     
