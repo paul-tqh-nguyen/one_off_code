@@ -221,7 +221,7 @@ class LSTMSentimentConcatenationPredictor(Predictor):
         self.loss_function = soft_jaccard_loss if self.loss_function_spec == 'soft_jaccard_loss' else nn.BCELoss().to(DEVICE)
         return
 
-class LSTMSentimentConcatenationPredictor(Predictor):
+class LSTMScaledDotProductAttentionNetwork(Predictor):
     def initialize_model(self) -> None:
         self.loss_function_spec = self.model_args['loss_function_spec']
         self.encoding_hidden_size = self.model_args['encoding_hidden_size']
@@ -249,17 +249,32 @@ def get_default_LSTMSentimentConcatenationPredictor() -> LSTMSentimentConcatenat
     number_of_encoding_layers = 2
     dropout_probability = 0.5
 
-    return LSTMSentimentConcatenationPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION,
-                                               max_vocab_size, pre_trained_embedding_specification,
+    return LSTMSentimentConcatenationPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, batch_size, TRAIN_PORTION, VALIDATION_PORTION, max_vocab_size, pre_trained_embedding_specification,
                                                loss_function_spec=loss_function_spec,
                                                sentiment_embedding_size=sentiment_embedding_size, 
                                                encoding_hidden_size=encoding_hidden_size,
                                                number_of_encoding_layers=number_of_encoding_layers,
                                                dropout_probability=dropout_probability)
 
+def get_default_LSTMScaledDotProductAttentionNetwork() -> LSTMScaledDotProductAttentionNetwork:
+    batch_size = 32
+    max_vocab_size = 25_000
+    pre_trained_embedding_specification = 'fasttext.en.300d'
+    loss_function_spec = 'soft_jaccard_loss'
+    
+    encoding_hidden_size = 512
+    number_of_encoding_layers = 2
+    dropout_probability = 0.5
+    
+    return LSTMScaledDotProductAttentionNetwork(OUTPUT_DIR, NUMBER_OF_EPOCHS, batch_size, TRAIN_PORTION, VALIDATION_PORTION, max_vocab_size, pre_trained_embedding_specification,
+                                                loss_function_spec=loss_function_spec,
+                                                encoding_hidden_size=encoding_hidden_size,
+                                                number_of_encoding_layers=number_of_encoding_layers,
+                                                dropout_probability=dropout_probability)
+
 @debug_on_error
 def train_model() -> None:
-    predictor = get_default_LSTMSentimentConcatenationPredictor()
+    predictor = get_default_LSTMScaledDotProductAttentionNetwork()
     predictor.train()
     predictor.load_parameters(predictor.best_saved_model_location)
     # predictor.demonstrate_training_examples()

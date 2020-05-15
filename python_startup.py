@@ -363,6 +363,19 @@ def uniq(iterator: Iterable) -> Generator:
             yield value
             previous = value
 
+from itertools import cycle, islice
+from typing import Iterable, Generator
+def roundrobin(*iterables: Iterable) -> Generator:
+    number_of_active_iterables = len(iterables)
+    nexts = cycle(iter(iterable).__next__ for iterable in iterables)
+    while number_of_active_iterables > 0:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            number_of_active_iterables -= 1
+            nexts = cycle(islice(nexts, number_of_active_iterables))
+
 from typing import Iterable 
 def powerset(iterable: Iterable) -> Iterable:
     from itertools import chain, combinations

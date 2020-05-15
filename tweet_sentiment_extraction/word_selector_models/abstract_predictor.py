@@ -270,6 +270,7 @@ class Predictor(ABC):
                 current_global_best_model_jaccard: float = current_global_best_model_score_dict['valid_jaccard']
                 log_current_model_as_best = current_global_best_model_jaccard < valid_jaccard
         self_score_dict = {
+            'predictor_type': self.__class__.__name__,
             'valid_jaccard': valid_jaccard,
             'valid_loss': valid_loss,
             'best_valid_jaccard': self.best_valid_jaccard,
@@ -360,6 +361,7 @@ class Predictor(ABC):
     def print_hyperparameters(self) -> None:
         print()
         print(f"Model hyperparameters are:")
+        print(f'        predictor_type: {self.__class__.__name__}')
         print(f'        number_of_epochs: {self.number_of_epochs}')
         print(f'        number_of_relevant_recent_epochs: {self.number_of_relevant_recent_epochs}')
         print(f'        batch_size: {self.batch_size}')

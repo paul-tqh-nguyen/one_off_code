@@ -14,6 +14,7 @@ import argparse
 import random
 import os
 import itertools
+from typing import Generator
 
 from misc_utilities import *
 from preprocess_data import PREPROCESSED_TRAINING_DATA_JSON_FILE
@@ -30,7 +31,7 @@ WORD_SELECTOR_BEST_MODEL_SCORE_JSON_FILE_LOCATION = os.path.join('./word_selecto
 # Hyperparameter Search #
 #########################
 
-def hyperparameter_search_word_selector_models() -> None:
+def LSTMSentimentConcatenationPredictor_generator() -< Generator[LSTMSentimentConcatenationPredictor, None, None]:
     from word_selector_models.models import LSTMSentimentConcatenationPredictor
     from word_selector_models.abstract_predictor import FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME
     
@@ -64,14 +65,20 @@ def hyperparameter_search_word_selector_models() -> None:
         if os.path.isfile(final_output_results_file):
             print(f'Skipping result generation for {final_output_results_file}.')
         else:
-            with safe_cuda_memory():
-                predictor = LSTMSentimentConcatenationPredictor(output_directory, number_of_epochs, batch_size, train_portion, validation_portion, max_vocab_size, pre_trained_embedding_specification,
-                                                                loss_function_spec=loss_function_spec,
-                                                                sentiment_embedding_size=sentiment_embedding_size, 
-                                                                encoding_hidden_size=encoding_hidden_size,
-                                                                number_of_encoding_layers=number_of_encoding_layers,
-                                                                dropout_probability=dropout_probability)
-                predictor.train()
+            yield predictor = LSTMSentimentConcatenationPredictor(output_directory, number_of_epochs, batch_size, train_portion, validation_portion, max_vocab_size, pre_trained_embedding_specification,
+                                                                  loss_function_spec=loss_function_spec,
+                                                                  sentiment_embedding_size=sentiment_embedding_size, 
+                                                                  encoding_hidden_size=encoding_hidden_size,
+                                                                  number_of_encoding_layers=number_of_encoding_layers,
+                                                                  dropout_probability=dropout_probability)
+
+def hyperparameter_search_word_selector_models() -> None:
+    predictors = roundrobin(
+        LSTMSentimentConcatenationPredictor_generator(),
+    )
+    for predictor in predictors:
+        with safe_cuda_memory():
+            predictor.train()
     return
 
 ##########
