@@ -87,7 +87,7 @@ def LSTMScaledDotProductAttentionPredictor_generator() -> Generator:
 
     sentiment_size_choices = [32, 64, 128, 256]
     encoding_hidden_size_choices = [32, 64, 128, 256]
-    number_of_encoding_layers_choices = [1, 2,4]
+    number_of_encoding_layers_choices = [1, 2, 4]
     dropout_probability_choices = [0.5]
 
     loss_function_spec_choices = ['BCELoss', 'soft_jaccard_loss']
@@ -119,7 +119,7 @@ def LSTMScaledDotProductAttentionPredictor_generator() -> Generator:
 def hyperparameter_search_word_selector_models() -> None:
     predictors = roundrobin(
         LSTMScaledDotProductAttentionPredictor_generator(),
-        LSTMSentimentConcatenationPredictor_generator(),
+        # LSTMSentimentConcatenationPredictor_generator(),
     )
     for predictor in predictors:
         with safe_cuda_memory():
@@ -130,7 +130,6 @@ def hyperparameter_search_word_selector_models() -> None:
 # Driver #
 ##########
 
-@debug_on_error
 def main() -> None:
     parser = argparse.ArgumentParser(formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
     parser.add_argument('-preprocess-data', action='store_true', help=f'Preprocess the raw data. Results stored in {PREPROCESSED_TRAINING_DATA_JSON_FILE}.')
