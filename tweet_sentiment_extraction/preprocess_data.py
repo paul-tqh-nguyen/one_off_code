@@ -18,6 +18,7 @@ import unicodedata
 import tqdm
 import pandas as pd
 import multiprocessing as mp
+import numpy as np
 import concurrent.futures
 from typing import Tuple, List, Callable
 from spacy.tokenizer import Tokenizer
