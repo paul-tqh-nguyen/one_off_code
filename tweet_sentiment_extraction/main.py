@@ -226,6 +226,7 @@ def main() -> None:
     parser.add_argument('-hyperparameter-search-lstm-scaled-dot-product-attention-predictor', action='store_true',
                         help=f'Exhaustively performs hyperparameter random search using only the LSTMScaledDotProductAttentionPredictor model.')
     parser.add_argument('-hyperparameter-search-naive-dense-predictor', action='store_true', help=f'Exhaustively performs hyperparameter random search using only the NaiveDensePredictor model.')
+    parser.add_argument('-bert', action='store_true', help=f'') # @todo fix this
     args = parser.parse_args()
     number_of_args_specified = sum(map(int,vars(args).values()))
     if number_of_args_specified == 0:
@@ -242,7 +243,7 @@ def main() -> None:
         predictors = roundrobin(
             LSTMSentimentConcatenationPredictor_generator(),
             LSTMScaledDotProductAttentionPredictor_generator(),
-            NaiveDensePredictor_generator(),
+            # NaiveDensePredictor_generator(),
         )
         hyperparameter_search(predictors)
     elif args.hyperparameter_search_lstm_sentiment_concatenation_predictor:
@@ -254,6 +255,10 @@ def main() -> None:
     elif args.hyperparameter_search_naive_dense_predictor:
         predictors = NaiveDensePredictor_generator()
         hyperparameter_search(predictors)
+    elif args.bert:
+        # @todo fix this
+        import bert_models.models
+        bert_models.models.train_model()
     else:
         raise Exception('Unexpected args received.')
     return

@@ -347,6 +347,12 @@ from typing import Iterable, Callable, List
 def eager_filter(func: Callable, iterable: Iterable) -> List:
     return list(filter(func, iterable))
 
+from typing import List
+def eager_zip(*args) -> List:
+    args = list(map(tuple, args))
+    assert len(set(map(len, args))) == 1
+    return list(zip(*args))
+
 def identity(input):
     return input
 
