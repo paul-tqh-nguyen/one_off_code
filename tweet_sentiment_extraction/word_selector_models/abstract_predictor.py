@@ -46,7 +46,7 @@ def set_global_device_id(global_device_id: int) -> None:
     assert DEVICE == 'cuda'
     assert global_device_id < torch.cuda.device_count()
     global DEVICE_ID
-    DEVICE_ID == global_device_id
+    DEVICE_ID = global_device_id
     return
 
 FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
@@ -383,7 +383,7 @@ class Predictor(ABC):
         print()
         print(f'The model has {self.count_parameters():,} trainable parameters.')
         print(f"This processes's PID is {os.getpid()}.")
-        if DEVICE == 'cuda':
+        if DEVICE.type == 'cuda':
             print(f'The CUDA device being used is {torch.cuda.get_device_name(DEVICE_ID)}')
             print(f'The CUDA device ID being used is {DEVICE_ID}')
         print()
