@@ -43,10 +43,11 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 DEVICE_ID = None if DEVICE == 'cpu' else torch.cuda.current_device()
 
 def set_global_device_id(global_device_id: int) -> None:
-    assert DEVICE == 'cuda'
+    assert DEVICE.type == 'cuda'
     assert global_device_id < torch.cuda.device_count()
     global DEVICE_ID
     DEVICE_ID = global_device_id
+    torch.cuda.set_device(DEVICE_ID)
     return
 
 FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
@@ -339,7 +340,6 @@ class Predictor(ABC):
         number_of_relevant_recent_epochs = math.ceil(number_of_epochs_per_iteration * NUMBER_OF_RELEVANT_RECENT_ITERATIONS)
         number_of_relevant_recent_epochs = max(MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS, number_of_relevant_recent_epochs)
         return number_of_relevant_recent_epochs
-
     
     def train(self) -> None:
         self.print_hyperparameters()
@@ -387,6 +387,7 @@ class Predictor(ABC):
             print(f'The CUDA device being used is {torch.cuda.get_device_name(DEVICE_ID)}')
             print(f'The CUDA device ID being used is {DEVICE_ID}')
         print()
+        return
     
     def save_parameters(self, parameter_file_location: str) -> None:
         torch.save(self.model.state_dict(), parameter_file_location)

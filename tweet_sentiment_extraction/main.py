@@ -235,9 +235,10 @@ def main() -> None:
                                        arg_value, vars(args).values()))
     if number_of_args_specified == 0:
         parser.print_help()
-    if isinstance(args.cuda_device_id, int):
+    if isinstance(args.cuda_device_id, str):
+        assert args.cuda_device_id.isnumeric()
         import word_selector_models.abstract_predictor
-        word_selector_models.abstract_predictor.set_global_device_id(args.cuda_device_id)
+        word_selector_models.abstract_predictor.set_global_device_id(int(args.cuda_device_id))
     if args.preprocess_data:
         import preprocess_data
         preprocess_data.preprocess_data()
