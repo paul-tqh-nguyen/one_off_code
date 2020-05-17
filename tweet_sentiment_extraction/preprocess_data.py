@@ -61,7 +61,7 @@ def initialize_tokenizer() -> Callable:
     return tokenizer
 TOKENIZER = initialize_tokenizer()
 
-URL_SPECIAL_TOKEN = '<URL_LINK>'
+URL_SPECIAL_TOKEN = 'URLLINK'
 
 SPECIAL_TOKENS = {
     URL_SPECIAL_TOKEN,

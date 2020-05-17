@@ -137,6 +137,11 @@ def doc(obj) -> None:
     print(inspect.getdoc(obj))
     return
 
+def parent_classes(obj) -> None:
+    import inspect
+    cls = obj if inspect.isclass(obj) else type(obj)
+    return inspect.getmro(cls)
+
 from typing import Iterable
 def p1(iterable: Iterable) -> None:
     for e in iterable:
