@@ -38,7 +38,6 @@ import functools
 import itertools
 import inspect
 import signal
-import tqdm
 from importlib import reload
 from inspect import getfile, getsource, getsourcefile
 from inspect import getmodule
@@ -64,6 +63,15 @@ def safe_cuda_memory():
             raise
         else:
             print("CUDA ran out of memory.")
+
+from contextlib import contextmanager
+@contextmanager
+def warnings_suppressed() -> None:
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        yield
+    return
 
 import io
 from contextlib import contextmanager
@@ -159,13 +167,15 @@ def current_tensors() -> List:
     import gc
     return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
 
-import tqdm
 def _dummy_tqdm_message_func(index: int):
     return ''
 def tqdm_with_message(iterable,
                       pre_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
                       post_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
                       *args, **kwargs):
+    import tqdm
+    if 'bar_format' not in kwargs:
+        kwargs['bar_format']='{l_bar}{bar:50}{r_bar}'
     progress_bar_iterator = tqdm.tqdm(iterable, *args, **kwargs)
     for index, element in enumerate(progress_bar_iterator):
         if pre_yield_message_func != _dummy_tqdm_message_func:

@@ -218,6 +218,7 @@ def hyperparameter_search(predictors: Iterable) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
+    parser.add_argument('-cuda-device-id', help=f'Set the CUDA device ID.')
     parser.add_argument('-preprocess-data', action='store_true', help=f'Preprocess the raw data. Results stored in {PREPROCESSED_TRAINING_DATA_JSON_FILE}.')
     parser.add_argument('-train-word-selector-model', action='store_true', help=f'Trains & evaluates our word selector model on our preprocessed dataset. Results are saved to {WORD_SELECTOR_RESULTS_DIRECTORY}.')
     parser.add_argument('-hyperparameter-search-word-selector-models', action='store_true',
@@ -226,41 +227,40 @@ def main() -> None:
     parser.add_argument('-hyperparameter-search-lstm-scaled-dot-product-attention-predictor', action='store_true',
                         help=f'Exhaustively performs hyperparameter random search using only the LSTMScaledDotProductAttentionPredictor model.')
     parser.add_argument('-hyperparameter-search-naive-dense-predictor', action='store_true', help=f'Exhaustively performs hyperparameter random search using only the NaiveDensePredictor model.')
-    parser.add_argument('-bert', action='store_true', help=f'') # @todo fix this
+    parser.add_argument('-bert', action='store_true', help=f'@todo fill this in') # @todo fix this
     args = parser.parse_args()
-    number_of_args_specified = sum(map(int,vars(args).values()))
+    number_of_args_specified = sum(map(lambda arg_value: int(arg_value) if isinstance(arg_value, bool) else 0 if arg_value is None else 1 if isinstance(arg_value, int) else arg_value, vars(args).values()))
     if number_of_args_specified == 0:
         parser.print_help()
-    elif number_of_args_specified > 1:
-        print('Please specify exactly one action.')
-    elif args.preprocess_data:
+    if isinstance(args.cuda_device_id, int):
+        import word_selector_models.abstract_predictor
+        word_selector_models.abstract_predictor.set_global_device_id(args.cuda_device_id)
+    if args.preprocess_data:
         import preprocess_data
         preprocess_data.preprocess_data()
-    elif args.train_word_selector_model:
+    if args.train_word_selector_model:
         from word_selector_models.models import train_model
         train_model()
-    elif args.hyperparameter_search_word_selector_models:
+    if args.hyperparameter_search_word_selector_models:
         predictors = roundrobin(
             LSTMSentimentConcatenationPredictor_generator(),
             LSTMScaledDotProductAttentionPredictor_generator(),
             # NaiveDensePredictor_generator(),
         )
         hyperparameter_search(predictors)
-    elif args.hyperparameter_search_lstm_sentiment_concatenation_predictor:
+    if args.hyperparameter_search_lstm_sentiment_concatenation_predictor:
         predictors = LSTMSentimentConcatenationPredictor_generator()
         hyperparameter_search(predictors)
-    elif args.hyperparameter_search_lstm_scaled_dot_product_attention_predictor:
+    if args.hyperparameter_search_lstm_scaled_dot_product_attention_predictor:
         predictors = LSTMScaledDotProductAttentionPredictor_generator()
         hyperparameter_search(predictors)
-    elif args.hyperparameter_search_naive_dense_predictor:
+    if args.hyperparameter_search_naive_dense_predictor:
         predictors = NaiveDensePredictor_generator()
         hyperparameter_search(predictors)
-    elif args.bert:
+    if args.bert:
         # @todo fix this
         import bert_models.models
         bert_models.models.train_model()
-    else:
-        raise Exception('Unexpected args received.')
     return
 
 if __name__ == '__main__':

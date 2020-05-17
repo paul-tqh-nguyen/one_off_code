@@ -172,9 +172,15 @@
  cuda-fourth
  cuda-fifth
  jupyter
- gpu-1
- gpu-2
- gpu-3
+ gpu1
+ gpu2
+ gpu3
+ gpu4
+ gpu5
+ gpu6
+ gpu7
+ gpu8
+ gpu9
  )
 
 (defun start-cuda-shells ()
@@ -207,15 +213,83 @@
 		      jupyter
 		      shell
 		      
-		      gpu-1
+		      gpu1
 		      shell
 		      
-		      gpu-2
+		      gpu2
 		      shell
 		      
-		      gpu-3
+		      gpu3
+		      shell
+		      
+		      gpu4
+		      shell
+		      
+		      gpu5
+		      shell
+		      
+		      gpu6
+		      shell
+		      
+		      gpu7
+		      shell
+		      
+		      gpu8
+		      shell
+		      
+		      gpu9
 		      shell
 		      )))
+
+(defun gpu-farm ()
+  (interactive)
+  (let* ((insert-text-with-cuda-id (lambda (device-id)
+				     (insert
+				      (format "conda deactivate
+conda activate ml
+cd ~/code/one_off_code/tweet_sentiment_extraction/
+for i in $(seq 1 10) ; do python3 main.py -cuda-device-id %d -hyperparameter-search-lstm-sentiment-concatenation-predictor ; done
+" device-id)))))
+    (delete-other-windows)
+    (gpu3)
+    (funcall insert-text-with-cuda-id 1)
+    (split-window-right)
+    (gpu2)
+    (funcall insert-text-with-cuda-id 1)
+    (split-window-right)
+    (gpu1)
+    (funcall insert-text-with-cuda-id 1)
+    (split-window-below)
+    (other-window 1)
+    (gpu4)
+    (funcall insert-text-with-cuda-id 2)
+    (other-window 1)
+    (split-window-below)
+    (other-window 1)
+    (gpu5)
+    (funcall insert-text-with-cuda-id 2)
+    (other-window 1)
+    (split-window-below)
+    (other-window 1)
+    (gpu6)
+    (funcall insert-text-with-cuda-id 2)
+    (other-window 2)
+    (split-window-below)
+    (other-window 1)
+    (gpu7)
+    (funcall insert-text-with-cuda-id 3)
+    (other-window 2)
+    (split-window-below)
+    (other-window 1)
+    (gpu8)
+    (funcall insert-text-with-cuda-id 3)
+    (other-window 2)
+    (split-window-below)
+    (other-window 1)
+    (gpu9)
+    (funcall insert-text-with-cuda-id 3)
+    (balance-windows)
+    ))
 
 ;; Start Up Shells
 

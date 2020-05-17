@@ -31,7 +31,8 @@ import torchtext
 # Globals #
 ###########
 
-tqdm.tqdm.pandas()
+with warnings_suppressed():
+    tqdm.tqdm.pandas()
 
 TRAINING_DATA_CSV_FILE = './data/train.csv'
 PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
