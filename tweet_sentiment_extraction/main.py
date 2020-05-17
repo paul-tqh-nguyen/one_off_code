@@ -229,7 +229,10 @@ def main() -> None:
     parser.add_argument('-hyperparameter-search-naive-dense-predictor', action='store_true', help=f'Exhaustively performs hyperparameter random search using only the NaiveDensePredictor model.')
     parser.add_argument('-bert', action='store_true', help=f'@todo fill this in') # @todo fix this
     args = parser.parse_args()
-    number_of_args_specified = sum(map(lambda arg_value: int(arg_value) if isinstance(arg_value, bool) else 0 if arg_value is None else 1 if isinstance(arg_value, int) else arg_value, vars(args).values()))
+    number_of_args_specified = sum(map(lambda arg_value: 
+                                       int(arg_value) if isinstance(arg_value, bool) else 
+                                       0 if arg_value is None else 1 if (isinstance(arg_value, str) and arg_value.isnumeric()) else 
+                                       arg_value, vars(args).values()))
     if number_of_args_specified == 0:
         parser.print_help()
     if isinstance(args.cuda_device_id, int):
@@ -265,3 +268,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+ 

@@ -244,8 +244,8 @@
 (defun gpu-farm ()
   (interactive)
   (let* ((insert-text-with-cuda-id (lambda (device-id)
-				     (insert
-				      (format "conda deactivate
+				    (insert
+				     (format "conda deactivate
 conda activate ml
 cd ~/code/one_off_code/tweet_sentiment_extraction/
 for i in $(seq 1 10) ; do python3 main.py -cuda-device-id %d -hyperparameter-search-lstm-sentiment-concatenation-predictor ; done
