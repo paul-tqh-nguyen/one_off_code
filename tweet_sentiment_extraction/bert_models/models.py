@@ -170,6 +170,8 @@ class BERTPredictor():
         
         self.number_of_epochs = number_of_epochs
         self.batch_size = batch_size
+        self.train_portion = train_portion
+        self.validation_portion = validation_portion
         self.gradient_clipping_threshold = gradient_clipping_threshold
         
         self.load_data()
@@ -181,7 +183,7 @@ class BERTPredictor():
 
         self.jaccard_threshold = 0.5 # @todo optimize this
         
-    def load_data() -> None:
+    def load_data(self) -> None:
         with open(preprocess_data.PREPROCESSED_TRAINING_DATA_JSON_FILE) as file_handle:
             rows = [json.loads(line) for line in file_handle.readlines()]
             rows = rows[:1_000]
@@ -380,13 +382,13 @@ class BERTPredictor():
 
         return
 
-class RoBERTaPredictor():
-    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: int, validation_portion: int, gradient_clipping_threshold: float, initial_learning_rate):
+class RoBERTaPredictor(BERTPredictor):
+    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: int, validation_portion: int, gradient_clipping_threshold: float, initial_learning_rate: float):
         transformers_model_config = RobertaConfig.from_pretrained(TRANSFORMERS_MODEL_SPEC)
         model = RobertaForTokenClassification(transformers_model_config).to(DEVICE)
         loss_function = nn.BCELoss()
-        optimizer = optim.Adam(params=model.parameters(), lr=INITIAL_LEARNING_RATE)
-        super().__init__()
+        optimizer = optim.Adam(params=model.parameters(), lr=initial_learning_rate)
+        super().__init__(output_directory, number_of_epochs, batch_size, train_portion, validation_portion, gradient_clipping_threshold, model, loss_function, optimizer)
 
 ###############
 # Main Driver #
@@ -394,7 +396,7 @@ class RoBERTaPredictor():
 
 @debug_on_error
 def train_model() -> None:
-    predictor = BERTPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, GRADIENT_CLIPPING_THRESHOLD, model, loss_function, optimizer)
+    predictor = RoBERTaPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, GRADIENT_CLIPPING_THRESHOLD, INITIAL_LEARNING_RATE)
     predictor.train()
     return 
 
