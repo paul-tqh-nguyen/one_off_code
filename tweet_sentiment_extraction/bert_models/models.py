@@ -62,6 +62,7 @@ NOT_SELECTED_OUTPUT_VALUE = [1,0]
 
 NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
 MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
+MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 30
 
 OUTPUT_DIR = './default_output'
 TRAIN_PORTION = 0.75
@@ -186,7 +187,6 @@ class BERTPredictor():
     def load_data(self) -> None:
         with open(preprocess_data.PREPROCESSED_TRAINING_DATA_JSON_FILE) as file_handle:
             rows = [json.loads(line) for line in file_handle.readlines()]
-            rows = rows[:1_000]
         random.shuffle(rows)
         number_of_training_examples = round(self.train_portion*len(rows))
         print()
@@ -207,6 +207,7 @@ class BERTPredictor():
         number_of_epochs_per_iteration = number_of_iterations_per_epoch ** -1
         number_of_relevant_recent_epochs = math.ceil(number_of_epochs_per_iteration * NUMBER_OF_RELEVANT_RECENT_ITERATIONS)
         number_of_relevant_recent_epochs = max(MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS, number_of_relevant_recent_epochs)
+        number_of_relevant_recent_epochs = min(MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS, number_of_relevant_recent_epochs)
         return number_of_relevant_recent_epochs
     
     def train_one_epoch(self) -> Tuple[float, float]:
@@ -270,6 +271,10 @@ class BERTPredictor():
                 current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
                 current_global_best_model_jaccard: float = current_global_best_model_score_dict['valid_jaccard']
                 log_current_model_as_best = current_global_best_model_jaccard < valid_jaccard
+        if valid_jaccard > self.best_valid_jaccard:
+            self.best_valid_jaccard = valid_jaccard
+            self.save_parameters(self.best_saved_model_location)
+            print(f'Best model so far saved to {self.best_saved_model_location}')
         self_score_dict = {
             'predictor_type': self.__class__.__name__,
             'valid_jaccard': valid_jaccard,
@@ -291,10 +296,6 @@ class BERTPredictor():
         if result_is_from_final_run:
             with open(self.final_model_score_location, 'w') as outfile:
                 json.dump(self_score_dict, outfile)
-        if valid_jaccard > self.best_valid_jaccard:
-            self.best_valid_jaccard = valid_jaccard
-            self.save_parameters(self.best_saved_model_location)
-            print(f'Best model so far saved to {self.best_saved_model_location}')
         return valid_loss, valid_jaccard
     
     def count_parameters(self) -> int:

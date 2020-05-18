@@ -310,12 +310,9 @@ def RoBERTaPredictor_generator() -> Generator:
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)
     
-    # batch_size_choices = [1, 32, 64, 128]
-    # gradient_clipping_threshold_choices = [10, 30, 50]
-    # initial_learning_rate_choices = [1e-5, 1e-7, 1e-8, 1e-9, 1e-10]
-    batch_size_choices = [128]
-    gradient_clipping_threshold_choices = [10]
-    initial_learning_rate_choices = [1e-10]
+    batch_size_choices = [1, 32, 64, 128]
+    gradient_clipping_threshold_choices = [10, 20, 30, 50]
+    initial_learning_rate_choices = [1e-5, 1e-8, 1e-10]
     
     hyparameter_list_choices = list(itertools.product(batch_size_choices,
                                                       gradient_clipping_threshold_choices,
@@ -328,7 +325,7 @@ def RoBERTaPredictor_generator() -> Generator:
         if os.path.isfile(final_output_results_file):
             print(f'Skipping result generation for {final_output_results_file}.')
         else:
-            predictor = RoBERTaPredictor(output_dir, number_of_epochs, batch_size, train_portion, validation_portion, gradient_clipping_threshold, initial_learning_rate)
+            predictor = RoBERTaPredictor(output_directory, number_of_epochs, batch_size, train_portion, validation_portion, gradient_clipping_threshold, initial_learning_rate)
             yield predictor
 
 def hyperparameter_search(predictors: Iterable) -> None:
