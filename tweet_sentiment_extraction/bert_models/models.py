@@ -23,6 +23,7 @@ import preprocess_data
 
 import torch
 import torch.nn as nn
+from torch.nn.utils import clip_grad_norm_
 import torch.nn.functional as F
 from torch.utils import data
 import torch.optim as optim
@@ -60,16 +61,17 @@ IS_SELECTED_OUTPUT_VALUE = [0,1]
 NOT_SELECTED_OUTPUT_VALUE = [1,0]
 
 NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
-MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
+MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
 
 OUTPUT_DIR = './default_output'
 TRAIN_PORTION = 0.75
 VALIDATION_PORTION = 1-TRAIN_PORTION
 NUMBER_OF_EPOCHS = 100
 
-BATCH_SIZE = 32
-NON_TRAINING_BATCH_SIZE = 128
-INITIAL_LEARNING_RATE = 1e-5
+BATCH_SIZE = 1
+NON_TRAINING_BATCH_SIZE = 256
+INITIAL_LEARNING_RATE = 1e-7
+GRADIENT_CLIPPING_THRESHOLD = 10
 
 TRANSFORMERS_MODEL_SPEC = 'roberta-base'
 TRANSFORMERS_TOKENIZER = RobertaTokenizer.from_pretrained(TRANSFORMERS_MODEL_SPEC)
@@ -102,14 +104,14 @@ class TweetSentimentSelectionDataset(data.Dataset):
         self.x = eager_map(self._model_input_from_row, tqdm_with_message(rows, post_yield_message_func = lambda index: f'Loading Input Example {index}', ))
         self.y = eager_map(self._model_output_from_row, tqdm_with_message(rows, post_yield_message_func = lambda index: f'Loading Output Example {index}', ))
         assert eager_map(lambda x: x.shape[0], self.x) == eager_map(lambda y: y.shape[0], self.y)
-
+        
     def _model_input_from_row(self, row: dict) -> torch.LongTensor:
         preprocessed_input_string = row['preprocessed_input_string']
         sentiment = row['sentiment']
         ids = TRANSFORMERS_TOKENIZER.encode(preprocessed_input_string, sentiment)
         id_tensor = torch.LongTensor(ids)
         return id_tensor
-
+    
     def _model_output_from_row(self, row: dict) -> torch.FloatTensor:
         preprocessed_input_string = row['preprocessed_input_string']
         words = preprocessed_input_string.split()
@@ -126,7 +128,7 @@ class TweetSentimentSelectionDataset(data.Dataset):
         assert len(output_values) == len(TRANSFORMERS_TOKENIZER.encode(preprocessed_input_string, row['sentiment']))
         output_tensor = torch.FloatTensor(output_values)
         return output_tensor
-            
+    
     def __getitem__(self, index):
         return self.x[index], self.y[index]
     
@@ -150,28 +152,12 @@ def collate(input_output_pairs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tenso
     assert tuple(padded_output_tensor_batch.shape) == (batch_size, max_sequence_length, 2)
     return padded_input_tensor_batch, padded_output_tensor_batch
 
-def load_data() -> Tuple[data.DataLoader, data.DataLoader]:
-    with open(preprocess_data.PREPROCESSED_TRAINING_DATA_JSON_FILE) as file_handle:
-        rows = [json.loads(line) for line in file_handle.readlines()]
-    random.shuffle(rows)
-    number_of_training_examples = round(TRAIN_PORTION*len(rows))
-    print()
-    print('Loading Training Data...')
-    training_dataset = TweetSentimentSelectionDataset(rows[:number_of_training_examples])
-    print()
-    print('Loading Validation Data...')
-    validation_dataset = TweetSentimentSelectionDataset(rows[number_of_training_examples:])
-    assert len(validation_dataset) == round(VALIDATION_PORTION*len(rows))
-    training_data_loader = data.DataLoader(training_dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
-    validation_data_loader = data.DataLoader(validation_dataset, batch_size=NON_TRAINING_BATCH_SIZE, shuffle=False, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
-    return training_data_loader, validation_data_loader
-
 ##############
 # Predictors #
 ##############
 
 class BERTPredictor():
-    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, model: nn.modules.module.Module, loss_function: Callable, optimizer: optim.Optimizer):
+    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: int, validation_portion: int, gradient_clipping_threshold: float, model: nn.modules.module.Module, loss_function: Callable, optimizer: optim.Optimizer):
         self.best_valid_jaccard = -1
         
         self.output_directory = output_directory
@@ -184,8 +170,9 @@ class BERTPredictor():
         
         self.number_of_epochs = number_of_epochs
         self.batch_size = batch_size
+        self.gradient_clipping_threshold = gradient_clipping_threshold
         
-        self.training_data_loader, self.validation_data_loader = load_data() # @todo this uses the global batch_size ; make this a method
+        self.load_data()
         
         self.model = model
         self.loss_function = loss_function
@@ -193,7 +180,25 @@ class BERTPredictor():
         assert sanity_check_model_forward_pass(self.model, self.validation_data_loader)
 
         self.jaccard_threshold = 0.5 # @todo optimize this
-
+        
+    def load_data() -> None:
+        with open(preprocess_data.PREPROCESSED_TRAINING_DATA_JSON_FILE) as file_handle:
+            rows = [json.loads(line) for line in file_handle.readlines()]
+            rows = rows[:1_000]
+        random.shuffle(rows)
+        number_of_training_examples = round(self.train_portion*len(rows))
+        print()
+        print('Loading Training Data...')
+        training_dataset = TweetSentimentSelectionDataset(rows[:number_of_training_examples])
+        print()
+        print('Loading Validation Data...')
+        validation_dataset = TweetSentimentSelectionDataset(rows[number_of_training_examples:])
+        assert len(validation_dataset) == round(self.validation_portion*len(rows))
+        training_data_loader = data.DataLoader(training_dataset, batch_size=self.batch_size, shuffle=True, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
+        validation_data_loader = data.DataLoader(validation_dataset, batch_size=NON_TRAINING_BATCH_SIZE, shuffle=False, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
+        self.training_data_loader, self.validation_data_loader = training_data_loader, validation_data_loader
+        return
+    
     @property
     def number_of_relevant_recent_epochs(self) -> int:
         number_of_iterations_per_epoch = len(self.training_data_loader) / self.batch_size
@@ -205,10 +210,10 @@ class BERTPredictor():
     def train_one_epoch(self) -> Tuple[float, float]:
         epoch_loss = 0
         epoch_jaccard = 0
-        self.optimizer.zero_grad()
         for batch_index, (text_batch, labels) in tqdm_with_message(enumerate(self.training_data_loader),
                                                                    post_yield_message_func = lambda index: f'Training Jaccard {epoch_jaccard/(index+1):.8f}',
                                                                    total=len(self.training_data_loader)):
+            self.optimizer.zero_grad()
             text_batch = text_batch.to(DEVICE)
             labels = labels.to(DEVICE)
             pre_softmax_labels = only_one(self.model.forward(text_batch))
@@ -221,9 +226,10 @@ class BERTPredictor():
             epoch_loss += loss.item()
             epoch_jaccard += self.scores_of_discretized_values(predicted_labels, labels)
             loss.backward()
+            clip_grad_norm_(self.model.parameters(), self.gradient_clipping_threshold)
             self.optimizer.step()
-        epoch_loss /= len(self.validation_data_loader)
-        epoch_jaccard /= len(self.validation_data_loader)
+        epoch_loss /= len(self.training_data_loader)
+        epoch_jaccard /= len(self.training_data_loader)
         return epoch_loss, epoch_jaccard
     
     def evaluate(self) -> Tuple[float, float]:
@@ -271,8 +277,8 @@ class BERTPredictor():
             'most_recently_completed_epoch_index': epoch_index,
             'number_of_relevant_recent_epochs': self.number_of_relevant_recent_epochs,
             'batch_size': self.batch_size,
-            'train_portion': TRAIN_PORTION, # @todo make this an attribute
-            'validation_portion': VALIDATION_PORTION, # @todo make this an attribute
+            'train_portion': self.train_portion,
+            'validation_portion': self.validation_portion,
             'number_of_parameters': self.count_parameters(),
         }
         if log_current_model_as_best:
@@ -291,6 +297,9 @@ class BERTPredictor():
     
     def count_parameters(self) -> int:
         return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+    
+    def gradient_norm(self) -> float:
+        return sum(torch.sum(p.grad.data**2).item() for p in self.model.parameters() if p.grad is not None) ** (1. / 2)
     
     @property
     def latest_model_score_location(self) -> str:
@@ -371,17 +380,21 @@ class BERTPredictor():
 
         return
 
+class RoBERTaPredictor():
+    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: int, validation_portion: int, gradient_clipping_threshold: float, initial_learning_rate):
+        transformers_model_config = RobertaConfig.from_pretrained(TRANSFORMERS_MODEL_SPEC)
+        model = RobertaForTokenClassification(transformers_model_config).to(DEVICE)
+        loss_function = nn.BCELoss()
+        optimizer = optim.Adam(params=model.parameters(), lr=INITIAL_LEARNING_RATE)
+        super().__init__()
+
 ###############
 # Main Driver #
 ###############
 
 @debug_on_error
 def train_model() -> None:
-    transformers_model_config = RobertaConfig.from_pretrained(TRANSFORMERS_MODEL_SPEC)
-    model = RobertaForTokenClassification(transformers_model_config).to(DEVICE)
-    loss_function = nn.BCELoss()
-    optimizer = optim.Adam(params=model.parameters(), lr=INITIAL_LEARNING_RATE)
-    predictor = BERTPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, model, loss_function, optimizer)
+    predictor = BERTPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, GRADIENT_CLIPPING_THRESHOLD, model, loss_function, optimizer)
     predictor.train()
     return 
 
