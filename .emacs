@@ -311,7 +311,7 @@
 		   (format "conda deactivate
 conda activate ml
 cd ~/code/one_off_code/tweet_sentiment_extraction/
-for i in $(seq 1 1000) ; do python3 main.py -hyperparameter-search-roberta ; done" device-id))
+for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d -hyperparameter-search-roberta ; done" device-id))
 		  (comint-send-input))))
 
 ;; Start Up Shells

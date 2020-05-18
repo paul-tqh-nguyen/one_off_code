@@ -388,8 +388,10 @@ def main() -> None:
         hyperparameter_search(predictors)
     if args.bert:
         # @todo fix this
-        import bert_models.models
-        bert_models.models.train_model()
+        # import bert_models.models
+        # bert_models.models.train_model()
+        import bert_models.experiment
+        bert_models.experiment.main()
     if args.hyperparameter_search_roberta:
         predictors = RoBERTaPredictor_generator()
         hyperparameter_search(predictors)
