@@ -15,27 +15,25 @@ import torch
 import pandas as pd
 import torch.nn as nn
 import numpy as np
+
+import sys ; sys.path.append("..")
+from misc_utilities import *
+
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
-
 from sklearn import model_selection
 from sklearn import metrics
-import transformers
 import tokenizers
-from transformers import AdamW
-from transformers import get_linear_schedule_with_warmup
-from tqdm.autonotebook import tqdm
+with warnings_suppressed():
+    import transformers
+    from transformers import AdamW, get_linear_schedule_with_warmup, RobertaTokenizer
+import tqdm
 import utils
-
-# import sys ; sys.path.append("..")
-# from misc_utilities import *
-# import preprocess_data
 
 ###########
 # Globals #
 ###########
 
-ROBERTA_PATH = "../roberta/"
 TOKENIZER = RobertaTokenizer.from_pretrained('roberta-base')
 TRAINING_FILE = "./train_folds.csv"
 MAX_LEN = 192
@@ -71,7 +69,8 @@ def process_data(tweet, selected_text, sentiment, tokenizer, max_len):
         for ct in range(idx0, idx1 + 1):
             char_targets[ct] = 1
     
-    tok_tweet = tokenizer.encode(tweet)
+    tok_tweet = tokenizer.encode_plus(tweet)
+    print(f"tok_tweet {repr(tok_tweet)}")
     input_ids_orig = tok_tweet.ids
     tweet_offsets = tok_tweet.offsets
     
@@ -158,7 +157,7 @@ class TweetModel(transformers.BertPreTrainedModel):
     def __init__(self, conf):
         super(TweetModel, self).__init__(conf)
         # Load the pretrained BERT model
-        self.roberta = transformers.RobertaModel.from_pretrained(ROBERTA_PATH, config=conf)
+        self.roberta = transformers.RobertaModel.from_pretrained('roberta-base', config=conf)
         # Set 10% dropout to be applied to the BERT backbone's output
         self.drop_out = nn.Dropout(0.1)
         # 768 is the dimensionality of bert-base-uncased's hidden representations
@@ -214,7 +213,7 @@ def train_fn(data_loader, model, optimizer, device, scheduler=None):
     jaccards = utils.AverageMeter()
 
     # Set tqdm to add loading screen and set the length
-    tk0 = tqdm(data_loader, total=len(data_loader))
+    tk0 = tqdm.tqdm(data_loader, total=len(data_loader))
     
     # Train the model on each batch
     for bi, d in enumerate(tk0):
@@ -335,7 +334,7 @@ def eval_fn(data_loader, model, device):
     
     # Turns off gradient calculations (https://datascience.stackexchange.com/questions/32651/what-is-the-use-of-torch-no-grad-in-pytorch)
     with torch.no_grad():
-        tk0 = tqdm(data_loader, total=len(data_loader))
+        tk0 = tqdm.tqdm(data_loader, total=len(data_loader))
         # Make predictions and calculate loss / jaccard score for each batch
         for bi, d in enumerate(tk0):
             ids = d["ids"]
@@ -441,7 +440,7 @@ def run(fold):
     # Set device as `cuda` (GPU)
     device = torch.device("cuda")
     # Load pretrained RoBERTa
-    model_config = transformers.RobertaConfig.from_pretrained(ROBERTA_PATH)
+    model_config = transformers.RobertaConfig.from_pretrained('roberta-base')
     # Output hidden states
     # This is important to set since we want to concatenate the hidden states from the last 2 BERT layers
     model_config.output_hidden_states = True
@@ -538,7 +537,7 @@ def main() -> None:
     df_test.loc[:, "selected_text"] = df_test.text.values
     
     device = torch.device("cuda")
-    model_config = transformers.RobertaConfig.from_pretrained(ROBERTA_PATH)
+    model_config = transformers.RobertaConfig.from_pretrained('roberta-base')
     model_config.output_hidden_states = True
     
     # Load each of the five trained models and move to GPU
@@ -586,7 +585,7 @@ def main() -> None:
     
     # Turn of gradient calculations
     with torch.no_grad():
-        tk0 = tqdm(data_loader, total=len(data_loader))
+        tk0 = tqdm.tqdm(data_loader, total=len(data_loader))
         # Predict the span containing the sentiment for each batch
         for bi, d in enumerate(tk0):
             ids = d["ids"]

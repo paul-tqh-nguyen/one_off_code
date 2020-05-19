@@ -14,6 +14,7 @@ import os
 import json
 import random
 import math
+import tqdm
 import pandas as pd
 from typing import Tuple, Iterable, List, Any
 
@@ -29,10 +30,14 @@ from torch.utils import data
 import torch.optim as optim
 with warnings_suppressed():
     from transformers import RobertaTokenizer, RobertaForTokenClassification, RobertaConfig
+from sklearn.model_selection import train_test_split
 
 ###########
 # Globals #
 ###########
+
+with warnings_suppressed():
+    tqdm.tqdm.pandas()
 
 # @todo unify these globals with those in the abstract_predictor.py file
 
@@ -100,21 +105,18 @@ def sanity_check_model_forward_pass(model: nn.modules.module.Module, dataloader:
 #############
 
 class TweetSentimentSelectionDataset(data.Dataset):
-    def __init__(self, rows: List[dict]):
-        self.rows = rows
-        self.x = eager_map(self._model_input_from_row, tqdm_with_message(rows, post_yield_message_func = lambda index: f'Loading Input Example {index}', ))
-        self.y = eager_map(self._model_output_from_row, tqdm_with_message(rows, post_yield_message_func = lambda index: f'Loading Output Example {index}', ))
+    def __init__(self, data_df: pd.DataFrame):
+        self.data_df = data_df
+        self.x = data_df[['text', 'sentiment']].progress_apply(lambda row: self._model_input_from_row(row[0], row[1]), axis=1)
+        self.y = data_df[['text', 'selected_text']].progress_apply(lambda row: self._model_output_from_row(row[0], row[1]), axis=1)
         assert eager_map(lambda x: x.shape[0], self.x) == eager_map(lambda y: y.shape[0], self.y)
         
-    def _model_input_from_row(self, row: dict) -> torch.LongTensor:
-        preprocessed_input_string = row['preprocessed_input_string']
-        sentiment = row['sentiment']
-        ids = TRANSFORMERS_TOKENIZER.encode(preprocessed_input_string, sentiment)
+    def _model_input_from_row(self, text: str, sentiment: str) -> torch.LongTensor:
+        ids = TRANSFORMERS_TOKENIZER.encode(text, sentiment)
         id_tensor = torch.LongTensor(ids)
         return id_tensor
     
-    def _model_output_from_row(self, row: dict) -> torch.FloatTensor:
-        preprocessed_input_string = row['preprocessed_input_string']
+    def _model_output_from_row(self, text: str, selected_text: str) -> torch.FloatTensor:
         words = preprocessed_input_string.split()
         numericalized_selected_text = row['numericalized_selected_text']
         assert set(numericalized_selected_text).issubset('01')
@@ -185,16 +187,14 @@ class BERTPredictor():
         self.jaccard_threshold = 0.5 # @todo optimize this
         
     def load_data(self) -> None:
-        with open(preprocess_data.PREPROCESSED_TRAINING_DATA_JSON_FILE) as file_handle:
-            rows = [json.loads(line) for line in file_handle.readlines()]
-        random.shuffle(rows)
-        number_of_training_examples = round(self.train_portion*len(rows))
+        all_data_df = pd.read_csv(preprocess_data.TRAINING_DATA_CSV_FILE)
+        training_data_df, validation_data_df = train_test_split(all_data_df, test_size=VALIDATION_PORTION)
         print()
         print('Loading Training Data...')
-        training_dataset = TweetSentimentSelectionDataset(rows[:number_of_training_examples])
+        training_dataset = TweetSentimentSelectionDataset(training_data_df)
         print()
         print('Loading Validation Data...')
-        validation_dataset = TweetSentimentSelectionDataset(rows[number_of_training_examples:])
+        validation_dataset = TweetSentimentSelectionDataset(validation_data_df)
         assert len(validation_dataset) == round(self.validation_portion*len(rows))
         training_data_loader = data.DataLoader(training_dataset, batch_size=self.batch_size, shuffle=True, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
         validation_data_loader = data.DataLoader(validation_dataset, batch_size=NON_TRAINING_BATCH_SIZE, shuffle=False, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
