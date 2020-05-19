@@ -1,6 +1,26 @@
 
 # Debugging Utilities
 
+from contextlib import contextmanager
+@contextmanager
+def safe_cuda_memory():
+    try:
+        yield
+    except RuntimeError as err:
+        if 'CUDA out of memory' not in str(err):
+            raise
+        else:
+            print("CUDA ran out of memory.")
+
+from contextlib import contextmanager
+@contextmanager
+def warnings_suppressed() -> None:
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        yield
+    return
+
 import io
 from contextlib import contextmanager
 @contextmanager
@@ -73,9 +93,19 @@ def doc(obj) -> None:
     print(inspect.getdoc(obj))
     return
 
+def parent_classes(obj) -> None:
+    import inspect
+    cls = obj if inspect.isclass(obj) else type(obj)
+    return inspect.getmro(cls)
+
 from typing import Iterable
 def p1(iterable: Iterable) -> None:
     for e in iterable:
+        print(e)
+    return
+
+def pdir(arbitrary_object: object) -> None:
+    for e in dir(arbitrary_object):
         print(e)
     return
 
@@ -85,14 +115,16 @@ def current_tensors() -> List:
     import gc
     return [e for e in gc.get_objects() if isinstance(e, torch.Tensor)]
 
-from tqdm import tqdm
 def _dummy_tqdm_message_func(index: int):
     return ''
 def tqdm_with_message(iterable,
                       pre_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
                       post_yield_message_func: Callable[[int], str] = _dummy_tqdm_message_func,
                       *args, **kwargs):
-    progress_bar_iterator = tqdm(iterable, *args, **kwargs)
+    import tqdm
+    if 'bar_format' not in kwargs:
+        kwargs['bar_format']='{l_bar}{bar:50}{r_bar}'
+    progress_bar_iterator = tqdm.tqdm(iterable, *args, **kwargs)
     for index, element in enumerate(progress_bar_iterator):
         if pre_yield_message_func != _dummy_tqdm_message_func:
             pre_yield_message = pre_yield_message_func(index)
@@ -278,13 +310,19 @@ from typing import Iterable, Callable, List
 def eager_filter(func: Callable, iterable: Iterable) -> List:
     return list(filter(func, iterable))
 
+from typing import List
+def eager_zip(*args) -> List:
+    args = list(map(tuple, args))
+    assert len(set(map(len, args))) == 1
+    return list(zip(*args))
+
 def identity(input):
     return input
 
 def implies(antecedent: bool, consequent: bool) -> bool:
     return not antecedent or consequent
 
-UNIQUE_BOGUS_RESULT_IDENTIFIER = (lambda x: x)
+UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
 from typing import Generator
 def uniq(iterator: Iterable) -> Generator:
@@ -293,6 +331,19 @@ def uniq(iterator: Iterable) -> Generator:
         if previous != value:
             yield value
             previous = value
+
+from itertools import cycle, islice
+from typing import Iterable, Generator
+def roundrobin(*iterables: Iterable) -> Generator:
+    number_of_active_iterables = len(iterables)
+    nexts = cycle(iter(iterable).__next__ for iterable in iterables)
+    while number_of_active_iterables > 0:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            number_of_active_iterables -= 1
+            nexts = cycle(islice(nexts, number_of_active_iterables))
 
 from typing import Iterable 
 def powerset(iterable: Iterable) -> Iterable:
