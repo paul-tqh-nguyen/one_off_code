@@ -98,20 +98,14 @@
   (interactive)
   (shell (generate-new-buffer-name "*shell*")))
 
-(defun start-shell-buffer-with-name (buffer-name init-command)
-  (if (or (null (get-buffer buffer-name))
-	  (null (get-buffer-process buffer-name)))
-      (progn 
-	(shell buffer-name)
-	(end-of-buffer)
-	(let ((start-point (point)))
-	  (shell-resync-dirs)
-	  (let ((buffer-process (get-buffer-process buffer-name)))
-	    (insert init-command)
-	    (comint-send-input)
-	    ;;(accept-process-output buffer-process)
-	    (delete-region start-point (point))
-	    (end-of-buffer))))
+(defun start-shell-buffer-with-name (buffer-name)
+  (interactive
+    (list 
+      (if current-prefix-arg
+          nil
+          (read-from-minibuffer "New Shell Buffer Name: "))))
+  (if (null (get-buffer buffer-name))
+      (shell buffer-name)
     (switch-to-buffer buffer-name)))
 
 (defmacro create-named-shell-function (function-name)
@@ -120,7 +114,7 @@
     `(defun ,function-name ()
        (interactive)
        (add-to-list 'display-buffer-alist '(,buffer-name-regex-string . (display-buffer-same-window)))
-       (start-shell-buffer-with-name ,buffer-name "echo"))))
+       (start-shell-buffer-with-name ,buffer-name))))
 
 (defmacro create-named-shell-functions (&rest function-names)
   (let (commands)
@@ -144,10 +138,12 @@
  ssh-tunnel
  )
 
-(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name shell-start-up-command)
-  (let ((default-directory (format "/ssh:%s@%s:" username host)))
-    (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
-    (start-shell-buffer-with-name buffer-name shell-start-up-command)))
+(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name)
+  (if (get-buffer buffer-name)
+      (switch-to-buffer buffer-name)
+    (let ((default-directory (format "/ssh:%s@%s:" username host)))
+      (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
+      (start-shell-buffer-with-name buffer-name))))
 
 (defmacro create-named-cuda-shell-function (function-name)
   (let ((buffer-name (format "*%s*" function-name)))
@@ -157,7 +153,7 @@
 	      (host "colo-dgx-01.corp.continuum.io")
 	      (buffer-name ,buffer-name)
 	      (default-directory (format "/ssh:%s@%s:" username host)))
-	 (start-remote-ssh-shell-buffer-with-name username host buffer-name "conda activate mg")))))
+	 (start-remote-ssh-shell-buffer-with-name username host buffer-name)))))
 
 (defmacro create-named-cuda-shell-functions (&rest function-names)
   (let (commands)
@@ -191,23 +187,58 @@
   (interactive)
   (mapcar #'funcall '(
 		      cuda
+		      shell
+		      
 		      cuda-shell
+		      shell
+		      
 		      cuda-test
+		      shell
+		      
 		      cuda-python
+		      shell
+		      
 		      cuda-second
+		      shell
+		      
 		      cuda-third
+		      shell
+		      
 		      cuda-fourth
+		      shell
+		      
 		      cuda-fifth
+		      shell
+		      
 		      jupyter
+		      shell
+		      
 		      gpu1
+		      shell
+		      
 		      gpu2
+		      shell
+		      
 		      gpu3
+		      shell
+		      
 		      gpu4
+		      shell
+		      
 		      gpu5
+		      shell
+		      
 		      gpu6
+		      shell
+		      
 		      gpu7
+		      shell
+		      
 		      gpu8
+		      shell
+		      
 		      gpu9
+		      shell
 		      )))
 
 (defun gpu-farm-int (func-for-cuda-id)
