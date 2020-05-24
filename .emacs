@@ -109,7 +109,7 @@
 	  (let ((buffer-process (get-buffer-process buffer-name)))
 	    (insert init-command)
 	    (comint-send-input)
-	    (accept-process-output buffer-process)
+	    ;;(accept-process-output buffer-process)
 	    (delete-region start-point (point))
 	    (end-of-buffer))))
     (switch-to-buffer buffer-name)))
