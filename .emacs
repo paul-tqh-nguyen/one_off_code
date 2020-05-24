@@ -142,11 +142,9 @@
  )
 
 (defun start-remote-ssh-shell-buffer-with-name (username host buffer-name shell-start-up-command)
-  (if (get-buffer buffer-name)
-      (switch-to-buffer buffer-name)
-    (let ((default-directory (format "/ssh:%s@%s:" username host)))
-      (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
-      (start-shell-buffer-with-name buffer-name shell-start-up-command))))
+  (let ((default-directory (format "/ssh:%s@%s:" username host)))
+    (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
+    (start-shell-buffer-with-name buffer-name shell-start-up-command)))
 
 (defmacro create-named-cuda-shell-function (function-name)
   (let ((buffer-name (format "*%s*" function-name)))
