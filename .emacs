@@ -98,15 +98,16 @@
   (interactive)
   (shell (generate-new-buffer-name "*shell*")))
 
-(defun start-shell-buffer-with-name (buffer-name)
-  (interactive
-    (list 
-      (if current-prefix-arg
-          nil
-          (read-from-minibuffer "New Shell Buffer Name: "))))
+(defun start-shell-buffer-with-name (buffer-name &optional init-command)
   (if (null (get-buffer buffer-name))
-      (shell buffer-name)
-    (switch-to-buffer buffer-name)))
+      (progn 
+	(shell buffer-name)
+	(shell-resync-dirs)
+	(insert init-command)
+	(comint-send-input))
+    (progn
+      (switch-to-buffer buffer-name)
+      (shell-resync-dirs))))
 
 (defmacro create-named-shell-function (function-name)
   (let ((buffer-name-regex-string (format "^\\*%s\\*$" function-name))
@@ -143,7 +144,7 @@
       (switch-to-buffer buffer-name)
     (let ((default-directory (format "/ssh:%s@%s:" username host)))
       (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
-      (start-shell-buffer-with-name buffer-name))))
+      (start-shell-buffer-with-name buffer-name "conda activate mg"))))
 
 (defmacro create-named-cuda-shell-function (function-name)
   (let ((buffer-name (format "*%s*" function-name)))
