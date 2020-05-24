@@ -98,12 +98,14 @@
   (interactive)
   (shell (generate-new-buffer-name "*shell*")))
 
-(defun start-shell-buffer-with-name (buffer-name &optional init-command)
+(defun start-shell-buffer-with-name (buffer-name init-command)
   (if (null (get-buffer buffer-name))
       (progn 
 	(shell buffer-name)
 	(shell-resync-dirs)
 	(insert init-command)
+	(comint-send-input)
+	(insert "echo")
 	(comint-send-input))
     (progn
       (switch-to-buffer buffer-name)
@@ -115,7 +117,7 @@
     `(defun ,function-name ()
        (interactive)
        (add-to-list 'display-buffer-alist '(,buffer-name-regex-string . (display-buffer-same-window)))
-       (start-shell-buffer-with-name ,buffer-name))))
+       (start-shell-buffer-with-name ,buffer-name "echo"))))
 
 (defmacro create-named-shell-functions (&rest function-names)
   (let (commands)
@@ -139,12 +141,12 @@
  ssh-tunnel
  )
 
-(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name)
+(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name shell-start-up-command)
   (if (get-buffer buffer-name)
       (switch-to-buffer buffer-name)
     (let ((default-directory (format "/ssh:%s@%s:" username host)))
       (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
-      (start-shell-buffer-with-name buffer-name "conda activate mg"))))
+      (start-shell-buffer-with-name buffer-name shell-start-up-command))))
 
 (defmacro create-named-cuda-shell-function (function-name)
   (let ((buffer-name (format "*%s*" function-name)))
@@ -154,7 +156,7 @@
 	      (host "colo-dgx-01.corp.continuum.io")
 	      (buffer-name ,buffer-name)
 	      (default-directory (format "/ssh:%s@%s:" username host)))
-	 (start-remote-ssh-shell-buffer-with-name username host buffer-name)))))
+	 (start-remote-ssh-shell-buffer-with-name username host buffer-name "conda activate mg")))))
 
 (defmacro create-named-cuda-shell-functions (&rest function-names)
   (let (commands)
