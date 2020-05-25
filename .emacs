@@ -101,7 +101,9 @@
 (defun start-shell-buffer-with-name (buffer-name)
   (if (or (null (get-buffer buffer-name))
 	  (null (get-buffer-process buffer-name)))
-      (shell buffer-name)
+      (progn 
+	(shell buffer-name)
+	(end-of-buffer))
     (switch-to-buffer buffer-name)))
 
 (defmacro create-named-shell-function (function-name)
@@ -181,58 +183,23 @@
   (interactive)
   (mapcar #'funcall '(
 		      cuda
-		      shell
-		      
 		      cuda-shell
-		      shell
-		      
 		      cuda-test
-		      shell
-		      
 		      cuda-python
-		      shell
-		      
 		      cuda-second
-		      shell
-		      
 		      cuda-third
-		      shell
-		      
 		      cuda-fourth
-		      shell
-		      
 		      cuda-fifth
-		      shell
-		      
 		      jupyter
-		      shell
-		      
 		      gpu1
-		      shell
-		      
 		      gpu2
-		      shell
-		      
 		      gpu3
-		      shell
-		      
 		      gpu4
-		      shell
-		      
 		      gpu5
-		      shell
-		      
 		      gpu6
-		      shell
-		      
 		      gpu7
-		      shell
-		      
 		      gpu8
-		      shell
-		      
 		      gpu9
-		      shell
 		      )))
 
 (defun gpu-farm-int (func-for-cuda-id)
