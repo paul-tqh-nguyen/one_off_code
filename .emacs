@@ -104,14 +104,15 @@
       (progn 
 	(shell buffer-name)
 	(end-of-buffer)
-	(let ((start-point (point)))
+	(let ((start-point (point))
+	      (buffer-process (get-buffer-process buffer-name))
+	      (shell-dirstack-query "pwd"))
+	  (insert init-command)
+	  (comint-send-input)
+	  (accept-process-output buffer-process)
+	  (delete-region start-point (buffer-size))
 	  (shell-resync-dirs)
-	  (let ((buffer-process (get-buffer-process buffer-name)))
-	    (insert init-command)
-	    (comint-send-input)
-	    (accept-process-output buffer-process)
-	    (delete-region start-point (point))
-	    (end-of-buffer))))
+	  (end-of-buffer)))
     (switch-to-buffer buffer-name)))
 
 (defmacro create-named-shell-function (function-name)
@@ -199,15 +200,6 @@
 		      cuda-fourth
 		      cuda-fifth
 		      jupyter
-		      gpu1
-		      gpu2
-		      gpu3
-		      gpu4
-		      gpu5
-		      gpu6
-		      gpu7
-		      gpu8
-		      gpu9
 		      )))
 
 (defun gpu-farm-int (func-for-cuda-id)
