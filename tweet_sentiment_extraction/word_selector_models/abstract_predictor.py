@@ -31,12 +31,6 @@ import torch.optim as optim
 import torchtext
 from torchtext import data
 
-################################################
-# Misc. Globals & Global State Initializations #
-################################################
-
-JACCARD_INDEX_GOOD_SCORE_THRESHOLD = 0.5
-
 ####################
 # Helper Utilities #
 ####################

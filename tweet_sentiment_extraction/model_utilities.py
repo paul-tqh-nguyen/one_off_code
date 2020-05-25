@@ -77,9 +77,10 @@ NON_TRAINING_BATCH_SIZE = 1024
 OUTPUT_DIR = './default_output'
 TRAIN_PORTION = 0.80
 VALIDATION_PORTION = 1-TRAIN_PORTION
-NUMBER_OF_EPOCHS = 100
+NUMBER_OF_EPOCHS = 3 # 100
 
 NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 30
+JACCARD_INDEX_GOOD_SCORE_THRESHOLD = 0.5
 
 def jaccard_index_over_strings(str1: str, str2: str): 
     a = set(str1.lower().split()) 

@@ -61,8 +61,8 @@ def main() -> None:
         assert args.cuda_device_id.isnumeric()
         import word_selector_models.abstract_predictor
         word_selector_models.abstract_predictor.set_global_device_id(int(args.cuda_device_id))
-        import bert_models.models
-        bert_models.models.set_global_device_id(int(args.cuda_device_id))
+        import roberta_models.models
+        roberta_models.models.set_global_device_id(int(args.cuda_device_id))
     if args.preprocess_data:
         import preprocess_data
         preprocess_data.preprocess_data()
@@ -80,7 +80,7 @@ def main() -> None:
         from hyperparameter_search import (
             LSTMSentimentConcatenationPredictor_generator,
             LSTMScaledDotProductAttentionPredictor_generator,
-            # NaiveDensePredictor_generator,
+            NaiveDensePredictor_generator,
         )
         predictors = roundrobin(
             LSTMSentimentConcatenationPredictor_generator(),
