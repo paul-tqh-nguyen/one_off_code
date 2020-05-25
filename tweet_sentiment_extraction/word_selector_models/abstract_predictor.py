@@ -22,6 +22,7 @@ from typing import List, Tuple, Set, Callable, Iterable
 
 import sys ; sys.path.append("..")
 import preprocess_data
+from model_utilities import *
 from misc_utilities import *
 
 import torch
@@ -34,32 +35,6 @@ from torchtext import data
 # Misc. Globals & Global State Initializations #
 ################################################
 
-SEED = 1234 if __debug__ else os.getpid()
-torch.manual_seed(SEED)
-torch.backends.cudnn.deterministic = __debug__
-torch.backends.cudnn.benchmark = not __debug__
-
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-DEVICE_ID = None if DEVICE == 'cpu' else torch.cuda.current_device()
-
-def set_global_device_id(global_device_id: int) -> None:
-    assert DEVICE.type == 'cuda'
-    assert global_device_id < torch.cuda.device_count()
-    global DEVICE_ID
-    DEVICE_ID = global_device_id
-    torch.cuda.set_device(DEVICE_ID)
-    return
-
-FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
-GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION = 'global_best_model_score.json'
-
-SENTIMENTS = ['positive', 'negative', 'neutral']
-
-NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
-NON_TRAINING_BATCH_SIZE = 1024
-MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
-
-NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 30
 JACCARD_INDEX_GOOD_SCORE_THRESHOLD = 0.5
 
 ####################
@@ -335,10 +310,7 @@ class Predictor(ABC):
 
     @property
     def number_of_relevant_recent_epochs(self) -> int:
-        number_of_iterations_per_epoch = len(self.training_data) / self.batch_size
-        number_of_epochs_per_iteration = number_of_iterations_per_epoch ** -1
-        number_of_relevant_recent_epochs = math.ceil(number_of_epochs_per_iteration * NUMBER_OF_RELEVANT_RECENT_ITERATIONS)
-        number_of_relevant_recent_epochs = max(MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS, number_of_relevant_recent_epochs)
+        number_of_relevant_recent_epochs = number_of_relevant_recent_epochs_for_data_size_and_batch_size(len(self.training_data), self.batch_size)
         return number_of_relevant_recent_epochs
     
     def train(self) -> None:

@@ -19,6 +19,7 @@ import pandas as pd
 from typing import Tuple, Iterable, List, Any
 
 import sys ; sys.path.append('..')
+from model_utilities import *
 from misc_utilities import *
 import preprocess_data
 
@@ -35,42 +36,6 @@ from sklearn.model_selection import train_test_split
 ###########
 # Globals #
 ###########
-
-with warnings_suppressed():
-    tqdm.tqdm.pandas()
-
-# @todo unify these globals with those in the abstract_predictor.py file
-
-SEED = 1234 if __debug__ else os.getpid()
-torch.manual_seed(SEED)
-torch.backends.cudnn.deterministic = __debug__
-torch.backends.cudnn.benchmark = not __debug__
-
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-NUMBER_OF_DATALOADER_WORKERS = 1 # 8
-DEVICE_ID = None if DEVICE == 'cpu' else torch.cuda.current_device()
-
-def set_global_device_id(global_device_id: int) -> None:
-    assert DEVICE.type == 'cuda'
-    assert global_device_id < torch.cuda.device_count()
-    global DEVICE_ID
-    DEVICE_ID = global_device_id
-    torch.cuda.set_device(DEVICE_ID)
-    return
-
-FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
-GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION = 'global_best_model_score.json'
-
-SENTIMENTS = ['positive', 'negative', 'neutral']
-
-NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
-MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
-MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 30
-
-OUTPUT_DIR = './default_output'
-TRAIN_PORTION = 0.75
-VALIDATION_PORTION = 1-TRAIN_PORTION
-NUMBER_OF_EPOCHS = 100
 
 BATCH_SIZE = 32
 NON_TRAINING_BATCH_SIZE = 256
@@ -147,7 +112,7 @@ class TweetSentimentSelectionDataset(data.Dataset):
         assert input_ids == TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
         assert len(selected_token_indices) > 0
         
-        output_tensor = torch.zeros([len(input_ids) ,2])
+        output_tensor = torch.zeros([len(input_ids), 2])
         output_tensor[selected_token_indices[0]+1][0] = 1
         output_tensor[selected_token_indices[-1]+1][1] = 1
         
@@ -230,11 +195,7 @@ class BERTPredictor():
     
     @property
     def number_of_relevant_recent_epochs(self) -> int:
-        number_of_iterations_per_epoch = len(self.training_data_loader) / self.batch_size
-        number_of_epochs_per_iteration = number_of_iterations_per_epoch ** -1
-        number_of_relevant_recent_epochs = math.ceil(number_of_epochs_per_iteration * NUMBER_OF_RELEVANT_RECENT_ITERATIONS)
-        number_of_relevant_recent_epochs = max(MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS, number_of_relevant_recent_epochs)
-        number_of_relevant_recent_epochs = min(MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS, number_of_relevant_recent_epochs)
+        number_of_relevant_recent_epochs = number_of_relevant_recent_epochs_for_data_size_and_batch_size(len(self.training_data), self.batch_size)
         return number_of_relevant_recent_epochs
     
     def train_one_epoch(self) -> Tuple[float, float]:

@@ -16,6 +16,7 @@ import os
 import itertools
 from typing import Generator
 
+from model_utilities import *
 from misc_utilities import *
 from preprocess_data import PREPROCESSED_TRAINING_DATA_JSON_FILE
 from word_selector_models.abstract_predictor import GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION as WORD_SELECTOR_BEST_MODEL_SCORE_JSON_FILE_LOCATION_BASENAME
@@ -33,7 +34,6 @@ WORD_SELECTOR_BEST_MODEL_SCORE_JSON_FILE_LOCATION = os.path.join('./word_selecto
 
 def LSTMSentimentConcatenationPredictor_generator() -> Generator:
     from word_selector_models.models import LSTMSentimentConcatenationPredictor
-    from word_selector_models.abstract_predictor import FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME
     
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)
@@ -75,7 +75,6 @@ def LSTMSentimentConcatenationPredictor_generator() -> Generator:
 
 def LSTMScaledDotProductAttentionPredictor_generator() -> Generator:
     from word_selector_models.models import LSTMScaledDotProductAttentionPredictor
-    from word_selector_models.abstract_predictor import FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME
     
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)
@@ -118,7 +117,6 @@ def LSTMScaledDotProductAttentionPredictor_generator() -> Generator:
 
 def LSTMScaledDotProductAttentionPredictor_generator() -> Generator:
     from word_selector_models.models import LSTMScaledDotProductAttentionPredictor
-    from word_selector_models.abstract_predictor import FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME
     
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)
@@ -160,7 +158,6 @@ def LSTMScaledDotProductAttentionPredictor_generator() -> Generator:
 
 def NaiveDensePredictor_generator() -> Generator:
     from word_selector_models.models import NaiveDensePredictor
-    from word_selector_models.abstract_predictor import FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME
     
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)
@@ -209,7 +206,6 @@ def NaiveDensePredictor_generator() -> Generator:
 
 def NaiveDensePredictor_generator() -> Generator:
     from word_selector_models.models import NaiveDensePredictor
-    from word_selector_models.abstract_predictor import FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME
     
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)
@@ -258,7 +254,6 @@ def NaiveDensePredictor_generator() -> Generator:
             
 def NaiveDensePredictor_generator() -> Generator:
     from word_selector_models.models import NaiveDensePredictor
-    from word_selector_models.abstract_predictor import FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME
     
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)
@@ -305,7 +300,7 @@ def NaiveDensePredictor_generator() -> Generator:
             yield predictor
 
 def RoBERTaPredictor_generator() -> Generator:
-    from bert_models.models import RoBERTaPredictor, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME
+    from bert_models.models import RoBERTaPredictor
     
     number_of_epochs = 99999
     train_portion, validation_portion = (0.75, 0.25)

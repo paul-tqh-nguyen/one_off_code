@@ -15,6 +15,7 @@ from typing import List, Callable, Iterable
 from collections import OrderedDict
 
 import sys ; sys.path.append("..")
+from model_utilities import *
 from misc_utilities import *
 from .abstract_predictor import Predictor, DEVICE, SENTIMENTS, soft_jaccard_loss
 
@@ -23,15 +24,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
-
-###########
-# Globals #
-###########
-
-OUTPUT_DIR = './default_output'
-TRAIN_PORTION = 0.75
-VALIDATION_PORTION = 1-TRAIN_PORTION
-NUMBER_OF_EPOCHS = 100
 
 ##########
 # Models #
