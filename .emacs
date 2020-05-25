@@ -98,12 +98,22 @@
   (interactive)
   (shell (generate-new-buffer-name "*shell*")))
 
-(defun start-shell-buffer-with-name (buffer-name)
+(defun start-shell-buffer-with-name (buffer-name init-command)
   (if (or (null (get-buffer buffer-name))
 	  (null (get-buffer-process buffer-name)))
       (progn 
 	(shell buffer-name)
-	(end-of-buffer))
+	(end-of-buffer)
+	(let ((start-point (point))
+	      (buffer-process (get-buffer-process buffer-name))
+	      (shell-dirstack-query "pwd"))
+	  (insert init-command)
+	  (comint-send-input)
+	  (accept-process-output buffer-process)
+	  (with-timeout (0.1)
+	    (shell-resync-dirs))
+	  (delete-region start-point (point))
+	  (end-of-buffer)))
     (switch-to-buffer buffer-name)))
 
 (defmacro create-named-shell-function (function-name)
@@ -112,7 +122,7 @@
     `(defun ,function-name ()
        (interactive)
        (add-to-list 'display-buffer-alist '(,buffer-name-regex-string . (display-buffer-same-window)))
-       (start-shell-buffer-with-name ,buffer-name))))
+       (start-shell-buffer-with-name ,buffer-name "echo"))))
 
 (defmacro create-named-shell-functions (&rest function-names)
   (let (commands)
@@ -136,10 +146,10 @@
  ssh-tunnel
  )
 
-(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name)
+(defun start-remote-ssh-shell-buffer-with-name (username host buffer-name shell-start-up-command)
   (let ((default-directory (format "/ssh:%s@%s:" username host)))
     (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
-    (start-shell-buffer-with-name buffer-name)))
+    (start-shell-buffer-with-name buffer-name shell-start-up-command)))
 
 (defmacro create-named-cuda-shell-function (function-name)
   (let ((buffer-name (format "*%s*" function-name)))
@@ -149,7 +159,7 @@
 	      (host "colo-dgx-01.corp.continuum.io")
 	      (buffer-name ,buffer-name)
 	      (default-directory (format "/ssh:%s@%s:" username host)))
-	 (start-remote-ssh-shell-buffer-with-name username host buffer-name)))))
+	 (start-remote-ssh-shell-buffer-with-name username host buffer-name "conda activate mg")))))
 
 (defmacro create-named-cuda-shell-functions (&rest function-names)
   (let (commands)
@@ -191,15 +201,6 @@
 		      cuda-fourth
 		      cuda-fifth
 		      jupyter
-		      gpu1
-		      gpu2
-		      gpu3
-		      gpu4
-		      gpu5
-		      gpu6
-		      gpu7
-		      gpu8
-		      gpu9
 		      )))
 
 (defun gpu-farm-int (func-for-cuda-id)
