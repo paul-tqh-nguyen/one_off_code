@@ -99,12 +99,8 @@
   (shell (generate-new-buffer-name "*shell*")))
 
 (defun start-shell-buffer-with-name (buffer-name)
-  (interactive
-    (list 
-      (if current-prefix-arg
-          nil
-          (read-from-minibuffer "New Shell Buffer Name: "))))
-  (if (null (get-buffer buffer-name))
+  (if (or (null (get-buffer buffer-name))
+	  (null (get-buffer-process buffer-name)))
       (shell buffer-name)
     (switch-to-buffer buffer-name)))
 
@@ -139,11 +135,9 @@
  )
 
 (defun start-remote-ssh-shell-buffer-with-name (username host buffer-name)
-  (if (get-buffer buffer-name)
-      (switch-to-buffer buffer-name)
-    (let ((default-directory (format "/ssh:%s@%s:" username host)))
-      (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
-      (start-shell-buffer-with-name buffer-name))))
+  (let ((default-directory (format "/ssh:%s@%s:" username host)))
+    (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
+    (start-shell-buffer-with-name buffer-name)))
 
 (defmacro create-named-cuda-shell-function (function-name)
   (let ((buffer-name (format "*%s*" function-name)))
