@@ -339,7 +339,7 @@ def hyperparameter_search(predictors: Iterable) -> None:
 ##########
 
 def main() -> None:
-    parser = argparse.ArgumentParser(formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
+    parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
     parser.add_argument('-cuda-device-id', help=f'Set the CUDA device ID.')
     parser.add_argument('-preprocess-data', action='store_true', help=f'Preprocess the raw data. Results stored in {PREPROCESSED_TRAINING_DATA_JSON_FILE}.')
     parser.add_argument('-train-word-selector-model', action='store_true', help=f'Trains & evaluates our word selector model on our preprocessed dataset. Results are saved to {WORD_SELECTOR_RESULTS_DIRECTORY}.')
@@ -388,10 +388,8 @@ def main() -> None:
         hyperparameter_search(predictors)
     if args.bert:
         # @todo fix this
-        # import bert_models.models
-        # bert_models.models.train_model()
-        import bert_models.experiment
-        bert_models.experiment.main()
+        import bert_models.models
+        bert_models.models.train_model()
     if args.hyperparameter_search_roberta:
         predictors = RoBERTaPredictor_generator()
         hyperparameter_search(predictors)

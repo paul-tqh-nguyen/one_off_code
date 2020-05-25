@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 '#!/usr/bin/python3 -OO'
 
-"""
-"""
+'''
+'''
 
 # @todo update doc string
 
@@ -18,7 +18,7 @@ import tqdm
 import pandas as pd
 from typing import Tuple, Iterable, List, Any
 
-import sys ; sys.path.append("..")
+import sys ; sys.path.append('..')
 from misc_utilities import *
 import preprocess_data
 
@@ -47,7 +47,7 @@ torch.backends.cudnn.deterministic = __debug__
 torch.backends.cudnn.benchmark = not __debug__
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-NUMBER_OF_DATALOADER_WORKERS = 8
+NUMBER_OF_DATALOADER_WORKERS = 1 # 8
 DEVICE_ID = None if DEVICE == 'cpu' else torch.cuda.current_device()
 
 def set_global_device_id(global_device_id: int) -> None:
@@ -62,8 +62,6 @@ FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
 GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION = 'global_best_model_score.json'
 
 SENTIMENTS = ['positive', 'negative', 'neutral']
-IS_SELECTED_OUTPUT_VALUE = [0,1]
-NOT_SELECTED_OUTPUT_VALUE = [1,0]
 
 NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
 MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
@@ -74,10 +72,10 @@ TRAIN_PORTION = 0.75
 VALIDATION_PORTION = 1-TRAIN_PORTION
 NUMBER_OF_EPOCHS = 100
 
-BATCH_SIZE = 1
+BATCH_SIZE = 32
 NON_TRAINING_BATCH_SIZE = 256
-INITIAL_LEARNING_RATE = 1e-7
-GRADIENT_CLIPPING_THRESHOLD = 10
+INITIAL_LEARNING_RATE = 1e-5
+GRADIENT_CLIPPING_THRESHOLD = 30
 
 TRANSFORMERS_MODEL_SPEC = 'roberta-base'
 TRANSFORMERS_TOKENIZER = RobertaTokenizer.from_pretrained(TRANSFORMERS_MODEL_SPEC)
@@ -106,30 +104,53 @@ def sanity_check_model_forward_pass(model: nn.modules.module.Module, dataloader:
 
 class TweetSentimentSelectionDataset(data.Dataset):
     def __init__(self, data_df: pd.DataFrame):
-        self.data_df = data_df
-        self.x = data_df[['text', 'sentiment']].progress_apply(lambda row: self._model_input_from_row(row[0], row[1]), axis=1)
-        self.y = data_df[['text', 'selected_text']].progress_apply(lambda row: self._model_output_from_row(row[0], row[1]), axis=1)
+        self.data_df = data_df.reset_index()
+        self.x = self.data_df[['text', 'sentiment']].progress_apply(lambda row: self._model_input_from_row(row[0], row[1]), axis=1)
+        self.y = self.data_df[['text', 'selected_text', 'sentiment']].progress_apply(lambda row: self._model_output_from_row(row[0], row[1], row[2]), axis=1)
+        assert len(self.x) == len(data_df)
+        assert len(self.y) == len(data_df)
         assert eager_map(lambda x: x.shape[0], self.x) == eager_map(lambda y: y.shape[0], self.y)
-        
+    
     def _model_input_from_row(self, text: str, sentiment: str) -> torch.LongTensor:
-        ids = TRANSFORMERS_TOKENIZER.encode(text, sentiment)
+        text_normalized = ' '+' '.join(text.split()) # @todo do we need this space?
+        ids = TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
         id_tensor = torch.LongTensor(ids)
         return id_tensor
     
-    def _model_output_from_row(self, text: str, selected_text: str) -> torch.FloatTensor:
-        words = preprocessed_input_string.split()
-        numericalized_selected_text = row['numericalized_selected_text']
-        assert set(numericalized_selected_text).issubset('01')
-        output_values: List[List[int]] = [NOT_SELECTED_OUTPUT_VALUE]
-        assert len(words) == len(numericalized_selected_text)
-        for word, result_as_char in zip(words, numericalized_selected_text):
-            token_output_value = IS_SELECTED_OUTPUT_VALUE if result_as_char == '1' else NOT_SELECTED_OUTPUT_VALUE
-            number_of_tokens_for_word = len(TRANSFORMERS_TOKENIZER.encode(word)[1:-1])
-            for _ in range(number_of_tokens_for_word):
-                output_values.append(token_output_value)
-        output_values = output_values + [NOT_SELECTED_OUTPUT_VALUE]*4
-        assert len(output_values) == len(TRANSFORMERS_TOKENIZER.encode(preprocessed_input_string, row['sentiment']))
-        output_tensor = torch.FloatTensor(output_values)
+    def _model_output_from_row(self, text: str, selected_text: str, sentiment: str) -> torch.FloatTensor:
+        text_normalized = ' '+' '.join(text.split()) # @todo do we need this space?
+        selected_text_normalized = ' '.join(selected_text.split())
+        selected_text_start_position_in_text = text_normalized.find(selected_text_normalized)
+        selected_characters = [False] * len(text_normalized)
+        for selected_text_position in range(selected_text_start_position_in_text, selected_text_start_position_in_text+len(selected_text_normalized)):
+            selected_characters[selected_text_position] = True
+        if text_normalized[selected_text_start_position_in_text-1] == ' ':
+            selected_characters[selected_text_start_position_in_text-1] = True
+        text_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized)
+        
+        token_offsets: List[Tuple[int, int]] = []
+        current_token_start_index = 0
+        for text_id in text_ids:
+            token = TRANSFORMERS_TOKENIZER.decode([text_id])
+            token_offsets.append((current_token_start_index, current_token_start_index+len(token)))
+            current_token_start_index += len(token)
+        
+        selected_token_indices: List[int] = []
+        for token_index, (token_start_index, token_end_index) in enumerate(token_offsets):
+            if any(selected_characters[token_start_index:token_end_index]):
+                selected_token_indices.append(token_index)
+        
+        sentiment_encoded = TRANSFORMERS_TOKENIZER.encode(sentiment)
+        assert len(sentiment_encoded) == 3
+        sentiment_id = sentiment_encoded[1]
+        input_ids = text_ids + [2, sentiment_id, 2]
+        assert input_ids == TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
+        assert len(selected_token_indices) > 0
+        
+        output_tensor = torch.zeros([len(input_ids) ,2])
+        output_tensor[selected_token_indices[0]+1][0] = 1
+        output_tensor[selected_token_indices[-1]+1][1] = 1
+        
         return output_tensor
     
     def __getitem__(self, index):
@@ -140,20 +161,27 @@ class TweetSentimentSelectionDataset(data.Dataset):
 
 def collate(input_output_pairs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     input_tensors, output_tensors = zip(*input_output_pairs)
-    assert len(input_tensors) == len( output_tensors)
+    assert len(input_tensors) == len(output_tensors)
     if __debug__:
         batch_size = len(input_tensors)
     assert {len(input_tensor.shape) for input_tensor in input_tensors} == {1}
     assert {len(output_tensor.shape) for output_tensor in output_tensors} == {2}
     max_sequence_length = max(input_tensor.shape[0] for input_tensor in input_tensors)
     assert max_sequence_length == max(output_tensor.shape[0] for output_tensor in output_tensors)
+    assert all(input_tensor.shape[0]==output_tensor.shape[0] for input_tensor, output_tensor in zip(input_tensors, output_tensors))
     padded_input_tensors = [torch.cat([input_tensor, torch.ones(max_sequence_length-len(input_tensor), dtype=int)*PAD_IDX]) for input_tensor in input_tensors]
     padded_input_tensor_batch = torch.stack(padded_input_tensors)
+    attention_mask_tensors = [torch.cat([torch.zeros(1, dtype=int), torch.ones(len(input_tensor)-1, dtype=int), torch.zeros(max_sequence_length-len(input_tensor), dtype=int)*PAD_IDX]) for input_tensor in input_tensors]
+    attention_mask_batch = torch.stack(attention_mask_tensors)
+
+    assert attention_mask_batch.sum() == sum(input_tensor.bool().int().sum() for input_tensor in input_tensors)
     assert tuple(padded_input_tensor_batch.shape) == (batch_size, max_sequence_length)
-    padded_output_tensors = [torch.cat([output_tensor, torch.FloatTensor([NOT_SELECTED_OUTPUT_VALUE]*(max_sequence_length-len(output_tensor)))]) for output_tensor in output_tensors]
+    input_token_type_id_batch = torch.zeros([batch_size, max_sequence_length], dtype=int)
+    assert input_token_type_id_batch.sum() == 0
+    padded_output_tensors = [torch.cat([output_tensor, torch.zeros([max_sequence_length-output_tensor.shape[0],2])]) for output_tensor in output_tensors]
     padded_output_tensor_batch = torch.stack(padded_output_tensors)
-    assert tuple(padded_output_tensor_batch.shape) == (batch_size, max_sequence_length, 2)
-    return padded_input_tensor_batch, padded_output_tensor_batch
+    assert tuple(padded_output_tensor_batch.shape) == (batch_size, max_sequence_length , 2)
+    return padded_input_tensor_batch, attention_mask_batch, input_token_type_id_batch, padded_output_tensor_batch
 
 ##############
 # Predictors #
@@ -183,11 +211,10 @@ class BERTPredictor():
         self.loss_function = loss_function
         self.optimizer = optimizer
         assert sanity_check_model_forward_pass(self.model, self.validation_data_loader)
-
-        self.jaccard_threshold = 0.5 # @todo optimize this
         
     def load_data(self) -> None:
         all_data_df = pd.read_csv(preprocess_data.TRAINING_DATA_CSV_FILE)
+        all_data_df = all_data_df[all_data_df['text'].notna()]
         training_data_df, validation_data_df = train_test_split(all_data_df, test_size=VALIDATION_PORTION)
         print()
         print('Loading Training Data...')
@@ -195,7 +222,7 @@ class BERTPredictor():
         print()
         print('Loading Validation Data...')
         validation_dataset = TweetSentimentSelectionDataset(validation_data_df)
-        assert len(validation_dataset) == round(self.validation_portion*len(rows))
+        assert len(validation_dataset) == round(self.validation_portion*len(all_data_df))
         training_data_loader = data.DataLoader(training_dataset, batch_size=self.batch_size, shuffle=True, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
         validation_data_loader = data.DataLoader(validation_dataset, batch_size=NON_TRAINING_BATCH_SIZE, shuffle=False, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
         self.training_data_loader, self.validation_data_loader = training_data_loader, validation_data_loader
@@ -213,14 +240,16 @@ class BERTPredictor():
     def train_one_epoch(self) -> Tuple[float, float]:
         epoch_loss = 0
         epoch_jaccard = 0
-        for batch_index, (text_batch, labels) in tqdm_with_message(enumerate(self.training_data_loader),
-                                                                   post_yield_message_func = lambda index: f'Training Jaccard {epoch_jaccard/(index+1):.8f}',
-                                                                   total=len(self.training_data_loader)):
+        for batch_index, (text_batch, attention_mask_batch, input_token_type_id_batch, labels) in tqdm_with_message(enumerate(self.training_data_loader),
+                                                                                                                    post_yield_message_func = lambda index: f'Training Jaccard {epoch_jaccard/(index+1):.8f}',
+                                                                                                                    total=len(self.training_data_loader)):
             self.optimizer.zero_grad()
             text_batch = text_batch.to(DEVICE)
+            attention_mask_batch = attention_mask_batch.to(DEVICE)
+            input_token_type_id_batch = input_token_type_id_batch.to(DEVICE)
             labels = labels.to(DEVICE)
-            pre_softmax_labels = only_one(self.model.forward(text_batch))
-            predicted_labels = F.softmax(pre_softmax_labels, dim=2)
+            pre_softmax_labels = only_one(self.model.forward(input_ids=text_batch, attention_mask=attention_mask_batch, token_type_ids=input_token_type_id_batch))
+            predicted_labels = F.softmax(pre_softmax_labels, dim=1)
             if __debug__:
                 batch_size = text_batch.shape[0]
                 max_sequence_length = text_batch.shape[1]
@@ -239,15 +268,16 @@ class BERTPredictor():
         epoch_loss = 0
         epoch_jaccard = 0
         self.model.eval()
-        # self.optimize_jaccard_threshold() # @todo implement this
         with torch.no_grad():
-            for text_batch, labels in tqdm_with_message(self.validation_data_loader,
-                                                        post_yield_message_func = lambda index: f'Validation Jaccard {epoch_jaccard/(index+1):.8f}',
-                                                        total=len(self.validation_data_loader)):
+            for text_batch, attention_mask_batch, input_token_type_id_batch, labels in tqdm_with_message(self.validation_data_loader,
+                                                                                                         post_yield_message_func = lambda index: f'Validation Jaccard {epoch_jaccard/(index+1):.8f}',
+                                                                                                         total=len(self.validation_data_loader)):
                 text_batch = text_batch.to(DEVICE)
+                attention_mask_batch = attention_mask_batch.to(DEVICE)
+                input_token_type_id_batch = input_token_type_id_batch.to(DEVICE)
                 labels = labels.to(DEVICE)
-                pre_softmax_labels = only_one(self.model.forward(text_batch))
-                predicted_labels = F.softmax(pre_softmax_labels, dim=2)
+                pre_softmax_labels = only_one(self.model.forward(input_ids=text_batch, attention_mask=attention_mask_batch, token_type_ids=input_token_type_id_batch))
+                predicted_labels = F.softmax(pre_softmax_labels, dim=1)
                 if __debug__:
                     batch_size = text_batch.shape[0]
                     max_sequence_length = text_batch.shape[1]
@@ -257,7 +287,6 @@ class BERTPredictor():
                 loss = self.loss_function(predicted_labels, labels)
                 epoch_loss += loss.item()
                 epoch_jaccard += self.scores_of_discretized_values(predicted_labels, labels)
-        # self.reset_jaccard_threshold() # @todo implement this
         epoch_loss /= len(self.validation_data_loader)
         epoch_jaccard /= len(self.validation_data_loader)
         return epoch_loss, epoch_jaccard
@@ -325,20 +354,20 @@ class BERTPredictor():
         most_recent_validation_jaccard_scores = [0]*self.number_of_relevant_recent_epochs
         print(f'Starting training')
         for epoch_index in range(self.number_of_epochs):
-            print("\n")
-            print(f"Epoch {epoch_index}")
-            with timer(section_name=f"Epoch {epoch_index}"):
+            print('\n')
+            print(f'Epoch {epoch_index}')
+            with timer(section_name=f'Epoch {epoch_index}'):
                 train_loss, train_jaccard = self.train_one_epoch()
                 valid_loss, valid_jaccard = self.validate(epoch_index, False)
                 print(f'\t   Training Jaccard: {train_jaccard:.8f} |   Training Loss: {train_loss:.8f}')
                 print(f'\t Validation Jaccard: {valid_jaccard:.8f} | Validation Loss: {valid_loss:.8f}')
-            print("\n")
+            print('\n')
             if any(valid_jaccard > previous_jaccard for previous_jaccard in most_recent_validation_jaccard_scores):
                 most_recent_validation_jaccard_scores.pop(0)
                 most_recent_validation_jaccard_scores.append(valid_jaccard)
             else:
                 print()
-                print(f"Validation is not better than any of the {self.number_of_relevant_recent_epochs} recent epochs, so training is ending early due to apparent convergence.")
+                print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs} recent epochs, so training is ending early due to apparent convergence.')
                 print()
                 break
         self.load_parameters(self.best_saved_model_location)
@@ -351,10 +380,50 @@ class BERTPredictor():
         assert y_hat.shape == y.shape
         batch_size, max_sequence_length, number_of_token_classes = y.shape
         assert number_of_token_classes == 2
-        y_hat_discretized = (y_hat.detach() > self.jaccard_threshold)
-        intersection_count = (y_hat_discretized[:,:,1] & y[:,:,1].bool()).sum(dim=1)
+        y_hat_start_and_end_indices = y_hat.detach().argmax(dim=1)
+        y_hat_start_indices = y_hat_start_and_end_indices[:,0]
+        y_hat_end_indices = y_hat_start_and_end_indices[:,1]
+        assert tuple(y_hat_start_and_end_indices.shape) == (batch_size, number_of_token_classes)
+        assert tuple(y_hat_start_indices.shape) == (batch_size,)
+        assert tuple(y_hat_end_indices.shape) == (batch_size,)
+        y_start_and_end_indices = y.argmax(dim=1)
+        y_start_indices = y_start_and_end_indices[:,0]
+        y_end_indices = y_start_and_end_indices[:,1]
+        assert tuple(y_start_and_end_indices.shape) == (batch_size, number_of_token_classes)
+        assert tuple(y_start_indices.shape) == (batch_size,)
+        assert tuple(y_end_indices.shape) == (batch_size,)
+        y_hat_start_and_end_indices_sane_wrt_each_other = (y_hat_start_indices < y_hat_end_indices).int()
+        y_hat_start_index_sane_wrt_y_end_index = (y_hat_start_indices < y_end_indices).int()
+        y_hat_end_index_sane_wrt_y_start_index =  (y_hat_end_indices > y_start_indices).int()
+        y_hat_values_sane = y_hat_start_and_end_indices_sane_wrt_each_other * y_hat_start_index_sane_wrt_y_end_index * y_hat_end_index_sane_wrt_y_start_index
+        assert tuple(y_hat_start_and_end_indices_sane_wrt_each_other.shape) == (batch_size,)
+        assert tuple(y_hat_start_index_sane_wrt_y_end_index.shape) == (batch_size,)
+        assert tuple(y_hat_end_index_sane_wrt_y_start_index.shape) == (batch_size,)
+        assert tuple(y_hat_values_sane.shape) == (batch_size,)
+        y_selected_text_lengths = (y_end_indices - y_start_indices)
+        y_selected_text_lengths = y_selected_text_lengths + 1
+        y_hat_selected_text_lengths = (y_hat_end_indices - y_hat_start_indices) * y_hat_values_sane
+        y_hat_selected_text_lengths = y_hat_selected_text_lengths + 1
+        assert tuple(y_selected_text_lengths.shape) == (batch_size,)
+        assert all(y_selected_text_lengths > 0)
+        assert tuple(y_hat_selected_text_lengths.shape) == (batch_size,)
+        assert all(y_hat_selected_text_lengths >= 0)
+        intersection_count_lost_via_y_hat_start_indices = y_start_indices-y_hat_start_indices
+        intersection_count_lost_via_y_hat_start_indices = intersection_count_lost_via_y_hat_start_indices * (intersection_count_lost_via_y_hat_start_indices < 0).int()
+        intersection_count_lost_via_y_hat_start_indices = intersection_count_lost_via_y_hat_start_indices * y_hat_values_sane
+        intersection_count_lost_via_y_hat_start_indices = intersection_count_lost_via_y_hat_start_indices.abs()
+        intersection_count_lost_via_y_hat_end_indices = y_end_indices-y_hat_end_indices
+        intersection_count_lost_via_y_hat_end_indices = intersection_count_lost_via_y_hat_end_indices * (intersection_count_lost_via_y_hat_end_indices > 0).int()
+        intersection_count_lost_via_y_hat_end_indices = intersection_count_lost_via_y_hat_end_indices * y_hat_values_sane
+        assert tuple(intersection_count_lost_via_y_hat_start_indices.shape) == (batch_size,)
+        assert tuple(intersection_count_lost_via_y_hat_end_indices.shape) == (batch_size,)
+        assert all(intersection_count_lost_via_y_hat_start_indices>=0)
+        assert all(intersection_count_lost_via_y_hat_end_indices>=0)
+        intersection_count = (y_selected_text_lengths * y_hat_values_sane) - intersection_count_lost_via_y_hat_start_indices - intersection_count_lost_via_y_hat_end_indices
+        intersection_count = intersection_count * (intersection_count > 0).int()
         assert tuple(intersection_count.shape) == (batch_size,)
-        union_count = y_hat_discretized[:,:,1].sum(dim=1) + y[:,:,1].sum(dim=1) - intersection_count
+        assert all(intersection_count>=0)
+        union_count = y_selected_text_lengths + y_hat_selected_text_lengths - intersection_count
         assert tuple(union_count.shape) == (batch_size,)
         jaccard_index = intersection_count / (union_count + epsilon)
         assert tuple(jaccard_index.shape) == (batch_size,)
@@ -365,7 +434,7 @@ class BERTPredictor():
 
     def print_hyperparameters(self) -> None:
         print()
-        print(f"Model hyperparameters are:")
+        print(f'Model hyperparameters are:')
         print(f'        predictor_type: {self.__class__.__name__}')
         print(f'        number_of_epochs: {self.number_of_epochs}')
         print(f'        number_of_relevant_recent_epochs: {self.number_of_relevant_recent_epochs}')
@@ -375,12 +444,11 @@ class BERTPredictor():
             print(f'        {config_key}: {repr(config_value)}')
         print()
         print(f'The model has {self.count_parameters():,} trainable parameters.')
-        print(f"This processes's PID is {os.getpid()}.")
+        print(f'This processes has PID {os.getpid()}.')
         if DEVICE.type == 'cuda':
             print(f'The CUDA device being used is {torch.cuda.get_device_name(DEVICE_ID)}')
             print(f'The CUDA device ID being used is {DEVICE_ID}')
         print()
-
         return
 
 class RoBERTaPredictor(BERTPredictor):
