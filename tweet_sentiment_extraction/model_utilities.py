@@ -55,6 +55,14 @@ NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
 MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
 MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 20
 
+def jaccard_sufficiently_high_for_epoch(jaccard_score: float, epoch_index: int) -> bool:
+    jaccard_thresholds_for_number_of_epochs = [
+        (0.5, 25),
+        (0.6, 40),
+    ]
+    jaccard_sufficiently_high = all(implies(epoch_index >= number_of_epochs_for_threshold, jaccard_score > jaccard_threshold) for jaccard_threshold, number_of_epochs_for_threshold in jaccard_thresholds_for_number_of_epochs)
+    return jaccard_sufficiently_high
+
 def number_of_relevant_recent_epochs_for_data_size_and_batch_size(data_size: int, batch_size: int) -> int:
     number_of_iterations_per_epoch = data_size / batch_size
     number_of_epochs_per_iteration = number_of_iterations_per_epoch ** -1

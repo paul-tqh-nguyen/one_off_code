@@ -265,14 +265,16 @@ class BERTPredictor():
             'batch_size': self.batch_size,
             'number_of_folds': self.number_of_folds,
             'number_of_parameters': self.count_parameters(),
+            'gradient_clipping_threshold': self.gradient_clipping_threshold,
+            'output_directory': self.output_directory,
         }
         if log_current_model_as_best:
             with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
                 json.dump(self_score_dict, outfile)
-        with open(self.latest_model_score_location(fold_index), 'w') as outfile:
+        with open(self.latest_model_score_location_for_fold(fold_index), 'w') as outfile:
             json.dump(self_score_dict, outfile)
         if result_is_from_final_run:
-            with open(self.final_model_score_location(fold_index), 'w') as outfile:
+            with open(self.final_model_score_location_for_fold(fold_index), 'w') as outfile:
                 json.dump(self_score_dict, outfile)
         return valid_loss, valid_jaccard
     
@@ -282,10 +284,10 @@ class BERTPredictor():
     def gradient_norm(self) -> float:
         return sum(torch.sum(p.grad.data**2).item() for p in self.model.parameters() if p.grad is not None) ** (1. / 2)
     
-    def latest_model_score_location(self, fold_index: int) -> str:
+    def latest_model_score_location_for_fold(self, fold_index: int) -> str:
         return os.path.join(self.best_saved_model_location_for_fold(fold_index), 'latest_model_score.json')
 
-    def final_model_score_location(self, fold_index: int) -> str:
+    def final_model_score_location_for_fold(self, fold_index: int) -> str:
         return os.path.join(self.best_saved_model_location_for_fold(fold_index), FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME)
     
     def save_parameters(self, parameter_directory_location: str) -> None:
@@ -296,6 +298,28 @@ class BERTPredictor():
         self.model.from_pretrained(parameter_directory_location)
         return
     
+    def aggregate_score_over_all_folds(self) -> None:
+        fold_index_to_jaccard = [None] * self.number_of_folds
+        for fold_index in range(self.number_of_folds):
+            json_file_location_for_fold = self.final_model_score_location_for_fold(fold_index)
+            with open(json_file_location_for_fold, 'r') as file_handle:
+                fold_score_dict = json.load(file_handle)
+                best_jaccard_score = fold_score_dict['best_valid_jaccard']
+                fold_index_to_jaccard[fold_index] = best_jaccard_score
+        min_jaccard_fold_index, min_jaccard = min(((fold_index, jaccard) for fold_index, jaccard in enumerate(fold_index_to_jaccard)), key = lambda x: x[1])
+        max_jaccard_fold_index, max_jaccard = max(((fold_index, jaccard) for fold_index, jaccard in enumerate(fold_index_to_jaccard)), key = lambda x: x[1])
+        mean_jaccard = mean(fold_index_to_jaccard)
+        aggregated_score_dict = {
+            'min_jaccard_fold_index': min_jaccard_fold_index,
+            'min_jaccard': min_jaccard,
+            'max_jaccard_fold_index': max_jaccard_fold_index,
+            'max_jaccard': max_jaccard,
+            'mean_jaccard': mean_jaccard,
+        }
+        with open(os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME), 'w') as outfile:
+            json.dump(aggregated_score_dict, outfile)
+        return
+    
     def train(self) -> None:
         assert self.cross_validator.get_n_splits() == self.number_of_folds
         for fold_index, (training_indices, validation_indices) in enumerate(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment)):
@@ -304,7 +328,7 @@ class BERTPredictor():
             validation_dataset = TweetSentimentSelectionDataset(validation_indices, self.input_id_tensors, self.output_tensors)
             training_data_loader = data.DataLoader(training_dataset, batch_size=self.batch_size, shuffle=True, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
             validation_data_loader = data.DataLoader(validation_dataset, batch_size=NON_TRAINING_BATCH_SIZE, shuffle=False, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
-            most_recent_validation_jaccard_scores = [0]*self.number_of_relevant_recent_epochs(training_data_loader)
+            most_recent_validation_jaccard_scores = [0] * self.number_of_relevant_recent_epochs(training_data_loader)
             print()
             print(f'Starting training for fold {fold_index}')
             self.print_hyperparameters(training_data_loader)
@@ -325,8 +349,14 @@ class BERTPredictor():
                     print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs(training_data_loader)} recent epochs, so training is ending early due to apparent convergence.')
                     print()
                     break
+                if not jaccard_sufficiently_high_for_epoch(valid_jaccard, epoch_index):
+                    print()
+                    print(f'Validation is not sufficiently high for the number of epochs passed, so training is ending early due to poor performance.')
+                    print()
+                    break
             self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
             self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
+        self.aggregate_score_over_all_folds()
         return
     
     def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:

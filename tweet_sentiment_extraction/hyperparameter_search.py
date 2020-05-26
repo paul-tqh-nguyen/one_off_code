@@ -306,9 +306,9 @@ def RoBERTaPredictor_generator() -> Generator:
     number_of_epochs = 99999
     train_portion, validation_portion = (0.8, 0.2)
     
-    batch_size_choices = [1, 32, 64, 128]
+    batch_size_choices = [1, 32, 64]
     gradient_clipping_threshold_choices = [10, 20, 30, 50]
-    initial_learning_rate_choices = [1e-5, 1e-8, 1e-10]
+    initial_learning_rate_choices = [1e-5, 3e-5, 1e-8, 1e-10]
     
     hyparameter_list_choices = list(itertools.product(batch_size_choices,
                                                       gradient_clipping_threshold_choices,
