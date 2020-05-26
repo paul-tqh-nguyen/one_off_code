@@ -16,6 +16,7 @@ import random
 import math
 import tqdm
 import pandas as pd
+from statistics import mean
 from typing import Tuple, Iterable, List
 
 import sys ; sys.path.append('..')
@@ -299,22 +300,22 @@ class BERTPredictor():
         return
     
     def aggregate_score_over_all_folds(self) -> None:
-        fold_index_to_jaccard = [None] * self.number_of_folds
+        fold_index_to_validation_jaccard = [None] * self.number_of_folds
         for fold_index in range(self.number_of_folds):
             json_file_location_for_fold = self.final_model_score_location_for_fold(fold_index)
             with open(json_file_location_for_fold, 'r') as file_handle:
                 fold_score_dict = json.load(file_handle)
-                best_jaccard_score = fold_score_dict['best_valid_jaccard']
+                best_validation_jaccard_score = fold_score_dict['best_valid_jaccard']
                 fold_index_to_jaccard[fold_index] = best_jaccard_score
-        min_jaccard_fold_index, min_jaccard = min(((fold_index, jaccard) for fold_index, jaccard in enumerate(fold_index_to_jaccard)), key = lambda x: x[1])
-        max_jaccard_fold_index, max_jaccard = max(((fold_index, jaccard) for fold_index, jaccard in enumerate(fold_index_to_jaccard)), key = lambda x: x[1])
-        mean_jaccard = mean(fold_index_to_jaccard)
+        min_validation_jaccard_fold_index, min_validation_jaccard = min(((fold_index, validation_jaccard) for fold_index, validation_jaccard in enumerate(fold_index_to_validation_jaccard)), key = lambda x: x[1])
+        max_validation_jaccard_fold_index, max_validation_jaccard = max(((fold_index, validation_jaccard) for fold_index, validation_jaccard in enumerate(fold_index_to_validation_jaccard)), key = lambda x: x[1])
+        mean_validation_jaccard = mean(fold_index_to_validation_jaccard)
         aggregated_score_dict = {
-            'min_jaccard_fold_index': min_jaccard_fold_index,
-            'min_jaccard': min_jaccard,
-            'max_jaccard_fold_index': max_jaccard_fold_index,
-            'max_jaccard': max_jaccard,
-            'mean_jaccard': mean_jaccard,
+            'min_validation_jaccard_fold_index': min_validation_jaccard_fold_index,
+            'min_validation_jaccard': min_validation_jaccard,
+            'max_validation_jaccard_fold_index': max_validation_jaccard_fold_index,
+            'max_validation_jaccard': max_validation_jaccard,
+            'mean_validation_jaccard': mean_validation_jaccard,
         }
         with open(os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME), 'w') as outfile:
             json.dump(aggregated_score_dict, outfile)
@@ -341,17 +342,17 @@ class BERTPredictor():
                     print(f'\t   Training Jaccard: {train_jaccard:.8f} |   Training Loss: {train_loss:.8f}')
                     print(f'\t Validation Jaccard: {valid_jaccard:.8f} | Validation Loss: {valid_loss:.8f}')
                 print('\n')
-                if any(valid_jaccard > previous_jaccard for previous_jaccard in most_recent_validation_jaccard_scores):
+                if not jaccard_sufficiently_high_for_epoch(valid_jaccard, epoch_index):
+                    print()
+                    print(f'Validation is not sufficiently high for the number of epochs passed, so training is ending early due to poor performance.')
+                    print()
+                    break
+                elif any(valid_jaccard > previous_jaccard for previous_jaccard in most_recent_validation_jaccard_scores):
                     most_recent_validation_jaccard_scores.pop(0)
                     most_recent_validation_jaccard_scores.append(valid_jaccard)
                 else:
                     print()
                     print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs(training_data_loader)} recent epochs, so training is ending early due to apparent convergence.')
-                    print()
-                    break
-                if not jaccard_sufficiently_high_for_epoch(valid_jaccard, epoch_index):
-                    print()
-                    print(f'Validation is not sufficiently high for the number of epochs passed, so training is ending early due to poor performance.')
                     print()
                     break
             self.load_parameters(self.best_saved_model_location_for_fold(fold_index))

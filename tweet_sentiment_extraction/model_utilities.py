@@ -36,7 +36,7 @@ torch.backends.cudnn.benchmark = not __debug__
 ##########
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-NUMBER_OF_DATALOADER_WORKERS = 0 # 8
+NUMBER_OF_DATALOADER_WORKERS = 8
 DEVICE_ID = None if DEVICE == 'cpu' else torch.cuda.current_device()
 
 def set_global_device_id(global_device_id: int) -> None:
@@ -54,9 +54,12 @@ def set_global_device_id(global_device_id: int) -> None:
 NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
 MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
 MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 20
+MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5 # @todo remove this
+MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5 # @todo remove this
 
 def jaccard_sufficiently_high_for_epoch(jaccard_score: float, epoch_index: int) -> bool:
     jaccard_thresholds_for_number_of_epochs = [
+        (0.67, 6), # @todo remove this
         (0.5, 25),
         (0.6, 40),
     ]
