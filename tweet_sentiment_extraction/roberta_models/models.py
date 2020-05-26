@@ -186,11 +186,12 @@ class BERTPredictor():
         self.loss_function = loss_function
         self.optimizer = optimizer
         assert sanity_check_model_forward_pass(self.model, self.validation_data_loader)
-        
+
+    @debug_on_error
     def load_data(self) -> None:
         all_data_df = pd.read_csv(preprocess_data.TRAINING_DATA_CSV_FILE)
         all_data_df = all_data_df[all_data_df['text'].notna()]
-        training_data_df, validation_data_df = train_test_split(all_data_df, test_size=VALIDATION_PORTION)
+        training_data_df, validation_data_df = train_test_split(all_data_df, test_size=self.validation_portion)
         print()
         print('Loading Training Data...')
         training_dataset = TweetSentimentSelectionDataset(training_data_df)
