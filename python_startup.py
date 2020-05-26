@@ -313,6 +313,9 @@ def timer(section_name: str = None, exitCallback: Callable[[], None] = None) -> 
 
 # General Utilities
 
+def is_ascii(input_string: str) -> bool:
+    return all(ord(character) < 128 for character in input_string)
+
 from contextlib import contextmanager
 @contextmanager
 def temp_plt_figure(*args, **kwargs) -> None:

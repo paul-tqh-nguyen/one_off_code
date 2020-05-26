@@ -199,9 +199,6 @@ def preprocess_token(input_token: str) -> str:
         preprocessed_token = URL_SPECIAL_TOKEN
     return preprocessed_token
 
-def is_ascii(input_string: str) -> bool:
-    return all(ord(character) < 128 for character in input_string)
-
 def preprocess_and_tokenize_string(input_string: str) -> str:
     preprocessed_input_string = input_string
     preprocessed_input_string = preprocessed_input_string.lower()

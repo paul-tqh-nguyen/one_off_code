@@ -16,7 +16,7 @@ import random
 import math
 import tqdm
 import pandas as pd
-from typing import Tuple, Iterable, List, Any
+from typing import Tuple, Iterable, List
 
 import sys ; sys.path.append('..')
 from model_utilities import *
@@ -55,7 +55,7 @@ NEW_WORD_PREFIX = chr(288)
 #############
 
 class  TweetSentimentSelectionDataset(data.Dataset):
-    def __init__(self, indices: List[int], x: pd.Series, y: pd.Series):
+    def __init__(self, indices: Iterable[int], x: pd.Series, y: pd.Series):
         self.x = [x.iloc[index] for index in indices]
         self.y = [y.iloc[index] for index in indices]
     
@@ -392,6 +392,7 @@ class BERTPredictor():
         print(f'Model hyperparameters are:')
         print(f'        predictor_type: {self.__class__.__name__}')
         print(f'        number_of_epochs: {self.number_of_epochs}')
+        print(f'        gradient_clipping_threshold: {self.gradient_clipping_threshold}')
         print(f'        number_of_relevant_recent_epochs: {self.number_of_relevant_recent_epochs(training_data_loader)}')
         print(f'        batch_size: {self.batch_size}')
         print(f'        output_directory: {self.output_directory}')
@@ -445,7 +446,7 @@ class BERTPredictor():
             selected_ids.remove(TRANSFORMERS_TOKENIZER.sep_token_id)
         
         selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
-        assert selected_text in normalized_text, f'{repr(selected_text)} not in {repr(normalized_text)}'
+        assert ''.join(eager_filter(is_ascii, selected_text)) in ''.join(eager_filter(is_ascii, normalized_text)) or , f'{repr(selected_text)} not in {repr(normalized_text)}'
         return selected_text
     
     def _evaluate_example(self, example_input_string: str, example_selected_text: str, example_sentiment: str) -> Tuple[str, float]:
@@ -453,12 +454,12 @@ class BERTPredictor():
         jaccard_score = jaccard_index_over_strings(example_selected_text, predicted_substring)
         return predicted_substring, jaccard_score
 
-    def _random_example_for_sentiment(self, data: data.Dataset, sentiment: str) -> Tuple[str, str, int]:
+    def _random_example_for_sentiment(self, sentiment: str) -> Tuple[str, str, int]:
         assert sentiment in SENTIMENTS
         example_for_sentiment_found = False
-        for _ in range(len(data)):
-            example_index = random.randrange(len(data))
-            example = data.data_df.iloc[example_index]
+        for _ in range(len(self.all_data_df)):
+            example_index = random.randrange(len(self.all_data_df))
+            example = self.all_data_df.iloc[example_index]
             example_input_string = example.text
             example_selected_text = example.selected_text
             example_sentiment = example.sentiment
@@ -470,11 +471,7 @@ class BERTPredictor():
             raise Exception(f"Could not find relevant {sentiment} example sufficiently quickly.")
         return example_input_string, example_selected_text, example_index
 
-    def _demonstrate_examples(self, data_set_spec: str) -> None:
-        assert data_set_spec in ['training', 'validation']
-        data = self.training_data_loader.dataset if data_set_spec == 'training' else self.validation_data_loader.dataset
-        print('\n'*8)
-        print(f'Here are some {data_set_spec} examples run through our model.')
+    def demonstrate_examples(self) -> None:
         print()
         approximate_number_of_examples_per_sentiment = math.ceil(NUMBER_OF_EXAMPLES_TO_DEMONSTRATE/len(SENTIMENTS))
         sentiment_to_sentiment_example_count = {sentiment: approximate_number_of_examples_per_sentiment for sentiment in SENTIMENTS}
@@ -487,8 +484,8 @@ class BERTPredictor():
             for sentiment_example_index in range(sentiment_example_count):
                 show_good_example = sentiment_example_index >= sentiment_example_count // 2
                 show_bad_example = not show_good_example
-                for _ in range(len(data)):
-                    text, selected_text, example_index = self._random_example_for_sentiment(data, sentiment)
+                for _ in range(len(self.all_data_df)):
+                    text, selected_text, example_index = self._random_example_for_sentiment(sentiment)
                     predicted_substring, jaccard_score = self._evaluate_example(text, selected_text, sentiment)
                     example_fits_score_quality = (show_good_example and jaccard_score > JACCARD_INDEX_GOOD_SCORE_THRESHOLD) or (show_bad_example and jaccard_score < JACCARD_INDEX_GOOD_SCORE_THRESHOLD)
                     if example_fits_score_quality:
@@ -501,14 +498,6 @@ class BERTPredictor():
                 print(f'jaccard_score       {repr(jaccard_score)}')
                 print()
                 assert example_fits_score_quality
-        return
-
-    def demonstrate_training_examples(self) -> None:
-        self._demonstrate_examples('training')
-        return
-    
-    def demonstrate_validation_examples(self) -> None:
-        self._demonstrate_examples('validation')
         return
 
 class RoBERTaPredictor(BERTPredictor):
@@ -527,9 +516,11 @@ class RoBERTaPredictor(BERTPredictor):
 def train_model() -> None:
     predictor = RoBERTaPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, NUMBER_OF_FOLDS, GRADIENT_CLIPPING_THRESHOLD, INITIAL_LEARNING_RATE)
     predictor.train()
-    # predictor.load_parameters(predictor.best_saved_model_location)
-    # # predictor.demonstrate_training_examples()
-    # predictor.demonstrate_validation_examples()
+    for fold_index in range(predictor.number_of_folds):
+        print()
+        print(f'Demonstrating examples via model for fold {fold_index}')
+        predictor.load_parameters(predictor.best_saved_model_location_for_fold(fold_index))
+        predictor.demonstrate_examples()
     return 
 
 if __name__ == '__main__':
