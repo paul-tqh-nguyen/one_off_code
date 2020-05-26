@@ -29,7 +29,7 @@ from torch.nn.utils import clip_grad_norm_
 import torch.nn.functional as F
 from torch.utils import data
 import torch.optim as optim
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
 with warnings_suppressed():
     from transformers import RobertaTokenizer, RobertaForTokenClassification, RobertaConfig
 
@@ -50,31 +50,14 @@ PAD_IDX = TRANSFORMERS_TOKENIZER.pad_token_id
 MAX_SEQUENCE_LENGTH = 512
 NEW_WORD_PREFIX = chr(288)
 
-###################
-# Sanity Checking #
-###################
-
-def sanity_check_model_forward_pass(model: nn.modules.module.Module, dataloader: data.DataLoader) -> bool:
-    random_index = random.randint(0, len(dataloader.dataset)-1)
-    x, y = dataloader.dataset[random_index]
-    x_batch = x.unsqueeze(0).to(DEVICE)
-    y_hat_batch = only_one(model(x_batch))
-    y_hat = y_hat_batch.squeeze(0)
-    assert y_hat.shape == y.shape
-    return True
-
 #############
 # Load Data #
 #############
 
-class TweetSentimentSelectionDataset(data.Dataset):
-    def __init__(self, data_df: pd.DataFrame):
-        self.data_df = data_df.reset_index()
-        self.x = self.data_df[['text', 'sentiment']].progress_apply(lambda row: model_input_from_row(row[0], row[1]), axis=1)
-        self.y = self.data_df[['text', 'selected_text', 'sentiment']].progress_apply(lambda row: model_output_from_row(row[0], row[1], row[2]), axis=1)
-        assert len(self.x) == len(data_df)
-        assert len(self.y) == len(data_df)
-        assert eager_map(lambda x: x.shape[0], self.x) == eager_map(lambda y: y.shape[0], self.y)
+class  TweetSentimentSelectionDataset(data.Dataset):
+    def __init__(self, indices: List[int], x: pd.Series, y: pd.Series):
+        self.x = [x.iloc[index] for index in indices]
+        self.y = [y.iloc[index] for index in indices]
     
     def __getitem__(self, index):
         return self.x[index], self.y[index]
@@ -163,21 +146,15 @@ def collate(input_output_pairs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tenso
 ##############
 
 class BERTPredictor():
-    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: int, validation_portion: int, gradient_clipping_threshold: float, model: nn.modules.module.Module, loss_function: Callable, optimizer: optim.Optimizer):
-        self.best_valid_jaccard = -1
-        
+    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, number_of_folds: int, gradient_clipping_threshold: float, model: nn.modules.module.Module, loss_function: Callable, optimizer: optim.Optimizer):
         self.output_directory = output_directory
         if not os.path.exists(self.output_directory):
             os.makedirs(self.output_directory)
-
-        self.best_saved_model_location = os.path.join(self.output_directory, 'best_model')
-        if not os.path.exists(self.best_saved_model_location):
-            os.makedirs(self.best_saved_model_location)
         
         self.number_of_epochs = number_of_epochs
         self.batch_size = batch_size
-        self.train_portion = train_portion
-        self.validation_portion = validation_portion
+        self.number_of_folds = number_of_folds
+        self.cross_validator = StratifiedKFold(n_splits=number_of_folds, shuffle=True, random_state=SEED)
         self.gradient_clipping_threshold = gradient_clipping_threshold
         
         self.load_data()
@@ -185,36 +162,36 @@ class BERTPredictor():
         self.model = model
         self.loss_function = loss_function
         self.optimizer = optimizer
-        assert sanity_check_model_forward_pass(self.model, self.validation_data_loader)
-
-    @debug_on_error
+    
     def load_data(self) -> None:
-        all_data_df = pd.read_csv(preprocess_data.TRAINING_DATA_CSV_FILE)
-        all_data_df = all_data_df[all_data_df['text'].notna()]
-        training_data_df, validation_data_df = train_test_split(all_data_df, test_size=self.validation_portion)
+        self.all_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
+        self.all_data_df = self.all_data_df[self.all_data_df['text'].notna()]
         print()
-        print('Loading Training Data...')
-        training_dataset = TweetSentimentSelectionDataset(training_data_df)
+        print('Loading Input Data...')
+        self.input_id_tensors = self.all_data_df[['text', 'sentiment']].progress_apply(lambda row: model_input_from_row(row[0], row[1]), axis=1)
         print()
-        print('Loading Validation Data...')
-        validation_dataset = TweetSentimentSelectionDataset(validation_data_df)
-        assert len(validation_dataset) == round(self.validation_portion*len(all_data_df))
-        training_data_loader = data.DataLoader(training_dataset, batch_size=self.batch_size, shuffle=True, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
-        validation_data_loader = data.DataLoader(validation_dataset, batch_size=NON_TRAINING_BATCH_SIZE, shuffle=False, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
-        self.training_data_loader, self.validation_data_loader = training_data_loader, validation_data_loader
+        print('Loading Output Data...')
+        self.output_tensors = self.all_data_df[['text', 'selected_text', 'sentiment']].progress_apply(lambda row: model_output_from_row(row[0], row[1], row[2]), axis=1)
+        assert len(self.input_id_tensors) == len(self.output_tensors)
+        assert eager_map(lambda x: x.shape[0], self.input_id_tensors) == eager_map(lambda y: y.shape[0], self.output_tensors)
         return
-    
-    @property
-    def number_of_relevant_recent_epochs(self) -> int:
-        number_of_relevant_recent_epochs = number_of_relevant_recent_epochs_for_data_size_and_batch_size(len(self.training_data_loader), self.batch_size)
+
+    def number_of_relevant_recent_epochs(self, training_data_loader: data.DataLoader) -> int:
+        number_of_relevant_recent_epochs = number_of_relevant_recent_epochs_for_data_size_and_batch_size(len(training_data_loader), self.batch_size)
         return number_of_relevant_recent_epochs
+
+    def best_saved_model_location_for_fold(self, fold_index: int) -> str:
+        best_saved_model_location = os.path.join(self.output_directory, f'best_model_for_fold_{fold_index}')
+        if not os.path.exists(best_saved_model_location):
+            os.makedirs(best_saved_model_location)
+        return best_saved_model_location
     
-    def train_one_epoch(self) -> Tuple[float, float]:
+    def train_one_epoch(self, training_data_loader: data.DataLoader) -> Tuple[float, float]:
         epoch_loss = 0
         epoch_jaccard = 0
-        for batch_index, (text_batch, attention_mask_batch, input_token_type_id_batch, labels) in tqdm_with_message(enumerate(self.training_data_loader),
+        for batch_index, (text_batch, attention_mask_batch, input_token_type_id_batch, labels) in tqdm_with_message(enumerate(training_data_loader),
                                                                                                                     post_yield_message_func = lambda index: f'Training Jaccard {epoch_jaccard/(index+1):.8f}',
-                                                                                                                    total=len(self.training_data_loader)):
+                                                                                                                    total=len(training_data_loader)):
             self.optimizer.zero_grad()
             text_batch = text_batch.to(DEVICE)
             attention_mask_batch = attention_mask_batch.to(DEVICE)
@@ -232,18 +209,18 @@ class BERTPredictor():
             loss.backward()
             clip_grad_norm_(self.model.parameters(), self.gradient_clipping_threshold)
             self.optimizer.step()
-        epoch_loss /= len(self.training_data_loader)
-        epoch_jaccard /= len(self.training_data_loader)
+        epoch_loss /= len(training_data_loader)
+        epoch_jaccard /= len(training_data_loader)
         return epoch_loss, epoch_jaccard
     
-    def evaluate(self) -> Tuple[float, float]:
+    def evaluate(self, validation_data_loader: data.DataLoader) -> Tuple[float, float]:
         epoch_loss = 0
         epoch_jaccard = 0
         self.model.eval()
         with torch.no_grad():
-            for text_batch, attention_mask_batch, input_token_type_id_batch, labels in tqdm_with_message(self.validation_data_loader,
+            for text_batch, attention_mask_batch, input_token_type_id_batch, labels in tqdm_with_message(validation_data_loader,
                                                                                                          post_yield_message_func = lambda index: f'Validation Jaccard {epoch_jaccard/(index+1):.8f}',
-                                                                                                         total=len(self.validation_data_loader)):
+                                                                                                         total=len(validation_data_loader)):
                 text_batch = text_batch.to(DEVICE)
                 attention_mask_batch = attention_mask_batch.to(DEVICE)
                 input_token_type_id_batch = input_token_type_id_batch.to(DEVICE)
@@ -259,12 +236,12 @@ class BERTPredictor():
                 loss = self.loss_function(predicted_labels, labels)
                 epoch_loss += loss.item()
                 epoch_jaccard += self.scores_of_discretized_values(predicted_labels, labels)
-        epoch_loss /= len(self.validation_data_loader)
-        epoch_jaccard /= len(self.validation_data_loader)
+        epoch_loss /= len(validation_data_loader)
+        epoch_jaccard /= len(validation_data_loader)
         return epoch_loss, epoch_jaccard
     
-    def validate(self, epoch_index: int, result_is_from_final_run: bool) -> Tuple[float, float]:
-        valid_loss, valid_jaccard = self.evaluate()
+    def validate(self, fold_index: int, training_data_loader: data.DataLoader, validation_data_loader: data.DataLoader, epoch_index: int, result_is_from_final_run: bool) -> Tuple[float, float]:
+        valid_loss, valid_jaccard = self.evaluate(validation_data_loader)
         if not os.path.isfile(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION):
             log_current_model_as_best = True
         else:
@@ -272,30 +249,30 @@ class BERTPredictor():
                 current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
                 current_global_best_model_jaccard: float = current_global_best_model_score_dict['valid_jaccard']
                 log_current_model_as_best = current_global_best_model_jaccard < valid_jaccard
-        if valid_jaccard > self.best_valid_jaccard:
-            self.best_valid_jaccard = valid_jaccard
-            self.save_parameters(self.best_saved_model_location)
-            print(f'Best model so far saved to {self.best_saved_model_location}')
+        if valid_jaccard > self.best_valid_jaccard_for_current_fold:
+            self.best_valid_jaccard_for_current_fold = valid_jaccard
+            best_saved_model_location = self.best_saved_model_location_for_fold(fold_index)
+            self.save_parameters(best_saved_model_location)
+            print(f'Best model so far saved to {best_saved_model_location}')
         self_score_dict = {
             'predictor_type': self.__class__.__name__,
             'valid_jaccard': valid_jaccard,
             'valid_loss': valid_loss,
-            'best_valid_jaccard': self.best_valid_jaccard,
+            'best_valid_jaccard': self.best_valid_jaccard_for_current_fold,
             'number_of_epochs': self.number_of_epochs,
             'most_recently_completed_epoch_index': epoch_index,
-            'number_of_relevant_recent_epochs': self.number_of_relevant_recent_epochs,
+            'number_of_relevant_recent_epochs': self.number_of_relevant_recent_epochs(training_data_loader),
             'batch_size': self.batch_size,
-            'train_portion': self.train_portion,
-            'validation_portion': self.validation_portion,
+            'number_of_folds': self.number_of_folds,
             'number_of_parameters': self.count_parameters(),
         }
         if log_current_model_as_best:
             with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
                 json.dump(self_score_dict, outfile)
-        with open(self.latest_model_score_location, 'w') as outfile:
+        with open(self.latest_model_score_location(fold_index), 'w') as outfile:
             json.dump(self_score_dict, outfile)
         if result_is_from_final_run:
-            with open(self.final_model_score_location, 'w') as outfile:
+            with open(self.final_model_score_location(fold_index), 'w') as outfile:
                 json.dump(self_score_dict, outfile)
         return valid_loss, valid_jaccard
     
@@ -305,13 +282,11 @@ class BERTPredictor():
     def gradient_norm(self) -> float:
         return sum(torch.sum(p.grad.data**2).item() for p in self.model.parameters() if p.grad is not None) ** (1. / 2)
     
-    @property
-    def latest_model_score_location(self) -> str:
-        return os.path.join(self.output_directory, 'latest_model_score.json')
+    def latest_model_score_location(self, fold_index: int) -> str:
+        return os.path.join(self.best_saved_model_location_for_fold(fold_index), 'latest_model_score.json')
 
-    @property
-    def final_model_score_location(self) -> str:
-        return os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME)
+    def final_model_score_location(self, fold_index: int) -> str:
+        return os.path.join(self.best_saved_model_location_for_fold(fold_index), FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME)
     
     def save_parameters(self, parameter_directory_location: str) -> None:
         self.model.save_pretrained(parameter_directory_location)
@@ -322,28 +297,36 @@ class BERTPredictor():
         return
     
     def train(self) -> None:
-        self.print_hyperparameters()
-        most_recent_validation_jaccard_scores = [0]*self.number_of_relevant_recent_epochs
-        print(f'Starting training')
-        for epoch_index in range(self.number_of_epochs):
-            print('\n')
-            print(f'Epoch {epoch_index}')
-            with timer(section_name=f'Epoch {epoch_index}'):
-                train_loss, train_jaccard = self.train_one_epoch()
-                valid_loss, valid_jaccard = self.validate(epoch_index, False)
-                print(f'\t   Training Jaccard: {train_jaccard:.8f} |   Training Loss: {train_loss:.8f}')
-                print(f'\t Validation Jaccard: {valid_jaccard:.8f} | Validation Loss: {valid_loss:.8f}')
-            print('\n')
-            if any(valid_jaccard > previous_jaccard for previous_jaccard in most_recent_validation_jaccard_scores):
-                most_recent_validation_jaccard_scores.pop(0)
-                most_recent_validation_jaccard_scores.append(valid_jaccard)
-            else:
-                print()
-                print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs} recent epochs, so training is ending early due to apparent convergence.')
-                print()
-                break
-        self.load_parameters(self.best_saved_model_location)
-        self.validate(epoch_index, True)
+        assert self.cross_validator.get_n_splits() == self.number_of_folds
+        for fold_index, (training_indices, validation_indices) in enumerate(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment)):
+            self.best_valid_jaccard_for_current_fold = -1
+            training_dataset = TweetSentimentSelectionDataset(training_indices, self.input_id_tensors, self.output_tensors)
+            validation_dataset = TweetSentimentSelectionDataset(validation_indices, self.input_id_tensors, self.output_tensors)
+            training_data_loader = data.DataLoader(training_dataset, batch_size=self.batch_size, shuffle=True, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
+            validation_data_loader = data.DataLoader(validation_dataset, batch_size=NON_TRAINING_BATCH_SIZE, shuffle=False, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
+            most_recent_validation_jaccard_scores = [0]*self.number_of_relevant_recent_epochs(training_data_loader)
+            print()
+            print(f'Starting training for fold {fold_index}')
+            self.print_hyperparameters(training_data_loader)
+            for epoch_index in range(self.number_of_epochs):
+                print('\n')
+                print(f'Epoch {epoch_index}')
+                with timer(section_name=f'Epoch {epoch_index}'):
+                    train_loss, train_jaccard = self.train_one_epoch(training_data_loader)
+                    valid_loss, valid_jaccard = self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, False)
+                    print(f'\t   Training Jaccard: {train_jaccard:.8f} |   Training Loss: {train_loss:.8f}')
+                    print(f'\t Validation Jaccard: {valid_jaccard:.8f} | Validation Loss: {valid_loss:.8f}')
+                print('\n')
+                if any(valid_jaccard > previous_jaccard for previous_jaccard in most_recent_validation_jaccard_scores):
+                    most_recent_validation_jaccard_scores.pop(0)
+                    most_recent_validation_jaccard_scores.append(valid_jaccard)
+                else:
+                    print()
+                    print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs(training_data_loader)} recent epochs, so training is ending early due to apparent convergence.')
+                    print()
+                    break
+            self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
+            self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
         return
     
     def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:
@@ -404,12 +387,12 @@ class BERTPredictor():
         assert mean_jaccard_index == 0.0 or 0.0 not in (intersection_count.sum(), union_count.sum())
         return mean_jaccard_index
 
-    def print_hyperparameters(self) -> None:
+    def print_hyperparameters(self, training_data_loader: data.DataLoader) -> None:
         print()
         print(f'Model hyperparameters are:')
         print(f'        predictor_type: {self.__class__.__name__}')
         print(f'        number_of_epochs: {self.number_of_epochs}')
-        print(f'        number_of_relevant_recent_epochs: {self.number_of_relevant_recent_epochs}')
+        print(f'        number_of_relevant_recent_epochs: {self.number_of_relevant_recent_epochs(training_data_loader)}')
         print(f'        batch_size: {self.batch_size}')
         print(f'        output_directory: {self.output_directory}')
         print()
@@ -529,12 +512,12 @@ class BERTPredictor():
         return
 
 class RoBERTaPredictor(BERTPredictor):
-    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, train_portion: int, validation_portion: int, gradient_clipping_threshold: float, initial_learning_rate: float):
+    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, number_of_folds: int, gradient_clipping_threshold: float, initial_learning_rate: float):
         transformers_model_config = RobertaConfig.from_pretrained(TRANSFORMERS_MODEL_SPEC)
         model = RobertaForTokenClassification(transformers_model_config).to(DEVICE)
         loss_function = nn.BCELoss()
         optimizer = optim.Adam(params=model.parameters(), lr=initial_learning_rate)
-        super().__init__(output_directory, number_of_epochs, batch_size, train_portion, validation_portion, gradient_clipping_threshold, model, loss_function, optimizer)
+        super().__init__(output_directory, number_of_epochs, batch_size, number_of_folds, gradient_clipping_threshold, model, loss_function, optimizer)
 
 ###############
 # Main Driver #
@@ -542,11 +525,11 @@ class RoBERTaPredictor(BERTPredictor):
 
 @debug_on_error
 def train_model() -> None:
-    predictor = RoBERTaPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, TRAIN_PORTION, VALIDATION_PORTION, GRADIENT_CLIPPING_THRESHOLD, INITIAL_LEARNING_RATE)
+    predictor = RoBERTaPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, NUMBER_OF_FOLDS, GRADIENT_CLIPPING_THRESHOLD, INITIAL_LEARNING_RATE)
     predictor.train()
-    predictor.load_parameters(predictor.best_saved_model_location)
-    # predictor.demonstrate_training_examples()
-    predictor.demonstrate_validation_examples()
+    # predictor.load_parameters(predictor.best_saved_model_location)
+    # # predictor.demonstrate_training_examples()
+    # predictor.demonstrate_validation_examples()
     return 
 
 if __name__ == '__main__':

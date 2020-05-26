@@ -152,7 +152,7 @@ class Predictor(ABC):
         self.sentiment_field = data.RawField()
         self.misc_field = data.RawField()
         self.all_data = data.dataset.TabularDataset(
-            path=preprocess_data.PREPROCESSED_TRAINING_DATA_JSON_FILE,
+            path=PREPROCESSED_TRAINING_DATA_JSON_FILE,
             format='json',
             fields={
                 'preprocessed_input_string': ('preprocessed_input_string', self.text_field),

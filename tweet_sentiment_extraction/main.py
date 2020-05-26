@@ -18,7 +18,6 @@ from typing import Generator
 
 from model_utilities import *
 from misc_utilities import *
-from preprocess_data import PREPROCESSED_TRAINING_DATA_JSON_FILE
 
 ##########
 # Driver #

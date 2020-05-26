@@ -23,6 +23,7 @@ import concurrent.futures
 from typing import Tuple, List, Callable
 from spacy.tokenizer import Tokenizer
 
+from model_utilities import *
 from misc_utilities import *
 
 import torchtext
@@ -30,12 +31,6 @@ import torchtext
 ###########
 # Globals #
 ###########
-
-with warnings_suppressed():
-    tqdm.tqdm.pandas()
-
-TRAINING_DATA_CSV_FILE = './data/train.csv'
-PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
 
 PREPROCESS_TEXT_IN_PARALLEL = False
 

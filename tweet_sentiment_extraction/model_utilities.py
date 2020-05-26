@@ -36,7 +36,7 @@ torch.backends.cudnn.benchmark = not __debug__
 ##########
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-NUMBER_OF_DATALOADER_WORKERS = 8
+NUMBER_OF_DATALOADER_WORKERS = 0 # 8
 DEVICE_ID = None if DEVICE == 'cpu' else torch.cuda.current_device()
 
 def set_global_device_id(global_device_id: int) -> None:
@@ -53,7 +53,7 @@ def set_global_device_id(global_device_id: int) -> None:
 
 NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
 MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
-MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 30
+MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 20
 
 def number_of_relevant_recent_epochs_for_data_size_and_batch_size(data_size: int, batch_size: int) -> int:
     number_of_iterations_per_epoch = data_size / batch_size
@@ -62,6 +62,13 @@ def number_of_relevant_recent_epochs_for_data_size_and_batch_size(data_size: int
     number_of_relevant_recent_epochs = max(MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS, number_of_relevant_recent_epochs)
     number_of_relevant_recent_epochs = min(MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS, number_of_relevant_recent_epochs)
     return number_of_relevant_recent_epochs
+
+########
+# Data #
+########
+
+TRAINING_DATA_CSV_FILE = './data/train.csv'
+PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
 
 #########
 # Misc. #
@@ -75,8 +82,7 @@ SENTIMENTS = ['positive', 'negative', 'neutral']
 NON_TRAINING_BATCH_SIZE = 1024
 
 OUTPUT_DIR = './default_output'
-TRAIN_PORTION = 0.80
-VALIDATION_PORTION = 1-TRAIN_PORTION
+NUMBER_OF_FOLDS = 5
 NUMBER_OF_EPOCHS = 100
 
 NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 30
