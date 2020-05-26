@@ -446,7 +446,7 @@ class BERTPredictor():
             selected_ids.remove(TRANSFORMERS_TOKENIZER.sep_token_id)
         
         selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
-        assert ''.join(eager_filter(is_ascii, selected_text)) in ''.join(eager_filter(is_ascii, normalized_text)) or , f'{repr(selected_text)} not in {repr(normalized_text)}'
+        assert ''.join(eager_filter(is_ascii, selected_text)) in ''.join(eager_filter(is_ascii, normalized_text)), f'{repr(selected_text)} not in {repr(normalized_text)}'
         return selected_text
     
     def _evaluate_example(self, example_input_string: str, example_selected_text: str, example_sentiment: str) -> Tuple[str, float]:
