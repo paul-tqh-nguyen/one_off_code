@@ -382,6 +382,8 @@ class BERTPredictor():
         test_data_df['start_index'] = start_and_end_indices_series.map(lambda pair: pair[0])
         test_data_df['end_index'] = start_and_end_indices_series.map(lambda pair: pair[1])
         def _extract_selected_text_via_indices(text: str, sentiment: str, start_index: int, end_index: int) -> str:
+            if end_index < start_index:
+                return text
             normalized_text = normalize_text(input_string)
             encoded_normalized_text = TRANSFORMERS_TOKENIZER.encode(normalized_text, sentiment)
             selected_ids = encoded_normalized_text[start_index:end_index+1]
