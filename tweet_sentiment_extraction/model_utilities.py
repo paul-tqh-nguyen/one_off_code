@@ -76,15 +76,18 @@ def number_of_relevant_recent_epochs_for_data_size_and_batch_size(data_size: int
 ########
 
 TRAINING_DATA_CSV_FILE = './data/train.csv'
+TESTING_DATA_CSV_FILE = './data/test.csv'
 PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
-
-#########
-# Misc. #
-#########
 
 FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
 GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION = 'global_best_model_score.json'
 CROSS_VALIDATION_RESULTS_CSV_FILE_LOCATION_BASE_NAME = 'cross_validation.csv'
+TESTING_RESULTS_CSV_FILE_LOCATION_BASE_NAME = "test_results.csv"
+SUBMISSION_CSV_FILE_LOCATION_BASE_NAME = "submission.csv"
+
+#########
+# Misc. #
+#########
 
 SENTIMENTS = ['positive', 'negative', 'neutral']
 

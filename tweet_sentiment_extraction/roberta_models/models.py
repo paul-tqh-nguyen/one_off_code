@@ -343,10 +343,62 @@ class BERTPredictor():
             start_and_end_word_indices_series = training_evaluation_df.iloc[validation_indices]['text', 'predicted_selected_text'].apply(lambda row: _start_and_end_word_indices(row[0], row[1]), axis=1)
             training_evaluation_df.iloc[validation_indices]['predicted_selected_text_start_index'] = start_and_end_word_indices_series.map(lambda pair: pair[0])
             training_evaluation_df.iloc[validation_indices]['predicted_selected_text_end_index'] = start_and_end_word_indices_series.map(lambda pair: pair[1])
-        assert not any(training_evaluation_df['predicted_selected_text','jaccard'].isnull())
-        training_evaluation_df.to_csv(os.path.join(self.output_directory, CROSS_VALIDATION_RESULTS_CSV_FILE_LOCATION_BASE_NAME))
+        assert not any(training_evaluation_df[['predicted_selected_text','jaccard']].isnull())
+        training_evaluation_df.to_csv(os.path.join(self.output_directory, CROSS_VALIDATION_RESULTS_CSV_FILE_LOCATION_BASE_NAME), index=False)
         print(f'Training set cross-validation Jaccard score is {training_evaluation_df.jaccard.mean()}.')
         return
+
+    def generate_testing_data_predictions(self) -> None:
+        self.model.eval()
+        test_data_df = pd.read_csv(TESTING_DATA_CSV_FILE)
+        fold_columns = sum(
+            [(f'start_index_fold_{fold_index}', f'start_index_score_fold_{fold_index}', f'end_index_fold_{fold_index}', f'end_index_score_fold_{fold_index}')
+                 for fold_index in range(self.number_of_folds)],
+            ())
+        fold_columns += ['start_index', 'end_index', 'selected_text']
+        test_data_df = pd.concat([test_data_df, pd.DataFrame(columns=fold_columns)])
+        for fold_index in range(self.number_of_folds):
+            self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
+            select_substring_tuple_series = test_data_df[['text', 'sentiment']].apply(lambda row: self._select_substring(row[0], row[1]), axis=1)
+            test_data_df[f'start_index_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[1])
+            test_data_df[f'start_index_score_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[2])
+            test_data_df[f'end_index_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[3])
+            test_data_df[f'end_index_score_fold_{fold_index}')] = select_substring_tuple_series.map(lambda tup: tup[4])
+        def _highest_scoring_start_and_end_indices(*args) -> Tuple[int, int]:
+            assert divmod(len(args), 4) == (self.number_of_folds, 0)
+            best_start_index = UNIQUE_BOGUS_RESULT_IDENTIFIER
+            best_start_score = 0
+            best_end_index = UNIQUE_BOGUS_RESULT_IDENTIFIER
+            best_end_score = 0
+            for fold_index in range(self.number_of_folds):
+                start_index, start_index_score, end_index, end_index_score = args[fold_index*4:(fold_index+1)*4]
+                if start_index_score > best_start_score:
+                    best_start_index = start_index
+                if end_index_score > best_end_score:
+                    best_end_index = end_index
+            assert UNIQUE_BOGUS_RESULT_IDENTIFIER not in (best_start_index, best_end_index)
+            return best_start_index, best_end_index
+        start_and_end_indices_series = test_data_df[fold_columns].apply(lambda row: _highest_scoring_start_and_end_indices(*row), axis=1)
+        test_data_df['start_index'] = start_and_end_indices_series.map(lambda pair: pair[0])
+        test_data_df['end_index'] = start_and_end_indices_series.map(lambda pair: pair[1])
+        def _extract_selected_text_via_indices(text: str, sentiment: str, start_index: int, end_index: int) -> str:
+            normalized_text = normalize_text(input_string)
+            encoded_normalized_text = TRANSFORMERS_TOKENIZER.encode(normalized_text, sentiment)
+            selected_ids = encoded_normalized_text[start_index:end_index+1]
+            
+            # Post-Processing
+            while TRANSFORMERS_TOKENIZER.cls_token_id in selected_ids:
+                selected_ids.remove(TRANSFORMERS_TOKENIZER.cls_token_id)
+            while TRANSFORMERS_TOKENIZER.sep_token_id in selected_ids:
+                selected_ids.remove(TRANSFORMERS_TOKENIZER.sep_token_id)
+                
+            selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
+            return selected_text
+        test_data_df['selected_text'] = test_data_df[['text', 'sentiment', 'start_index', 'end_index']].apply(lambda row: _extract_selected_text_via_indices(row[0], row[1], row[2], row[3]), axis=1)
+        assert not any(test_data_df[fold_columns].isnull())
+        test_data_df.to_csv(os.path.join(self.output_directory, TESTING_RESULTS_CSV_FILE_LOCATION_BASE_NAME), index=False)
+        test_data_df.to_csv(os.path.join(self.output_directory, SUBMISSION_CSV_FILE_LOCATION_BASE_NAME), index=False)
+        return 
     
     def train(self) -> None:
         assert self.cross_validator.get_n_splits() == self.number_of_folds
@@ -463,8 +515,8 @@ class BERTPredictor():
             print(f'The CUDA device ID being used is {DEVICE_ID}')
         print()
         return
-    
-    def select_substring(self, input_string: str, sentiment: str) -> str:
+
+    def _select_substring(self, input_string: str, sentiment: str) -> Tuple[str, int, int, int, int]:
         assert sentiment in SENTIMENTS
         self.model.eval()
         id_tensor = model_input_from_row(input_string, sentiment)
@@ -494,8 +546,8 @@ class BERTPredictor():
         assert encoded_normalized_text[-1] == TRANSFORMERS_TOKENIZER.sep_token_id
         assert encoded_normalized_text[-3] == TRANSFORMERS_TOKENIZER.sep_token_id
         assert encoded_normalized_text[-4] == TRANSFORMERS_TOKENIZER.sep_token_id
-        start_index = predicted_label[:,0].argmax().item()
-        end_index = predicted_label[:,1].argmax().item()
+        start_index, start_score = torch.max(predicted_label[:,0], dim=0, out=None)
+        end_index, end_score = torch.max(predicted_label[:,1], dim=0, out=None)
         selected_ids = encoded_normalized_text[start_index:end_index+1]
         
         # Post-Processing
@@ -506,7 +558,10 @@ class BERTPredictor():
         
         selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
         assert remove_non_ascii_characters(selected_text) in remove_non_ascii_characters(normalized_text), f'{repr(selected_text)} not in {repr(normalized_text)}'
-        return selected_text
+        return selected_text, start_index, start_score, end_index, end_score
+
+    def select_substring(self, input_string: str, sentiment: str) -> str:
+        return _select_substring(input_string, sentiment)[0]
     
     def _evaluate_example(self, example_input_string: str, example_selected_text: str, example_sentiment: str) -> Tuple[str, float]:
         predicted_substring = self.select_substring(example_input_string, example_sentiment)
