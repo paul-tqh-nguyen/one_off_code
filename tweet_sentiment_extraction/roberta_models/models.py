@@ -323,8 +323,8 @@ class BERTPredictor():
         training_evaluation_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
         training_evaluation_df = pd.concat([training_evaluation_df, pd.DataFrame(columns=['predicted_selected_text','jaccard', 'predicted_selected_text_start_index', 'predicted_selected_text_end_index'])])
         def _start_and_end_word_indices(text: str, selected_text: str) -> Tuple[int, int]:
-            start_index = -1
-            end_index = -1
+            start_index = None
+            end_index = None
             text_words = eager_map(remove_non_ascii_characters, text.split())
             selected_text_words = eager_map(remove_non_ascii_characters, selected_text.split())
             for text_word_index, text_word in enumerate(text_words):
@@ -345,6 +345,7 @@ class BERTPredictor():
             training_evaluation_df.iloc[validation_indices]['predicted_selected_text_end_index'] = start_and_end_word_indices_series.map(lambda pair: pair[1])
         assert not any(training_evaluation_df['predicted_selected_text','jaccard'].isnull())
         training_evaluation_df.to_csv(os.path.join(self.output_directory, CROSS_VALIDATION_RESULTS_CSV_FILE_LOCATION_BASE_NAME))
+        print(f'Training set cross-validation Jaccard score is {training_evaluation_df.jaccard.mean()}.')
         return
     
     def train(self) -> None:
