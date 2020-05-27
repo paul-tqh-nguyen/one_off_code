@@ -54,12 +54,9 @@ def set_global_device_id(global_device_id: int) -> None:
 NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
 MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
 MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 20
-MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5 # @todo remove this
-MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5 # @todo remove this
 
 def jaccard_sufficiently_high_for_epoch(jaccard_score: float, epoch_index: int) -> bool:
     jaccard_thresholds_for_number_of_epochs = [
-        (0.67, 6), # @todo remove this
         (0.5, 25),
         (0.6, 40),
     ]
@@ -87,6 +84,7 @@ PREPROCESSED_TRAINING_DATA_JSON_FILE = './data/preprocessed_train.json'
 
 FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME = 'final_model_score.json'
 GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION = 'global_best_model_score.json'
+CROSS_VALIDATION_RESULTS_CSV_FILE_LOCATION_BASE_NAME = 'cross_validation.csv'
 
 SENTIMENTS = ['positive', 'negative', 'neutral']
 
@@ -104,6 +102,9 @@ def jaccard_index_over_strings(str1: str, str2: str):
     b = set(str2.lower().split())
     c = a.intersection(b)
     return float(len(c)) / (len(a) + len(b) - len(c))
+
+def remove_non_ascii_characters(text: str) -> str:
+    return ''.join(eager_filter(is_ascii, text))
 
 ##########
 # Driver #

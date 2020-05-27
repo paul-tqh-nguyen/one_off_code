@@ -299,7 +299,7 @@ class BERTPredictor():
         self.model.from_pretrained(parameter_directory_location)
         return
     
-    def aggregate_score_over_all_folds(self) -> None:
+    def aggregate_score_over_all_folds(self, fold_index_to_splits: dict) -> None:
         fold_index_to_validation_jaccard = [None] * self.number_of_folds
         for fold_index in range(self.number_of_folds):
             json_file_location_for_fold = self.final_model_score_location_for_fold(fold_index)
@@ -319,11 +319,38 @@ class BERTPredictor():
         }
         with open(os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME), 'w') as outfile:
             json.dump(aggregated_score_dict, outfile)
+        self.model.eval()
+        training_evaluation_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
+        training_evaluation_df = pd.concat([training_evaluation_df, pd.DataFrame(columns=['predicted_selected_text','jaccard', 'predicted_selected_text_start_index', 'predicted_selected_text_end_index'])])
+        def _start_and_end_word_indices(text: str, selected_text: str) -> Tuple[int, int]:
+            start_index = -1
+            end_index = -1
+            text_words = eager_map(remove_non_ascii_characters, text.split())
+            selected_text_words = eager_map(remove_non_ascii_characters, selected_text.split())
+            for text_word_index, text_word in enumerate(text_words):
+                possible_end_index = text_word_index + len(selected_text_words)
+                if possible_end_index == len(text_words):
+                    break
+                if selected_text_words == text_words[text_word_index:possible_end_index]:
+                    start_index = text_word_index
+                    end_index = possible_end_index
+                    break
+            return start_index, end_index
+        for fold_index, (training_indices, validation_indices) in fold_index_to_splits:
+            self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
+            training_evaluation_df.iloc[validation_indices]['predicted_selected_text'] = training_evaluation_df.iloc[validation_indices][['text', 'sentiment']].apply(lambda row: self.select_substring(row[0], row[1]), axis=1)
+            training_evaluation_df.iloc[validation_indices]['jaccard'] = training_evaluation_df.iloc[validation_indices][['selected_text', 'predicted_selected_text']].apply(lambda row: jaccard_index_over_strings(row[0], row[1]), axis=1)
+            start_and_end_word_indices_series = training_evaluation_df.iloc[validation_indices]['text', 'predicted_selected_text'].apply(lambda row: _start_and_end_word_indices(row[0], row[1]), axis=1)
+            training_evaluation_df.iloc[validation_indices]['predicted_selected_text_start_index'] = start_and_end_word_indices_series.map(lambda pair: pair[0])
+            training_evaluation_df.iloc[validation_indices]['predicted_selected_text_end_index'] = start_and_end_word_indices_series.map(lambda pair: pair[1])
+        assert not any(training_evaluation_df['predicted_selected_text','jaccard'].isnull())
+        training_evaluation_df.to_csv(os.path.join(self.output_directory, CROSS_VALIDATION_RESULTS_CSV_FILE_LOCATION_BASE_NAME))
         return
     
     def train(self) -> None:
         assert self.cross_validator.get_n_splits() == self.number_of_folds
-        for fold_index, (training_indices, validation_indices) in enumerate(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment)):
+        fold_index_to_splits = list(enumerate(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment)))
+        for fold_index, (training_indices, validation_indices) in fold_index_to_splits:
             self.best_valid_jaccard_for_current_fold = -1
             training_dataset = TweetSentimentSelectionDataset(training_indices, self.input_id_tensors, self.output_tensors)
             validation_dataset = TweetSentimentSelectionDataset(validation_indices, self.input_id_tensors, self.output_tensors)
@@ -357,7 +384,7 @@ class BERTPredictor():
                     break
             self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
             self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
-        self.aggregate_score_over_all_folds()
+        self.aggregate_score_over_all_folds(fold_index_to_splits)
         return
     
     def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:
@@ -477,7 +504,7 @@ class BERTPredictor():
             selected_ids.remove(TRANSFORMERS_TOKENIZER.sep_token_id)
         
         selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
-        assert ''.join(eager_filter(is_ascii, selected_text)) in ''.join(eager_filter(is_ascii, normalized_text)), f'{repr(selected_text)} not in {repr(normalized_text)}'
+        assert remove_non_ascii_characters(selected_text) in remove_non_ascii_characters(normalized_text), f'{repr(selected_text)} not in {repr(normalized_text)}'
         return selected_text
     
     def _evaluate_example(self, example_input_string: str, example_selected_text: str, example_sentiment: str) -> Tuple[str, float]:
