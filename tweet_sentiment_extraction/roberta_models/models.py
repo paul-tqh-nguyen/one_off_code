@@ -421,7 +421,7 @@ class BERTPredictor():
         test_data_df.to_csv(os.path.join(self.output_directory, SUBMISSION_CSV_FILE_LOCATION_BASE_NAME), index=False)
         return 
     
-    def train(self) -> None:
+    def train(self, train_for_hyperparameter_search: bool) -> None:
         assert self.cross_validator.get_n_splits() == self.number_of_folds
         fold_index_to_splits: List[Tuple[np.ndarray, np.ndarray]] = list(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment))
         for fold_index, (training_indices, validation_indices) in enumerate(fold_index_to_splits):
@@ -456,9 +456,13 @@ class BERTPredictor():
                     print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs(training_data_loader)} recent epochs, so training is ending early due to apparent convergence.')
                     print()
                     break
-            self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
-            self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
-        self.aggregate_score_over_all_folds(fold_index_to_splits)
+            if not train_for_hyperparameter_search:
+                self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
+                self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
+            else:
+                break
+        if not train_for_hyperparameter_search:
+            self.aggregate_score_over_all_folds(fold_index_to_splits)
         return
     
     def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:
@@ -648,7 +652,7 @@ class RoBERTaPredictor(BERTPredictor):
 @debug_on_error
 def train_model() -> None:
     predictor = RoBERTaPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, NUMBER_OF_FOLDS, GRADIENT_CLIPPING_THRESHOLD, INITIAL_LEARNING_RATE)
-    predictor.train()
+    predictor.train(False)
     for fold_index in range(predictor.number_of_folds):
         print()
         print(f'Demonstrating examples via model for fold {fold_index}')
