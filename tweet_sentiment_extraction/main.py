@@ -24,10 +24,6 @@ from misc_utilities import *
 ##########
 
 def main() -> None:
-    from hyperparameter_search import WORD_SELECTOR_RESULTS_DIRECTORY
-    from hyperparameter_search import WORD_SELECTOR_BEST_MODEL_SCORE_JSON_FILE_LOCATION
-    from hyperparameter_search import ROBERTA_RESULTS_DIRECTORY
-    from hyperparameter_search import ROBERTA_BEST_MODEL_SCORE_JSON_FILE_LOCATION
     
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
 
@@ -36,11 +32,15 @@ def main() -> None:
     parser.add_argument('-preprocess-data', action='store_true', help=f'Preprocess the raw data. Results stored in {PREPROCESSED_TRAINING_DATA_JSON_FILE}.')
 
     # RoBERTa Commands
+    from hyperparameter_search import ROBERTA_RESULTS_DIRECTORY
+    from hyperparameter_search import ROBERTA_BEST_MODEL_SCORE_JSON_FILE_LOCATION
     parser.add_argument('-train-roberta-model', action='store_true', help=f'Trains & evaluates our RoBERTa model on the raw dataset. Results are saved to {ROBERTA_RESULTS_DIRECTORY}.')
     parser.add_argument('-hyperparameter-search-roberta', action='store_true',
                         help=f'Exhaustively performs hyperparameter random search using only the RoBERTa model. Details of the best performance are tracked in {ROBERTA_BEST_MODEL_SCORE_JSON_FILE_LOCATION}')
 
     # Word Selector Commands
+    from hyperparameter_search import WORD_SELECTOR_RESULTS_DIRECTORY
+    from hyperparameter_search import WORD_SELECTOR_BEST_MODEL_SCORE_JSON_FILE_LOCATION
     parser.add_argument('-train-word-selector-model', action='store_true', help=f'Trains & evaluates our word selector model on our preprocessed dataset. Results are saved to {WORD_SELECTOR_RESULTS_DIRECTORY}.')
     parser.add_argument('-hyperparameter-search-word-selector-models', action='store_true',
                         help=f'Exhaustively performs hyperparameter random search. Details of the best performance are tracked in {WORD_SELECTOR_BEST_MODEL_SCORE_JSON_FILE_LOCATION}.')
@@ -66,28 +66,37 @@ def main() -> None:
         import preprocess_data
         preprocess_data.preprocess_data()
     
-    if args.train_word_selector_model:
-        from word_selector_models.models import train_model
-        train_model()
-    if args.train_roberta_model:
-        import roberta_models.models
-        roberta_models.models.train_model()
-
     # Hyperparameter Search
     
     if args.hyperparameter_search_word_selector_models:
         from hyperparameter_search import (
             LSTMSentimentConcatenationPredictor_generator,
             LSTMScaledDotProductAttentionPredictor_generator,
-            NaiveDensePredictor_generator,
+            # NaiveDensePredictor_generator,
+            RoBERTaPredictor_generator,
         )
         predictors = roundrobin(
             LSTMSentimentConcatenationPredictor_generator(),
             LSTMScaledDotProductAttentionPredictor_generator(),
             # NaiveDensePredictor_generator(),
+            RoBERTaPredictor_generator(),
         )
         from hyperparameter_search import hyperparameter_search
         hyperparameter_search(predictors)
+
+    # RoBERTa
+    if args.train_roberta_model:
+        import roberta_models.models
+        roberta_models.models.train_model()
+    if args.hyperparameter_search_roberta:
+        from hyperparameter_search import RoBERTaPredictor_generator, hyperparameter_search
+        predictors = RoBERTaPredictor_generator()
+        hyperparameter_search(predictors)
+
+    # Word Selector
+    if args.train_word_selector_model:
+        from word_selector_models.models import train_model
+        train_model()
     if args.hyperparameter_search_lstm_sentiment_concatenation_predictor:
         from hyperparameter_search import LSTMSentimentConcatenationPredictor_generator, hyperparameter_search
         predictors = LSTMSentimentConcatenationPredictor_generator()
@@ -100,11 +109,7 @@ def main() -> None:
         from hyperparameter_search import NaiveDensePredictor_generator, hyperparameter_search
         predictors = NaiveDensePredictor_generator()
         hyperparameter_search(predictors)
-    if args.hyperparameter_search_roberta:
-        from hyperparameter_search import RoBERTaPredictor_generator, hyperparameter_search
-        predictors = RoBERTaPredictor_generator()
-        hyperparameter_search(predictors)
-    
+        
     return
 
 if __name__ == '__main__':

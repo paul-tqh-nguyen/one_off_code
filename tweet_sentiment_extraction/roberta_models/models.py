@@ -245,13 +245,6 @@ class BERTPredictor():
     
     def validate(self, fold_index: int, training_data_loader: data.DataLoader, validation_data_loader: data.DataLoader, epoch_index: int, result_is_from_final_run: bool) -> Tuple[float, float]:
         valid_loss, valid_jaccard = self.evaluate(validation_data_loader)
-        if not os.path.isfile(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION):
-            log_current_model_as_best = True
-        else:
-            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'r') as current_global_best_model_score_json_file:
-                current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
-                current_global_best_model_jaccard: float = current_global_best_model_score_dict['valid_jaccard']
-                log_current_model_as_best = current_global_best_model_jaccard < valid_jaccard
         if valid_jaccard > self.best_valid_jaccard_for_current_fold:
             self.best_valid_jaccard_for_current_fold = valid_jaccard
             best_saved_model_location = self.best_saved_model_location_for_fold(fold_index)
@@ -271,9 +264,7 @@ class BERTPredictor():
             'gradient_clipping_threshold': self.gradient_clipping_threshold,
             'output_directory': self.output_directory,
         }
-        if log_current_model_as_best:
-            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
-                json.dump(self_score_dict, outfile)
+
         with open(self.latest_model_score_location_for_fold(fold_index), 'w') as outfile:
             json.dump(self_score_dict, outfile)
         if result_is_from_final_run:
@@ -318,9 +309,27 @@ class BERTPredictor():
             'max_validation_jaccard_fold_index': max_validation_jaccard_fold_index,
             'max_validation_jaccard': max_validation_jaccard,
             'mean_validation_jaccard': mean_validation_jaccard,
+            'predictor_type': self.__class__.__name__,
+            'number_of_epochs': self.number_of_epochs,
+            'batch_size': self.batch_size,
+            'number_of_folds': self.number_of_folds,
+            'number_of_parameters': self.count_parameters(),
+            'gradient_clipping_threshold': self.gradient_clipping_threshold,
+            'output_directory': self.output_directory,
+
         }
         with open(os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME), 'w') as outfile:
             json.dump(aggregated_score_dict, outfile)
+        if not os.path.isfile(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION):
+            log_current_model_as_best = True
+        else:
+            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'r') as current_global_best_model_score_json_file:
+                current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
+                current_global_best_model_jaccard: float = current_global_best_model_score_dict['mean_validation_jaccard']
+                log_current_model_as_best = current_global_best_model_jaccard < mean_validation_jaccard
+        if log_current_model_as_best:
+            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
+                json.dump(aggregated_score_dict, outfile)
         self.model.eval()
         training_evaluation_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
         training_evaluation_df.text[training_evaluation_df.text != training_evaluation_df.text] = ''
@@ -421,7 +430,7 @@ class BERTPredictor():
         test_data_df.to_csv(os.path.join(self.output_directory, SUBMISSION_CSV_FILE_LOCATION_BASE_NAME), index=False)
         return 
     
-    def train(self, train_for_hyperparameter_search: bool) -> None:
+    def train(self) -> None:
         assert self.cross_validator.get_n_splits() == self.number_of_folds
         fold_index_to_splits: List[Tuple[np.ndarray, np.ndarray]] = list(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment))
         for fold_index, (training_indices, validation_indices) in enumerate(fold_index_to_splits):
@@ -456,13 +465,9 @@ class BERTPredictor():
                     print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs(training_data_loader)} recent epochs, so training is ending early due to apparent convergence.')
                     print()
                     break
-            if not train_for_hyperparameter_search:
-                self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
-                self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
-            else:
-                break
-        if not train_for_hyperparameter_search:
-            self.aggregate_score_over_all_folds(fold_index_to_splits)
+            self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
+            self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
+        self.aggregate_score_over_all_folds(fold_index_to_splits)
         return
     
     def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:
@@ -652,7 +657,7 @@ class RoBERTaPredictor(BERTPredictor):
 @debug_on_error
 def train_model() -> None:
     predictor = RoBERTaPredictor(OUTPUT_DIR, NUMBER_OF_EPOCHS, BATCH_SIZE, NUMBER_OF_FOLDS, GRADIENT_CLIPPING_THRESHOLD, INITIAL_LEARNING_RATE)
-    predictor.train(False)
+    predictor.train()
     for fold_index in range(predictor.number_of_folds):
         print()
         print(f'Demonstrating examples via model for fold {fold_index}')
