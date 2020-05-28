@@ -306,7 +306,7 @@ class BERTPredictor():
             with open(json_file_location_for_fold, 'r') as file_handle:
                 fold_score_dict = json.load(file_handle)
                 best_validation_jaccard_score = fold_score_dict['best_valid_jaccard']
-                fold_index_to_jaccard[fold_index] = best_jaccard_score
+                fold_index_to_jaccard[fold_index] = best_validation_jaccard_score
         min_validation_jaccard_fold_index, min_validation_jaccard = min(((fold_index, validation_jaccard) for fold_index, validation_jaccard in enumerate(fold_index_to_validation_jaccard)), key = lambda x: x[1])
         max_validation_jaccard_fold_index, max_validation_jaccard = max(((fold_index, validation_jaccard) for fold_index, validation_jaccard in enumerate(fold_index_to_validation_jaccard)), key = lambda x: x[1])
         mean_validation_jaccard = mean(fold_index_to_validation_jaccard)
@@ -363,7 +363,7 @@ class BERTPredictor():
             test_data_df[f'start_index_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[1])
             test_data_df[f'start_index_score_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[2])
             test_data_df[f'end_index_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[3])
-            test_data_df[f'end_index_score_fold_{fold_index}')] = select_substring_tuple_series.map(lambda tup: tup[4])
+            test_data_df[f'end_index_score_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[4])
         def _highest_scoring_start_and_end_indices(*args) -> Tuple[int, int]:
             assert divmod(len(args), 4) == (self.number_of_folds, 0)
             best_start_index = UNIQUE_BOGUS_RESULT_IDENTIFIER

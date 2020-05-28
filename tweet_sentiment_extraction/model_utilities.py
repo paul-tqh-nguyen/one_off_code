@@ -59,6 +59,7 @@ MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5 # @todo remove these
 
 def jaccard_sufficiently_high_for_epoch(jaccard_score: float, epoch_index: int) -> bool:
     jaccard_thresholds_for_number_of_epochs = [
+        (0.67, 6), # @todo remove this
         (0.5, 25),
         (0.6, 40),
     ]
