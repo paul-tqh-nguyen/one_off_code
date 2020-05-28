@@ -54,12 +54,9 @@ def set_global_device_id(global_device_id: int) -> None:
 NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
 MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
 MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 20
-MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5 # @todo remove these
-MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5 # @todo remove these
 
 def jaccard_sufficiently_high_for_epoch(jaccard_score: float, epoch_index: int) -> bool:
     jaccard_thresholds_for_number_of_epochs = [
-        (0.67, 6), # @todo remove this
         (0.5, 25),
         (0.6, 40),
     ]
@@ -103,14 +100,17 @@ NUMBER_OF_EPOCHS = 100
 NUMBER_OF_EXAMPLES_TO_DEMONSTRATE = 30
 JACCARD_INDEX_GOOD_SCORE_THRESHOLD = 0.5
 
-def jaccard_index_over_strings(str1: str, str2: str): 
+def jaccard_index_over_strings(str1: str, str2: str):
     a = set(str1.lower().split()) 
     b = set(str2.lower().split())
     c = a.intersection(b)
-    return float(len(c)) / (len(a) + len(b) - len(c))
+    return 1 if len(a) + len(b) == 0 else float(len(c)) / (len(a) + len(b) - len(c))
 
 def remove_non_ascii_characters(text: str) -> str:
     return ''.join(eager_filter(is_ascii, text))
+
+def is_nan(obj) -> bool:
+    return obj != obj
 
 ##########
 # Driver #

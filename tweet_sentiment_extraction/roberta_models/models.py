@@ -15,8 +15,10 @@ import json
 import random
 import math
 import tqdm
+import numpy as np
 import pandas as pd
 from statistics import mean
+from functools import reduce
 from typing import Tuple, Iterable, List
 
 import sys ; sys.path.append('..')
@@ -299,14 +301,14 @@ class BERTPredictor():
         self.model.from_pretrained(parameter_directory_location)
         return
     
-    def aggregate_score_over_all_folds(self, fold_index_to_splits: dict) -> None:
+    def aggregate_score_over_all_folds(self, fold_index_to_splits: list) -> None:
         fold_index_to_validation_jaccard = [None] * self.number_of_folds
         for fold_index in range(self.number_of_folds):
             json_file_location_for_fold = self.final_model_score_location_for_fold(fold_index)
             with open(json_file_location_for_fold, 'r') as file_handle:
                 fold_score_dict = json.load(file_handle)
                 best_validation_jaccard_score = fold_score_dict['best_valid_jaccard']
-                fold_index_to_jaccard[fold_index] = best_validation_jaccard_score
+                fold_index_to_validation_jaccard[fold_index] = best_validation_jaccard_score
         min_validation_jaccard_fold_index, min_validation_jaccard = min(((fold_index, validation_jaccard) for fold_index, validation_jaccard in enumerate(fold_index_to_validation_jaccard)), key = lambda x: x[1])
         max_validation_jaccard_fold_index, max_validation_jaccard = max(((fold_index, validation_jaccard) for fold_index, validation_jaccard in enumerate(fold_index_to_validation_jaccard)), key = lambda x: x[1])
         mean_validation_jaccard = mean(fold_index_to_validation_jaccard)
@@ -321,7 +323,9 @@ class BERTPredictor():
             json.dump(aggregated_score_dict, outfile)
         self.model.eval()
         training_evaluation_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
-        training_evaluation_df = pd.concat([training_evaluation_df, pd.DataFrame(columns=['predicted_selected_text','jaccard', 'predicted_selected_text_start_index', 'predicted_selected_text_end_index'])])
+        training_evaluation_df.text[training_evaluation_df.text != training_evaluation_df.text] = ''
+        training_evaluation_df.selected_text[training_evaluation_df.selected_text != training_evaluation_df.selected_text] = ''
+        training_evaluation_df = pd.concat([training_evaluation_df, pd.DataFrame(columns=['predicted_selected_text','jaccard', 'predicted_selected_text_start_index', 'predicted_selected_text_end_index', 'fold_index'])])
         def _start_and_end_word_indices(text: str, selected_text: str) -> Tuple[int, int]:
             start_index = None
             end_index = None
@@ -336,14 +340,25 @@ class BERTPredictor():
                     end_index = possible_end_index
                     break
             return start_index, end_index
-        for fold_index, (training_indices, validation_indices) in fold_index_to_splits:
+        remainder_indices = set(training_evaluation_df.index) - reduce(set.union, (set(split[1]) for split in  fold_index_to_splits))
+        assert len(remainder_indices) == len(training_evaluation_df) % self.number_of_folds
+        for fold_index, (training_indices, validation_indices) in enumerate(fold_index_to_splits):
+            if fold_index == self.number_of_folds-1:
+                validation_indices = np.concatenate([validation_indices, list(remainder_indices)])
             self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
-            training_evaluation_df.iloc[validation_indices]['predicted_selected_text'] = training_evaluation_df.iloc[validation_indices][['text', 'sentiment']].apply(lambda row: self.select_substring(row[0], row[1]), axis=1)
-            training_evaluation_df.iloc[validation_indices]['jaccard'] = training_evaluation_df.iloc[validation_indices][['selected_text', 'predicted_selected_text']].apply(lambda row: jaccard_index_over_strings(row[0], row[1]), axis=1)
-            start_and_end_word_indices_series = training_evaluation_df.iloc[validation_indices]['text', 'predicted_selected_text'].apply(lambda row: _start_and_end_word_indices(row[0], row[1]), axis=1)
-            training_evaluation_df.iloc[validation_indices]['predicted_selected_text_start_index'] = start_and_end_word_indices_series.map(lambda pair: pair[0])
-            training_evaluation_df.iloc[validation_indices]['predicted_selected_text_end_index'] = start_and_end_word_indices_series.map(lambda pair: pair[1])
-        assert not any(training_evaluation_df[['predicted_selected_text','jaccard']].isnull())
+            training_evaluation_df['fold_index'].iloc[validation_indices] = fold_index
+            print()
+            print(f'Predicting selected text for fold {fold_index} cross-validation.')
+            training_evaluation_df['predicted_selected_text'].iloc[validation_indices] = training_evaluation_df[['text', 'sentiment']].iloc[validation_indices].progress_apply(lambda row: self.select_substring(row[0], row[1]), axis=1)
+            assert not any(training_evaluation_df['predicted_selected_text'].iloc[validation_indices].isnull())
+            print(f'Calculating Jaccard scores for fold {fold_index} cross-validation.')
+            training_evaluation_df['jaccard'].iloc[validation_indices] = training_evaluation_df[['selected_text', 'predicted_selected_text']].iloc[validation_indices].progress_apply(lambda row: jaccard_index_over_strings(row[0], row[1]), axis=1)
+            assert not any(training_evaluation_df['jaccard'].iloc[validation_indices].isnull())
+            start_and_end_word_indices_series = training_evaluation_df[['text', 'predicted_selected_text']].iloc[validation_indices].progress_apply(lambda row: _start_and_end_word_indices(row[0], row[1]), axis=1)
+            training_evaluation_df['predicted_selected_text_start_index'].iloc[validation_indices] = start_and_end_word_indices_series.progress_map(lambda pair: pair[0])
+            training_evaluation_df['predicted_selected_text_end_index'].iloc[validation_indices] = start_and_end_word_indices_series.progress_map(lambda pair: pair[1])
+        assert not any(training_evaluation_df['predicted_selected_text'].isnull())
+        assert not any(training_evaluation_df['jaccard'].isnull())
         training_evaluation_df.to_csv(os.path.join(self.output_directory, CROSS_VALIDATION_RESULTS_CSV_FILE_LOCATION_BASE_NAME), index=False)
         print(f'Training set cross-validation Jaccard score is {training_evaluation_df.jaccard.mean()}.')
         return
@@ -351,19 +366,23 @@ class BERTPredictor():
     def generate_testing_data_predictions(self) -> None:
         self.model.eval()
         test_data_df = pd.read_csv(TESTING_DATA_CSV_FILE)
+        test_data_df.text[test_data_df.text != test_data_df.text] = ''
+        test_data_df.selected_text[test_data_df.selected_text != test_data_df.selected_text] = ''
         fold_columns = sum(
             [(f'start_index_fold_{fold_index}', f'start_index_score_fold_{fold_index}', f'end_index_fold_{fold_index}', f'end_index_score_fold_{fold_index}')
                  for fold_index in range(self.number_of_folds)],
             ())
         fold_columns += ['start_index', 'end_index', 'selected_text']
         test_data_df = pd.concat([test_data_df, pd.DataFrame(columns=fold_columns)])
+        print()
+        print('Predicting selected text for test data.')
         for fold_index in range(self.number_of_folds):
             self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
-            select_substring_tuple_series = test_data_df[['text', 'sentiment']].apply(lambda row: self._select_substring(row[0], row[1]), axis=1)
-            test_data_df[f'start_index_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[1])
-            test_data_df[f'start_index_score_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[2])
-            test_data_df[f'end_index_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[3])
-            test_data_df[f'end_index_score_fold_{fold_index}'] = select_substring_tuple_series.map(lambda tup: tup[4])
+            select_substring_tuple_series = test_data_df[['text', 'sentiment']].progress_apply(lambda row: self._select_substring(row[0], row[1]), axis=1)
+            test_data_df[f'start_index_fold_{fold_index}'] = select_substring_tuple_series.progress_map(lambda tup: tup[1])
+            test_data_df[f'start_index_score_fold_{fold_index}'] = select_substring_tuple_series.progress_map(lambda tup: tup[2])
+            test_data_df[f'end_index_fold_{fold_index}'] = select_substring_tuple_series.progress_map(lambda tup: tup[3])
+            test_data_df[f'end_index_score_fold_{fold_index}'] = select_substring_tuple_series.progress_map(lambda tup: tup[4])
         def _highest_scoring_start_and_end_indices(*args) -> Tuple[int, int]:
             assert divmod(len(args), 4) == (self.number_of_folds, 0)
             best_start_index = UNIQUE_BOGUS_RESULT_IDENTIFIER
@@ -378,9 +397,9 @@ class BERTPredictor():
                     best_end_index = end_index
             assert UNIQUE_BOGUS_RESULT_IDENTIFIER not in (best_start_index, best_end_index)
             return best_start_index, best_end_index
-        start_and_end_indices_series = test_data_df[fold_columns].apply(lambda row: _highest_scoring_start_and_end_indices(*row), axis=1)
-        test_data_df['start_index'] = start_and_end_indices_series.map(lambda pair: pair[0])
-        test_data_df['end_index'] = start_and_end_indices_series.map(lambda pair: pair[1])
+        start_and_end_indices_series = test_data_df[fold_columns].progress_apply(lambda row: _highest_scoring_start_and_end_indices(*row), axis=1)
+        test_data_df['start_index'] = start_and_end_indices_series.progress_map(lambda pair: pair[0])
+        test_data_df['end_index'] = start_and_end_indices_series.progress_map(lambda pair: pair[1])
         def _extract_selected_text_via_indices(text: str, sentiment: str, start_index: int, end_index: int) -> str:
             if end_index < start_index:
                 return text
@@ -396,16 +415,16 @@ class BERTPredictor():
                 
             selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
             return selected_text
-        test_data_df['selected_text'] = test_data_df[['text', 'sentiment', 'start_index', 'end_index']].apply(lambda row: _extract_selected_text_via_indices(row[0], row[1], row[2], row[3]), axis=1)
-        assert not any(test_data_df[fold_columns].isnull())
+        test_data_df['selected_text'] = test_data_df[['text', 'sentiment', 'start_index', 'end_index']].progress_apply(lambda row: _extract_selected_text_via_indices(row[0], row[1], row[2], row[3]), axis=1)
+        assert not any(any(test_data_df[fold_column].isnull()) for fold_column in fold_columns)
         test_data_df.to_csv(os.path.join(self.output_directory, TESTING_RESULTS_CSV_FILE_LOCATION_BASE_NAME), index=False)
         test_data_df.to_csv(os.path.join(self.output_directory, SUBMISSION_CSV_FILE_LOCATION_BASE_NAME), index=False)
         return 
     
     def train(self) -> None:
         assert self.cross_validator.get_n_splits() == self.number_of_folds
-        fold_index_to_splits = list(enumerate(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment)))
-        for fold_index, (training_indices, validation_indices) in fold_index_to_splits:
+        fold_index_to_splits: List[Tuple[np.ndarray, np.ndarray]] = list(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment))
+        for fold_index, (training_indices, validation_indices) in enumerate(fold_index_to_splits):
             self.best_valid_jaccard_for_current_fold = -1
             training_dataset = TweetSentimentSelectionDataset(training_indices, self.input_id_tensors, self.output_tensors)
             validation_dataset = TweetSentimentSelectionDataset(validation_indices, self.input_id_tensors, self.output_tensors)
@@ -543,13 +562,11 @@ class BERTPredictor():
         predicted_label = predicted_labels.squeeze(0)
         assert tuple(predicted_label.shape) == (id_tensor_length, 2)
         normalized_text = normalize_text(input_string)
-        encoded_normalized_text = TRANSFORMERS_TOKENIZER.encode(normalized_text, sentiment)
+        encoded_normalized_text = TRANSFORMERS_TOKENIZER.encode(normalized_text)
         assert encoded_normalized_text[0] == TRANSFORMERS_TOKENIZER.cls_token_id
         assert encoded_normalized_text[-1] == TRANSFORMERS_TOKENIZER.sep_token_id
-        assert encoded_normalized_text[-3] == TRANSFORMERS_TOKENIZER.sep_token_id
-        assert encoded_normalized_text[-4] == TRANSFORMERS_TOKENIZER.sep_token_id
-        start_index, start_score = torch.max(predicted_label[:,0], dim=0, out=None)
-        end_index, end_score = torch.max(predicted_label[:,1], dim=0, out=None)
+        start_score, start_index = torch.max(predicted_label[:,0], dim=0, out=None)
+        end_score, end_index = torch.max(predicted_label[:,1], dim=0, out=None)
         selected_ids = encoded_normalized_text[start_index:end_index+1]
         
         # Post-Processing
@@ -561,9 +578,9 @@ class BERTPredictor():
         selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
         assert remove_non_ascii_characters(selected_text) in remove_non_ascii_characters(normalized_text), f'{repr(selected_text)} not in {repr(normalized_text)}'
         return selected_text, start_index, start_score, end_index, end_score
-
+    
     def select_substring(self, input_string: str, sentiment: str) -> str:
-        return _select_substring(input_string, sentiment)[0]
+        return self._select_substring(input_string, sentiment)[0]
     
     def _evaluate_example(self, example_input_string: str, example_selected_text: str, example_sentiment: str) -> Tuple[str, float]:
         predicted_substring = self.select_substring(example_input_string, example_sentiment)
