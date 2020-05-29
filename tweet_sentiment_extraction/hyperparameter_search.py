@@ -310,8 +310,8 @@ def RoBERTaPredictor_generator() -> Generator:
     number_of_folds = 5
     
     batch_size_choices = [32] # [1, 32, 64]
-    gradient_clipping_threshold_choices = [10, 50] # [10, 20, 30, 50]
-    initial_learning_rate_choices = [3e-5, 5e-5, 1e-6] # [1e-5, 3e-5, 5e-5, 1e-6, 1e-7]
+    gradient_clipping_threshold_choices = [10, 20, 30, 50]
+    initial_learning_rate_choices = [1e-5, 3e-5, 5e-5, 1e-6, 1e-7]
     
     hyparameter_list_choices = list(itertools.product(batch_size_choices,
                                                       gradient_clipping_threshold_choices,
@@ -335,7 +335,7 @@ def ElectraPredictor_generator() -> Generator:
     
     batch_size_choices = [1, 32, 64]
     gradient_clipping_threshold_choices = [10, 20, 30, 50]
-    initial_learning_rate_choices = [1e-5, 3e-5, 5e-5, 1e-6, 1e-7]
+    initial_learning_rate_choices = [5e-5, 3e-5, 1e-5, 1e-6, 1e-7]
     
     hyparameter_list_choices = list(itertools.product(batch_size_choices,
                                                       gradient_clipping_threshold_choices,
