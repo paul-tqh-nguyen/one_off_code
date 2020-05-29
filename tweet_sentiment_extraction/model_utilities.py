@@ -12,6 +12,7 @@
 
 import tqdm
 import math
+import random
 import numpy as np
 
 from misc_utilities import *
@@ -25,9 +26,15 @@ import torch
 with warnings_suppressed():
     tqdm.tqdm.pandas()
 
+def set_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    return
+
 SEED = 1234 if __debug__ else os.getpid()
-np.random.seed(SEED)
-torch.manual_seed(SEED)
+set_seed(SEED)
 torch.backends.cudnn.deterministic = __debug__
 torch.backends.cudnn.benchmark = not __debug__
 

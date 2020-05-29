@@ -374,6 +374,9 @@ def eager_zip(*args) -> List:
 def identity(input):
     return input
 
+def xor(disjunct_a: bool, disjunct_b: bool) -> bool:
+    return bool(disjunct_a) ^ bool(disjunct_b)
+
 def implies(antecedent: bool, consequent: bool) -> bool:
     return not antecedent or consequent
 
