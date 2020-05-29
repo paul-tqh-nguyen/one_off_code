@@ -86,17 +86,27 @@ def model_input_from_row(text: str, sentiment: str) -> torch.LongTensor:
     id_tensor = torch.LongTensor(ids)
     return id_tensor
 
-def _normalize_selected_text(input_string: str) -> str:
-    input_string_normalized = normalize_text(input_string)
-    input_string_normalized = input_string_normalized.strip()
-    while input_string_normalized[-1] in WEIRD_NON_ASCII_SEQUENCE:
-        input_string_normalized = input_string_normalized[:-1]
-    return input_string_normalized
+def _normalize_selected_text(text: str, selected_text: str) -> str:
+    selected_text_start_position = text.find(selected_text.strip())
+    selected_text_end_position = selected_text_start_position + len(selected_text)
+    assert selected_text_start_position >= 0
+    assert selected_text_end_position <= len(text)
+    while selected_text_end_position != len(text) and text[selected_text_end_position] != ' ':
+        selected_text_end_position += 1
+    while selected_text_start_position != 0 and text[selected_text_start_position-1] != ' ':
+        selected_text_start_position -= 1
+    assert selected_text_start_position >= 0
+    assert selected_text_end_position <= len(text)
+    selected_text_normalized = text[selected_text_start_position:selected_text_end_position]
+    selected_text_normalized = normalize_text(selected_text_normalized)
+    selected_text_normalized = selected_text_normalized.strip()
+    assert len(set(WEIRD_NON_ASCII_SEQUENCE).intersection(selected_text_normalized)) == 0
+    return selected_text_normalized
 
 def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torch.FloatTensor:
     assert WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER not in text+selected_text
     text_normalized = normalize_text(text)
-    selected_text_normalized = _normalize_selected_text(selected_text)
+    selected_text_normalized = _normalize_selected_text(text, selected_text)
     assert selected_text_normalized in text_normalized
     selected_text_start_position_in_text = text_normalized.find(selected_text_normalized)
     assert selected_text_start_position_in_text >=0
@@ -119,24 +129,11 @@ def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torc
         token_offsets.append(start_and_end_index_pair)
         current_token_start_index += len(token)
     assert current_token_start_index == len(text_normalized)
-
+    
     selected_token_indices: List[int] = []
-    if __debug__:
-        selected_text_cuts_end_word = False
-        selected_text_cuts_start_word = False
-        selected_text_is_single_word_that_is_cut_off = False
     for token_index, (token_start_index, token_end_index) in enumerate(token_offsets):
         if any(selected_characters[token_start_index:token_end_index]):
-            if __debug__ and not all(selected_characters[token_start_index:token_end_index]):
-                compacted_selection_sequence = list(uniq(selected_characters[token_start_index:token_end_index]))
-                assert len(compacted_selection_sequence) == 2
-                assert compacted_selection_sequence in [[True, False], [False, True]]
-                if compacted_selection_sequence == [True, False]:
-                    selected_text_cuts_end_word = True
-                elif compacted_selection_sequence == [False, True]:
-                    selected_text_cuts_start_word = True
-                if (selected_text_cuts_end_word or selected_text_cuts_start_word) and len(selected_text_normalized.split()) == 1:
-                    selected_text_is_single_word_that_is_cut_off = True
+            assert all(selected_characters[token_start_index:token_end_index])
             selected_token_indices.append(token_index)
     
     sentiment_encoded = TRANSFORMERS_TOKENIZER.encode(sentiment)
@@ -150,9 +147,9 @@ def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torc
     end_index = selected_token_indices[-1]+1
     output_tensor[start_index][0] = 1
     output_tensor[end_index][1] = 1
-
-    assert selected_text_cuts_start_word or selected_text_normalized.strip().startswith(TRANSFORMERS_TOKENIZER.decode(input_ids[start_index], clean_up_tokenization_spaces=False).strip()) or selected_text_is_single_word_that_is_cut_off
-    assert selected_text_cuts_end_word or selected_text_normalized.strip().endswith(TRANSFORMERS_TOKENIZER.decode(input_ids[end_index], clean_up_tokenization_spaces=False).strip()) or selected_text_is_single_word_that_is_cut_off
+    
+    assert selected_text_normalized.startswith(TRANSFORMERS_TOKENIZER.decode(input_ids[start_index], clean_up_tokenization_spaces=False)[1:])
+    assert selected_text_normalized.endswith(TRANSFORMERS_TOKENIZER.decode(input_ids[end_index], clean_up_tokenization_spaces=False)[1:])
     
     return output_tensor
 
