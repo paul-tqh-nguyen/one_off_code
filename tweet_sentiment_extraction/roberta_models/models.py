@@ -149,7 +149,7 @@ def collate(input_output_pairs: torch.Tensor) -> Tuple[torch.Tensor, torch.Tenso
 ##############
 
 class BERTPredictor():
-    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, number_of_folds: int, gradient_clipping_threshold: float, model: nn.modules.module.Module, loss_function: Callable, optimizer: optim.Optimizer):
+    def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, number_of_folds: int, gradient_clipping_threshold: float, initial_learning_rate: float, model_initializer: Callable, loss_function: Callable, optimizer_initializer: Callable):
         self.output_directory = output_directory
         if not os.path.exists(self.output_directory):
             os.makedirs(self.output_directory)
@@ -159,12 +159,13 @@ class BERTPredictor():
         self.number_of_folds = number_of_folds
         self.cross_validator = StratifiedKFold(n_splits=number_of_folds, shuffle=True, random_state=SEED)
         self.gradient_clipping_threshold = gradient_clipping_threshold
+        self.initial_learning_rate = initial_learning_rate
         
         self.load_data()
         
-        self.model = model
+        self.model_initializer = model_initializer
         self.loss_function = loss_function
-        self.optimizer = optimizer
+        self.optimizer_initializer = optimizer_initializer
     
     def load_data(self) -> None:
         self.all_data_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
@@ -435,7 +436,8 @@ class BERTPredictor():
         assert self.cross_validator.get_n_splits() == self.number_of_folds
         fold_index_to_splits: List[Tuple[np.ndarray, np.ndarray]] = list(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment))
         for fold_index, (training_indices, validation_indices) in enumerate(fold_index_to_splits):
-            self.model.reset_parameters()
+            self.model = self.model_initializer()
+            self.optimizer = self.optimizer_initializer(self.model)
             self.best_valid_jaccard_for_current_fold = -1
             training_dataset = TweetSentimentSelectionDataset(training_indices, self.input_id_tensors, self.output_tensors)
             validation_dataset = TweetSentimentSelectionDataset(validation_indices, self.input_id_tensors, self.output_tensors)
@@ -647,10 +649,10 @@ class BERTPredictor():
 class RoBERTaPredictor(BERTPredictor):
     def __init__(self, output_directory: str, number_of_epochs: int, batch_size: int, number_of_folds: int, gradient_clipping_threshold: float, initial_learning_rate: float):
         transformers_model_config = RobertaConfig.from_pretrained(TRANSFORMERS_MODEL_SPEC)
-        model = RobertaForTokenClassification(transformers_model_config).to(DEVICE)
+        model_initializer = lambda: RobertaForTokenClassification(transformers_model_config).to(DEVICE)
         loss_function = nn.BCELoss()
-        optimizer = optim.Adam(params=model.parameters(), lr=initial_learning_rate)
-        super().__init__(output_directory, number_of_epochs, batch_size, number_of_folds, gradient_clipping_threshold, model, loss_function, optimizer)
+        optimizer_initializer = lambda model: optim.Adam(params=model.parameters(), lr=initial_learning_rate)
+        super().__init__(output_directory, number_of_epochs, batch_size, number_of_folds, gradient_clipping_threshold, initial_learning_rate, model_initializer, loss_function, optimizer_initializer)
 
 ###############
 # Main Driver #
