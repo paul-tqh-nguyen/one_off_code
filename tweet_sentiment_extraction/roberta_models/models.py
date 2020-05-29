@@ -316,6 +316,7 @@ class BERTPredictor():
             'number_of_folds': self.number_of_folds,
             'number_of_parameters': self.count_parameters(),
             'gradient_clipping_threshold': self.gradient_clipping_threshold,
+            'initial_learning_rate': self.initial_learning_rate,
             'output_directory': self.output_directory,
 
         }
@@ -538,6 +539,7 @@ class BERTPredictor():
         print(f'        predictor_type: {self.__class__.__name__}')
         print(f'        number_of_epochs: {self.number_of_epochs}')
         print(f'        gradient_clipping_threshold: {self.gradient_clipping_threshold}')
+        print(f'        initial_learning_rate: {self.initial_learning_rate}')
         print(f'        number_of_relevant_recent_epochs: {self.number_of_relevant_recent_epochs(training_data_loader)}')
         print(f'        batch_size: {self.batch_size}')
         print(f'        output_directory: {self.output_directory}')

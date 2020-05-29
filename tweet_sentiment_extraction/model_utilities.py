@@ -52,8 +52,8 @@ def set_global_device_id(global_device_id: int) -> None:
 ###############
 
 NUMBER_OF_RELEVANT_RECENT_ITERATIONS = 1_000
-MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
-MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 20
+MIN_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 5
+MAX_NUMBER_OF_RELEVANT_RECENT_EPOCHS = 10
 
 def jaccard_sufficiently_high_for_epoch(jaccard_score: float, epoch_index: int) -> bool:
     jaccard_thresholds_for_number_of_epochs = [
