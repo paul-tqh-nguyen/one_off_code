@@ -23,6 +23,7 @@ from misc_utilities import *
 # Driver #
 ##########
 
+@debug_on_error
 def main() -> None:
     
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))

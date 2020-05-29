@@ -366,6 +366,7 @@ class BERTPredictor():
             start_and_end_word_indices_series = training_evaluation_df[['text', 'predicted_selected_text']].iloc[validation_indices].progress_apply(lambda row: _start_and_end_word_indices(row[0], row[1]), axis=1)
             training_evaluation_df['predicted_selected_text_start_index'].iloc[validation_indices] = start_and_end_word_indices_series.progress_map(lambda pair: pair[0])
             training_evaluation_df['predicted_selected_text_end_index'].iloc[validation_indices] = start_and_end_word_indices_series.progress_map(lambda pair: pair[1])
+        assert not any(training_evaluation_df['fold_index'].isnull())
         assert not any(training_evaluation_df['predicted_selected_text'].isnull())
         assert not any(training_evaluation_df['jaccard'].isnull())
         training_evaluation_df.to_csv(os.path.join(self.output_directory, CROSS_VALIDATION_RESULTS_CSV_FILE_LOCATION_BASE_NAME), index=False)
@@ -434,6 +435,7 @@ class BERTPredictor():
         assert self.cross_validator.get_n_splits() == self.number_of_folds
         fold_index_to_splits: List[Tuple[np.ndarray, np.ndarray]] = list(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment))
         for fold_index, (training_indices, validation_indices) in enumerate(fold_index_to_splits):
+            self.model.reset_parameters()
             self.best_valid_jaccard_for_current_fold = -1
             training_dataset = TweetSentimentSelectionDataset(training_indices, self.input_id_tensors, self.output_tensors)
             validation_dataset = TweetSentimentSelectionDataset(validation_indices, self.input_id_tensors, self.output_tensors)
@@ -441,8 +443,8 @@ class BERTPredictor():
             validation_data_loader = data.DataLoader(validation_dataset, batch_size=NON_TRAINING_BATCH_SIZE, shuffle=False, drop_last=False, num_workers=NUMBER_OF_DATALOADER_WORKERS, collate_fn=collate)
             most_recent_validation_jaccard_scores = [0] * self.number_of_relevant_recent_epochs(training_data_loader)
             print()
-            print(f'Starting training for fold {fold_index}')
             self.print_hyperparameters(training_data_loader)
+            print(f'Starting training for fold {fold_index}')
             for epoch_index in range(self.number_of_epochs):
                 print('\n')
                 print(f'Epoch {epoch_index}')
