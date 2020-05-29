@@ -136,10 +136,11 @@ def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torc
             assert all(selected_characters[token_start_index:token_end_index])
             selected_token_indices.append(token_index)
     
-    sentiment_encoded = TRANSFORMERS_TOKENIZER.encode(sentiment)
-    assert len(sentiment_encoded) == 3
-    sentiment_id = sentiment_encoded[1]
     input_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
+    assert input_ids[0] == TRANSFORMERS_TOKENIZER.cls_token_id
+    assert input_ids[-4] == TRANSFORMERS_TOKENIZER.sep_token_id
+    assert input_ids[-3] == TRANSFORMERS_TOKENIZER.sep_token_id
+    assert input_ids[-1] == TRANSFORMERS_TOKENIZER.sep_token_id
     assert len(selected_token_indices) > 0
     
     output_tensor = torch.zeros([len(input_ids), 2])
