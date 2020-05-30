@@ -49,9 +49,13 @@ TRANSFORMERS_MODEL_SPEC = 'roberta-base'
 TRANSFORMERS_TOKENIZER = RobertaTokenizer.from_pretrained(TRANSFORMERS_MODEL_SPEC)
 CLS_TOKEN = TRANSFORMERS_TOKENIZER.cls_token
 SEP_TOKEN = TRANSFORMERS_TOKENIZER.sep_token
+CLS_IDX = TRANSFORMERS_TOKENIZER.cls_token_id
+SEP_IDX = TRANSFORMERS_TOKENIZER.sep_token_id
 PAD_IDX = TRANSFORMERS_TOKENIZER.pad_token_id
-MAX_SEQUENCE_LENGTH = 512
 NEW_WORD_PREFIX = chr(288)
+
+# WEIRD_NON_ASCII_SEQUENCE = 'ï¿½'
+# WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER = chr(0)
 
 #############
 # Load Data #
@@ -69,7 +73,7 @@ class  TweetSentimentSelectionDataset(data.Dataset):
         return len(self.x)
 
 def normalize_text(input_string: str) -> str:
-    input_string_normalized = ' '+' '.join(input_string.split()) # @todo do we need this space?
+    input_string_normalized = ' '+' '.join(input_string.split())
     return input_string_normalized
 
 def model_input_from_row(text: str, sentiment: str) -> torch.LongTensor:
@@ -81,37 +85,58 @@ def model_input_from_row(text: str, sentiment: str) -> torch.LongTensor:
 def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torch.FloatTensor:
     text_normalized = normalize_text(text)
     selected_text_normalized = ' '.join(selected_text.split())
-    selected_text_start_position_in_text = text_normalized.find(selected_text_normalized)
+    # assert selected_text_normalized in text_normalized
+    selected_text_start_position = text_normalized.find(selected_text_normalized)
+    assert selected_text_start_position >= 0
+    assert selected_text_start_position+len(selected_text_normalized) <= len(text_normalized)
     selected_characters = [False] * len(text_normalized)
-    for selected_text_position in range(selected_text_start_position_in_text, selected_text_start_position_in_text+len(selected_text_normalized)):
+    for selected_text_position in range(selected_text_start_position, selected_text_start_position+len(selected_text_normalized)):
         selected_characters[selected_text_position] = True
-    if text_normalized[selected_text_start_position_in_text-1] == ' ':
-        selected_characters[selected_text_start_position_in_text-1] = True
+    if text_normalized[selected_text_start_position-1] == ' ':
+        selected_characters[selected_text_start_position-1] = True
     text_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized)
     
     token_offsets: List[Tuple[int, int]] = []
     current_token_start_index = 0
     for text_id in text_ids:
         token = TRANSFORMERS_TOKENIZER.decode([text_id])
-        token_offsets.append((current_token_start_index, current_token_start_index+len(token)))
+        start_and_end_index_pair = (current_token_start_index, current_token_start_index+len(token))
+        # assert text_normalized[start_and_end_index_pair[0]:start_and_end_index_pair[1]] == token
+        token_offsets.append(start_and_end_index_pair)
         current_token_start_index += len(token)
+    # assert current_token_start_index == len(text_normalized)
     
     selected_token_indices: List[int] = []
     for token_index, (token_start_index, token_end_index) in enumerate(token_offsets):
         if any(selected_characters[token_start_index:token_end_index]):
+            # assert all(selected_characters[token_start_index:token_end_index])
             selected_token_indices.append(token_index)
     
     sentiment_encoded = TRANSFORMERS_TOKENIZER.encode(sentiment)
     assert len(sentiment_encoded) == 3
     sentiment_id = sentiment_encoded[1]
+    assert SEP_IDX not in text_ids[1:-1]
+    assert CLS_IDX not in text_ids[1:-1]
     input_ids = text_ids + [2, sentiment_id, 2]
     assert input_ids == TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
     assert len(selected_token_indices) > 0
-    
+
+    # assert input_ids[0] == CLS_IDX
+    # assert input_ids[-4] == SEP_IDX
+    # assert input_ids[-3] == SEP_IDX
+    # assert input_ids[-1] == SEP_IDX
+    # assert CLS_IDX not in input_ids[1:-4]
+    # assert SEP_IDX not in input_ids[1:-4]
+
     output_tensor = torch.zeros([len(input_ids), 2])
-    output_tensor[selected_token_indices[0]+1][0] = 1
-    output_tensor[selected_token_indices[-1]+1][1] = 1
-    
+    start_index = selected_token_indices[0]+1
+    end_index = selected_token_indices[-1]+1
+    output_tensor[start_index][0] = 1
+    output_tensor[end_index][1] = 1
+
+    # assert selected_text_normalized.startswith(TRANSFORMERS_TOKENIZER.decode(input_ids[start_index], clean_up_tokenization_spaces=False)[1:])
+    # assert selected_text_normalized.endswith(TRANSFORMERS_TOKENIZER.decode(input_ids[end_index], clean_up_tokenization_spaces=False)[1:])
+
     return output_tensor
 
 def pad_tensor(input_tensor: torch.Tensor, max_sequence_length: int) -> torch.Tensor:
@@ -190,6 +215,19 @@ class BERTPredictor():
             os.makedirs(best_saved_model_location)
         return best_saved_model_location
     
+    def _update_global_best_score(self, score_dict: dict) -> None:
+        if not os.path.isfile(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION):
+            log_current_model_as_best = True
+        else:
+            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'r') as current_global_best_model_score_json_file:
+                current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
+                current_global_best_model_jaccard: float = current_global_best_model_score_dict['jaccard']
+                log_current_model_as_best = current_global_best_model_jaccard < score_dict['jaccard']
+        if log_current_model_as_best:
+            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
+                json.dump(score_dict, outfile)
+        return
+
     def train_one_epoch(self, training_data_loader: data.DataLoader) -> Tuple[float, float]:
         epoch_loss = 0
         epoch_jaccard = 0
@@ -256,6 +294,8 @@ class BERTPredictor():
             'valid_jaccard': valid_jaccard,
             'valid_loss': valid_loss,
             'best_valid_jaccard': self.best_valid_jaccard_for_current_fold,
+            'fold_index': fold_index,
+            'jaccard': valid_jaccard,
             'number_of_epochs': self.number_of_epochs,
             'most_recently_completed_epoch_index': epoch_index,
             'number_of_relevant_recent_epochs': self.number_of_relevant_recent_epochs(training_data_loader),
@@ -265,7 +305,7 @@ class BERTPredictor():
             'gradient_clipping_threshold': self.gradient_clipping_threshold,
             'output_directory': self.output_directory,
         }
-
+        self._update_global_best_score(self_score_dict)
         with open(self.latest_model_score_location_for_fold(fold_index), 'w') as outfile:
             json.dump(self_score_dict, outfile)
         if result_is_from_final_run:
@@ -310,6 +350,7 @@ class BERTPredictor():
             'max_validation_jaccard_fold_index': max_validation_jaccard_fold_index,
             'max_validation_jaccard': max_validation_jaccard,
             'mean_validation_jaccard': mean_validation_jaccard,
+            'jaccard': mean_validation_jaccard,
             'predictor_type': self.__class__.__name__,
             'number_of_epochs': self.number_of_epochs,
             'batch_size': self.batch_size,
@@ -318,20 +359,10 @@ class BERTPredictor():
             'gradient_clipping_threshold': self.gradient_clipping_threshold,
             'initial_learning_rate': self.initial_learning_rate,
             'output_directory': self.output_directory,
-
         }
+        self._update_global_best_score(aggregated_score_dict)
         with open(os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME), 'w') as outfile:
             json.dump(aggregated_score_dict, outfile)
-        if not os.path.isfile(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION):
-            log_current_model_as_best = True
-        else:
-            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'r') as current_global_best_model_score_json_file:
-                current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
-                current_global_best_model_jaccard: float = current_global_best_model_score_dict['mean_validation_jaccard']
-                log_current_model_as_best = current_global_best_model_jaccard < mean_validation_jaccard
-        if log_current_model_as_best:
-            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
-                json.dump(aggregated_score_dict, outfile)
         self.model.eval()
         training_evaluation_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
         training_evaluation_df.text[training_evaluation_df.text != training_evaluation_df.text] = ''
@@ -350,6 +381,8 @@ class BERTPredictor():
                     start_index = text_word_index
                     end_index = possible_end_index
                     break
+            assert isinstance(start_index, int)
+            assert isinstance(end_index, int)
             return start_index, end_index
         remainder_indices = set(training_evaluation_df.index) - reduce(set.union, (set(split[1]) for split in  fold_index_to_splits))
         assert len(remainder_indices) == len(training_evaluation_df) % self.number_of_folds
@@ -433,10 +466,11 @@ class BERTPredictor():
         test_data_df.to_csv(os.path.join(self.output_directory, SUBMISSION_CSV_FILE_LOCATION_BASE_NAME), index=False)
         return 
     
-    def train(self) -> None:
+    def train(self, only_train_one_fold: bool = False) -> None:
         assert self.cross_validator.get_n_splits() == self.number_of_folds
         fold_index_to_splits: List[Tuple[np.ndarray, np.ndarray]] = list(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment))
         for fold_index, (training_indices, validation_indices) in enumerate(fold_index_to_splits):
+            assert implies(only_train_one_fold, fold_index == 0)
             self.model = self.model_initializer()
             self.optimizer = self.optimizer_initializer(self.model)
             self.best_valid_jaccard_for_current_fold = -1
@@ -470,9 +504,13 @@ class BERTPredictor():
                     print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs(training_data_loader)} recent epochs, so training is ending early due to apparent convergence.')
                     print()
                     break
-            self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
-            self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
-        self.aggregate_score_over_all_folds(fold_index_to_splits)
+            if not only_train_one_fold:
+                self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
+                self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
+            else: 
+                break
+        if not only_train_one_fold:
+            self.aggregate_score_over_all_folds(fold_index_to_splits)
         return
     
     def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:
