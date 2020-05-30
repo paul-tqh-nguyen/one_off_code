@@ -49,13 +49,9 @@ TRANSFORMERS_MODEL_SPEC = 'roberta-base'
 TRANSFORMERS_TOKENIZER = RobertaTokenizer.from_pretrained(TRANSFORMERS_MODEL_SPEC)
 CLS_TOKEN = TRANSFORMERS_TOKENIZER.cls_token
 SEP_TOKEN = TRANSFORMERS_TOKENIZER.sep_token
-CLS_IDX = TRANSFORMERS_TOKENIZER.cls_token_id
-SEP_IDX = TRANSFORMERS_TOKENIZER.sep_token_id
 PAD_IDX = TRANSFORMERS_TOKENIZER.pad_token_id
+MAX_SEQUENCE_LENGTH = 512
 NEW_WORD_PREFIX = chr(288)
-
-WEIRD_NON_ASCII_SEQUENCE = 'ï¿½'
-WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER = chr(0)
 
 #############
 # Load Data #
@@ -73,88 +69,48 @@ class  TweetSentimentSelectionDataset(data.Dataset):
         return len(self.x)
 
 def normalize_text(input_string: str) -> str:
-    input_string_normalized = ' '+' '.join(input_string.split())
-    input_string_normalized = input_string_normalized.replace(WEIRD_NON_ASCII_SEQUENCE, WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER)
+    input_string_normalized = ' '+' '.join(input_string.split()) # @todo do we need this space?
     return input_string_normalized
 
-def denormalize_text(input_string: str) -> str:
-    input_string_denormalized = input_string_normalized.replace(WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER, WEIRD_NON_ASCII_SEQUENCE)
-    return input_string_denormalized
-
 def model_input_from_row(text: str, sentiment: str) -> torch.LongTensor:
-    assert WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER not in text
     text_normalized = normalize_text(text)
     ids = TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
     id_tensor = torch.LongTensor(ids)
     return id_tensor
 
-def _normalize_selected_text(text: str, selected_text: str) -> str:
-    selected_text_start_position = text.find(selected_text.strip())
-    selected_text_end_position = selected_text_start_position + len(selected_text)
-    assert selected_text_start_position >= 0
-    assert selected_text_end_position <= len(text)
-    while selected_text_end_position != len(text) and text[selected_text_end_position] != ' ':
-        selected_text_end_position += 1
-    while selected_text_start_position != 0 and text[selected_text_start_position-1] != ' ':
-        selected_text_start_position -= 1
-    assert selected_text_start_position >= 0
-    assert selected_text_end_position <= len(text)
-    selected_text_normalized = text[selected_text_start_position:selected_text_end_position]
-    selected_text_normalized = normalize_text(selected_text_normalized)
-    selected_text_normalized = selected_text_normalized.strip()
-    assert len(set(WEIRD_NON_ASCII_SEQUENCE).intersection(selected_text_normalized)) == 0
-    return selected_text_normalized
-
 def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torch.FloatTensor:
-    assert WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER not in text+selected_text
     text_normalized = normalize_text(text)
-    selected_text_normalized = _normalize_selected_text(text, selected_text)
-    assert selected_text_normalized in text_normalized
+    selected_text_normalized = ' '.join(selected_text.split())
     selected_text_start_position_in_text = text_normalized.find(selected_text_normalized)
-    assert selected_text_start_position_in_text >=0
     selected_characters = [False] * len(text_normalized)
     for selected_text_position in range(selected_text_start_position_in_text, selected_text_start_position_in_text+len(selected_text_normalized)):
         selected_characters[selected_text_position] = True
     if text_normalized[selected_text_start_position_in_text-1] == ' ':
         selected_characters[selected_text_start_position_in_text-1] = True
-    assert ''.join(eager_map(str, eager_map(int, uniq(selected_characters)))) in ['1','010','10','01']
-    text_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized)[1:-1]
-    assert SEP_IDX not in text_ids
-    assert CLS_IDX not in text_ids
+    text_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized)
     
     token_offsets: List[Tuple[int, int]] = []
     current_token_start_index = 0
     for text_id in text_ids:
-        token = TRANSFORMERS_TOKENIZER.decode([text_id], clean_up_tokenization_spaces=False)
-        start_and_end_index_pair = (current_token_start_index, current_token_start_index+len(token))
-        assert text_normalized[start_and_end_index_pair[0]:start_and_end_index_pair[1]] == token
-        token_offsets.append(start_and_end_index_pair)
+        token = TRANSFORMERS_TOKENIZER.decode([text_id])
+        token_offsets.append((current_token_start_index, current_token_start_index+len(token)))
         current_token_start_index += len(token)
-    assert current_token_start_index == len(text_normalized)
     
     selected_token_indices: List[int] = []
     for token_index, (token_start_index, token_end_index) in enumerate(token_offsets):
         if any(selected_characters[token_start_index:token_end_index]):
-            assert all(selected_characters[token_start_index:token_end_index])
             selected_token_indices.append(token_index)
     
-    input_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
-    assert input_ids[0] == CLS_IDX
-    assert input_ids[-4] == SEP_IDX
-    assert input_ids[-3] == SEP_IDX
-    assert input_ids[-1] == SEP_IDX
-    assert CLS_IDX not in input_ids[1:-4]
-    assert SEP_IDX not in input_ids[1:-4]
+    sentiment_encoded = TRANSFORMERS_TOKENIZER.encode(sentiment)
+    assert len(sentiment_encoded) == 3
+    sentiment_id = sentiment_encoded[1]
+    input_ids = text_ids + [2, sentiment_id, 2]
+    assert input_ids == TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
     assert len(selected_token_indices) > 0
     
     output_tensor = torch.zeros([len(input_ids), 2])
-    start_index = selected_token_indices[0]+1
-    end_index = selected_token_indices[-1]+1
-    output_tensor[start_index][0] = 1
-    output_tensor[end_index][1] = 1
-    
-    assert selected_text_normalized.startswith(TRANSFORMERS_TOKENIZER.decode(input_ids[start_index], clean_up_tokenization_spaces=False)[1:])
-    assert selected_text_normalized.endswith(TRANSFORMERS_TOKENIZER.decode(input_ids[end_index], clean_up_tokenization_spaces=False)[1:])
+    output_tensor[selected_token_indices[0]+1][0] = 1
+    output_tensor[selected_token_indices[-1]+1][1] = 1
     
     return output_tensor
 
@@ -288,19 +244,6 @@ class BERTPredictor():
         epoch_jaccard /= len(validation_data_loader)
         return epoch_loss, epoch_jaccard
     
-    def _update_global_best_score(self, score_dict: dict) -> None:
-        if not os.path.isfile(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION):
-            log_current_model_as_best = True
-        else:
-            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'r') as current_global_best_model_score_json_file:
-                current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
-                current_global_best_model_jaccard: float = current_global_best_model_score_dict['jaccard']
-                log_current_model_as_best = current_global_best_model_jaccard < score_dict['jaccard']
-        if log_current_model_as_best:
-            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
-                json.dump(score_dict, outfile)
-        return
-    
     def validate(self, fold_index: int, training_data_loader: data.DataLoader, validation_data_loader: data.DataLoader, epoch_index: int, result_is_from_final_run: bool) -> Tuple[float, float]:
         valid_loss, valid_jaccard = self.evaluate(validation_data_loader)
         if valid_jaccard > self.best_valid_jaccard_for_current_fold:
@@ -310,8 +253,6 @@ class BERTPredictor():
             print(f'Best model so far saved to {best_saved_model_location}')
         self_score_dict = {
             'predictor_type': self.__class__.__name__,
-            'fold_index': fold_index,
-            'jaccard': valid_jaccard,
             'valid_jaccard': valid_jaccard,
             'valid_loss': valid_loss,
             'best_valid_jaccard': self.best_valid_jaccard_for_current_fold,
@@ -324,7 +265,7 @@ class BERTPredictor():
             'gradient_clipping_threshold': self.gradient_clipping_threshold,
             'output_directory': self.output_directory,
         }
-        self._update_global_best_score(self_score_dict)
+
         with open(self.latest_model_score_location_for_fold(fold_index), 'w') as outfile:
             json.dump(self_score_dict, outfile)
         if result_is_from_final_run:
@@ -369,7 +310,6 @@ class BERTPredictor():
             'max_validation_jaccard_fold_index': max_validation_jaccard_fold_index,
             'max_validation_jaccard': max_validation_jaccard,
             'mean_validation_jaccard': mean_validation_jaccard,
-            'jaccard': mean_validation_jaccard,
             'predictor_type': self.__class__.__name__,
             'number_of_epochs': self.number_of_epochs,
             'batch_size': self.batch_size,
@@ -382,7 +322,16 @@ class BERTPredictor():
         }
         with open(os.path.join(self.output_directory, FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME), 'w') as outfile:
             json.dump(aggregated_score_dict, outfile)
-        self._update_global_best_score(aggregated_score_dict)
+        if not os.path.isfile(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION):
+            log_current_model_as_best = True
+        else:
+            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'r') as current_global_best_model_score_json_file:
+                current_global_best_model_score_dict = json.load(current_global_best_model_score_json_file)
+                current_global_best_model_jaccard: float = current_global_best_model_score_dict['mean_validation_jaccard']
+                log_current_model_as_best = current_global_best_model_jaccard < mean_validation_jaccard
+        if log_current_model_as_best:
+            with open(GLOBAL_BEST_MODEL_SCORE_JSON_FILE_LOCATION, 'w') as outfile:
+                json.dump(aggregated_score_dict, outfile)
         self.model.eval()
         training_evaluation_df = pd.read_csv(TRAINING_DATA_CSV_FILE)
         training_evaluation_df.text[training_evaluation_df.text != training_evaluation_df.text] = ''
@@ -391,8 +340,8 @@ class BERTPredictor():
         def _start_and_end_word_indices(text: str, selected_text: str) -> Tuple[int, int]:
             start_index = None
             end_index = None
-            text_words = text.split()
-            selected_text_words = selected_text.split()
+            text_words = eager_map(remove_non_ascii_characters, text.split())
+            selected_text_words = eager_map(remove_non_ascii_characters, selected_text.split())
             for text_word_index, text_word in enumerate(text_words):
                 possible_end_index = text_word_index + len(selected_text_words)
                 if possible_end_index == len(text_words):
@@ -401,8 +350,6 @@ class BERTPredictor():
                     start_index = text_word_index
                     end_index = possible_end_index
                     break
-            assert isinstance(start_index, int)
-            assert isinstance(end_index, int)
             return start_index, end_index
         remainder_indices = set(training_evaluation_df.index) - reduce(set.union, (set(split[1]) for split in  fold_index_to_splits))
         assert len(remainder_indices) == len(training_evaluation_df) % self.number_of_folds
@@ -470,8 +417,15 @@ class BERTPredictor():
                 return text
             normalized_text = normalize_text(input_string)
             encoded_normalized_text = TRANSFORMERS_TOKENIZER.encode(normalized_text, sentiment)
-            selected_ids = encoded_normalized_text[start_index:end_index+1]                
-            selected_text = denormalize_text(TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False))
+            selected_ids = encoded_normalized_text[start_index:end_index+1]
+            
+            # Post-Processing
+            while TRANSFORMERS_TOKENIZER.cls_token_id in selected_ids:
+                selected_ids.remove(TRANSFORMERS_TOKENIZER.cls_token_id)
+            while TRANSFORMERS_TOKENIZER.sep_token_id in selected_ids:
+                selected_ids.remove(TRANSFORMERS_TOKENIZER.sep_token_id)
+                
+            selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
             return selected_text
         test_data_df['selected_text'] = test_data_df[['text', 'sentiment', 'start_index', 'end_index']].progress_apply(lambda row: _extract_selected_text_via_indices(row[0], row[1], row[2], row[3]), axis=1)
         assert not any(any(test_data_df[fold_column].isnull()) for fold_column in fold_columns)
@@ -479,11 +433,10 @@ class BERTPredictor():
         test_data_df.to_csv(os.path.join(self.output_directory, SUBMISSION_CSV_FILE_LOCATION_BASE_NAME), index=False)
         return 
     
-    def train(self, only_train_one_fold: bool = False) -> None:
+    def train(self) -> None:
         assert self.cross_validator.get_n_splits() == self.number_of_folds
         fold_index_to_splits: List[Tuple[np.ndarray, np.ndarray]] = list(self.cross_validator.split(self.all_data_df.index, self.all_data_df.sentiment))
         for fold_index, (training_indices, validation_indices) in enumerate(fold_index_to_splits):
-            assert implies(only_train_one_fold, fold_index == 0)
             self.model = self.model_initializer()
             self.optimizer = self.optimizer_initializer(self.model)
             self.best_valid_jaccard_for_current_fold = -1
@@ -517,13 +470,9 @@ class BERTPredictor():
                     print(f'Validation is not better than any of the {self.number_of_relevant_recent_epochs(training_data_loader)} recent epochs, so training is ending early due to apparent convergence.')
                     print()
                     break
-            if not only_train_one_fold:
-                self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
-                self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
-            else: 
-                break
-        if not only_train_one_fold:
-            self.aggregate_score_over_all_folds(fold_index_to_splits)
+            self.load_parameters(self.best_saved_model_location_for_fold(fold_index))
+            self.validate(fold_index, training_data_loader, validation_data_loader, epoch_index, True)
+        self.aggregate_score_over_all_folds(fold_index_to_splits)
         return
     
     def scores_of_discretized_values(self, y_hat: torch.Tensor, y: torch.Tensor) -> float:
@@ -629,13 +578,20 @@ class BERTPredictor():
         assert tuple(predicted_label.shape) == (id_tensor_length, 2)
         normalized_text = normalize_text(input_string)
         encoded_normalized_text = TRANSFORMERS_TOKENIZER.encode(normalized_text)
-        assert encoded_normalized_text[0] == CLS_IDX
-        assert encoded_normalized_text[-1] == SEP_IDX
+        assert encoded_normalized_text[0] == TRANSFORMERS_TOKENIZER.cls_token_id
+        assert encoded_normalized_text[-1] == TRANSFORMERS_TOKENIZER.sep_token_id
         start_score, start_index = torch.max(predicted_label[:,0], dim=0, out=None)
         end_score, end_index = torch.max(predicted_label[:,1], dim=0, out=None)
-        selected_ids = encoded_normalized_text[start_index:end_index+1]        
-        selected_text = denormalize_text(TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False))
-        assert selected_text in normalized_text, f'{repr(selected_text)} not in {repr(normalized_text)}'
+        selected_ids = encoded_normalized_text[start_index:end_index+1]
+        
+        # Post-Processing
+        while TRANSFORMERS_TOKENIZER.cls_token_id in selected_ids:
+            selected_ids.remove(TRANSFORMERS_TOKENIZER.cls_token_id)
+        while TRANSFORMERS_TOKENIZER.sep_token_id in selected_ids:
+            selected_ids.remove(TRANSFORMERS_TOKENIZER.sep_token_id)
+        
+        selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
+        assert remove_non_ascii_characters(selected_text) in remove_non_ascii_characters(normalized_text), f'{repr(selected_text)} not in {repr(normalized_text)}'
         return selected_text, start_index, start_score, end_index, end_score
     
     def select_substring(self, input_string: str, sentiment: str) -> str:
