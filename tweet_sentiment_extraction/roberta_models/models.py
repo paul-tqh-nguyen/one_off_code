@@ -54,8 +54,8 @@ SEP_IDX = TRANSFORMERS_TOKENIZER.sep_token_id
 PAD_IDX = TRANSFORMERS_TOKENIZER.pad_token_id
 NEW_WORD_PREFIX = chr(288)
 
-# WEIRD_NON_ASCII_SEQUENCE = 'ï¿½'
-# WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER = chr(0)
+WEIRD_NON_ASCII_SEQUENCE = 'ï¿½'
+WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER = chr(0)
 
 #############
 # Load Data #
@@ -74,7 +74,30 @@ class  TweetSentimentSelectionDataset(data.Dataset):
 
 def normalize_text(input_string: str) -> str:
     input_string_normalized = ' '+' '.join(input_string.split())
+    input_string_normalized = input_string_normalized.replace(WEIRD_NON_ASCII_SEQUENCE, WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER)
     return input_string_normalized
+
+def denormalize_text(input_string: str) -> str:
+    input_string_normalized = input_string
+    input_string_denormalized = input_string_normalized.replace(WEIRD_NON_ASCII_SEQUENCE_PLACE_HOLDER, WEIRD_NON_ASCII_SEQUENCE)
+    return input_string_denormalized
+
+def normalize_selected_text(text: str, selected_text) -> str:
+    assert selected_text in text
+    selected_text = selected_text.strip()
+    selected_text_start_position = text.find(selected_text)
+    selected_text_end_position = selected_text_start_position + len(selected_text)
+    assert selected_text_start_position >= 0
+    assert selected_text_end_position <= len(text)
+    while selected_text_end_position != len(text) and text[selected_text_end_position] != ' ':
+        selected_text_end_position += 1
+    while selected_text_start_position != 0 and text[selected_text_start_position-1] != ' ':
+        selected_text_start_position -= 1
+    assert selected_text_start_position >= 0
+    assert selected_text_end_position <= len(text)
+    selected_text_normalized = text[selected_text_start_position:selected_text_end_position]
+    selected_text_normalized = normalize_text(selected_text_normalized)
+    return selected_text_normalized
 
 def model_input_from_row(text: str, sentiment: str) -> torch.LongTensor:
     text_normalized = normalize_text(text)
@@ -84,49 +107,51 @@ def model_input_from_row(text: str, sentiment: str) -> torch.LongTensor:
 
 def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torch.FloatTensor:
     text_normalized = normalize_text(text)
-    selected_text_normalized = ' '.join(selected_text.split())
-    # assert selected_text_normalized in text_normalized
-    selected_text_start_position = text_normalized.find(selected_text_normalized)
+    selected_text_normalized = normalize_selected_text(text, selected_text)
+    assert selected_text_normalized in text_normalized
+    text_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized)
+    normalized_text_with_enclosing_tokens = TRANSFORMERS_TOKENIZER.decode(text_ids, clean_up_tokenization_spaces=False)
+    assert CLS_TOKEN+text_normalized+SEP_TOKEN == normalized_text_with_enclosing_tokens
+    assert selected_text_normalized in normalized_text_with_enclosing_tokens
+    selected_text_start_position = normalized_text_with_enclosing_tokens.find(selected_text_normalized)
     assert selected_text_start_position >= 0
-    assert selected_text_start_position+len(selected_text_normalized) <= len(text_normalized)
-    selected_characters = [False] * len(text_normalized)
+    assert selected_text_start_position+len(selected_text_normalized) <= len(normalized_text_with_enclosing_tokens)
+    selected_characters = [False] * len(normalized_text_with_enclosing_tokens)
     for selected_text_position in range(selected_text_start_position, selected_text_start_position+len(selected_text_normalized)):
         selected_characters[selected_text_position] = True
-    if text_normalized[selected_text_start_position-1] == ' ':
+    if normalized_text_with_enclosing_tokens[selected_text_start_position-1] == ' ':
         selected_characters[selected_text_start_position-1] = True
-    text_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized)
     
     token_offsets: List[Tuple[int, int]] = []
     current_token_start_index = 0
+    assert text_ids[0] == CLS_IDX
+    assert text_ids[-1] == SEP_IDX
+    assert SEP_IDX not in text_ids[1:-1]
+    assert CLS_IDX not in text_ids[1:-1]
     for text_id in text_ids:
-        token = TRANSFORMERS_TOKENIZER.decode([text_id])
+        token = TRANSFORMERS_TOKENIZER.decode([text_id], clean_up_tokenization_spaces=False)
         start_and_end_index_pair = (current_token_start_index, current_token_start_index+len(token))
-        # assert text_normalized[start_and_end_index_pair[0]:start_and_end_index_pair[1]] == token
+        assert normalized_text_with_enclosing_tokens[start_and_end_index_pair[0]:start_and_end_index_pair[1]] == token
         token_offsets.append(start_and_end_index_pair)
         current_token_start_index += len(token)
-    # assert current_token_start_index == len(text_normalized)
-    
+    assert current_token_start_index == len(normalized_text_with_enclosing_tokens)
+
     selected_token_indices: List[int] = []
     for token_index, (token_start_index, token_end_index) in enumerate(token_offsets):
         if any(selected_characters[token_start_index:token_end_index]):
-            # assert all(selected_characters[token_start_index:token_end_index])
+            assert all(selected_characters[token_start_index:token_end_index])
             selected_token_indices.append(token_index)
-    
-    sentiment_encoded = TRANSFORMERS_TOKENIZER.encode(sentiment)
-    assert len(sentiment_encoded) == 3
-    sentiment_id = sentiment_encoded[1]
-    assert SEP_IDX not in text_ids[1:-1]
-    assert CLS_IDX not in text_ids[1:-1]
-    input_ids = text_ids + [2, sentiment_id, 2]
-    assert input_ids == TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
     assert len(selected_token_indices) > 0
+    
+    input_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
 
-    # assert input_ids[0] == CLS_IDX
-    # assert input_ids[-4] == SEP_IDX
-    # assert input_ids[-3] == SEP_IDX
-    # assert input_ids[-1] == SEP_IDX
-    # assert CLS_IDX not in input_ids[1:-4]
-    # assert SEP_IDX not in input_ids[1:-4]
+    assert input_ids[0] == CLS_IDX
+    assert input_ids[-4] == SEP_IDX
+    assert input_ids[-3] == SEP_IDX
+    assert input_ids[-1] == SEP_IDX
+    assert CLS_IDX not in input_ids[1:-4]
+    assert SEP_IDX not in input_ids[1:-4]
+    assert input_ids[-2] not in (SEP_IDX, CLS_IDX)
 
     output_tensor = torch.zeros([len(input_ids), 2])
     start_index = selected_token_indices[0]+1
@@ -451,14 +476,7 @@ class BERTPredictor():
             normalized_text = normalize_text(input_string)
             encoded_normalized_text = TRANSFORMERS_TOKENIZER.encode(normalized_text, sentiment)
             selected_ids = encoded_normalized_text[start_index:end_index+1]
-            
-            # Post-Processing
-            while TRANSFORMERS_TOKENIZER.cls_token_id in selected_ids:
-                selected_ids.remove(TRANSFORMERS_TOKENIZER.cls_token_id)
-            while TRANSFORMERS_TOKENIZER.sep_token_id in selected_ids:
-                selected_ids.remove(TRANSFORMERS_TOKENIZER.sep_token_id)
-                
-            selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
+            selected_text = denormalize_text(TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False))
             return selected_text
         test_data_df['selected_text'] = test_data_df[['text', 'sentiment', 'start_index', 'end_index']].progress_apply(lambda row: _extract_selected_text_via_indices(row[0], row[1], row[2], row[3]), axis=1)
         assert not any(any(test_data_df[fold_column].isnull()) for fold_column in fold_columns)
@@ -621,14 +639,7 @@ class BERTPredictor():
         start_score, start_index = torch.max(predicted_label[:,0], dim=0, out=None)
         end_score, end_index = torch.max(predicted_label[:,1], dim=0, out=None)
         selected_ids = encoded_normalized_text[start_index:end_index+1]
-        
-        # Post-Processing
-        while TRANSFORMERS_TOKENIZER.cls_token_id in selected_ids:
-            selected_ids.remove(TRANSFORMERS_TOKENIZER.cls_token_id)
-        while TRANSFORMERS_TOKENIZER.sep_token_id in selected_ids:
-            selected_ids.remove(TRANSFORMERS_TOKENIZER.sep_token_id)
-        
-        selected_text = TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False)
+        selected_text = denormalize_text(TRANSFORMERS_TOKENIZER.decode(selected_ids, clean_up_tokenization_spaces=False))
         assert remove_non_ascii_characters(selected_text) in remove_non_ascii_characters(normalized_text), f'{repr(selected_text)} not in {repr(normalized_text)}'
         return selected_text, start_index, start_score, end_index, end_score
     
