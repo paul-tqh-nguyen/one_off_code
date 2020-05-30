@@ -49,6 +49,8 @@ TRANSFORMERS_MODEL_SPEC = 'roberta-base'
 TRANSFORMERS_TOKENIZER = RobertaTokenizer.from_pretrained(TRANSFORMERS_MODEL_SPEC)
 CLS_TOKEN = TRANSFORMERS_TOKENIZER.cls_token
 SEP_TOKEN = TRANSFORMERS_TOKENIZER.sep_token
+CLS_IDX = TRANSFORMERS_TOKENIZER.cls_token_id
+SEP_IDX = TRANSFORMERS_TOKENIZER.sep_token_id
 PAD_IDX = TRANSFORMERS_TOKENIZER.pad_token_id
 NEW_WORD_PREFIX = chr(288)
 
@@ -117,8 +119,8 @@ def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torc
         selected_characters[selected_text_start_position_in_text-1] = True
     assert ''.join(eager_map(str, eager_map(int, uniq(selected_characters)))) in ['1','010','10','01']
     text_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized)[1:-1]
-    assert TRANSFORMERS_TOKENIZER.sep_token_id not in text_ids
-    assert TRANSFORMERS_TOKENIZER.cls_token_id not in text_ids
+    assert SEP_IDX not in text_ids
+    assert CLS_IDX not in text_ids
     
     token_offsets: List[Tuple[int, int]] = []
     current_token_start_index = 0
@@ -137,10 +139,12 @@ def model_output_from_row(text: str, selected_text: str, sentiment: str) -> torc
             selected_token_indices.append(token_index)
     
     input_ids = TRANSFORMERS_TOKENIZER.encode(text_normalized, sentiment)
-    assert input_ids[0] == TRANSFORMERS_TOKENIZER.cls_token_id
-    assert input_ids[-4] == TRANSFORMERS_TOKENIZER.sep_token_id
-    assert input_ids[-3] == TRANSFORMERS_TOKENIZER.sep_token_id
-    assert input_ids[-1] == TRANSFORMERS_TOKENIZER.sep_token_id
+    assert input_ids[0] == CLS_IDX
+    assert input_ids[-4] == SEP_IDX
+    assert input_ids[-3] == SEP_IDX
+    assert input_ids[-1] == SEP_IDX
+    assert CLS_IDX not in input_ids[1:-4]
+    assert SEP_IDX not in input_ids[1:-4]
     assert len(selected_token_indices) > 0
     
     output_tensor = torch.zeros([len(input_ids), 2])
@@ -625,8 +629,8 @@ class BERTPredictor():
         assert tuple(predicted_label.shape) == (id_tensor_length, 2)
         normalized_text = normalize_text(input_string)
         encoded_normalized_text = TRANSFORMERS_TOKENIZER.encode(normalized_text)
-        assert encoded_normalized_text[0] == TRANSFORMERS_TOKENIZER.cls_token_id
-        assert encoded_normalized_text[-1] == TRANSFORMERS_TOKENIZER.sep_token_id
+        assert encoded_normalized_text[0] == CLS_IDX
+        assert encoded_normalized_text[-1] == SEP_IDX
         start_score, start_index = torch.max(predicted_label[:,0], dim=0, out=None)
         end_score, end_index = torch.max(predicted_label[:,1], dim=0, out=None)
         selected_ids = encoded_normalized_text[start_index:end_index+1]        

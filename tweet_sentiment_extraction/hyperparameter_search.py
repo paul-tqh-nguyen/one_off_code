@@ -332,22 +332,34 @@ def ElectraPredictor_generator() -> Generator:
     
     number_of_epochs = 99999
     number_of_folds = 5
+
+    pretrained_model_spec_choices = {
+        'google/electra-small-generator',
+        'google/electra-base-generator',
+        'google/electra-large-generator',
+        'google/electra-small-discriminator',
+        'google/electra-base-discriminator',
+        'google/electra-large-discriminator',
+    }
     
     batch_size_choices = [1, 32, 64]
     gradient_clipping_threshold_choices = [10, 20, 30, 50]
     initial_learning_rate_choices = [5e-5, 3e-5, 1e-5, 1e-6, 1e-7]
     
-    hyparameter_list_choices = list(itertools.product(batch_size_choices,
+    hyparameter_list_choices = list(itertools.product(pretrained_model_spec_choices,
+                                                      batch_size_choices,
                                                       gradient_clipping_threshold_choices,
                                                       initial_learning_rate_choices))
     random.seed()
     random.shuffle(hyparameter_list_choices)
-    for (batch_size, gradient_clipping_threshold, initial_learning_rate) in hyparameter_list_choices:
+    for (pretrained_model_spec, batch_size, gradient_clipping_threshold, initial_learning_rate) in hyparameter_list_choices:
         output_directory = f'./results/ElectraPredictor_batch_{batch_size}_folds_{number_of_folds}_gradient_clip_{gradient_clipping_threshold}_learning_rate_{initial_learning_rate}'
         final_output_results_file = os.path.join(output_directory, 'best_model_for_fold_0', FINAL_MODEL_SCORE_JSON_FILE_BASE_NAME)
         if os.path.isfile(final_output_results_file):
             print(f'Skipping result generation for {final_output_results_file}.')
         else:
+            import electra_models.models
+            electra_models.models.TRANSFORMERS_MODEL_SPEC = pretrained_model_spec # @todo this is leaky ; training depends on global state set here that can change prior to training.
             predictor = ElectraPredictor(output_directory, number_of_epochs, batch_size, number_of_folds, gradient_clipping_threshold, initial_learning_rate)
             yield predictor
 
