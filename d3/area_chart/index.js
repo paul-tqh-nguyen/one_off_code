@@ -101,6 +101,7 @@ const render = data => {
 
 d3.csv(data_location)
     .then(data => {
+        console.log(`JSON.stringify(data) ${JSON.stringify(data)}`);
         data = data.map(datum => {
             return {
                 timestamp: new Date(datum.timestamp),
