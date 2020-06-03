@@ -1,0 +1,34 @@
+
+/***********/
+/* General */
+/***********/
+
+body {
+    overflow-x: hidden;
+    padding: 0px;
+    margin: 0px;
+}
+
+/*******/
+/* SVG */
+/*******/
+
+.svg-container-center {
+    position: relative;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    transform: translateX(-50%);
+    font-family: sans-serif;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+#map {
+    border: 1px solid purple;
+    height: 80vh;
+    width: 60vw;
+}
+
+#map-svg {
+}
