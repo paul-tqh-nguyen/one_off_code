@@ -42,10 +42,12 @@ OUTPUT_GEOJSON_FILE_LOCATION = './data/processed_data.geojson'
 def generate_landmass_features() -> List[dict]:
     with open(WORLD_GEOJSON_FILE_LOCATION, 'r') as file_handle:
         world_geojson_data = json.load(file_handle)
-    usa_feature = only_one([feature for feature in world_geojson_data['features'] if feature['properties']['name']=='USA'])
-    usa_feature['properties'] = {'information-type': 'landmass'}
-    del usa_feature['id']
-    landmass_features = [usa_feature]
+    landmass_features: List[dict] = []
+    for feature in world_geojson_data['features']:
+        if feature['properties']['name'] in ['USA']:
+            feature['properties'] = {'information-type': 'landmass'}
+            del feature['id']
+            landmass_features.append(feature)
     return landmass_features
 
 ########################################
