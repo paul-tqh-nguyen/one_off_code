@@ -1,7 +1,7 @@
 
 const mapMain = () => {
     
-    const getJSONLocation = 'usa.geojson';
+    const getJSONLocation = './data/processed_data.geojson';
     
     const plotContainer = document.getElementById('map');
     const svg = d3.select('#map-svg');
