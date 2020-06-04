@@ -11,9 +11,10 @@ const mapMain = () => {
           .attr('id','land-masses-group-scale-layer');
     const projection = d3.geoMercator();
 
-    const landMassColor = '#69b3a2';
+    svg.style('background-color', '#aadaff');
+    const landMassColor = '#b8d8b4';
     const landMassBorderColor = 'red';
-    const flightPathBorderColor = 'purple';
+    const flightPathBorderColor = '#9000ff';
 
     const paddingAmount = 10;
 
