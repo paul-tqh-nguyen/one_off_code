@@ -77,7 +77,7 @@ fi
 # Anaconda Utilities
 
 alias ssh-cuda="ssh pnguyen@colo-dgx-01.corp.continuum.io"
-alias ssh-tunnel = "pnguyen@colo-dgx-01.corp.continuum.io -NL 8080:localhost:8080"
+alias ssh-tunnel="pnguyen@colo-dgx-01.corp.continuum.io -NL 8080:localhost:8080"
 
 alias pytest="pytest --cov-report=html"
 
