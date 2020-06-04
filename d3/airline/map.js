@@ -1,7 +1,7 @@
 
 const mapMain = () => {
     
-    const getJSONLocation = 'usa.geojson'; // 'geodata.geojson'
+    const getJSONLocation = 'usa.geojson';
     
     const plotContainer = document.getElementById('map');
     const svg = d3.select('#map-svg');
@@ -21,16 +21,8 @@ const mapMain = () => {
             .attr('height', `${plotContainer.clientHeight}px`);
         const svg_width = parseFloat(svg.attr('width'));
         const svg_height = parseFloat(svg.attr('height'));
-        
-        d3.json(getJSONLocation, data =>{
-            landMassesGroupScaleLayer
-                .selectAll('path')
-                .data(data.features)
-                .enter()
-    	        .append('path')
-                .attr('fill', landMassColor)
-                .style('stroke', landMassBorderColor)
-                .attr('d', d3.geoPath().projection(projection));
+
+        const scaleAndTranslateMap = () => {
             const landMassesGroupScaleLayerBoundingBox = d3.select('#land-masses-group-scale-layer').node().getBBox();
             const landMassesGroupScaleLayerWidth = landMassesGroupScaleLayerBoundingBox.width;
             const landMassesGroupScaleLayerHeight = landMassesGroupScaleLayerBoundingBox.height;
@@ -45,7 +37,20 @@ const mapMain = () => {
             const landMassesGroupTranslateLayerY = landMassesGroupTranslateLayerBoundingBox.y;
             landMassesGroupTranslateLayer
                 .attr('transform', `translate(${-landMassesGroupTranslateLayerX + svg_width / 2 - landMassesGroupTranslateLayerWidth / 2} ${-landMassesGroupTranslateLayerY + svg_height / 2 - landMassesGroupTranslateLayerHeight / 2})`);
+        };
+        
+        d3.json(getJSONLocation, data =>{
+            landMassesGroupScaleLayer
+                .selectAll('path')
+                .data(data.features)
+                .enter()
+    	        .append('path')
+                .attr('fill', landMassColor)
+                .style('stroke', landMassBorderColor)
+                .attr('d', datum => d3.geoPath().projection(projection)(datum));
+            scaleAndTranslateMap();
         });
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     };
     
     redraw();

@@ -33,10 +33,18 @@
 ;; Javascript Settings
 
 (load "rjsx-mode.el")
+(setq sgml-attribute-offset 2) ;; @hack figure out why we have to this
+(add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
+
 (load "js2-mode.el")
 (add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
-(add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
-(setq sgml-attribute-offset 2) ;; @hack figure out why we have to this
+
+(load "json-reformat.el")
+(load "json-snatcher.el")
+(load "json-mode.el")
+(add-to-list 'auto-mode-alist '("\\.json\\'" . json-mode))
+(add-to-list 'auto-mode-alist '("\\.geojson\\'" . json-mode))
+
 
 (defun javascript-printf-selected ()
   (interactive)
