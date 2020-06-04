@@ -42,7 +42,7 @@ const mapMain = () => {
         d3.json(getJSONLocation, data =>{
             landMassesGroupScaleLayer
                 .selectAll('path')
-                .data(data.features)
+                .data(data.features.filter(datum => datum.properties['information-type'] === "landmass"))
                 .enter()
     	        .append('path')
                 .attr('fill', landMassColor)
