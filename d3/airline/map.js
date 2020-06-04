@@ -9,7 +9,7 @@ const mapMain = () => {
           .attr('id','land-masses-group-translate-layer');
     const landMassesGroupScaleLayer = landMassesGroupTranslateLayer.append('g')
           .attr('id','land-masses-group-scale-layer');
-    const projection = d3.geoCylindricalStereographic();
+    const projection = d3.geoMercator();
 
     const landMassColor = '#69b3a2';
     const landMassBorderColor = 'red';
@@ -18,7 +18,6 @@ const mapMain = () => {
     const paddingAmount = 10;
 
     const redraw = () => {
-        
         svg
             .attr('width', `${plotContainer.clientWidth}px`)
             .attr('height', `${plotContainer.clientHeight}px`);
@@ -47,6 +46,7 @@ const mapMain = () => {
     	        .append('path')
                 .attr('fill', landMassColor)
                 .style('stroke', landMassBorderColor)
+                .style('stroke-width', 0.25)
                 .attr('d', datum => d3.geoPath().projection(projection)(datum));
 
             const landMassesGroupScaleLayerBoundingBox = d3.select('#land-masses-group-scale-layer').node().getBBox();
