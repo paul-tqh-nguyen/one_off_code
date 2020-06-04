@@ -15,6 +15,8 @@ import asyncio
 import pyppeteer
 import warnings
 import urllib
+import time
+import psutil
 from typing import Awaitable, List
 
 from misc_utilities import *
@@ -27,8 +29,10 @@ OUTPUT_CSV_FILE = './data.csv'
 
 START_NODE_LINK = 'https://www.wikidata.org/wiki/Q10884' # tree
 
-BROWSER_IS_HEADLESS = True
+BROWSER_IS_HEADLESS = False
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
+NUMBER_OF_ATTEMPTS_PER_SLEEP = 3
+SLEEPING_RANGE_SLEEP_TIME= 10
 
 ##########################
 # Web Scraping Utilities #
@@ -92,38 +96,23 @@ def scrape_function(func: Awaitable) -> Awaitable:
 
 WIKI_DATA_QUERY_SERVICE_URI = 'https://query.wikidata.org'
 
-def _sparql_query_queried_variables(sparql_query:str) -> List[str]:
-    if not sparql_query.strip().lower().startswith('select'):
-        raise NotImplementedError('Only SELECT queries are currently supported.')
-    seen = set()
-    queried_variables: List[str] = []
-    for sparql_token in sparql_query.split():
-        if sparql_token.startswith('?'):
-            if sparql_token not in seen:
-                seen.add(sparql_token)
-                queried_variables.append(sparql_token)
-    return queried_variables
-
 @scrape_function
 async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.page.Page) -> List[dict]:
     results = []
     sparql_query_encoded = urllib.parse.quote(sparql_query)
     uri = WIKI_DATA_QUERY_SERVICE_URI+'/#'+sparql_query_encoded
-    sparql_query_queried_variables = _sparql_query_queried_variables(sparql_query)
-    number_of_variables_queried = len(sparql_query_queried_variables)
     await page.goto(uri)
     selector_query_for_arbitrary_text_inside_query_box = 'span.cm-variable-2'
     await page.waitForSelector(selector_query_for_arbitrary_text_inside_query_box)
     button = await page.querySelector('button#execute-button')
     await page.evaluate('(button) => button.click()', button)
-    await page.waitForSelector('div.th-inner.sortable.both')
-    column_header_divs = await page.querySelectorAll('div.th-inner.sortable.both')
-    assert len(column_header_divs) == number_of_variables_queried
+    await page.waitForSelector('div.th-inner.sortable.both.asc')
+    column_header_divs = await page.querySelectorAll('div.th-inner.sortable.both.asc')
+    number_of_variables_queried = len(column_header_divs)
     variable_names = []
     for column_header_div in column_header_divs:
         variable_name = await page.evaluate('(column_header_div) => column_header_div.textContent', column_header_div)
         variable_names.append(variable_name)
-    assert sparql_query_queried_variables == eager_map(lambda variable_name: '?'+variable_name, variable_names)
     anchors = await page.querySelectorAll('a.item-link')
     result = dict()
     for anchor_index, anchor in enumerate(anchors):
@@ -142,22 +131,30 @@ async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.p
 def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
     return EVENT_LOOP.run_until_complete(_query_wikidata_via_web_scraper(sparql_query))
 
+######################################
+# Domain Specific Wikidata Utilities #
+######################################
+
+INSTANCE_OF = 'wdt:P31'
+SUBCLASS_OF = 'wdt:P279'
+
+def get_number_of_instances(class_term: str) -> int:
+    query = f'''
+SELECT (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
+  ?INSTANCE {INSTANCE_OF} ?INSTANCE.
+}}
+'''
+    query_results = execute_sparql_query_via_wikidata(query)
+    number_of_instances = only_one(query_results)['?NUM_INSTANCES']
+    return number_of_instances
+
 ##########
 # Driver #
 ##########
 
 @debug_on_error
 def gather_data() -> None:
-    sparql_query = '''
-SELECT ?item ?itemLabel 
-WHERE 
-{
-  ?item wdt:P31 wd:Q146.
-  SERVICE wikibase:label { bd:serviceParam wikibase:language '[AUTO_LANGUAGE],en'. }
-}
-'''
-    query_results = execute_sparql_query_via_wikidata(sparql_query)
-    print(f'query_results {repr(query_results)}')
+    get_number_of_instances('Q146')
     return
 
 if __name__ == '__main__':

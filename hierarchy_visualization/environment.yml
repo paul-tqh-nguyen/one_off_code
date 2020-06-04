@@ -4,6 +4,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - psutil
   - pip=20.0.2=py37_3
   - pip:
     - pyppeteer
