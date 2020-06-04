@@ -1,0 +1,9 @@
+name: hierarchy
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - pip=20.0.2=py37_3
+  - pip:
+    - pyppeteer
