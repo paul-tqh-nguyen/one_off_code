@@ -17,7 +17,7 @@ import warnings
 import urllib
 import time
 import psutil
-from typing import Awaitable, List
+from typing import Awaitable, List, Set, Iterable, Dict
 
 from misc_utilities import *
 
@@ -27,9 +27,9 @@ from misc_utilities import *
 
 OUTPUT_CSV_FILE = './data.csv'
 
-START_NODE_LINK = 'https://www.wikidata.org/wiki/Q10884' # tree
+START_NODE = 'wd:Q10884' # tree
 
-BROWSER_IS_HEADLESS = False
+BROWSER_IS_HEADLESS = True
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
 NUMBER_OF_ATTEMPTS_PER_SLEEP = 3
 SLEEPING_RANGE_SLEEP_TIME= 10
@@ -97,7 +97,7 @@ def scrape_function(func: Awaitable) -> Awaitable:
 WIKI_DATA_QUERY_SERVICE_URI = 'https://query.wikidata.org'
 
 @scrape_function
-async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.page.Page) -> List[dict]:
+async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.page.Page) -> List[Dict[str, str]]:
     sparql_query_encoded = urllib.parse.quote(sparql_query)
     uri = WIKI_DATA_QUERY_SERVICE_URI+'/#'+sparql_query_encoded
     await page.goto(uri)
@@ -115,7 +115,7 @@ async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.p
     query_result_divs = await page.querySelectorAll('div#query-result')
     query_result_div = only_one(query_result_divs)
     query_result_rows = await query_result_div.querySelectorAll('tr')
-    results: List[dict] = []
+    results: List[Dict[str, str]] = []
     result = {}
     for query_result_row in query_result_rows:
         query_result_row_tds = await query_result_row.querySelectorAll('td')
@@ -127,10 +127,7 @@ async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.p
             if answer_is_wikidata_entity:
                 anchors = await query_result_row_td.querySelectorAll('a.item-link')
                 anchor = only_one(anchors)
-                anchor_link = await page.evaluate('(anchor) => anchor.href', anchor)
-                assert len(re.findall(r'^http://www.wikidata.org/entity/\w+$', anchor_link))==1
-                entity_id = anchor_link.replace('http://www.wikidata.org/entity/','')
-                result_text = entity_id
+                result_text = await page.evaluate('(anchor) => anchor.textContent', anchor)
             else:
                 result_text = await page.evaluate('(query_result_row_td) => query_result_row_td.textContent', query_result_row_td)
             result[result_item_variable_name] = result_text
@@ -140,7 +137,7 @@ async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.p
                 result = dict()
     return results
 
-def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
+def execute_sparql_query_via_wikidata(sparql_query:str) -> List[Dict[str, str]]:
     return EVENT_LOOP.run_until_complete(_query_wikidata_via_web_scraper(sparql_query))
 
 ######################################
@@ -150,16 +147,32 @@ def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
 INSTANCE_OF = 'wdt:P31'
 SUBCLASS_OF = 'wdt:P279'
 
-def get_number_of_instances(class_term: str) -> int:
+def get_number_of_instances(class_entity: str) -> int:
     query = f'''
 SELECT (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
-  ?INSTANCE {INSTANCE_OF} wd:{class_term}.
+    ?INSTANCE {INSTANCE_OF} {class_entity}.
 }}
 '''
     query_results = execute_sparql_query_via_wikidata(query)
-    print(f"query_results {repr(query_results)}")
     number_of_instances = only_one(query_results)['?NUM_INSTANCES']
     return number_of_instances
+
+def get_subclasses_of_entities(class_entities: Iterable[str]) -> Dict[str, List[Dict[str, str]]]:
+    query = f'''
+SELECT ?ENTITY ?SUBCLASS ?SUBCLASSLabel ?SUBCLASSDescription WHERE {{
+    VALUES ?ENTITY {{ {' '.join(class_entities)} }}.
+    ?SUBCLASS {SUBCLASS_OF} ?ENTITY.
+    SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
+}}
+'''
+    query_results = execute_sparql_query_via_wikidata(query)
+    assert set(map(len,query_results)) == {4}
+    answer = {class_entity: [] for class_entity in class_entities}
+    for query_result in query_results:
+        entity = query_result['?ENTITY']
+        del query_result['?ENTITY']
+        answer[entity].append(query_result)
+    return answer
 
 ##########
 # Driver #
@@ -167,7 +180,8 @@ SELECT (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
 
 #@debug_on_error
 def gather_data() -> None:
-    get_number_of_instances('Q146')
+    result = get_subclasses_of_entities([START_NODE])
+    p1(result[START_NODE])
     return
 
 if __name__ == '__main__':
