@@ -17,6 +17,7 @@ import warnings
 import urllib
 import time
 import psutil
+import networkx as nx
 from typing import Awaitable, List, Set, Iterable, Dict
 
 from misc_utilities import *
@@ -28,6 +29,8 @@ from misc_utilities import *
 OUTPUT_CSV_FILE = './data.csv'
 
 START_NODE = 'wd:Q10884' # tree
+
+DEPTH_LIMIT = 5
 
 BROWSER_IS_HEADLESS = True
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
@@ -178,10 +181,28 @@ SELECT ?ENTITY ?SUBCLASS ?SUBCLASSLabel ?SUBCLASSDescription WHERE {{
 # Driver #
 ##########
 
-#@debug_on_error
+@debug_on_error
 def gather_data() -> None:
-    result = get_subclasses_of_entities([START_NODE])
-    p1(result[START_NODE])
+    hierarchy = nx.DiGraph()
+    start_node_properties = only_one(execute_sparql_query_via_wikidata(f'''
+SELECT ?itemLabel ?itemDescription WHERE {{
+    VALUES ?item {{ {START_NODE} }}
+    SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
+}}
+'''))
+    hierarchy.add_node(START_NODE, label=start_node_properties['?itemLabel'], description=start_node_properties['?itemDescription'])
+    current_entities = {START_NODE}
+    for depth in range(1, DEPTH_LIMIT+1):
+        subclass_results = get_subclasses_of_entities(current_entities)
+        current_entities = set()
+        for entity, subclass_dicts in subclass_results.items():
+            print()
+            print(f"entity {repr(entity)}")
+            for subclass_dict in subclass_dicts:
+                hierarchy.add_edge(entity, subclass_dict['?SUBCLASS'])
+                hierarchy.add_node(subclass_dict['?SUBCLASS'], label=subclass_dict['?SUBCLASSLabel'], description=subclass_dict['?SUBCLASSDescription'])
+                current_entities.add(subclass_dict['?SUBCLASS'])
+                print(f"subclass_dict['?SUBCLASS'] {repr(subclass_dict['?SUBCLASS'])}")
     return
 
 if __name__ == '__main__':
