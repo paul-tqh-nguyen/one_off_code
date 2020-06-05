@@ -18,6 +18,7 @@ import urllib
 import time
 import psutil
 import tqdm
+import json
 import networkx as nx
 from typing import Awaitable, List, Set, Iterable, Dict
 
@@ -27,7 +28,7 @@ from misc_utilities import *
 # Globals #
 ###########
 
-OUTPUT_CSV_FILE = './data.csv'
+OUTPUT_JSON_FILE = './data.json'
 
 START_NODE = 'wd:Q10884' # tree
 
@@ -182,6 +183,7 @@ SELECT ?ENTITY ?SUBCLASS ?SUBCLASSLabel ?SUBCLASSDescription WHERE {{
 
 def generate_hierarchy() -> nx.DiGraph:
     hierarchy = nx.DiGraph()
+    print(f'Gathering start node ({START_NODE}) data.')
     start_node_properties = only_one(execute_sparql_query_via_wikidata(f'''
 SELECT ?itemLabel ?itemDescription WHERE {{
     VALUES ?item {{ {START_NODE} }}
@@ -189,7 +191,7 @@ SELECT ?itemLabel ?itemDescription WHERE {{
 }}
 '''))
     hierarchy.add_node(START_NODE, label=start_node_properties['?itemLabel'], description=start_node_properties['?itemDescription'])
-    lead_class_entities = set()
+    print('Initializing BFS.')
     current_entities = {START_NODE}
     pbar = tqdm.tqdm(unit=' breadths') ; iteration_index = 0 ; update_pbar_description = lambda : pbar.set_description(f'Hierarchy node count {len(hierarchy.nodes)}')
     while current_entities:
@@ -197,8 +199,6 @@ SELECT ?itemLabel ?itemDescription WHERE {{
         subclass_results = get_subclasses_of_entities(current_entities)
         current_entities = set()
         for entity, subclass_dicts in subclass_results.items():
-            if len(subclass_dicts) == 0:
-                lead_class_entities.add(entity)
             for subclass_dict in subclass_dicts:
                 subclass_is_valid = subclass_dict['?SUBCLASS'][3:] != subclass_dict['?SUBCLASSLabel']
                 if subclass_is_valid:
@@ -208,10 +208,12 @@ SELECT ?itemLabel ?itemDescription WHERE {{
                     update_pbar_description()
         iteration_index += 1
         pbar.update()
-    print
+    pbar.close()
+    print('Gathering instance counts.')
     entity_to_number_of_instances = get_number_of_instances_for_entities(hierarchy.nodes)
     for entity, number_of_instances in entity_to_number_of_instances.items():
         hierarchy.nodes[entity]['number_of_instances'] = number_of_instances
+    print('Hierarchy gathering complete.')
     return hierarchy
 
 ##########
@@ -221,7 +223,10 @@ SELECT ?itemLabel ?itemDescription WHERE {{
 @debug_on_error
 def gather_data() -> None:
     hierarchy = generate_hierarchy()
-    print(f"nx.tree_data(hierarchy, START_NODE) {repr(nx.tree_data(hierarchy, START_NODE))}")
+    json_data = nx.readwrite.node_link_data(hierarchy, {'source': 'parent', 'target': 'child'})
+    with open(OUTPUT_JSON_FILE, 'w') as file_handle:
+        json.dump(json_data, file_handle)
+    print(f'Hierarchy data exported to {OUTPUT_JSON_FILE}')
     return 
 
 if __name__ == '__main__':
