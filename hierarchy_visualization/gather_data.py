@@ -28,7 +28,7 @@ from misc_utilities import *
 # Globals #
 ###########
 
-OUTPUT_JSON_FILE = './data.json'
+OUTPUT_JSON_FILE = './hierarchy_data.json'
 
 START_NODE = 'wd:Q10884' # tree
 

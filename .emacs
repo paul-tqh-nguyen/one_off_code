@@ -62,7 +62,7 @@
 	    (progn
 	      (dotimes (space-index index-of-first-non-white-space-character)
 	  	(insert " "))
-	      (insert (format "console.log(`%s ${%s}`);" no-indentation-region-line no-indentation-region-line))))
+	      (insert (format "console.log(`%s ${JSON.stringify(%s)}`);" no-indentation-region-line no-indentation-region-line))))
 	  (unless (eq current-line-index (1- number-of-region-lines))
 	    (insert "\n")
 	    (setq current-line-index (1+ current-line-index))))))))
