@@ -30,9 +30,7 @@ OUTPUT_CSV_FILE = './data.csv'
 
 START_NODE = 'wd:Q10884' # tree
 
-DEPTH_LIMIT = 5
-
-BROWSER_IS_HEADLESS = True
+BROWSER_IS_HEADLESS = False
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
 NUMBER_OF_ATTEMPTS_PER_SLEEP = 3
 SLEEPING_RANGE_SLEEP_TIME= 10
@@ -82,7 +80,7 @@ def scrape_function(func: Awaitable) -> Awaitable:
                 browser_process = only_one([process for process in psutil.process_iter() if process.pid==BROWSER.process.pid])
                 for child_process in browser_process.children(recursive=True):
                     child_process.kill()
-                browser_process.kill() # @hack memory leak ; this line doesn't actually kill the process (or maybe it just doesn't free the PID?) until the encompassing python process closes
+                browser_process.kill() # @hack memory leak ; this doesn't actually kill the process (or maybe it just doesn't free the PID?) until the encompassing python process closes
                 BROWSER = await _launch_browser()
             except Exception as err:
                 raise
@@ -150,15 +148,20 @@ def execute_sparql_query_via_wikidata(sparql_query:str) -> List[Dict[str, str]]:
 INSTANCE_OF = 'wdt:P31'
 SUBCLASS_OF = 'wdt:P279'
 
-def get_number_of_instances(class_entity: str) -> int:
+def get_number_of_instances_for_entities(class_entities: Iterable[str]) -> Dict[str, int]:
     query = f'''
-SELECT (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
-    ?INSTANCE {INSTANCE_OF} {class_entity}.
+SELECT ?ENTITY (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
+    VALUES ?ENTITY {{ {' '.join(class_entities)} }}.
+    ?INSTANCE {INSTANCE_OF} ?ENTITY.
 }}
+GROUP BY ?ENTITY
+HAVING(COUNT(?INSTANCE) > 1)
 '''
+    print(f"query {repr(query)}")
     query_results = execute_sparql_query_via_wikidata(query)
-    number_of_instances = only_one(query_results)['?NUM_INSTANCES']
-    return number_of_instances
+    assert implies(query_results, set(map(len,query_results)) == {2})
+    entity_to_number_of_instances = {query_result['?ENTITY']:query_result['?NUM_INSTANCES'] for query_result in query_results}
+    return entity_to_number_of_instances
 
 def get_subclasses_of_entities(class_entities: Iterable[str]) -> Dict[str, List[Dict[str, str]]]:
     query = f'''
@@ -169,7 +172,7 @@ SELECT ?ENTITY ?SUBCLASS ?SUBCLASSLabel ?SUBCLASSDescription WHERE {{
 }}
 '''
     query_results = execute_sparql_query_via_wikidata(query)
-    assert set(map(len,query_results)) == {4}
+    assert implies(query_results, set(map(len,query_results)) == {4})
     answer = {class_entity: [] for class_entity in class_entities}
     for query_result in query_results:
         entity = query_result['?ENTITY']
@@ -191,19 +194,24 @@ SELECT ?itemLabel ?itemDescription WHERE {{
 }}
 '''))
     hierarchy.add_node(START_NODE, label=start_node_properties['?itemLabel'], description=start_node_properties['?itemDescription'])
+    lead_class_entities = set()
     current_entities = {START_NODE}
-    for depth in range(1, DEPTH_LIMIT+1):
+    while current_entities:
         subclass_results = get_subclasses_of_entities(current_entities)
         current_entities = set()
         for entity, subclass_dicts in subclass_results.items():
-            print()
-            print(f"entity {repr(entity)}")
+            if len(subclass_dicts) == 0:
+                lead_class_entities.add(entity)
             for subclass_dict in subclass_dicts:
-                hierarchy.add_edge(entity, subclass_dict['?SUBCLASS'])
-                hierarchy.add_node(subclass_dict['?SUBCLASS'], label=subclass_dict['?SUBCLASSLabel'], description=subclass_dict['?SUBCLASSDescription'])
-                current_entities.add(subclass_dict['?SUBCLASS'])
-                print(f"subclass_dict['?SUBCLASS'] {repr(subclass_dict['?SUBCLASS'])}")
-    return
+                subclass_is_valid = subclass_dict['?SUBCLASS'][3:] != subclass_dict['?SUBCLASSLabel']
+                if subclass_is_valid:
+                    hierarchy.add_edge(entity, subclass_dict['?SUBCLASS'])
+                    hierarchy.add_node(subclass_dict['?SUBCLASS'], label=subclass_dict['?SUBCLASSLabel'], description=subclass_dict['?SUBCLASSDescription'])
+                    current_entities.add(subclass_dict['?SUBCLASS'])
+    entity_to_number_of_instances = get_number_of_instances_for_entities(hierarchy.nodes)
+    for entity, number_of_instances in entity_to_number_of_instances.items():
+        hierarchy[entity]['number_of_instances'] = number_of_instances
+    return hierarchy
 
 if __name__ == '__main__':
     gather_data()
