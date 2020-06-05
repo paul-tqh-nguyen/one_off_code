@@ -30,7 +30,7 @@ OUTPUT_CSV_FILE = './data.csv'
 
 START_NODE = 'wd:Q10884' # tree
 
-BROWSER_IS_HEADLESS = False
+BROWSER_IS_HEADLESS = True
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
 NUMBER_OF_ATTEMPTS_PER_SLEEP = 3
 SLEEPING_RANGE_SLEEP_TIME= 10
@@ -155,9 +155,8 @@ SELECT ?ENTITY (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
     ?INSTANCE {INSTANCE_OF} ?ENTITY.
 }}
 GROUP BY ?ENTITY
-HAVING(COUNT(?INSTANCE) > 1)
+HAVING(COUNT(?INSTANCE) > 0)
 '''
-    print(f"query {repr(query)}")
     query_results = execute_sparql_query_via_wikidata(query)
     assert implies(query_results, set(map(len,query_results)) == {2})
     entity_to_number_of_instances = {query_result['?ENTITY']:query_result['?NUM_INSTANCES'] for query_result in query_results}
@@ -210,8 +209,8 @@ SELECT ?itemLabel ?itemDescription WHERE {{
                     current_entities.add(subclass_dict['?SUBCLASS'])
     entity_to_number_of_instances = get_number_of_instances_for_entities(hierarchy.nodes)
     for entity, number_of_instances in entity_to_number_of_instances.items():
-        hierarchy[entity]['number_of_instances'] = number_of_instances
-    return hierarchy
+        hierarchy.nodes[entity]['number_of_instances'] = number_of_instances
+    return 
 
 if __name__ == '__main__':
     gather_data()
