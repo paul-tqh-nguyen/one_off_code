@@ -17,6 +17,7 @@ import warnings
 import urllib
 import time
 import psutil
+import tqdm
 import networkx as nx
 from typing import Awaitable, List, Set, Iterable, Dict
 
@@ -179,12 +180,7 @@ SELECT ?ENTITY ?SUBCLASS ?SUBCLASSLabel ?SUBCLASSDescription WHERE {{
         answer[entity].append(query_result)
     return answer
 
-##########
-# Driver #
-##########
-
-@debug_on_error
-def gather_data() -> None:
+def generate_hierarchy() -> nx.DiGraph:
     hierarchy = nx.DiGraph()
     start_node_properties = only_one(execute_sparql_query_via_wikidata(f'''
 SELECT ?itemLabel ?itemDescription WHERE {{
@@ -195,7 +191,9 @@ SELECT ?itemLabel ?itemDescription WHERE {{
     hierarchy.add_node(START_NODE, label=start_node_properties['?itemLabel'], description=start_node_properties['?itemDescription'])
     lead_class_entities = set()
     current_entities = {START_NODE}
+    pbar = tqdm.tqdm(unit=' breadths') ; iteration_index = 0 ; update_pbar_description = lambda : pbar.set_description(f'Hierarchy node count {len(hierarchy.nodes)}')
     while current_entities:
+        update_pbar_description()
         subclass_results = get_subclasses_of_entities(current_entities)
         current_entities = set()
         for entity, subclass_dicts in subclass_results.items():
@@ -207,9 +205,23 @@ SELECT ?itemLabel ?itemDescription WHERE {{
                     hierarchy.add_edge(entity, subclass_dict['?SUBCLASS'])
                     hierarchy.add_node(subclass_dict['?SUBCLASS'], label=subclass_dict['?SUBCLASSLabel'], description=subclass_dict['?SUBCLASSDescription'])
                     current_entities.add(subclass_dict['?SUBCLASS'])
+                    update_pbar_description()
+        iteration_index += 1
+        pbar.update()
+    print
     entity_to_number_of_instances = get_number_of_instances_for_entities(hierarchy.nodes)
     for entity, number_of_instances in entity_to_number_of_instances.items():
         hierarchy.nodes[entity]['number_of_instances'] = number_of_instances
+    return hierarchy
+
+##########
+# Driver #
+##########
+
+@debug_on_error
+def gather_data() -> None:
+    hierarchy = generate_hierarchy()
+    print(f"nx.tree_data(hierarchy, START_NODE) {repr(nx.tree_data(hierarchy, START_NODE))}")
     return 
 
 if __name__ == '__main__':
