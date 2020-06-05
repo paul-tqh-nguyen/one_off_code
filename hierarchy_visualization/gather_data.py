@@ -98,7 +98,6 @@ WIKI_DATA_QUERY_SERVICE_URI = 'https://query.wikidata.org'
 
 @scrape_function
 async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.page.Page) -> List[dict]:
-    results = []
     sparql_query_encoded = urllib.parse.quote(sparql_query)
     uri = WIKI_DATA_QUERY_SERVICE_URI+'/#'+sparql_query_encoded
     await page.goto(uri)
@@ -106,26 +105,39 @@ async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.p
     await page.waitForSelector(selector_query_for_arbitrary_text_inside_query_box)
     button = await page.querySelector('button#execute-button')
     await page.evaluate('(button) => button.click()', button)
-    await page.waitForSelector('div.th-inner.sortable.both.asc')
-    column_header_divs = await page.querySelectorAll('div.th-inner.sortable.both.asc')
+    await page.waitForSelector('div.th-inner')
+    column_header_divs = await page.querySelectorAll('div.th-inner')
     number_of_variables_queried = len(column_header_divs)
     variable_names = []
     for column_header_div in column_header_divs:
         variable_name = await page.evaluate('(column_header_div) => column_header_div.textContent', column_header_div)
-        variable_names.append(variable_name)
-    anchors = await page.querySelectorAll('a.item-link')
-    result = dict()
-    for anchor_index, anchor in enumerate(anchors):
-        anchor_variable = variable_names[anchor_index%number_of_variables_queried]
-        anchor_link = await page.evaluate('(anchor) => anchor.href', anchor)
-        assert len(re.findall(r'^http://www.wikidata.org/entity/\w+$', anchor_link))==1
-        entity_id = anchor_link.replace('http://www.wikidata.org/entity/','')
-        anchor_variable_with_question_mark_prefix = '?'+anchor_variable
-        result[anchor_variable_with_question_mark_prefix] = entity_id
-        if (1+anchor_index)%number_of_variables_queried==0:
-            assert len(result) == number_of_variables_queried
-            results.append(result)
-            result = dict()
+        variable_names.append('?'+variable_name)
+    query_result_divs = await page.querySelectorAll('div#query-result')
+    query_result_div = only_one(query_result_divs)
+    query_result_rows = await query_result_div.querySelectorAll('tr')
+    results: List[dict] = []
+    result = {}
+    for query_result_row in query_result_rows:
+        query_result_row_tds = await query_result_row.querySelectorAll('td')
+        for result_item_index, query_result_row_td in enumerate(query_result_row_tds):
+            result_item_variable_name = variable_names[result_item_index%number_of_variables_queried]
+            query_result_row_td_explore_anchors = await query_result_row_td.querySelectorAll('a.explore')
+            assert len(query_result_row_td_explore_anchors) in (0,1)
+            answer_is_wikidata_entity = len(query_result_row_td_explore_anchors) == 1
+            if answer_is_wikidata_entity:
+                anchors = await query_result_row_td.querySelectorAll('a.item-link')
+                anchor = only_one(anchors)
+                anchor_link = await page.evaluate('(anchor) => anchor.href', anchor)
+                assert len(re.findall(r'^http://www.wikidata.org/entity/\w+$', anchor_link))==1
+                entity_id = anchor_link.replace('http://www.wikidata.org/entity/','')
+                result_text = entity_id
+            else:
+                result_text = await page.evaluate('(query_result_row_td) => query_result_row_td.textContent', query_result_row_td)
+            result[result_item_variable_name] = result_text
+            if (1+result_item_index)%number_of_variables_queried==0:
+                assert len(result) == number_of_variables_queried
+                results.append(result)
+                result = dict()
     return results
 
 def execute_sparql_query_via_wikidata(sparql_query:str) -> List[dict]:
@@ -141,10 +153,11 @@ SUBCLASS_OF = 'wdt:P279'
 def get_number_of_instances(class_term: str) -> int:
     query = f'''
 SELECT (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
-  ?INSTANCE {INSTANCE_OF} ?INSTANCE.
+  ?INSTANCE {INSTANCE_OF} wd:{class_term}.
 }}
 '''
     query_results = execute_sparql_query_via_wikidata(query)
+    print(f"query_results {repr(query_results)}")
     number_of_instances = only_one(query_results)['?NUM_INSTANCES']
     return number_of_instances
 
@@ -152,7 +165,7 @@ SELECT (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
 # Driver #
 ##########
 
-@debug_on_error
+#@debug_on_error
 def gather_data() -> None:
     get_number_of_instances('Q146')
     return
