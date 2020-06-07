@@ -41,14 +41,14 @@ const hierarchyMain = () => {
 	const svg_width = parseFloat(svg.attr('width'));
 	const svg_height = parseFloat(svg.attr('height'));
 	
-	const collide = alpha => {
+ 	const collide = alpha => {
 	    const quadtree = d3.geom.quadtree(nodes);
 	    return datum => {
-		const r = datum.radius + paddingBetweenNodes;
-		const nx0 = datum.x - r;
-		const ny0 = datum.y - r;
-		const nx1 = datum.x + r;
-		const ny1 = datum.y + r;
+		const datumBoundingDistance = datum.radius + paddingBetweenNodes;
+		const datumLeftX = datum.x - datumBoundingDistance;
+		const datumTopY = datum.y - datumBoundingDistance;
+		const datumRightX = datum.x + datumBoundingDistance;
+		const datumBottomY = datum.y + datumBoundingDistance;
 		quadtree.visit((quadtreeNode, quadtreeNodeLeftX, quadtreeNodeTopY, quadtreeNodeRightX, quadtreeNodeBottomY) => {
 		    if (quadtreeNode.point && (quadtreeNode.point !== datum)) {
 			let xDelta = datum.x - quadtreeNode.point.x;
@@ -65,7 +65,7 @@ const hierarchyMain = () => {
 			    quadtreeNode.point.y += yDelta;
 			}
 		    }
-		    const collisionDetected = quadtreeNodeLeftX > nx1 || quadtreeNodeRightX < nx0 || quadtreeNodeTopY > ny1 || quadtreeNodeBottomY < ny0;
+		    const collisionDetected = quadtreeNodeLeftX > datumRightX || quadtreeNodeRightX < datumLeftX || quadtreeNodeTopY > datumBottomY || quadtreeNodeBottomY < datumTopY;
 		    return collisionDetected;
 		});
 	    };
