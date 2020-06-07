@@ -31,8 +31,8 @@ const hierarchyMain = () => {
 
 	const collide = alpha => {
 	    var quadtree = d3.quadtree()
-		.x(node => node.x)
-		.y(node => node.y)
+		.x(datum => datum.x)
+		.y(datum => datum.y)
 		.addAll(nodes);
 	    return datum => {
 		const datumBoundingDistance = datum.radius + paddingBetweenNodes;
@@ -63,9 +63,9 @@ const hierarchyMain = () => {
 	};
 	
 	const boundingBoxForce = () => {
-	    nodes.forEach(node => {
-		node.x = Math.max(margin.left, Math.min(svg_width - margin.right, node.x));
-		node.y = Math.max(margin.top, Math.min(svg_height - margin.bottom, node.y));
+	    nodes.forEach(datum => {
+		datum.x = Math.max(margin.left, Math.min(svg_width - margin.right, datum.x));
+		datum.y = Math.max(margin.top, Math.min(svg_height - margin.bottom, datum.y));
 	    });
 	};
 	
@@ -80,31 +80,31 @@ const hierarchyMain = () => {
 	      .selectAll("text")
 	      .data(nodes)
 	      .enter().append("text")
-	      .text(node =>  node.label)
+	      .text(datum =>  `${datum.label} (${datum.distance_to_root})`)
 	      .attr("font-size", textFontSize)
 	      .attr("dx", nodeRadius + 5)
 	      .attr("dy", nodeRadius / 2);
-
+	   
 	simulation
-	// .force('y', d3.forceY().y(datum => 10))
+	    .force('y', d3.forceY().y(datum => datum.distance_to_root*100))
 	    .force('center', d3.forceCenter(svg_width / 2, svg_height / 2))
 	    .force('charge', d3.forceManyBody().strength(chargeStrength))
 	    .force('bounding-box', boundingBoxForce)
 	    .nodes(nodes).on('tick', () => {
 		nodeGroup
 		    .each(collide(0.5))
-		    .attr('cx', node => node.x)
-		    .attr('cy', node => node.y);
+		    .attr('cx', datum => datum.x)
+		    .attr('cy', datum => datum.y);
 		textGroup
-		    .attr('x', node => node.x)
-		    .attr('y', node => node.y);
+		    .attr('x', datum => datum.x)
+		    .attr('y', datum => datum.y);
 	    })
 	    .restart();
     };
 
     d3.json(dataLocation)
 	.then(data => {
-	    const nodes = data.nodes;
+	    const nodes = data.nodes.slice(0,50);
             const redraw = () => render(nodes);
 	    redraw();
 	    window.addEventListener('resize', redraw);

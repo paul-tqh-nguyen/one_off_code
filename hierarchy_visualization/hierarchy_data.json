@@ -1,1 +1,931 @@
-{"directed": true, "multigraph": false, "graph": {}, "nodes": [{"label": "tree", "description": "perennial woody plant", "number_of_instances": "557", "id": "wd:Q10884"}, {"label": "Christmas tree", "description": "decorated tree used in the celebration of Christmas", "number_of_instances": "13", "id": "wd:Q47128"}, {"label": "Pinaceae", "description": "family of plants", "id": "wd:Q101680"}, {"label": "Tilia", "description": "genus of plants", "number_of_instances": "9", "id": "wd:Q127849"}, {"label": "Ulmus glabra", "description": "species of plant", "number_of_instances": "72", "id": "wd:Q147498"}, {"label": "broad-leaved tree", "description": "any tree that has wide leaves", "id": "wd:Q148993"}, {"label": "Populus \u00d7canescens", "description": "nothospecies of plant", "number_of_instances": "5", "id": "wd:Q149553"}, {"label": "Acer opalus", "description": "species of plant", "number_of_instances": "1", "id": "wd:Q163822"}, {"label": "Quercus alba", "description": "species of plant", "number_of_instances": "7", "id": "wd:Q469555"}, {"label": "roadside tree", "description": "", "id": "wd:Q491700"}, {"label": "Yakusugi", "description": "", "id": "wd:Q590101"}, {"label": "remarkable tree", "description": "tree which, because of its great age, size or condition, is of exceptional cultural, landscape or nature conservation value.", "number_of_instances": "8312", "id": "wd:Q811534"}, {"label": "fruit tree", "description": "tree which bears fruit that is consumed or used by humans and some animals", "id": "wd:Q904653"}, {"label": "aspen", "description": "common name for certain tree species", "id": "wd:Q1087592"}, {"label": "Emperor's oak", "description": "Oak tree planted in honour or in memory of an emperor", "number_of_instances": "1", "id": "wd:Q1322098"}, {"label": "boundary tree", "description": "tree that indicates boundary", "number_of_instances": "2", "id": "wd:Q1476200"}, {"label": "Gerichtslinde", "description": "", "number_of_instances": "1", "id": "wd:Q1513572"}, {"label": "windswept tree", "description": "", "id": "wd:Q1519695"}, {"label": "Pacifier tree", "description": "tree on which pacifiers are hanged as part of the weaning process", "id": "wd:Q1555379"}, {"label": "Emperor's oak", "description": "", "number_of_instances": "1", "id": "wd:Q1614379"}, {"label": "espalier", "description": "plant that has been managed for the production of fruit by pruning and tying branches to a flat frame or wall", "id": "wd:Q1754876"}, {"label": "notable tree of France", "description": "remarkable tree award given by the A.R.B.R.E.S association", "id": "wd:Q1771174"}, {"label": "birth tree", "description": "tree planted at the birth of a child", "id": "wd:Q2162112"}, {"label": "shade tree", "description": "tree grown specifically for its shade", "id": "wd:Q2546229"}, {"label": "snag", "description": "standing, dead or dying tree", "number_of_instances": "1", "id": "wd:Q2909080"}, {"label": "sapling", "description": "a young tree", "id": "wd:Q3099429"}, {"label": "Moon Tree", "description": "tree grown from one of the 500 seeds taken into orbit around the Moon by Stuart Roosa during the Apollo 14 mission in 1971", "number_of_instances": "66", "id": "wd:Q6907628"}, {"label": "spar", "description": "tree used in logging", "id": "wd:Q7573534"}, {"label": "important tree", "description": "", "number_of_instances": "88", "id": "wd:Q10065268"}, {"label": "classified tree", "description": "", "number_of_instances": "1", "id": "wd:Q10396011"}, {"label": "Famous trees in Stockholm", "description": "", "id": "wd:Q10551714"}, {"label": "cherry tree", "description": "", "number_of_instances": "1", "id": "wd:Q11352785"}, {"label": "hibakujumoku", "description": "japanes word for a tree who survived the atom bomb attack on Hiroshima in 1945", "number_of_instances": "1", "id": "wd:Q11626623"}, {"label": "cypress", "description": "name applied to many plants of different genera", "id": "wd:Q14169641"}, {"label": "Yew", "description": "common name given to various species of trees", "number_of_instances": "2", "id": "wd:Q17038225"}, {"label": "leafless tree", "description": "", "id": "wd:Q22338152"}, {"label": "trees in mythology", "description": "mythology", "id": "wd:Q24262538"}, {"label": "Patk\u00f3 Bandi Tree", "description": "", "id": "wd:Q29044259"}, {"label": "poplar", "description": "temperate tree", "number_of_instances": "1", "id": "wd:Q30456678"}, {"label": "oak", "description": "deciduous tree", "number_of_instances": "229", "id": "wd:Q33036816"}, {"label": "linden tree", "description": "popular deciduous tree", "number_of_instances": "81", "id": "wd:Q45417383"}, {"label": "Freedom tree", "description": "", "number_of_instances": "1", "id": "wd:Q55100046"}, {"label": "Martin Luther tree", "description": "trees dedicated to Martin Luther", "id": "wd:Q59274681"}, {"label": "pine tree", "description": "common forest tree", "number_of_instances": "14", "id": "wd:Q59668787"}, {"label": "birch", "description": "tree with white bark", "number_of_instances": "2", "id": "wd:Q59762749"}, {"label": "ash", "description": "deciduous tree", "number_of_instances": "4", "id": "wd:Q59772388"}, {"label": "maple tree", "description": "deciduous tree", "number_of_instances": "2", "id": "wd:Q59772474"}, {"label": "beech tree", "description": "popular deciduous tree", "id": "wd:Q59779138"}, {"label": "horsechestnut", "description": "popular deciduous tree", "id": "wd:Q59779140"}, {"label": "hornbeam", "description": "deciduous tree", "id": "wd:Q59779148"}, {"label": "elm tree", "description": "deciduous tree", "number_of_instances": "5", "id": "wd:Q59779164"}, {"label": "eucalypt tree", "description": "originally Australian tree", "number_of_instances": "3", "id": "wd:Q59805407"}, {"label": "cedar tree", "description": "coniferous tree", "id": "wd:Q59835134"}, {"label": "chestnut tree", "description": "popular deciduous tree", "number_of_instances": "3", "id": "wd:Q59835149"}, {"label": "apple tree", "description": "fruit-bearing tree", "number_of_instances": "3", "id": "wd:Q60458657"}, {"label": "larch", "description": "deciduous tree", "number_of_instances": "1", "id": "wd:Q61996280"}, {"label": "laurel tree", "description": "small mediterranean tree", "id": "wd:Q62398746"}, {"label": "walnut tree", "description": "nut-bearing tree", "id": "wd:Q62398912"}, {"label": "cherry tree", "description": "type of fruit-bearing tree", "number_of_instances": "10", "id": "wd:Q62474322"}, {"label": "holly tree", "description": "evergreen tree", "number_of_instances": "5", "id": "wd:Q63347524"}, {"label": "blasted tree", "description": "a tree damaged by traumatic event such as lightning strike", "id": "wd:Q71123130"}, {"label": "banana tree", "description": "tree bearing bananas", "id": "wd:Q75195775"}, {"label": "hollow tree trunk", "description": "tree where the trunk is grown in a way that you can crawl through a hole", "id": "wd:Q79341255"}, {"label": "pear tree", "description": "fruit-bearing tree", "id": "wd:Q90083157"}, {"label": "cavity tree", "description": "", "id": "wd:Q91126524"}, {"label": "Luther linden tree", "description": "", "number_of_instances": "18", "id": "wd:Q59274710"}, {"label": "memorial tree", "description": "", "number_of_instances": "21", "id": "wd:Q12043672"}, {"label": "log", "description": "kind of stock, or unhewn portion of a felled tree, including a length cut off for use as firewood, construction, or another purpose", "id": "wd:Q12029485"}, {"label": "Picea", "description": "genus of plants", "id": "wd:Q26782"}, {"label": "Humboldt State University Moon Trees", "description": "Moon Trees in Arcata, California (count unknown)", "id": "wd:Q27057267"}, {"label": "J\u00f6\u00f6lboom", "description": "type of Christmas tree", "id": "wd:Q20619"}, {"label": "artificial Christmas tree", "description": "", "id": "wd:Q1017198"}, {"label": "aluminum Christmas tree", "description": "type of artificial Christmas tree that was popular in the United States from 1958 until about the mid-1960s", "id": "wd:Q4737415"}, {"label": "nail tree", "description": "", "number_of_instances": "6", "id": "wd:Q2859800"}, {"label": "sacred tree", "description": "individual tree, that is held sacred", "number_of_instances": "27", "id": "wd:Q12373247"}, {"label": "\u00c1rbol Singular de la Comunidad de Madrid", "description": "trees cataloged as outstanding by the Community of Madrid", "id": "wd:Q54823961"}, {"label": "drive-through tree", "description": "", "number_of_instances": "2", "id": "wd:Q69719735"}, {"label": "Veteran trees in Lombardy", "description": "", "id": "wd:Q95588016"}, {"label": "Tree of 40 Fruit", "description": "fruit tree with 40 grafted Prunus varieties", "id": "wd:Q18709203"}, {"label": "Picea abies", "description": "species of plant", "number_of_instances": "108", "id": "wd:Q145992"}, {"label": "memorial tree, dedicated to the Dutch royal family", "description": "", "number_of_instances": "2", "id": "wd:Q2745006"}, {"label": "Koningslinde", "description": "traditional tree planting (linden trees) for KIng Willem of the Netherlands in 2013", "id": "wd:Q14635302"}], "links": [{"parent": "wd:Q10884", "child": "wd:Q47128"}, {"parent": "wd:Q10884", "child": "wd:Q101680"}, {"parent": "wd:Q10884", "child": "wd:Q127849"}, {"parent": "wd:Q10884", "child": "wd:Q147498"}, {"parent": "wd:Q10884", "child": "wd:Q148993"}, {"parent": "wd:Q10884", "child": "wd:Q149553"}, {"parent": "wd:Q10884", "child": "wd:Q163822"}, {"parent": "wd:Q10884", "child": "wd:Q469555"}, {"parent": "wd:Q10884", "child": "wd:Q491700"}, {"parent": "wd:Q10884", "child": "wd:Q590101"}, {"parent": "wd:Q10884", "child": "wd:Q811534"}, {"parent": "wd:Q10884", "child": "wd:Q904653"}, {"parent": "wd:Q10884", "child": "wd:Q1087592"}, {"parent": "wd:Q10884", "child": "wd:Q1322098"}, {"parent": "wd:Q10884", "child": "wd:Q1476200"}, {"parent": "wd:Q10884", "child": "wd:Q1513572"}, {"parent": "wd:Q10884", "child": "wd:Q1519695"}, {"parent": "wd:Q10884", "child": "wd:Q1555379"}, {"parent": "wd:Q10884", "child": "wd:Q1614379"}, {"parent": "wd:Q10884", "child": "wd:Q1754876"}, {"parent": "wd:Q10884", "child": "wd:Q1771174"}, {"parent": "wd:Q10884", "child": "wd:Q2162112"}, {"parent": "wd:Q10884", "child": "wd:Q2546229"}, {"parent": "wd:Q10884", "child": "wd:Q2909080"}, {"parent": "wd:Q10884", "child": "wd:Q3099429"}, {"parent": "wd:Q10884", "child": "wd:Q6907628"}, {"parent": "wd:Q10884", "child": "wd:Q7573534"}, {"parent": "wd:Q10884", "child": "wd:Q10065268"}, {"parent": "wd:Q10884", "child": "wd:Q10396011"}, {"parent": "wd:Q10884", "child": "wd:Q10551714"}, {"parent": "wd:Q10884", "child": "wd:Q11352785"}, {"parent": "wd:Q10884", "child": "wd:Q11626623"}, {"parent": "wd:Q10884", "child": "wd:Q14169641"}, {"parent": "wd:Q10884", "child": "wd:Q17038225"}, {"parent": "wd:Q10884", "child": "wd:Q22338152"}, {"parent": "wd:Q10884", "child": "wd:Q24262538"}, {"parent": "wd:Q10884", "child": "wd:Q29044259"}, {"parent": "wd:Q10884", "child": "wd:Q30456678"}, {"parent": "wd:Q10884", "child": "wd:Q33036816"}, {"parent": "wd:Q10884", "child": "wd:Q45417383"}, {"parent": "wd:Q10884", "child": "wd:Q55100046"}, {"parent": "wd:Q10884", "child": "wd:Q59274681"}, {"parent": "wd:Q10884", "child": "wd:Q59668787"}, {"parent": "wd:Q10884", "child": "wd:Q59762749"}, {"parent": "wd:Q10884", "child": "wd:Q59772388"}, {"parent": "wd:Q10884", "child": "wd:Q59772474"}, {"parent": "wd:Q10884", "child": "wd:Q59779138"}, {"parent": "wd:Q10884", "child": "wd:Q59779140"}, {"parent": "wd:Q10884", "child": "wd:Q59779148"}, {"parent": "wd:Q10884", "child": "wd:Q59779164"}, {"parent": "wd:Q10884", "child": "wd:Q59805407"}, {"parent": "wd:Q10884", "child": "wd:Q59835134"}, {"parent": "wd:Q10884", "child": "wd:Q59835149"}, {"parent": "wd:Q10884", "child": "wd:Q60458657"}, {"parent": "wd:Q10884", "child": "wd:Q61996280"}, {"parent": "wd:Q10884", "child": "wd:Q62398746"}, {"parent": "wd:Q10884", "child": "wd:Q62398912"}, {"parent": "wd:Q10884", "child": "wd:Q62474322"}, {"parent": "wd:Q10884", "child": "wd:Q63347524"}, {"parent": "wd:Q10884", "child": "wd:Q71123130"}, {"parent": "wd:Q10884", "child": "wd:Q75195775"}, {"parent": "wd:Q10884", "child": "wd:Q79341255"}, {"parent": "wd:Q10884", "child": "wd:Q90083157"}, {"parent": "wd:Q10884", "child": "wd:Q91126524"}, {"parent": "wd:Q47128", "child": "wd:Q20619"}, {"parent": "wd:Q47128", "child": "wd:Q1017198"}, {"parent": "wd:Q47128", "child": "wd:Q4737415"}, {"parent": "wd:Q101680", "child": "wd:Q26782"}, {"parent": "wd:Q811534", "child": "wd:Q2859800"}, {"parent": "wd:Q811534", "child": "wd:Q12043672"}, {"parent": "wd:Q811534", "child": "wd:Q12373247"}, {"parent": "wd:Q811534", "child": "wd:Q54823961"}, {"parent": "wd:Q811534", "child": "wd:Q69719735"}, {"parent": "wd:Q811534", "child": "wd:Q95588016"}, {"parent": "wd:Q904653", "child": "wd:Q18709203"}, {"parent": "wd:Q904653", "child": "wd:Q60458657"}, {"parent": "wd:Q904653", "child": "wd:Q75195775"}, {"parent": "wd:Q904653", "child": "wd:Q90083157"}, {"parent": "wd:Q2909080", "child": "wd:Q12029485"}, {"parent": "wd:Q6907628", "child": "wd:Q27057267"}, {"parent": "wd:Q10065268", "child": "wd:Q12043672"}, {"parent": "wd:Q45417383", "child": "wd:Q59274710"}, {"parent": "wd:Q59274681", "child": "wd:Q59274710"}, {"parent": "wd:Q12043672", "child": "wd:Q2745006"}, {"parent": "wd:Q12043672", "child": "wd:Q14635302"}, {"parent": "wd:Q12043672", "child": "wd:Q59274681"}, {"parent": "wd:Q26782", "child": "wd:Q145992"}]}
+{
+    "directed": true,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "label": "tree",
+            "description": "perennial woody plant",
+            "distance_to_root": 0,
+            "number_of_instances": 557,
+            "id": "wd:Q10884"
+        },
+        {
+            "label": "Christmas tree",
+            "description": "decorated tree used in the celebration of Christmas",
+            "distance_to_root": 1,
+            "number_of_instances": 13,
+            "id": "wd:Q47128"
+        },
+        {
+            "label": "Pinaceae",
+            "description": "family of plants",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q101680"
+        },
+        {
+            "label": "Tilia",
+            "description": "genus of plants",
+            "distance_to_root": 1,
+            "number_of_instances": 9,
+            "id": "wd:Q127849"
+        },
+        {
+            "label": "Ulmus glabra",
+            "description": "species of plant",
+            "distance_to_root": 1,
+            "number_of_instances": 72,
+            "id": "wd:Q147498"
+        },
+        {
+            "label": "broad-leaved tree",
+            "description": "any tree that has wide leaves",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q148993"
+        },
+        {
+            "label": "Populus \u00d7canescens",
+            "description": "nothospecies of plant",
+            "distance_to_root": 1,
+            "number_of_instances": 5,
+            "id": "wd:Q149553"
+        },
+        {
+            "label": "Acer opalus",
+            "description": "species of plant",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q163822"
+        },
+        {
+            "label": "Quercus alba",
+            "description": "species of plant",
+            "distance_to_root": 1,
+            "number_of_instances": 7,
+            "id": "wd:Q469555"
+        },
+        {
+            "label": "roadside tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q491700"
+        },
+        {
+            "label": "Yakusugi",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q590101"
+        },
+        {
+            "label": "remarkable tree",
+            "description": "tree which, because of its great age, size or condition, is of exceptional cultural, landscape or nature conservation value.",
+            "distance_to_root": 1,
+            "number_of_instances": 8312,
+            "id": "wd:Q811534"
+        },
+        {
+            "label": "fruit tree",
+            "description": "tree which bears fruit that is consumed or used by humans and some animals",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q904653"
+        },
+        {
+            "label": "aspen",
+            "description": "common name for certain tree species",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q1087592"
+        },
+        {
+            "label": "Emperor's oak",
+            "description": "Oak tree planted in honour or in memory of an emperor",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q1322098"
+        },
+        {
+            "label": "boundary tree",
+            "description": "tree that indicates boundary",
+            "distance_to_root": 1,
+            "number_of_instances": 2,
+            "id": "wd:Q1476200"
+        },
+        {
+            "label": "Gerichtslinde",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q1513572"
+        },
+        {
+            "label": "windswept tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q1519695"
+        },
+        {
+            "label": "Pacifier tree",
+            "description": "tree on which pacifiers are hanged as part of the weaning process",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q1555379"
+        },
+        {
+            "label": "Emperor's oak",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q1614379"
+        },
+        {
+            "label": "espalier",
+            "description": "plant that has been managed for the production of fruit by pruning and tying branches to a flat frame or wall",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q1754876"
+        },
+        {
+            "label": "notable tree of France",
+            "description": "remarkable tree award given by the A.R.B.R.E.S association",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q1771174"
+        },
+        {
+            "label": "birth tree",
+            "description": "tree planted at the birth of a child",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q2162112"
+        },
+        {
+            "label": "shade tree",
+            "description": "tree grown specifically for its shade",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q2546229"
+        },
+        {
+            "label": "snag",
+            "description": "standing, dead or dying tree",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q2909080"
+        },
+        {
+            "label": "sapling",
+            "description": "a young tree",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q3099429"
+        },
+        {
+            "label": "Moon Tree",
+            "description": "tree grown from one of the 500 seeds taken into orbit around the Moon by Stuart Roosa during the Apollo 14 mission in 1971",
+            "distance_to_root": 1,
+            "number_of_instances": 66,
+            "id": "wd:Q6907628"
+        },
+        {
+            "label": "spar",
+            "description": "tree used in logging",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q7573534"
+        },
+        {
+            "label": "important tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 88,
+            "id": "wd:Q10065268"
+        },
+        {
+            "label": "classified tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q10396011"
+        },
+        {
+            "label": "Famous trees in Stockholm",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q10551714"
+        },
+        {
+            "label": "cherry tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q11352785"
+        },
+        {
+            "label": "hibakujumoku",
+            "description": "japanes word for a tree who survived the atom bomb attack on Hiroshima in 1945",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q11626623"
+        },
+        {
+            "label": "cypress",
+            "description": "name applied to many plants of different genera",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q14169641"
+        },
+        {
+            "label": "Yew",
+            "description": "common name given to various species of trees",
+            "distance_to_root": 1,
+            "number_of_instances": 2,
+            "id": "wd:Q17038225"
+        },
+        {
+            "label": "leafless tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q22338152"
+        },
+        {
+            "label": "trees in mythology",
+            "description": "mythology",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q24262538"
+        },
+        {
+            "label": "Patk\u00f3 Bandi Tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q29044259"
+        },
+        {
+            "label": "poplar",
+            "description": "temperate tree",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q30456678"
+        },
+        {
+            "label": "oak",
+            "description": "deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 229,
+            "id": "wd:Q33036816"
+        },
+        {
+            "label": "linden tree",
+            "description": "popular deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 81,
+            "id": "wd:Q45417383"
+        },
+        {
+            "label": "Freedom tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q55100046"
+        },
+        {
+            "label": "Martin Luther tree",
+            "description": "trees dedicated to Martin Luther",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q59274681"
+        },
+        {
+            "label": "pine tree",
+            "description": "common forest tree",
+            "distance_to_root": 1,
+            "number_of_instances": 14,
+            "id": "wd:Q59668787"
+        },
+        {
+            "label": "birch",
+            "description": "tree with white bark",
+            "distance_to_root": 1,
+            "number_of_instances": 2,
+            "id": "wd:Q59762749"
+        },
+        {
+            "label": "ash",
+            "description": "deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 4,
+            "id": "wd:Q59772388"
+        },
+        {
+            "label": "maple tree",
+            "description": "deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 2,
+            "id": "wd:Q59772474"
+        },
+        {
+            "label": "beech tree",
+            "description": "popular deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q59779138"
+        },
+        {
+            "label": "horsechestnut",
+            "description": "popular deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q59779140"
+        },
+        {
+            "label": "hornbeam",
+            "description": "deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q59779148"
+        },
+        {
+            "label": "elm tree",
+            "description": "deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 5,
+            "id": "wd:Q59779164"
+        },
+        {
+            "label": "eucalypt tree",
+            "description": "originally Australian tree",
+            "distance_to_root": 1,
+            "number_of_instances": 3,
+            "id": "wd:Q59805407"
+        },
+        {
+            "label": "cedar tree",
+            "description": "coniferous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q59835134"
+        },
+        {
+            "label": "chestnut tree",
+            "description": "popular deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 3,
+            "id": "wd:Q59835149"
+        },
+        {
+            "label": "apple tree",
+            "description": "fruit-bearing tree",
+            "distance_to_root": 2,
+            "number_of_instances": 3,
+            "id": "wd:Q60458657"
+        },
+        {
+            "label": "larch",
+            "description": "deciduous tree",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q61996280"
+        },
+        {
+            "label": "laurel tree",
+            "description": "small mediterranean tree",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q62398746"
+        },
+        {
+            "label": "walnut tree",
+            "description": "nut-bearing tree",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q62398912"
+        },
+        {
+            "label": "cherry tree",
+            "description": "type of fruit-bearing tree",
+            "distance_to_root": 1,
+            "number_of_instances": 10,
+            "id": "wd:Q62474322"
+        },
+        {
+            "label": "holly tree",
+            "description": "evergreen tree",
+            "distance_to_root": 1,
+            "number_of_instances": 5,
+            "id": "wd:Q63347524"
+        },
+        {
+            "label": "blasted tree",
+            "description": "a tree damaged by traumatic event such as lightning strike",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q71123130"
+        },
+        {
+            "label": "banana tree",
+            "description": "tree bearing bananas",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75195775"
+        },
+        {
+            "label": "hollow tree trunk",
+            "description": "tree where the trunk is grown in a way that you can crawl through a hole",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q79341255"
+        },
+        {
+            "label": "pear tree",
+            "description": "fruit-bearing tree",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q90083157"
+        },
+        {
+            "label": "cavity tree",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q91126524"
+        },
+        {
+            "label": "Picea",
+            "description": "genus of plants",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q26782"
+        },
+        {
+            "label": "Tree of 40 Fruit",
+            "description": "fruit tree with 40 grafted Prunus varieties",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q18709203"
+        },
+        {
+            "label": "Luther linden tree",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 18,
+            "id": "wd:Q59274710"
+        },
+        {
+            "label": "nail tree",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 6,
+            "id": "wd:Q2859800"
+        },
+        {
+            "label": "memorial tree",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 21,
+            "id": "wd:Q12043672"
+        },
+        {
+            "label": "sacred tree",
+            "description": "individual tree, that is held sacred",
+            "distance_to_root": 2,
+            "number_of_instances": 27,
+            "id": "wd:Q12373247"
+        },
+        {
+            "label": "\u00c1rbol Singular de la Comunidad de Madrid",
+            "description": "trees cataloged as outstanding by the Community of Madrid",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q54823961"
+        },
+        {
+            "label": "drive-through tree",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 2,
+            "id": "wd:Q69719735"
+        },
+        {
+            "label": "Veteran trees in Lombardy",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q95588016"
+        },
+        {
+            "label": "log",
+            "description": "kind of stock, or unhewn portion of a felled tree, including a length cut off for use as firewood, construction, or another purpose",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q12029485"
+        },
+        {
+            "label": "J\u00f6\u00f6lboom",
+            "description": "type of Christmas tree",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q20619"
+        },
+        {
+            "label": "artificial Christmas tree",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1017198"
+        },
+        {
+            "label": "aluminum Christmas tree",
+            "description": "type of artificial Christmas tree that was popular in the United States from 1958 until about the mid-1960s",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q4737415"
+        },
+        {
+            "label": "Humboldt State University Moon Trees",
+            "description": "Moon Trees in Arcata, California (count unknown)",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q27057267"
+        },
+        {
+            "label": "Picea abies",
+            "description": "species of plant",
+            "distance_to_root": 3,
+            "number_of_instances": 108,
+            "id": "wd:Q145992"
+        },
+        {
+            "label": "memorial tree, dedicated to the Dutch royal family",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 2,
+            "id": "wd:Q2745006"
+        },
+        {
+            "label": "Koningslinde",
+            "description": "traditional tree planting (linden trees) for KIng Willem of the Netherlands in 2013",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q14635302"
+        }
+    ],
+    "links": [
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q47128"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q101680"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q127849"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q147498"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q148993"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q149553"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q163822"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q469555"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q491700"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q590101"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q811534"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q904653"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1087592"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1322098"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1476200"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1513572"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1519695"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1555379"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1614379"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1754876"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q1771174"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q2162112"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q2546229"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q2909080"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q3099429"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q6907628"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q7573534"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q10065268"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q10396011"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q10551714"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q11352785"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q11626623"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q14169641"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q17038225"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q22338152"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q24262538"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q29044259"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q30456678"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q33036816"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q45417383"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q55100046"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59274681"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59668787"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59762749"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59772388"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59772474"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59779138"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59779140"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59779148"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59779164"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59805407"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59835134"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q59835149"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q60458657"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q61996280"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q62398746"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q62398912"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q62474322"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q63347524"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q71123130"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q75195775"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q79341255"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q90083157"
+        },
+        {
+            "parent": "wd:Q10884",
+            "child": "wd:Q91126524"
+        },
+        {
+            "parent": "wd:Q47128",
+            "child": "wd:Q20619"
+        },
+        {
+            "parent": "wd:Q47128",
+            "child": "wd:Q1017198"
+        },
+        {
+            "parent": "wd:Q47128",
+            "child": "wd:Q4737415"
+        },
+        {
+            "parent": "wd:Q101680",
+            "child": "wd:Q26782"
+        },
+        {
+            "parent": "wd:Q811534",
+            "child": "wd:Q2859800"
+        },
+        {
+            "parent": "wd:Q811534",
+            "child": "wd:Q12043672"
+        },
+        {
+            "parent": "wd:Q811534",
+            "child": "wd:Q12373247"
+        },
+        {
+            "parent": "wd:Q811534",
+            "child": "wd:Q54823961"
+        },
+        {
+            "parent": "wd:Q811534",
+            "child": "wd:Q69719735"
+        },
+        {
+            "parent": "wd:Q811534",
+            "child": "wd:Q95588016"
+        },
+        {
+            "parent": "wd:Q904653",
+            "child": "wd:Q18709203"
+        },
+        {
+            "parent": "wd:Q904653",
+            "child": "wd:Q60458657"
+        },
+        {
+            "parent": "wd:Q904653",
+            "child": "wd:Q75195775"
+        },
+        {
+            "parent": "wd:Q904653",
+            "child": "wd:Q90083157"
+        },
+        {
+            "parent": "wd:Q2909080",
+            "child": "wd:Q12029485"
+        },
+        {
+            "parent": "wd:Q6907628",
+            "child": "wd:Q27057267"
+        },
+        {
+            "parent": "wd:Q10065268",
+            "child": "wd:Q12043672"
+        },
+        {
+            "parent": "wd:Q45417383",
+            "child": "wd:Q59274710"
+        },
+        {
+            "parent": "wd:Q59274681",
+            "child": "wd:Q59274710"
+        },
+        {
+            "parent": "wd:Q26782",
+            "child": "wd:Q145992"
+        },
+        {
+            "parent": "wd:Q12043672",
+            "child": "wd:Q2745006"
+        },
+        {
+            "parent": "wd:Q12043672",
+            "child": "wd:Q14635302"
+        },
+        {
+            "parent": "wd:Q12043672",
+            "child": "wd:Q59274681"
+        }
+    ]
+}

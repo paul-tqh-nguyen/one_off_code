@@ -162,6 +162,9 @@ HAVING(COUNT(?INSTANCE) > 0)
     query_results = execute_sparql_query_via_wikidata(query)
     assert implies(query_results, set(map(len,query_results)) == {2})
     entity_to_number_of_instances = {query_result['?ENTITY']:query_result['?NUM_INSTANCES'] for query_result in query_results}
+    for class_entity in class_entities:
+        if class_entity not in entity_to_number_of_instances:
+            entity_to_number_of_instances[class_entity] = 0
     return entity_to_number_of_instances
 
 def get_subclasses_of_entities(class_entities: Iterable[str]) -> Dict[str, List[Dict[str, str]]]:
@@ -190,12 +193,13 @@ SELECT ?itemLabel ?itemDescription WHERE {{
     SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
 }}
 '''))
-    hierarchy.add_node(START_NODE, label=start_node_properties['?itemLabel'], description=start_node_properties['?itemDescription'])
+    hierarchy.add_node(START_NODE, label=start_node_properties['?itemLabel'], description=start_node_properties['?itemDescription'], distance_to_root=0)
     print('Initializing BFS.')
     current_entities = {START_NODE}
     pbar = tqdm.tqdm(unit=' breadths') ; iteration_index = 0 ; update_pbar_description = lambda : pbar.set_description(f'Hierarchy node count {len(hierarchy.nodes)}')
     while current_entities:
         update_pbar_description()
+        iteration_index += 1
         subclass_results = get_subclasses_of_entities(current_entities)
         current_entities = set()
         for entity, subclass_dicts in subclass_results.items():
@@ -203,16 +207,15 @@ SELECT ?itemLabel ?itemDescription WHERE {{
                 subclass_is_valid = subclass_dict['?SUBCLASS'][3:] != subclass_dict['?SUBCLASSLabel']
                 if subclass_is_valid:
                     hierarchy.add_edge(entity, subclass_dict['?SUBCLASS'])
-                    hierarchy.add_node(subclass_dict['?SUBCLASS'], label=subclass_dict['?SUBCLASSLabel'], description=subclass_dict['?SUBCLASSDescription'])
+                    hierarchy.add_node(subclass_dict['?SUBCLASS'], label=subclass_dict['?SUBCLASSLabel'], description=subclass_dict['?SUBCLASSDescription'], distance_to_root=iteration_index)
                     current_entities.add(subclass_dict['?SUBCLASS'])
                     update_pbar_description()
-        iteration_index += 1
         pbar.update()
     pbar.close()
     print('Gathering instance counts.')
     entity_to_number_of_instances = get_number_of_instances_for_entities(hierarchy.nodes)
     for entity, number_of_instances in entity_to_number_of_instances.items():
-        hierarchy.nodes[entity]['number_of_instances'] = number_of_instances
+        hierarchy.nodes[entity]['number_of_instances'] = int(number_of_instances)
     print('Hierarchy gathering complete.')
     return hierarchy
 
@@ -225,7 +228,7 @@ def gather_data() -> None:
     hierarchy = generate_hierarchy()
     json_data = nx.readwrite.node_link_data(hierarchy, {'source': 'parent', 'target': 'child'})
     with open(OUTPUT_JSON_FILE, 'w') as file_handle:
-        json.dump(json_data, file_handle)
+        json.dump(json_data, file_handle, indent=4)
     print(f'Hierarchy data exported to {OUTPUT_JSON_FILE}')
     return 
 
