@@ -1,19 +1,7 @@
 
-const nodes = [
-    { id: "mammal", group: 0, label: "Mammals", level: 1 },
-    { id: "dog"   , group: 0, label: "Dogs"   , level: 2 },
-    { id: "cat"   , group: 0, label: "Cats"   , level: 2 },
-    { id: "fox"   , group: 0, label: "Foxes"  , level: 2 },
-    { id: "elk"   , group: 0, label: "Elk"    , level: 2 },
-    { id: "insect", group: 1, label: "Insects", level: 1 },
-    { id: "ant"   , group: 1, label: "Ants"   , level: 2 },
-    { id: "bee"   , group: 1, label: "Bees"   , level: 2 },
-    { id: "fish"  , group: 2, label: "Fish"   , level: 1 },
-    { id: "carp"  , group: 2, label: "Carp"   , level: 2 },
-    { id: "pike"  , group: 2, label: "Pikes"  , level: 2 }
-];
-
 const hierarchyMain = () => {
+    
+    const dataLocation = './hierarchy_data.json';
     
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
@@ -31,17 +19,17 @@ const hierarchyMain = () => {
         right: 50,
     };
     
-    const redraw = () => {
+    const render = (nodes) => {
 	
 	svg
 	    .attr('width', `${plotContainer.clientWidth}px`)
 	    .attr('height', `${plotContainer.clientHeight}px`)
 	    .selectAll("*")
-	    .remove();;
+	    .remove();
 	const svg_width = parseFloat(svg.attr('width'));
 	const svg_height = parseFloat(svg.attr('height'));
-	
- 	const collide = alpha => {
+
+	const collide = alpha => {
 	    var quadtree = d3.quadtree()
 		.x(node => node.x)
 		.y(node => node.y)
@@ -73,7 +61,7 @@ const hierarchyMain = () => {
 		});
 	    };
 	};
-		
+	
 	const boundingBoxForce = () => {
 	    nodes.forEach(node => {
 		node.x = Math.max(margin.left, Math.min(svg_width - margin.right, node.x));
@@ -113,9 +101,17 @@ const hierarchyMain = () => {
 	    })
 	    .restart();
     };
-    
-    redraw();
-    window.addEventListener('resize', redraw);
+
+    d3.json(dataLocation)
+	.then(data => {
+	    const nodes = data.nodes;
+            const redraw = () => render(nodes);
+	    redraw();
+	    window.addEventListener('resize', redraw);
+	}).catch(err => {
+	    console.error(err.message);
+	    return;
+	});
 };
 
 hierarchyMain();
