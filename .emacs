@@ -32,19 +32,18 @@
 
 ;; Javascript Settings
 
-(load "rjsx-mode.el")
-(setq sgml-attribute-offset 2) ;; @hack figure out why we have to this
-(add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
-
-(load "js2-mode.el")
-(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
-
 (load "json-reformat.el")
 (load "json-snatcher.el")
 (load "json-mode.el")
 (add-to-list 'auto-mode-alist '("\\.json\\'" . json-mode))
 (add-to-list 'auto-mode-alist '("\\.geojson\\'" . json-mode))
 
+(load "js2-mode.el")
+(add-to-list 'auto-mode-alist '("\\.js\\'" . js2-mode))
+
+(load "rjsx-mode.el")
+(setq sgml-attribute-offset 2) ;; @hack figure out why we have to this
+(add-to-list 'auto-mode-alist '("\\.js\\'" . rjsx-mode))
 
 (defun javascript-printf-selected ()
   (interactive)
@@ -54,8 +53,9 @@
 	   (number-of-region-lines (length region-lines))
 	   (current-line-index 0))
       (delete-region (region-beginning) (region-end))
-      (dolist (region-line region-lines)
-	(let* ((index-of-first-non-white-space-character (string-match "[^\s-]" region-line))
+      (dolist (region-line-unnormalized region-lines)
+	(let* ((region-line (replace-regexp-in-string "	" "        " region-line-unnormalized))
+	       (index-of-first-non-white-space-character (string-match "[^\s-]" region-line))
 	       (no-indentation-region-line (if index-of-first-non-white-space-character (substring region-line index-of-first-non-white-space-character nil) region-line)))
 	  (if (null index-of-first-non-white-space-character)
 	      (insert region-line)
@@ -66,6 +66,14 @@
 	  (unless (eq current-line-index (1- number-of-region-lines))
 	    (insert "\n")
 	    (setq current-line-index (1+ current-line-index))))))))
+
+(add-hook 'js2-mode-hook
+	  (lambda ()
+	    (local-set-key (kbd "C-c p") 'javascript-printf-selected)))
+
+(add-hook 'js-mode-hook
+	  (lambda ()
+	    (local-set-key (kbd "C-c p") 'javascript-printf-selected)))
 
 (add-hook 'rjsx-mode-hook
 	  (lambda ()
@@ -322,9 +330,9 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d -hyperparameter-s
 	   (region-lines (split-string region-string "\n"))
 	   (number-of-region-lines (length region-lines))
 	   (current-line-index 0))
-      (delete-region (region-beginning) (region-end))
-      (dolist (region-line region-lines)
-	(let* ((index-of-first-non-white-space-character (string-match "[^\s-]" region-line))
+      (dolist (region-line-unnormalized region-lines)
+	(let* ((region-line (replace-regexp-in-string "	" "        " region-line-unnormalized))
+	       (index-of-first-non-white-space-character (string-match "[^\s-]" region-line))
 	       (no-indentation-region-line (if index-of-first-non-white-space-character (substring region-line index-of-first-non-white-space-character nil) region-line)))
 	  (if (null index-of-first-non-white-space-character)
 	      (insert region-line)
