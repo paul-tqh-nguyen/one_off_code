@@ -22,7 +22,7 @@ const hierarchyMain = () => {
     const chargeStrength = -160;
     const nodeRadius = 10;
     const textFontSize = 15;
-    const paddingBetweenNodes = 10;
+    const paddingBetweenNodes = 30;
     
     const margin = {
         top: 50,
@@ -42,7 +42,10 @@ const hierarchyMain = () => {
 	const svg_height = parseFloat(svg.attr('height'));
 	
  	const collide = alpha => {
-	    const quadtree = d3.geom.quadtree(nodes);
+	    var quadtree = d3.quadtree()
+		.x(node => node.x)
+		.y(node => node.y)
+		.addAll(nodes);
 	    return datum => {
 		const datumBoundingDistance = datum.radius + paddingBetweenNodes;
 		const datumLeftX = datum.x - datumBoundingDistance;
@@ -50,19 +53,19 @@ const hierarchyMain = () => {
 		const datumRightX = datum.x + datumBoundingDistance;
 		const datumBottomY = datum.y + datumBoundingDistance;
 		quadtree.visit((quadtreeNode, quadtreeNodeLeftX, quadtreeNodeTopY, quadtreeNodeRightX, quadtreeNodeBottomY) => {
-		    if (quadtreeNode.point && (quadtreeNode.point !== datum)) {
-			let xDelta = datum.x - quadtreeNode.point.x;
-			let yDelta = datum.y - quadtreeNode.point.y;
+		    if (quadtreeNode.data && (quadtreeNode.data !== datum)) {
+			let xDelta = datum.x - quadtreeNode.data.x;
+			let yDelta = datum.y - quadtreeNode.data.y;
 			let distance = Math.sqrt(xDelta * xDelta + yDelta * yDelta);
-			let minimumDistance = datum.radius + quadtreeNode.point.radius + paddingBetweenNodes;
+			let minimumDistance = nodeRadius + nodeRadius + paddingBetweenNodes;
 			if (distance < minimumDistance) {
 			    distance = (distance - minimumDistance) / distance * alpha;
 			    xDelta *= distance;
 			    datum.x -= xDelta;
 			    yDelta *= distance;
 			    datum.y -= yDelta;
-			    quadtreeNode.point.x += xDelta;
-			    quadtreeNode.point.y += yDelta;
+			    quadtreeNode.data.x += xDelta;
+			    quadtreeNode.data.y += yDelta;
 			}
 		    }
 		    const collisionDetected = quadtreeNodeLeftX > datumRightX || quadtreeNodeRightX < datumLeftX || quadtreeNodeTopY > datumBottomY || quadtreeNodeBottomY < datumTopY;
@@ -70,7 +73,7 @@ const hierarchyMain = () => {
 		});
 	    };
 	};
-
+		
 	const boundingBoxForce = () => {
 	    nodes.forEach(node => {
 		node.x = Math.max(margin.left, Math.min(svg_width - margin.right, node.x));
@@ -101,6 +104,7 @@ const hierarchyMain = () => {
 	    .force('bounding-box', boundingBoxForce)
 	    .nodes(nodes).on('tick', () => {
 		nodeGroup
+		    .each(collide(0.5))
 		    .attr('cx', node => node.x)
 		    .attr('cy', node => node.y);
 		textGroup
