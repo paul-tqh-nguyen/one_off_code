@@ -8,8 +8,8 @@ const hierarchyMain = () => {
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
     const simulation = d3.forceSimulation()
-	  .alphaDecay(0.00001)
-	  .velocityDecay(0.2);
+	  .alphaDecay(0.001)
+	  .velocityDecay(0.5);
     
     const chargeStrength = -160;
     const nodeRadius = 10;
@@ -33,7 +33,11 @@ const hierarchyMain = () => {
 	const svgWidth = parseFloat(svg.attr('width'));
 	const svgHeight = parseFloat(svg.attr('height'));
 
-	const edgeGroup = svg.append('g')
+        const svgContent = svg.append('g');
+        svg.call(d3.zoom().on('zoom', () => {
+            svgContent.attr('transform', d3.event.transform);
+        }));
+	const edgeGroup = svgContent.append('g')
 	      .selectAll('line')
 	      .data(linkData)
 	      .enter().append('line')
@@ -41,14 +45,14 @@ const hierarchyMain = () => {
 	      .attr('stroke-opacity', 1)
 	      .attr('stroke-width', 3);
 
-	const nodeGroup = svg.append('g')
+	const nodeGroup = svgContent.append('g')
 	      .selectAll('circle')
 	      .data(nodeData)
 	      .enter().append('circle')
 	      .attr('r', nodeRadius)
 	      .attr('fill', 'red');
 	
-	const textGroup = svg.append('g')
+	const textGroup = svgContent.append('g')
 	      .selectAll('text')
 	      .data(nodeData)
 	      .enter().append('text')
