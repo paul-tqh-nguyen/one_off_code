@@ -17,10 +17,10 @@ const hierarchyMain = () => {
     const paddingBetweenNodes = 30;
     
     const margin = {
-        top: 50,
-        bottom: 50,
-        left: 50,
-        right: 50,
+        top: 100,
+        bottom: 100,
+        left: 100,
+        right: 100,
     };
     
     const render = (nodeData, linkData, nodeById, parentIdToChildIds, childIdToParentids) => {
@@ -102,39 +102,10 @@ const hierarchyMain = () => {
 		datum.y = Math.max(margin.top, Math.min(svgHeight - margin.bottom, datum.y));
 	    });
 	};
-
-	// const linkPull = alpha => {
-	//     nodeData.forEach(datum => {
-	// 	const parentIds = childIdToParentids[datum.id];
-	// 	const childIds = parentIdToChildIds[datum.id];
-	// 	const parentXs = parentIds.map(parentId => {
-	// 	    console.log('\n\n\n\n');
-        //             console.log(`parentId ${JSON.stringify(parentId)}`);
-        //             console.log(`nodeById[parentId] ${JSON.stringify(nodeById[parentId])}`);
-        //             console.log(`nodeById[parentId].x ${JSON.stringify(nodeById[parentId].x)}`);
-	// 	    return nodeById[parentId].x;
-	// 	});
-	// 	const childXs = childIds.map(childId => {
-	// 	    return nodeById[childId].x;
-	// 	});
-	// 	const meanX = mean(parentXs.concat(childXs));
-	// 	// console.log('\n\n\n\n');
-        //         // console.log(`parentIds ${JSON.stringify(parentIds)}`);
-        //         // console.log(`parentXs ${JSON.stringify(parentXs)}`);
-        //         // console.log(`childIds ${JSON.stringify(childIds)}`);
-        //         // console.log(`childXs ${JSON.stringify(childXs)}`);
-        //         // console.log(`datum.x ${JSON.stringify(datum.x)}`);
-	// 	// datum.x =  alpha * datum.x + (1 - alpha) * meanX;
-        //         console.log(`datum.x ${JSON.stringify(datum.x)}`);
-	//     });
-	// };
-	
 	simulation
-	// .force('charge', d3.forceManyBody().strength(-50))
-	    .force('center', d3.forceCenter(svgWidth / 2, svgHeight / 2))
+	    .force('charge', d3.forceManyBody().strength(-50))
 	    .force('horizontal-center', horizontalCenter(0.999))
 	    .force('bounding-box', boundingBoxForce)
-	// .force('link-pull', linkPull(0.01))
 	    .force('y', d3.forceY().y(datum => datum.distance_to_root * nodeRadius * 20))
 	    .force('x', d3.forceX().x(datum => {
 	    	const parentIds = childIdToParentids[datum.id];
