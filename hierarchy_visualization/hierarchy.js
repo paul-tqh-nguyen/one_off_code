@@ -4,7 +4,7 @@ const hierarchyMain = () => {
     const dataLocation = './hierarchy_data.json';
 
     const mean = inputArray => inputArray.reduce((a, b) => a + b, 0) / inputArray.length;
-    const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
+    // const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
 
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
@@ -12,7 +12,7 @@ const hierarchyMain = () => {
     const alphaDecay = 0.01;
     const velocityDecay = 0.00001;
     const distanceToCenterAlpha = 1.0;
-    const linkAlpha = 0.5;
+    const linkAlpha = 0.25;
     const siblingAlpha = 0.5;
 
     const paddingBetweenNodes = 15;
