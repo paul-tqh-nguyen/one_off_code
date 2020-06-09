@@ -459,18 +459,11 @@
             "id": "wd:Q91126524"
         },
         {
-            "label": "log",
-            "description": "kind of stock, or unhewn portion of a felled tree, including a length cut off for use as firewood, construction, or another purpose",
+            "label": "Humboldt State University Moon Trees",
+            "description": "Moon Trees in Arcata, California (count unknown)",
             "distance_to_root": 2,
             "number_of_instances": 0,
-            "id": "wd:Q12029485"
-        },
-        {
-            "label": "Picea",
-            "description": "genus of plants",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q26782"
+            "id": "wd:Q27057267"
         },
         {
             "label": "J\u00f6\u00f6lboom",
@@ -494,11 +487,25 @@
             "id": "wd:Q4737415"
         },
         {
-            "label": "nail tree",
+            "label": "Luther linden tree",
             "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 18,
+            "id": "wd:Q59274710"
+        },
+        {
+            "label": "Picea",
+            "description": "genus of plants",
             "distance_to_root": 2,
-            "number_of_instances": 6,
-            "id": "wd:Q2859800"
+            "number_of_instances": 0,
+            "id": "wd:Q26782"
+        },
+        {
+            "label": "log",
+            "description": "kind of stock, or unhewn portion of a felled tree, including a length cut off for use as firewood, construction, or another purpose",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q12029485"
         },
         {
             "label": "memorial tree",
@@ -506,6 +513,13 @@
             "distance_to_root": 2,
             "number_of_instances": 21,
             "id": "wd:Q12043672"
+        },
+        {
+            "label": "nail tree",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 6,
+            "id": "wd:Q2859800"
         },
         {
             "label": "sacred tree",
@@ -536,25 +550,18 @@
             "id": "wd:Q95588016"
         },
         {
-            "label": "Luther linden tree",
-            "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 18,
-            "id": "wd:Q59274710"
-        },
-        {
-            "label": "Humboldt State University Moon Trees",
-            "description": "Moon Trees in Arcata, California (count unknown)",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q27057267"
-        },
-        {
             "label": "Tree of 40 Fruit",
             "description": "fruit tree with 40 grafted Prunus varieties",
             "distance_to_root": 2,
             "number_of_instances": 0,
             "id": "wd:Q18709203"
+        },
+        {
+            "label": "Picea abies",
+            "description": "species of plant",
+            "distance_to_root": 3,
+            "number_of_instances": 108,
+            "id": "wd:Q145992"
         },
         {
             "label": "memorial tree, dedicated to the Dutch royal family",
@@ -569,13 +576,6 @@
             "distance_to_root": 3,
             "number_of_instances": 0,
             "id": "wd:Q14635302"
-        },
-        {
-            "label": "Picea abies",
-            "description": "species of plant",
-            "distance_to_root": 3,
-            "number_of_instances": 108,
-            "id": "wd:Q145992"
         }
     ],
     "links": [
