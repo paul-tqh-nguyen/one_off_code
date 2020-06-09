@@ -30,7 +30,7 @@ from misc_utilities import *
 
 OUTPUT_JSON_FILE = './hierarchy_data.json'
 
-START_NODE = 'wd:Q10884' # tree
+START_NODE = 'wd:Q153556'
 
 BROWSER_IS_HEADLESS = True
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
