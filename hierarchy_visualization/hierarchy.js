@@ -48,7 +48,13 @@ const hierarchyMain = () => {
 	      .data(linkData)
 	      .enter()
               .append('line')
-	      .attr('class', datum => nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 'indirect-edge' : 'edge')
+	      .attr('class', datum => nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 'indirect-edge' : 'edge');
+        edgeGroup
+            .append('title').text(
+                'asd'
+                //datum => datum.parent
+            );
+        edgeGroup
               .on('mouseover', function(d) {
                   if (d3.select(this).classed('edge')) {
                       d3.select(this).attr('class', 'edge direct-edge-highlighted');
@@ -145,26 +151,26 @@ const hierarchyMain = () => {
     };
 
     const generateDistanceToCenterFactorByDepth = nodeData => {
-        let nodesPerDepth = {};
-	nodeData.forEach(node => {
-            if (node.distance_to_root in nodesPerDepth) {
-                nodesPerDepth[node.distance_to_root] += 1;
+        const nodesPerDepth = nodeData.reduce((accumulator, node) => {
+            if (node.distance_to_root in accumulator) {
+                accumulator[node.distance_to_root] += 1;
             } else {
-                nodesPerDepth[node.distance_to_root] = 1;
+                accumulator[node.distance_to_root] = 1;
             }
-        });
-        const distanceToCenterFactorByDepth = {};
-        Object.keys(nodesPerDepth).forEach(depth => {
+            return accumulator;
+        }, {});
+        const distanceToCenterFactorByDepth = Object.keys(nodesPerDepth).reduce((accumulator, depth) => {
             const nodeCount = nodesPerDepth[depth];
             const approximateCircumference = nodeCount * approximateCircumferenceDistancePerNode;
             const expectedRadius = approximateCircumference / (2 * Math.PI);
-            distanceToCenterFactorByDepth[depth] = Math.max(minDistanceBetweenDepths, expectedRadius);
-        });
-        let currentDistanceFromRoot = 0;
-        Object.keys(distanceToCenterFactorByDepth).sort().map(depth => {
+            accumulator[depth] = Math.max(minDistanceBetweenDepths, expectedRadius);
+            return accumulator;
+        }, {});
+        Object.keys(distanceToCenterFactorByDepth).sort().reduce((currentDistanceFromRoot, depth) => {
             distanceToCenterFactorByDepth[depth] += currentDistanceFromRoot;
             currentDistanceFromRoot = distanceToCenterFactorByDepth[depth];
-        });
+            return currentDistanceFromRoot;
+        }, 0);
         return distanceToCenterFactorByDepth;
     };
     
@@ -173,18 +179,22 @@ const hierarchyMain = () => {
 	    const nodeData = data.nodes;
 	    const linkData = data.links;
             const rootNode = nodeData.filter(datum => datum.distance_to_root == 0)[0];
-	    let nodeById = {};
-	    let parentIdToChildIds = {};
-	    let childIdToParentids = {};
-	    nodeData.forEach(node => {
-		nodeById[node.id] = node;
-		parentIdToChildIds[node.id] = [];
-		childIdToParentids[node.id] = [];
-	    });
-	    linkData.forEach(datum => {
-		parentIdToChildIds[datum.parent].push(datum.child);
-		childIdToParentids[datum.child].push(datum.parent);
-	    });
+	    const nodeById = nodeData.reduce((accumulator, node) => {
+		accumulator[node.id] = node;
+                return accumulator;
+            }, {});
+	    const { parentIdToChildIds, childIdToParentids } = linkData.reduce((accumulator, datum) => {
+                ['parent', 'child'].forEach(datumKey => {
+                    ['parentIdToChildIds', 'childIdToParentids'].forEach(accumulatorKey => {
+                        if (! (datum[datumKey] in accumulator[accumulatorKey]) ) {
+		            accumulator[accumulatorKey][datum[datumKey]] = [];
+                        }
+                    });
+                });
+	    	accumulator.parentIdToChildIds[datum.parent].push(datum.child);
+	    	accumulator.childIdToParentids[datum.child].push(datum.parent);
+                return accumulator;
+	    }, {parentIdToChildIds: {}, childIdToParentids: {}});
             const distanceToCenterFactorByDepth = generateDistanceToCenterFactorByDepth(nodeData);
             const redraw = () => render({
                 nodeData,
