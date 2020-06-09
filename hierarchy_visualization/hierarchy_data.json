@@ -7,7 +7,7 @@
             "label": "tree",
             "description": "perennial woody plant",
             "distance_to_root": 0,
-            "number_of_instances": 557,
+            "number_of_instances": 558,
             "id": "wd:Q10884"
         },
         {
@@ -203,7 +203,7 @@
             "label": "important tree",
             "description": "",
             "distance_to_root": 1,
-            "number_of_instances": 88,
+            "number_of_instances": 89,
             "id": "wd:Q10065268"
         },
         {
@@ -459,6 +459,13 @@
             "id": "wd:Q91126524"
         },
         {
+            "label": "log",
+            "description": "kind of stock, or unhewn portion of a felled tree, including a length cut off for use as firewood, construction, or another purpose",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q12029485"
+        },
+        {
             "label": "Picea",
             "description": "genus of plants",
             "distance_to_root": 2,
@@ -466,18 +473,25 @@
             "id": "wd:Q26782"
         },
         {
-            "label": "Tree of 40 Fruit",
-            "description": "fruit tree with 40 grafted Prunus varieties",
+            "label": "J\u00f6\u00f6lboom",
+            "description": "type of Christmas tree",
             "distance_to_root": 2,
             "number_of_instances": 0,
-            "id": "wd:Q18709203"
+            "id": "wd:Q20619"
         },
         {
-            "label": "Luther linden tree",
+            "label": "artificial Christmas tree",
             "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 18,
-            "id": "wd:Q59274710"
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1017198"
+        },
+        {
+            "label": "aluminum Christmas tree",
+            "description": "type of artificial Christmas tree that was popular in the United States from 1958 until about the mid-1960s",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q4737415"
         },
         {
             "label": "nail tree",
@@ -522,32 +536,11 @@
             "id": "wd:Q95588016"
         },
         {
-            "label": "log",
-            "description": "kind of stock, or unhewn portion of a felled tree, including a length cut off for use as firewood, construction, or another purpose",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q12029485"
-        },
-        {
-            "label": "J\u00f6\u00f6lboom",
-            "description": "type of Christmas tree",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q20619"
-        },
-        {
-            "label": "artificial Christmas tree",
+            "label": "Luther linden tree",
             "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1017198"
-        },
-        {
-            "label": "aluminum Christmas tree",
-            "description": "type of artificial Christmas tree that was popular in the United States from 1958 until about the mid-1960s",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q4737415"
+            "distance_to_root": 4,
+            "number_of_instances": 18,
+            "id": "wd:Q59274710"
         },
         {
             "label": "Humboldt State University Moon Trees",
@@ -557,11 +550,11 @@
             "id": "wd:Q27057267"
         },
         {
-            "label": "Picea abies",
-            "description": "species of plant",
-            "distance_to_root": 3,
-            "number_of_instances": 108,
-            "id": "wd:Q145992"
+            "label": "Tree of 40 Fruit",
+            "description": "fruit tree with 40 grafted Prunus varieties",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q18709203"
         },
         {
             "label": "memorial tree, dedicated to the Dutch royal family",
@@ -576,6 +569,13 @@
             "distance_to_root": 3,
             "number_of_instances": 0,
             "id": "wd:Q14635302"
+        },
+        {
+            "label": "Picea abies",
+            "description": "species of plant",
+            "distance_to_root": 3,
+            "number_of_instances": 108,
+            "id": "wd:Q145992"
         }
     ],
     "links": [

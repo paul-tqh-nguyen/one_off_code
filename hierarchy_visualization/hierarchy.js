@@ -4,26 +4,33 @@ const hierarchyMain = () => {
     const dataLocation = './hierarchy_data.json';
 
     const mean = inputArray => inputArray.reduce((a, b) => a + b, 0) / inputArray.length;
-    
+    //const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
+
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
-    const simulation = d3.forceSimulation()
-	  .alphaDecay(0.001)
-	  .velocityDecay(0.5);
     
-    const chargeStrength = -160;
-    const nodeRadius = 10;
-    const textFontSize = 15;
-    const paddingBetweenNodes = 30;
-    
+    const alphaDecay = 0.01;
+    const velocityDecay = 0.5;
+    const collisionAlpha = 1.0;
+    const distanceToCenterAlpha = 1.0;
+    const linkAlpha = 0.25;
+    const siblingAlpha = 1.0;
+
+    const nodeRadius = 5;
+    const edgeWidth = 0.5;
+    const paddingBetweenNodes = nodeRadius* 2;
     const margin = {
         top: 100,
         bottom: 100,
         left: 100,
         right: 100,
     };
+
+    const simulation = d3.forceSimulation()
+	  .alphaDecay(alphaDecay)
+	  .velocityDecay(velocityDecay);
     
-    const render = (nodeData, linkData, nodeById, parentIdToChildIds, childIdToParentids) => {
+    const render = ({nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth}) => {
 	
 	svg
 	    .attr('width', `${plotContainer.clientWidth}px`)
@@ -51,15 +58,6 @@ const hierarchyMain = () => {
 	      .enter().append('circle')
 	      .attr('r', nodeRadius)
 	      .attr('fill', 'red');
-	
-	const textGroup = svgContent.append('g')
-	      .selectAll('text')
-	      .data(nodeData)
-	      .enter().append('text')
-	      .text(datum =>  datum.distance_to_root)
-	      .attr('font-size', textFontSize)
-	      .attr('dx', nodeRadius + 5)
-	      .attr('dy', nodeRadius / 2);
 
 	const collide = alpha => {
 	    var quadtree = d3.quadtree()
@@ -93,68 +91,167 @@ const hierarchyMain = () => {
 		});
 	    };
 	};
-	
-	const horizontalCenter = alpha => {
-	    return () => nodeData.forEach(datum => {
-		datum.x = datum.x * alpha + Math.min(svgWidth / 2) * (1-alpha);
-	    });
-	};
-	
-	const boundingBoxForce = () => {
-	    nodeData.forEach(datum => {
-		datum.x = Math.max(margin.left, Math.min(svgWidth - margin.right, datum.x));
-		datum.y = Math.max(margin.top, Math.min(svgHeight - margin.bottom, datum.y));
-	    });
-	};
+
+        const distanceToCenter = alpha => {
+            return () => {
+	        nodeData.forEach(datum => {
+                    if (datum !== rootNode) {
+                        const goalDistance = distanceToCenterFactorByDepth[datum.distance_to_root];
+                        const xDelta = rootNode.x - datum.x;
+                        const yDelta = rootNode.y - datum.y;
+                        const currentDistance = Math.sqrt(xDelta * xDelta + yDelta * yDelta);
+                        const oldPortionToKeep = 1 - ((currentDistance - goalDistance) / currentDistance) * alpha;
+                        datum.x = datum.x * oldPortionToKeep + (1-oldPortionToKeep) * rootNode.x;
+		        datum.y = datum.y * oldPortionToKeep + (1-oldPortionToKeep) * rootNode.y;
+	            }
+                });
+            };
+        };
+        
+        const linkForce = alpha => {            
+            return () => {
+	        nodeData.forEach(child => {
+                    if (child !== rootNode) {
+		        const parentIds = childIdToParentids[child.id];
+                        const parents = parentIds.map(parentId => nodeById[parentId]).filter(parent => (child.distance_to_root - parent.distance_to_root) == 1);
+                        const parentMeanX = mean(parents.map(parent => parent.x));
+                        const parentMeanY = mean(parents.map(parent => parent.y));
+                        child.x = child.x * (1-alpha) + alpha * parentMeanX;
+                        child.y = child.y * (1-alpha) + alpha * parentMeanY;
+                    }
+                });
+            };
+        };
+        
+        const siblingForce = alpha => {            
+            return () => {
+	        nodeData.forEach(parent => {
+                    const siblings = parentIdToChildIds[parent.id]
+                          .map(childId => childIdToParentids[childId])
+                          .reduce((a,b) => a.concat(b), [])
+                          .filter(siblingId => siblingId !== parent.id)
+                          .map(siblingId => nodeById[siblingId])
+                          .filter(sibling => sibling.distance_to_root == parent.distance_to_root);
+                    if (siblings.length > 0) {
+                        const siblingMeanX = mean(siblings.map(sibling => sibling.x)); 
+                        const siblingMeanY = mean(siblings.map(sibling => sibling.y));
+                        console.log('\n\n\n\n\n\n\n');
+                        console.log(`parent.label ${JSON.stringify(parent.label)}`);
+                        console.log(`siblings.length ${JSON.stringify(siblings.length)}`);
+                        console.log(`parent.x ${JSON.stringify(parent.x)}`);
+                        console.log(`siblingMeanX ${JSON.stringify(siblingMeanX)}`);
+                        parent.x = parent.x * alpha + (1-alpha) * siblingMeanX;
+                        parent.y = parent.y * alpha + (1-alpha) * siblingMeanY;
+                        console.log(`parent.x ${JSON.stringify(parent.x)}`);
+                    }
+                });
+            };
+        };
+        
 	simulation
-	    .force('charge', d3.forceManyBody().strength(-50))
-	    .force('horizontal-center', horizontalCenter(0.999))
-	    .force('bounding-box', boundingBoxForce)
-	    .force('y', d3.forceY().y(datum => datum.distance_to_root * nodeRadius * 20))
-	    .force('x', d3.forceX().x(datum => {
-	    	const parentIds = childIdToParentids[datum.id];
-	    	const parentXs = parentIds ? parentIds.map(parentId => nodeById[parentId].x) : [];
-	    	const childIds = parentIdToChildIds[datum.id];
-	    	const childXs = childIds ? childIds.map(childId => nodeById[childId].x) : [];
-	    	const meanX = mean(parentXs.concat(childXs));
-	    	return meanX;
-	    }).strength(0.001))
+            .force('center', d3.forceCenter(svgWidth / 2, svgHeight / 2))
+            .force('links', linkForce(linkAlpha))
+            .force('sibling-force', siblingForce(siblingAlpha))
+            .force('distance-to-center', distanceToCenter(distanceToCenterAlpha))
 	    .nodes(nodeData).on('tick', () => {
 		nodeGroup
-		    .each(collide(0.5))
+		    .each(collide(collisionAlpha))
 		    .attr('cx', datum => datum.x)
 		    .attr('cy', datum => datum.y);
 		edgeGroup
+		    .attr('stroke-opacity', datum => {
+                        return nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 0.05 : 1;
+                    })
+		    .attr('stroke-width', datum => {
+                        return nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? edgeWidth * 16 : edgeWidth;
+                    })
 		    .attr('x1', datum => nodeById[datum.parent].x)
 		    .attr('y1', datum => nodeById[datum.parent].y)
 		    .attr('x2', datum => nodeById[datum.child].x)
 		    .attr('y2', datum => nodeById[datum.child].y);
-		textGroup
-		    .attr('x', datum => datum.x)
-		    .attr('y', datum => datum.y);
 	    })
 	    .restart();
+    };
+
+    const generateDistanceToCenterFactorByDepth = nodeData => {
+        let nodesPerDepth = {};
+	nodeData.forEach(node => {
+            if (node.distance_to_root in nodesPerDepth) {
+                nodesPerDepth[node.distance_to_root] += 1;
+            } else {
+                nodesPerDepth[node.distance_to_root] = 1;
+            }
+        });
+        const distanceToCenterFactorByDepth = {};
+        Object.keys(nodesPerDepth).forEach(depth => {
+            const nodeCount = nodesPerDepth[depth];
+            const approximateCircumference = nodeCount * (nodeRadius * 2 + paddingBetweenNodes * 2);
+            const expectedRadius = approximateCircumference / (2 * Math.PI);
+            distanceToCenterFactorByDepth[depth] = Math.max(nodeRadius * 20, expectedRadius);
+        });
+        let currentDistanceFromRoot = 0;
+        Object.keys(distanceToCenterFactorByDepth).sort().map(depth => {
+            distanceToCenterFactorByDepth[depth] += currentDistanceFromRoot;
+            currentDistanceFromRoot = distanceToCenterFactorByDepth[depth];
+        });
+        return distanceToCenterFactorByDepth;
+    };
+
+    const groupBySiblings = ({nodeData, nodeById, parentIdToChildIds, childIdToParentids}) => {
+        const hashBySiblings = parent => {
+            let siblingHash = Array.from(new Set(
+                parentIdToChildIds[parent.id]
+                    .map(childId => childIdToParentids[childId])
+                    .reduce((a,b) => a.concat(b), [])
+                    .concat([parent.id])))
+                .map(siblingId => nodeById[siblingId])
+                .filter(sibling => sibling.distance_to_root == parent.distance_to_root)
+                .map(sibling => sibling.id)
+                .sort()
+                .reduce((a,b) => a+b, '');
+            return siblingHash;
+        };
+        let nodeByHash = {};
+        nodeData.forEach(datum => {
+            const hash = hashBySiblings(datum);
+            if (hash in nodeByHash) {
+                nodeByHash[hash] = nodeByHash[hash].concat([datum]);
+            } else {
+                nodeByHash[hash] = [datum];
+            };
+        });
+        const nodeDataGroupedBySiblings = Object.keys(nodeByHash).map(hash => nodeByHash[hash]).reduce((a,b) => a.concat(b));
+        return nodeDataGroupedBySiblings;
     };
     
     d3.json(dataLocation)
 	.then(data => {
 	    const nodeData = data.nodes;
 	    const linkData = data.links;
+            const rootNode = nodeData.filter(datum => datum.distance_to_root == 0)[0];
 	    let nodeById = {};
-	    nodeData.forEach(node => {
-		nodeById[node.id] = node;
-	    });
 	    let parentIdToChildIds = {};
 	    let childIdToParentids = {};
-	    nodeData.forEach(datum => {
-		parentIdToChildIds[datum.id] = [];
-		childIdToParentids[datum.id] = [];
+	    nodeData.forEach(node => {
+		nodeById[node.id] = node;
+		parentIdToChildIds[node.id] = [];
+		childIdToParentids[node.id] = [];
 	    });
 	    linkData.forEach(datum => {
 		parentIdToChildIds[datum.parent].push(datum.child);
 		childIdToParentids[datum.child].push(datum.parent);
 	    });
-            const redraw = () => render(nodeData, linkData, nodeById, parentIdToChildIds, childIdToParentids);
+            const distanceToCenterFactorByDepth = generateDistanceToCenterFactorByDepth(nodeData);
+            const nodeDataGroupedBySiblings = groupBySiblings({nodeData, nodeById, parentIdToChildIds, childIdToParentids});
+            const redraw = () => render({
+                nodeData: nodeDataGroupedBySiblings,
+                linkData,
+                rootNode,
+                nodeById,
+                parentIdToChildIds,
+                childIdToParentids,
+                distanceToCenterFactorByDepth
+            });
 	    redraw();
 	    window.addEventListener('resize', redraw);
 	}).catch(err => {
