@@ -1,0 +1,922 @@
+{
+    "directed": true,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "label": "cooking appliance",
+            "description": "home appliance used for preparing food",
+            "distance_to_root": 0,
+            "number_of_instances": 3,
+            "id": "wd:Q57583712"
+        },
+        {
+            "label": "oven",
+            "description": "thermally insulated chamber used for the heating, baking or drying of a substance",
+            "distance_to_root": 1,
+            "number_of_instances": 47,
+            "id": "wd:Q36539"
+        },
+        {
+            "label": "microwave oven",
+            "description": "kitchen cooking appliance",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q127956"
+        },
+        {
+            "label": "kitchen stove",
+            "description": "kitchen appliance designed for the purpose of cooking food",
+            "distance_to_root": 1,
+            "number_of_instances": 2,
+            "id": "wd:Q182995"
+        },
+        {
+            "label": "coffeemaker",
+            "description": "device for making coffee",
+            "distance_to_root": 1,
+            "number_of_instances": 2,
+            "id": "wd:Q211841"
+        },
+        {
+            "label": "slow cooker",
+            "description": "electrical cooking appliance used to prepare food by simmering for several hours, mostly unattended",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q642345"
+        },
+        {
+            "label": "barbecue grill",
+            "description": "device that cooks food by applying heat from below",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q853185"
+        },
+        {
+            "label": "brasero",
+            "description": "heater",
+            "distance_to_root": 1,
+            "number_of_instances": 3,
+            "id": "wd:Q899035"
+        },
+        {
+            "label": "spiral vegetable slicer",
+            "description": "kitchen appliance used for cutting vegetables",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q2311022"
+        },
+        {
+            "label": "Popcorn maker",
+            "description": "type of food preparation device",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q3509140"
+        },
+        {
+            "label": "Cheesemelter",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q5089424"
+        },
+        {
+            "label": "air fryer",
+            "description": "a kitchen appliance that cooks by circulating hot air around the food using convection",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q17232663"
+        },
+        {
+            "label": "pancake machine",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q20850435"
+        },
+        {
+            "label": "Cooktop",
+            "description": "a device commonly used for cooking food",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q60738833"
+        },
+        {
+            "label": "smart oven",
+            "description": "a oven that can be controlled using the internet",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q64003633"
+        },
+        {
+            "label": "Billig",
+            "description": "plate used to bake cr\u00eapes",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q12287"
+        },
+        {
+            "label": "induction stove",
+            "description": "Type of cooker that uses electromagnetic induction",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q751960"
+        },
+        {
+            "label": "electric stove",
+            "description": "stove with an integrated electrical heating device to cook and bake",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1211746"
+        },
+        {
+            "label": "gas stove",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1667685"
+        },
+        {
+            "label": "Fire ring",
+            "description": "a device to contain fires from spreading",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q5451647"
+        },
+        {
+            "label": "Bachelor griller",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q17005079"
+        },
+        {
+            "label": "clay stove",
+            "description": "stove build of clay",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q28320096"
+        },
+        {
+            "label": "Dr\u00f6ppelminna",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q152173"
+        },
+        {
+            "label": "AeroPress",
+            "description": "device for brewing coffee",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q381188"
+        },
+        {
+            "label": "moka pot",
+            "description": "type of coffeemaker",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1054566"
+        },
+        {
+            "label": "French press",
+            "description": "coffee brewing device",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1147545"
+        },
+        {
+            "label": "espresso machine",
+            "description": "type of coffeemaker that makes espresso",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1210743"
+        },
+        {
+            "label": "cezve",
+            "description": "Traditional pot for cooking Turkish coffee",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1254441"
+        },
+        {
+            "label": "vacuum coffee maker",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1704731"
+        },
+        {
+            "label": "Integrated fully automatic coffee machines",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1721065"
+        },
+        {
+            "label": "Senseo",
+            "description": "type of coffeemaker",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1856585"
+        },
+        {
+            "label": "coffee percolator",
+            "description": "coffee brewing method",
+            "distance_to_root": 2,
+            "number_of_instances": 1,
+            "id": "wd:Q2342885"
+        },
+        {
+            "label": "CoEx",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q2477437"
+        },
+        {
+            "label": "Neapolitan flip coffee pot",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q2541439"
+        },
+        {
+            "label": "Chemex Coffeemaker",
+            "description": "manual pour-over style glass coffeemaker, invented in 1941",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q5090371"
+        },
+        {
+            "label": "Keurig",
+            "description": "beverage brewing system for home and commercial use",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q6395629"
+        },
+        {
+            "label": "oven range",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q11293439"
+        },
+        {
+            "label": "Benghazi burner",
+            "description": "type of brazier",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q16971459"
+        },
+        {
+            "label": "blast furnace",
+            "description": "type of metallurgical furnace used for smelting to produce industrial metals",
+            "distance_to_root": 2,
+            "number_of_instances": 44,
+            "id": "wd:Q181485"
+        },
+        {
+            "label": "stove",
+            "description": "enclosed heated space",
+            "distance_to_root": 2,
+            "number_of_instances": 87,
+            "id": "wd:Q203789"
+        },
+        {
+            "label": "Tandoor",
+            "description": "cylindrical clay or metal oven used in Asian cooking",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q379831"
+        },
+        {
+            "label": "Electric arc furnace",
+            "description": "a furnace that uses electricity as a source of heat",
+            "distance_to_root": 2,
+            "number_of_instances": 1,
+            "id": "wd:Q650993"
+        },
+        {
+            "label": "bakehouse",
+            "description": "building for baking bread",
+            "distance_to_root": 2,
+            "number_of_instances": 253,
+            "id": "wd:Q798436"
+        },
+        {
+            "label": "solar cooker",
+            "description": "device which uses the energy of direct sunlight to heat, cook or pasteurise drink and other food materials",
+            "distance_to_root": 2,
+            "number_of_instances": 2,
+            "id": "wd:Q903682"
+        },
+        {
+            "label": "masonry oven",
+            "description": "oven consisting of a baking chamber made of fireproof brick, concrete, stone, clay, or cob",
+            "distance_to_root": 2,
+            "number_of_instances": 6,
+            "id": "wd:Q908601"
+        },
+        {
+            "label": "clay oven",
+            "description": "oven build of clay",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1309876"
+        },
+        {
+            "label": "kiln",
+            "description": "oven that generates high temperatures",
+            "distance_to_root": 2,
+            "number_of_instances": 128,
+            "id": "wd:Q1724341"
+        },
+        {
+            "label": "steam oven",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q2114471"
+        },
+        {
+            "label": "wood-fired oven",
+            "description": "oven that uses wood fuel for cooking",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q2758066"
+        },
+        {
+            "label": "Beehive oven",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q4879811"
+        },
+        {
+            "label": "Chorkor oven",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q5105143"
+        },
+        {
+            "label": "reflow oven",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q7307368"
+        },
+        {
+            "label": "Punjabi tandoor",
+            "description": "Chicken Cooking style of Punjab in Clay oven",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q19895513"
+        },
+        {
+            "label": "cremator",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q27825035"
+        },
+        {
+            "label": "charcoal grill",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q20057402"
+        },
+        {
+            "label": "fire pit",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 8,
+            "id": "wd:Q187317"
+        },
+        {
+            "label": "lime kiln",
+            "description": "kiln used for the calcination of limestone (calcium carbonate) to produce the form of lime called quicklime (calcium oxide)",
+            "distance_to_root": 3,
+            "number_of_instances": 735,
+            "id": "wd:Q59772"
+        },
+        {
+            "label": "Hoffmann kiln",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 1,
+            "id": "wd:Q387572"
+        },
+        {
+            "label": "Cement kiln",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q748594"
+        },
+        {
+            "label": "pottery kiln",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 10,
+            "id": "wd:Q1621967"
+        },
+        {
+            "label": "dragon kiln",
+            "description": "traditional Chinese form of kiln",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q11679341"
+        },
+        {
+            "label": "coke oven",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 1,
+            "id": "wd:Q14917515"
+        },
+        {
+            "label": "gypsum kiln",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 2,
+            "id": "wd:Q81801249"
+        },
+        {
+            "label": "charcoal blast furnace",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q2118056"
+        },
+        {
+            "label": "electric ceramic cooker",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q18235250"
+        },
+        {
+            "label": "masonry heater",
+            "description": "type of heating device for warmth in a room",
+            "distance_to_root": 3,
+            "number_of_instances": 2,
+            "id": "wd:Q388294"
+        },
+        {
+            "label": "Portable stove",
+            "description": "Cooking stove specially designed to be portable and lightweight",
+            "distance_to_root": 3,
+            "number_of_instances": 9,
+            "id": "wd:Q616204"
+        },
+        {
+            "label": "rocket stove",
+            "description": "type of stove",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q1254139"
+        },
+        {
+            "label": "wood-burning stove",
+            "description": "type of stove",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q1370219"
+        },
+        {
+            "label": "foot stove",
+            "description": "type of stove",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q1432781"
+        },
+        {
+            "label": "kerosene heater",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q2598105"
+        },
+        {
+            "label": "Russian stove",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q2991875"
+        },
+        {
+            "label": "Multi-fuel stove",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q6934455"
+        },
+        {
+            "label": "sauna stove",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q11871855"
+        },
+        {
+            "label": "bio fireplace",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q12053155"
+        },
+        {
+            "label": "cook stove",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q15615037"
+        },
+        {
+            "label": "clean-burning stove",
+            "description": "a stove with reduced toxic emissions",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q17008009"
+        },
+        {
+            "label": "Latrobe Stove",
+            "description": "coal-fired parlor heater made of cast iron and fitted into fireplaces as an insert, patented in 1846",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q48977554"
+        },
+        {
+            "label": "G.I. pocket stove",
+            "description": "World War II\u2013era portable pressurized-burner liquid-fuel stove",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "id": "wd:Q5512062"
+        },
+        {
+            "label": "Heat sources for cooking",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "id": "wd:Q5674268"
+        },
+        {
+            "label": "high efficiency wood-burning stove",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "id": "wd:Q2195095"
+        },
+        {
+            "label": "slow combustion heater",
+            "description": "subconcept of Heating (scot/887)",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "id": "wd:Q95675227"
+        },
+        {
+            "label": "Alcohol Cookstove",
+            "description": "(Category 04: Tools & Equipment for Materials> Food Processing & Preparation T&E> Food Preparation Equipment> Cooking Device> Cookstove)",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "id": "wd:Q84439792"
+        }
+    ],
+    "links": [
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q36539"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q127956"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q182995"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q211841"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q642345"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q853185"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q899035"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q2311022"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q3509140"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q5089424"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q17232663"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q20850435"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q60738833"
+        },
+        {
+            "parent": "wd:Q57583712",
+            "child": "wd:Q64003633"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q181485"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q203789"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q379831"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q650993"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q798436"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q903682"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q908601"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q1309876"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q1724341"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q2114471"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q2758066"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q4879811"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q5105143"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q7307368"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q19895513"
+        },
+        {
+            "parent": "wd:Q36539",
+            "child": "wd:Q27825035"
+        },
+        {
+            "parent": "wd:Q127956",
+            "child": "wd:Q11293439"
+        },
+        {
+            "parent": "wd:Q182995",
+            "child": "wd:Q12287"
+        },
+        {
+            "parent": "wd:Q182995",
+            "child": "wd:Q751960"
+        },
+        {
+            "parent": "wd:Q182995",
+            "child": "wd:Q1211746"
+        },
+        {
+            "parent": "wd:Q182995",
+            "child": "wd:Q1667685"
+        },
+        {
+            "parent": "wd:Q182995",
+            "child": "wd:Q5451647"
+        },
+        {
+            "parent": "wd:Q182995",
+            "child": "wd:Q17005079"
+        },
+        {
+            "parent": "wd:Q182995",
+            "child": "wd:Q28320096"
+        },
+        {
+            "parent": "wd:Q182995",
+            "child": "wd:Q64003633"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q152173"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q381188"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q1054566"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q1147545"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q1210743"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q1254441"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q1704731"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q1721065"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q1856585"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q2342885"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q2477437"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q2541439"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q5090371"
+        },
+        {
+            "parent": "wd:Q211841",
+            "child": "wd:Q6395629"
+        },
+        {
+            "parent": "wd:Q853185",
+            "child": "wd:Q20057402"
+        },
+        {
+            "parent": "wd:Q899035",
+            "child": "wd:Q16971459"
+        },
+        {
+            "parent": "wd:Q1211746",
+            "child": "wd:Q18235250"
+        },
+        {
+            "parent": "wd:Q5451647",
+            "child": "wd:Q187317"
+        },
+        {
+            "parent": "wd:Q181485",
+            "child": "wd:Q2118056"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q388294"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q616204"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q1254139"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q1370219"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q1432781"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q2598105"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q2991875"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q6934455"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q11871855"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q12053155"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q15615037"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q17008009"
+        },
+        {
+            "parent": "wd:Q203789",
+            "child": "wd:Q48977554"
+        },
+        {
+            "parent": "wd:Q1724341",
+            "child": "wd:Q59772"
+        },
+        {
+            "parent": "wd:Q1724341",
+            "child": "wd:Q387572"
+        },
+        {
+            "parent": "wd:Q1724341",
+            "child": "wd:Q748594"
+        },
+        {
+            "parent": "wd:Q1724341",
+            "child": "wd:Q1621967"
+        },
+        {
+            "parent": "wd:Q1724341",
+            "child": "wd:Q11679341"
+        },
+        {
+            "parent": "wd:Q1724341",
+            "child": "wd:Q14917515"
+        },
+        {
+            "parent": "wd:Q1724341",
+            "child": "wd:Q81801249"
+        },
+        {
+            "parent": "wd:Q616204",
+            "child": "wd:Q5512062"
+        },
+        {
+            "parent": "wd:Q616204",
+            "child": "wd:Q5674268"
+        },
+        {
+            "parent": "wd:Q1370219",
+            "child": "wd:Q2195095"
+        },
+        {
+            "parent": "wd:Q1370219",
+            "child": "wd:Q95675227"
+        },
+        {
+            "parent": "wd:Q15615037",
+            "child": "wd:Q84439792"
+        }
+    ]
+}
