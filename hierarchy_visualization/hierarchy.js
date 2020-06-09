@@ -4,21 +4,23 @@ const hierarchyMain = () => {
     const dataLocation = './hierarchy_data.json';
 
     const mean = inputArray => inputArray.reduce((a, b) => a + b, 0) / inputArray.length;
-    //const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
+    const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
 
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
     
     const alphaDecay = 0.01;
-    const velocityDecay = 0.5;
-    const collisionAlpha = 1.0;
+    const velocityDecay = 0.00001;
+    const collisionAlpha = 0.5;
     const distanceToCenterAlpha = 1.0;
     const linkAlpha = 0.25;
     const siblingAlpha = 0.5;
 
-    const nodeRadius = 5;
-    const edgeWidth = 0.5;
-    const paddingBetweenNodes = nodeRadius* 2;
+    const nodeRadius = 10;
+    const edgeWidth = 1;
+    const hiddenEdgeWidth = 8;
+    const paddingBetweenNodes = 20;
+    const approximateCircumferenceDistancePerNode = 15;
     const margin = {
         top: 100,
         bottom: 100,
@@ -65,13 +67,12 @@ const hierarchyMain = () => {
 		.y(datum => datum.y)
 		.addAll(nodeData);
 	    return datum => {
-		const datumBoundingDistance = datum.radius + paddingBetweenNodes;
-		const datumLeftX = datum.x - datumBoundingDistance;
-		const datumTopY = datum.y - datumBoundingDistance;
-		const datumRightX = datum.x + datumBoundingDistance;
-		const datumBottomY = datum.y + datumBoundingDistance;
 		quadtree.visit((quadtreeNode, quadtreeNodeLeftX, quadtreeNodeTopY, quadtreeNodeRightX, quadtreeNodeBottomY) => {
+                    let goalBetweenNodes = paddingBetweenNodes;
 		    if (quadtreeNode.data && (quadtreeNode.data !== datum)) {
+                        if (datum.distance_to_root == quadtreeNode.data.distance_to_root) {
+                            goalBetweenNodes *= 2;
+                        }
 			let xDelta = datum.x - quadtreeNode.data.x;
 			let yDelta = datum.y - quadtreeNode.data.y;
 			let distance = Math.sqrt(xDelta * xDelta + yDelta * yDelta);
@@ -86,6 +87,11 @@ const hierarchyMain = () => {
 			    quadtreeNode.data.y += yDelta;
 			}
 		    }
+		    const datumBoundingDistance = datum.radius + goalBetweenNodes;
+		    const datumLeftX = datum.x - datumBoundingDistance;
+		    const datumTopY = datum.y - datumBoundingDistance;
+		    const datumRightX = datum.x + datumBoundingDistance;
+		    const datumBottomY = datum.y + datumBoundingDistance;
 		    const collisionDetected = quadtreeNodeLeftX > datumRightX || quadtreeNodeRightX < datumLeftX || quadtreeNodeTopY > datumBottomY || quadtreeNodeBottomY < datumTopY;
 		    return collisionDetected;
 		});
@@ -135,14 +141,8 @@ const hierarchyMain = () => {
                     if (siblings.length > 0) {
                         const siblingMeanX = mean(siblings.map(sibling => sibling.x)); 
                         const siblingMeanY = mean(siblings.map(sibling => sibling.y));
-                        console.log('\n\n\n\n\n\n\n');
-                        console.log(`parent.label ${JSON.stringify(parent.label)}`);
-                        console.log(`siblings.length ${JSON.stringify(siblings.length)}`);
-                        console.log(`parent.x ${JSON.stringify(parent.x)}`);
-                        console.log(`siblingMeanX ${JSON.stringify(siblingMeanX)}`);
                         parent.x = parent.x * (1-alpha) + alpha * siblingMeanX;
                         parent.y = parent.y * (1-alpha) + alpha * siblingMeanY;
-                        console.log(`parent.x ${JSON.stringify(parent.x)}`);
                     }
                 });
             };
@@ -163,7 +163,7 @@ const hierarchyMain = () => {
                         return nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 0.05 : 1;
                     })
 		    .attr('stroke-width', datum => {
-                        return nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? edgeWidth * 16 : edgeWidth;
+                        return nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? hiddenEdgeWidth : edgeWidth;
                     })
 		    .attr('x1', datum => nodeById[datum.parent].x)
 		    .attr('y1', datum => nodeById[datum.parent].y)
@@ -185,7 +185,7 @@ const hierarchyMain = () => {
         const distanceToCenterFactorByDepth = {};
         Object.keys(nodesPerDepth).forEach(depth => {
             const nodeCount = nodesPerDepth[depth];
-            const approximateCircumference = nodeCount * (nodeRadius * 2 + paddingBetweenNodes * 2);
+            const approximateCircumference = nodeCount * approximateCircumferenceDistancePerNode;
             const expectedRadius = approximateCircumference / (2 * Math.PI);
             distanceToCenterFactorByDepth[depth] = Math.max(nodeRadius * 20, expectedRadius);
         });
