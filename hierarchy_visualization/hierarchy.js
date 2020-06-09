@@ -46,10 +46,26 @@ const hierarchyMain = () => {
 	const svgWidth = parseFloat(svg.attr('width'));
 	const svgHeight = parseFloat(svg.attr('height'));
 
-        nodeData.forEach((datum) => {
+        nodeData.forEach((datum, index) => {
             if ( !('x' in datum && 'y' in datum)) {
-                datum.x = datum.relativeInitPosition / nodeData.length * svgWidth;
-                datum.y = datum.relativeInitPosition / nodeData.length * svgHeight;
+                switch(index % 4) {
+                case 0:
+                    datum.x = 0;
+                    datum.y = index+1 / nodeData.length * svgHeight;
+                    break;
+                case 1:
+                    datum.x = svgWidth;
+                    datum.y = index+1 / nodeData.length * svgHeight;
+                    break;
+                case 2:
+                    datum.x = index+1 / nodeData.length * svgWidth;
+                    datum.y = 0;
+                    break;
+                case 3:
+                    datum.x = index+1 / nodeData.length * svgWidth;
+                    datum.y = svgHeight;
+                    break;
+                }
             }
         });
                 
@@ -114,10 +130,16 @@ const hierarchyMain = () => {
 `,);
               })
               .on('click', datum => {
+                  const xDelta = datum.x - rootNode.x;
+                  const yDelta = datum.y - rootNode.y;
                   const children = parentIdToChildIds[datum.id].map(childId => nodeById[childId]);
                   if (children.length > 0) {
                       children.filter(child => child.distance_to_root == datum.distance_to_root + 1).forEach(child => {
                           child.display_endabled = true;
+                          if (datum !== rootNode) {
+                              child.x = datum.x + xDelta;
+                              child.y = datum.y + yDelta;
+                          }
                       });
                       render(inputArgs);
                       simulation.alpha(1);
@@ -219,9 +241,7 @@ const hierarchyMain = () => {
     
     d3.json(dataLocation)
 	.then(data => {
-	    const nodeData = data.nodes
-                  .map(datum => Object.assign(datum, {display_endabled: datum.distance_to_root == 0}))
-                  .map(datum => Object.assign(datum, {relativeInitPosition: Math.random()}));
+	    const nodeData = data.nodes.map(datum => Object.assign(datum, {display_endabled: datum.distance_to_root == 0}));
 	    const linkData = data.links;
             const rootNode = nodeData.filter(datum => datum.distance_to_root == 0)[0];
 	    const nodeById = nodeData.reduce((accumulator, node) => {
