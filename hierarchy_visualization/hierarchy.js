@@ -11,16 +11,13 @@ const hierarchyMain = () => {
     
     const alphaDecay = 0.01;
     const velocityDecay = 0.00001;
-    const collisionAlpha = 0.5;
     const distanceToCenterAlpha = 1.0;
-    const linkAlpha = 0.25;
+    const linkAlpha = 0.5;
     const siblingAlpha = 0.5;
 
-    const nodeRadius = 10;
-    const edgeWidth = 1;
-    const hiddenEdgeWidth = 8;
-    const paddingBetweenNodes = 20;
+    const paddingBetweenNodes = 15;
     const approximateCircumferenceDistancePerNode = 15;
+    const minDistanceBetweenDepths = 200;
     const margin = {
         top: 100,
         bottom: 100,
@@ -49,54 +46,34 @@ const hierarchyMain = () => {
 	const edgeGroup = svgContent.append('g')
 	      .selectAll('line')
 	      .data(linkData)
-	      .enter().append('line')
-	      .attr('stroke', 'black')
-	      .attr('stroke-opacity', 1)
-	      .attr('stroke-width', 3);
+	      .enter()
+              .append('line')
+	      .attr('class', datum => nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 'indirect-edge' : 'edge')
+              .on('mouseover', function(d) {
+                  if (d3.select(this).classed('edge')) {
+                      d3.select(this).attr('class', 'edge direct-edge-highlighted');
+                  }
+                  if (d3.select(this).classed('indirect-edge')) {
+                      d3.select(this).attr('class', 'indirect-edge indirect-edge-highlighted');
+                  }
+              })
+              .on('mouseout', function(d) {
+                  if (d3.select(this).classed('edge direct-edge-highlighted')) {
+                      d3.select(this).attr('class', 'edge');
+                  }
+                  if (d3.select(this).classed('indirect-edge indirect-edge-highlighted')) {
+                      d3.select(this).attr('class', 'indirect-edge');
+                  }
+              });
 
 	const nodeGroup = svgContent.append('g')
 	      .selectAll('circle')
 	      .data(nodeData)
 	      .enter().append('circle')
-	      .attr('r', nodeRadius)
-	      .attr('fill', 'red');
-
-	const collide = alpha => {
-	    var quadtree = d3.quadtree()
-		.x(datum => datum.x)
-		.y(datum => datum.y)
-		.addAll(nodeData);
-	    return datum => {
-		quadtree.visit((quadtreeNode, quadtreeNodeLeftX, quadtreeNodeTopY, quadtreeNodeRightX, quadtreeNodeBottomY) => {
-                    let goalBetweenNodes = paddingBetweenNodes;
-		    if (quadtreeNode.data && (quadtreeNode.data !== datum)) {
-                        if (datum.distance_to_root == quadtreeNode.data.distance_to_root) {
-                            goalBetweenNodes *= 2;
-                        }
-			let xDelta = datum.x - quadtreeNode.data.x;
-			let yDelta = datum.y - quadtreeNode.data.y;
-			let distance = Math.sqrt(xDelta * xDelta + yDelta * yDelta);
-			let minimumDistance = nodeRadius + nodeRadius + paddingBetweenNodes;
-			if (distance < minimumDistance) {
-			    distance = (distance - minimumDistance) / distance * alpha;
-			    xDelta *= distance;
-			    datum.x -= xDelta;
-			    yDelta *= distance;
-			    datum.y -= yDelta;
-			    quadtreeNode.data.x += xDelta;
-			    quadtreeNode.data.y += yDelta;
-			}
-		    }
-		    const datumBoundingDistance = datum.radius + goalBetweenNodes;
-		    const datumLeftX = datum.x - datumBoundingDistance;
-		    const datumTopY = datum.y - datumBoundingDistance;
-		    const datumRightX = datum.x + datumBoundingDistance;
-		    const datumBottomY = datum.y + datumBoundingDistance;
-		    const collisionDetected = quadtreeNodeLeftX > datumRightX || quadtreeNodeRightX < datumLeftX || quadtreeNodeTopY > datumBottomY || quadtreeNodeBottomY < datumTopY;
-		    return collisionDetected;
-		});
-	    };
-	};
+              .attr('class', 'node')
+              .on('click', datum => {
+                  console.log(`datum ${JSON.stringify(datum)}`);
+              });
 
         const distanceToCenter = alpha => {
             return () => {
@@ -153,18 +130,12 @@ const hierarchyMain = () => {
             .force('links', linkForce(linkAlpha))
             .force('sibling-force', siblingForce(siblingAlpha))
             .force('distance-to-center', distanceToCenter(distanceToCenterAlpha))
+            .force('collide', d3.forceCollide(paddingBetweenNodes).strength(1))
 	    .nodes(nodeData).on('tick', () => {
 		nodeGroup
-		    .each(collide(collisionAlpha))
 		    .attr('cx', datum => datum.x)
 		    .attr('cy', datum => datum.y);
 		edgeGroup
-		    .attr('stroke-opacity', datum => {
-                        return nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 0.05 : 1;
-                    })
-		    .attr('stroke-width', datum => {
-                        return nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? hiddenEdgeWidth : edgeWidth;
-                    })
 		    .attr('x1', datum => nodeById[datum.parent].x)
 		    .attr('y1', datum => nodeById[datum.parent].y)
 		    .attr('x2', datum => nodeById[datum.child].x)
@@ -187,7 +158,7 @@ const hierarchyMain = () => {
             const nodeCount = nodesPerDepth[depth];
             const approximateCircumference = nodeCount * approximateCircumferenceDistancePerNode;
             const expectedRadius = approximateCircumference / (2 * Math.PI);
-            distanceToCenterFactorByDepth[depth] = Math.max(nodeRadius * 20, expectedRadius);
+            distanceToCenterFactorByDepth[depth] = Math.max(minDistanceBetweenDepths, expectedRadius);
         });
         let currentDistanceFromRoot = 0;
         Object.keys(distanceToCenterFactorByDepth).sort().map(depth => {
