@@ -14,7 +14,7 @@ const hierarchyMain = () => {
     const collisionAlpha = 1.0;
     const distanceToCenterAlpha = 1.0;
     const linkAlpha = 0.25;
-    const siblingAlpha = 1.0;
+    const siblingAlpha = 0.5;
 
     const nodeRadius = 5;
     const edgeWidth = 0.5;
@@ -140,8 +140,8 @@ const hierarchyMain = () => {
                         console.log(`siblings.length ${JSON.stringify(siblings.length)}`);
                         console.log(`parent.x ${JSON.stringify(parent.x)}`);
                         console.log(`siblingMeanX ${JSON.stringify(siblingMeanX)}`);
-                        parent.x = parent.x * alpha + (1-alpha) * siblingMeanX;
-                        parent.y = parent.y * alpha + (1-alpha) * siblingMeanY;
+                        parent.x = parent.x * (1-alpha) + alpha * siblingMeanX;
+                        parent.y = parent.y * (1-alpha) + alpha * siblingMeanY;
                         console.log(`parent.x ${JSON.stringify(parent.x)}`);
                     }
                 });
@@ -196,33 +196,6 @@ const hierarchyMain = () => {
         });
         return distanceToCenterFactorByDepth;
     };
-
-    const groupBySiblings = ({nodeData, nodeById, parentIdToChildIds, childIdToParentids}) => {
-        const hashBySiblings = parent => {
-            let siblingHash = Array.from(new Set(
-                parentIdToChildIds[parent.id]
-                    .map(childId => childIdToParentids[childId])
-                    .reduce((a,b) => a.concat(b), [])
-                    .concat([parent.id])))
-                .map(siblingId => nodeById[siblingId])
-                .filter(sibling => sibling.distance_to_root == parent.distance_to_root)
-                .map(sibling => sibling.id)
-                .sort()
-                .reduce((a,b) => a+b, '');
-            return siblingHash;
-        };
-        let nodeByHash = {};
-        nodeData.forEach(datum => {
-            const hash = hashBySiblings(datum);
-            if (hash in nodeByHash) {
-                nodeByHash[hash] = nodeByHash[hash].concat([datum]);
-            } else {
-                nodeByHash[hash] = [datum];
-            };
-        });
-        const nodeDataGroupedBySiblings = Object.keys(nodeByHash).map(hash => nodeByHash[hash]).reduce((a,b) => a.concat(b));
-        return nodeDataGroupedBySiblings;
-    };
     
     d3.json(dataLocation)
 	.then(data => {
@@ -242,9 +215,8 @@ const hierarchyMain = () => {
 		childIdToParentids[datum.child].push(datum.parent);
 	    });
             const distanceToCenterFactorByDepth = generateDistanceToCenterFactorByDepth(nodeData);
-            const nodeDataGroupedBySiblings = groupBySiblings({nodeData, nodeById, parentIdToChildIds, childIdToParentids});
             const redraw = () => render({
-                nodeData: nodeDataGroupedBySiblings,
+                nodeData,
                 linkData,
                 rootNode,
                 nodeById,
