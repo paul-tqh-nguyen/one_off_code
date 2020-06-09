@@ -77,7 +77,7 @@ td {
 }
 
 .node-leaf {
-    fill: magenta;
+    fill: blue;
 }
 
 .node:hover {
@@ -91,7 +91,7 @@ td {
 
 .direct-edge {
     stroke: black;
-    stroke-width: 5;
+    stroke-width: 3;
     stroke-opacity: 1;
     transition: all 0.2s;
 }

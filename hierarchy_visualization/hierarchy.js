@@ -18,10 +18,10 @@ const hierarchyMain = () => {
     const velocityDecay = 0.1;
     const distanceToCenterAlpha = 1.0;
     const linkAlpha = 0.1;
-    const siblingAlpha = 0.5;
+    const siblingAlpha = 0.25;
 
     const paddingBetweenNodes = 10;
-    const approximateCircumferenceDistancePerNode = 15;
+    const approximateCircumferenceDistancePerNode = 10;
     const minDistanceBetweenDepths = 100;
     const margin = {
         top: 100,
@@ -57,9 +57,6 @@ const hierarchyMain = () => {
                 case 1:
                     datum.x = svgWidth;
                     datum.y = (index+1) / nodeData.length * svgHeight;
-                    // console.log('\n\n\n');
-                    // console.log(`(index+1) / nodeData.length ${JSON.stringify((index+1) / nodeData.length)}`);
-                    // console.log(`svgHeight ${JSON.stringify(svgHeight)}`);
                     break;
                 case 2:
                     datum.x = (index+1) / nodeData.length * svgWidth;
@@ -193,6 +190,7 @@ const hierarchyMain = () => {
                     if (siblings.length > 0) {
                         const siblingMeanX = mean(siblings.map(sibling => sibling.x)); 
                         const siblingMeanY = mean(siblings.map(sibling => sibling.y));
+                        
                         parent.x = parent.x * (1-alpha) + alpha * siblingMeanX;
                         parent.y = parent.y * (1-alpha) + alpha * siblingMeanY;
                     }
@@ -200,7 +198,7 @@ const hierarchyMain = () => {
             };
         };
 
-        drag.on("drag", function(d,i) {
+        drag.on("drag", (d,i) => {
             d.x += d3.event.dx;
             d.y += d3.event.dy;
         });
@@ -210,7 +208,7 @@ const hierarchyMain = () => {
             .force('links', linkForce(linkAlpha))
             .force('sibling-force', siblingForce(siblingAlpha))
             .force('distance-to-center', distanceToCenter(distanceToCenterAlpha))
-            .force('collide', d3.forceCollide(paddingBetweenNodes).strength(1).iterations(200))
+            .force('collide', d3.forceCollide(paddingBetweenNodes).strength(0.5).iterations(200))
 	    .nodes(nodeData.filter(datum => datum.display_endabled)).on('tick', () => {
 		nodeGroup
 		    .attr('cx', datum => datum.x)
