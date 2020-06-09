@@ -12,37 +12,27 @@ const hierarchyMain = () => {
     const alphaDecay = 0.01;
     const velocityDecay = 0.00001;
     const distanceToCenterAlpha = 1.0;
-    const linkAlpha = 0.25;
+    const linkAlpha = 0.5;
     const siblingAlpha = 0.5;
 
-    const paddingBetweenNodes = 15;
-    const approximateCircumferenceDistancePerNode = 15;
-    const minDistanceBetweenDepths = 200;
+    const paddingBetweenNodes = 10;
+    const approximateCircumferenceDistancePerNode = 10;
+    const minDistanceBetweenDepths = 100;
     const margin = {
         top: 100,
         bottom: 100,
         left: 100,
         right: 100,
     };
-    const textDisplayX = 30;
-    const textDisplayY = 20;
-    const textDisplayTSPANHeight = '1.3em';
-    const textDisplayMargin = {
-        top: 10,
-        bottom: 10,
-        left: 10,
-        right: 10,
-    };
-    const textDisplayBackgroundColor = '#fff';
-    const textDisplayBorderColor = 'purple';
-    const textDisplayBorderWidth = 1;
 
     const simulation = d3.forceSimulation()
 	  .alphaDecay(alphaDecay)
 	  .velocityDecay(velocityDecay);
     
-    const render = ({nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth}) => {
-	
+    const render = (inputArgs) => {
+
+        const {nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth} = inputArgs;
+        
 	svg
 	    .attr('width', `${plotContainer.clientWidth}px`)
 	    .attr('height', `${plotContainer.clientHeight}px`)
@@ -57,7 +47,7 @@ const hierarchyMain = () => {
         }));
 	const edgeGroup = svgZoomableContent.append('g')
 	      .selectAll('line')
-	      .data(linkData)
+	      .data(linkData.filter(datum => nodeById[datum.parent].display_endabled && nodeById[datum.child].display_endabled))
 	      .enter()
               .append('line')
 	      .attr('class', datum => nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 'indirect-edge' : 'direct-edge')
@@ -75,12 +65,14 @@ const hierarchyMain = () => {
 <p>Parent:</p>
 <p>Label: ${parent.label} </p>
 <p>Description: ${parent.description} </p>
+<p>Number of Subclasses: ${parentIdToChildIds[parent.id].length} </p>
 <p>Number of Instances: ${parent.number_of_instances} </p>
 <p>Wikidata ID: <a target="_blank" title="${parent.label}"href="https://www.wikidata.org/wiki/${parent.id.replace('wd:','')}">${parent.id}</a></p>
 </br></br></br></br></br>
 <p>Child:</p>
 <p>Label: ${child.label} </p>
 <p>Description: ${child.description} </p>
+<p>Number of Subclasses: ${parentIdToChildIds[child.id].length} </p>
 <p>Number of Instances: ${child.number_of_instances} </p>
 <p>Wikidata ID: <a target="_blank" title="${child.label}"href="https://www.wikidata.org/wiki/${child.id.replace('wd:','')}">${child.id}</a></p>
 `,);
@@ -96,7 +88,7 @@ const hierarchyMain = () => {
 
 	const nodeGroup = svgZoomableContent.append('g')
 	      .selectAll('circle')
-	      .data(nodeData)
+	      .data(nodeData.filter(datum => datum.display_endabled))
 	      .enter().append('circle')
               .attr('class', 'node')
               .on('mouseover', datum => {
@@ -104,12 +96,19 @@ const hierarchyMain = () => {
                       .html(`
 <p>Label: ${datum.label} </p>
 <p>Description: ${datum.description} </p>
+<p>Number of Subclasses: ${parentIdToChildIds[datum.id].length} </p>
 <p>Number of Instances: ${datum.number_of_instances} </p>
 <p>Wikidata ID: <a target="_blank" title="${datum.label}"href="https://www.wikidata.org/wiki/${datum.id.replace('wd:','')}">${datum.id}</a></p>
 `,);
               })
               .on('click', datum => {
-                  console.log(`datum.label ${JSON.stringify(datum.label)}`); // @todo do something here
+                  const children = parentIdToChildIds[datum.id].map(childId => nodeById[childId]);
+                  if (children.length > 0) {
+                      children.filter(child => child.distance_to_root == datum.distance_to_root + 1).forEach(child => {
+                          child.display_endabled = true;
+                      });
+                      render(inputArgs);
+                  }
               });
 
         const distanceToCenter = alpha => {
@@ -207,7 +206,7 @@ const hierarchyMain = () => {
     
     d3.json(dataLocation)
 	.then(data => {
-	    const nodeData = data.nodes;
+	    const nodeData = data.nodes.map(datum => Object.assign(datum, {display_endabled: datum.distance_to_root == 0}));
 	    const linkData = data.links;
             const rootNode = nodeData.filter(datum => datum.distance_to_root == 0)[0];
 	    const nodeById = nodeData.reduce((accumulator, node) => {
