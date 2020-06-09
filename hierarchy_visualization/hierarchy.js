@@ -18,7 +18,7 @@ const hierarchyMain = () => {
     const velocityDecay = 0.1;
     const distanceToCenterAlpha = 1.0;
     const linkAlpha = 0.1;
-    const siblingAlpha = 0.25;
+    const siblingAlpha = 0.5;
 
     const paddingBetweenNodes = 10;
     const approximateCircumferenceDistancePerNode = 15;
@@ -33,6 +33,7 @@ const hierarchyMain = () => {
     const simulation = d3.forceSimulation()
 	  .alphaDecay(alphaDecay)
 	  .velocityDecay(velocityDecay);
+    const drag = d3.drag();
     
     const render = (inputArgs) => {
 
@@ -51,18 +52,21 @@ const hierarchyMain = () => {
                 switch(index % 4) {
                 case 0:
                     datum.x = 0;
-                    datum.y = index+1 / nodeData.length * svgHeight;
+                    datum.y = (index+1) / nodeData.length * svgHeight;
                     break;
                 case 1:
                     datum.x = svgWidth;
-                    datum.y = index+1 / nodeData.length * svgHeight;
+                    datum.y = (index+1) / nodeData.length * svgHeight;
+                    // console.log('\n\n\n');
+                    // console.log(`(index+1) / nodeData.length ${JSON.stringify((index+1) / nodeData.length)}`);
+                    // console.log(`svgHeight ${JSON.stringify(svgHeight)}`);
                     break;
                 case 2:
-                    datum.x = index+1 / nodeData.length * svgWidth;
+                    datum.x = (index+1) / nodeData.length * svgWidth;
                     datum.y = 0;
                     break;
                 case 3:
-                    datum.x = index+1 / nodeData.length * svgWidth;
+                    datum.x = (index+1) / nodeData.length * svgWidth;
                     datum.y = svgHeight;
                     break;
                 }
@@ -195,7 +199,12 @@ const hierarchyMain = () => {
                 });
             };
         };
-        
+
+        drag.on("drag", function(d,i) {
+            d.x += d3.event.dx;
+            d.y += d3.event.dy;
+        });
+
 	simulation
             .force('center', d3.forceCenter(svgWidth / 2, svgHeight / 2))
             .force('links', linkForce(linkAlpha))
@@ -205,7 +214,8 @@ const hierarchyMain = () => {
 	    .nodes(nodeData.filter(datum => datum.display_endabled)).on('tick', () => {
 		nodeGroup
 		    .attr('cx', datum => datum.x)
-		    .attr('cy', datum => datum.y);
+		    .attr('cy', datum => datum.y)
+                    .call(drag);
 		edgeGroup
 		    .attr('x1', datum => nodeById[datum.parent].x)
 		    .attr('y1', datum => nodeById[datum.parent].y)
