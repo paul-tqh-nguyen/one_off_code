@@ -68,13 +68,20 @@ td {
 }
 
 .node {
-    fill: red;
     r: 5;
     transition: fill 0.2s, r 0.2s;
 }
 
+.node-expandable {
+    fill: red;
+}
+
+.node-leaf {
+    fill: magenta;
+}
+
 .node:hover {
-    fill: darkred;
+    fill: darkmagenta;
     r: 8;
 }
 

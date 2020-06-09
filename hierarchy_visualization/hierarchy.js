@@ -3,20 +3,25 @@ const hierarchyMain = () => {
     
     const dataLocation = './hierarchy_data.json';
 
-    const mean = inputArray => inputArray.reduce((a, b) => a + b, 0) / inputArray.length;
     // const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
+    const sum = inputArray => inputArray.reduce((a, b) => a + b, 0);
+    const mean = inputArray => sum(inputArray) / inputArray.length;
+    // const softmax = (inputArray) => inputArray.map(value  => Math.exp(value) / sum(inputArray.map(y =>  Math.exp(y))));
+    // const normalize = (inputArray) => inputArray.map(value  => value / sum(inputArray));
+    // const simpleStringHash = inputString => inputString.split('').map(character => character.charCodeAt(0)).reduce((a,b) => parseInt(JSON.stringify(a)+JSON.stringify(b)));
+    // const simpleStringToFloatHash = inputString => inputString.split('').map(character => character.charCodeAt(0)).reduce((a,b) => a/b);
 
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
     
-    const alphaDecay = 0.01;
-    const velocityDecay = 0.00001;
+    const alphaDecay = 0.001;
+    const velocityDecay = 0.1;
     const distanceToCenterAlpha = 1.0;
-    const linkAlpha = 0.5;
-    const siblingAlpha = 0.5;
+    const linkAlpha = 0.1;
+    const siblingAlpha = 0.25;
 
     const paddingBetweenNodes = 10;
-    const approximateCircumferenceDistancePerNode = 10;
+    const approximateCircumferenceDistancePerNode = 15;
     const minDistanceBetweenDepths = 100;
     const margin = {
         top: 100,
@@ -32,14 +37,21 @@ const hierarchyMain = () => {
     const render = (inputArgs) => {
 
         const {nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth} = inputArgs;
-        
-	svg
+                
+        svg
 	    .attr('width', `${plotContainer.clientWidth}px`)
 	    .attr('height', `${plotContainer.clientHeight}px`)
 	    .selectAll('*')
 	    .remove();
 	const svgWidth = parseFloat(svg.attr('width'));
 	const svgHeight = parseFloat(svg.attr('height'));
+
+        nodeData.forEach((datum) => {
+            if ( !('x' in datum && 'y' in datum)) {
+                datum.x = datum.relativeInitPosition / nodeData.length * svgWidth;
+                datum.y = datum.relativeInitPosition / nodeData.length * svgHeight;
+            }
+        });
                 
         const svgZoomableContent = svg.append('g');
         svg.call(d3.zoom().on('zoom', () => {
@@ -90,7 +102,7 @@ const hierarchyMain = () => {
 	      .selectAll('circle')
 	      .data(nodeData.filter(datum => datum.display_endabled))
 	      .enter().append('circle')
-              .attr('class', 'node')
+              .attr('class', datum => parentIdToChildIds[datum.id].length > 0 ? 'node node-leaf' : 'node node-expandable')
               .on('mouseover', datum => {
                   d3.select('#text-display')
                       .html(`
@@ -108,12 +120,13 @@ const hierarchyMain = () => {
                           child.display_endabled = true;
                       });
                       render(inputArgs);
+                      simulation.alpha(1);
                   }
               });
 
         const distanceToCenter = alpha => {
             return () => {
-	        nodeData.forEach(datum => {
+	        nodeData.filter(datum => datum.display_endabled).forEach(datum => {
                     if (datum !== rootNode) {
                         const goalDistance = distanceToCenterFactorByDepth[datum.distance_to_root];
                         const xDelta = rootNode.x - datum.x;
@@ -129,7 +142,7 @@ const hierarchyMain = () => {
         
         const linkForce = alpha => {            
             return () => {
-	        nodeData.forEach(child => {
+	        nodeData.filter(datum => datum.display_endabled).forEach(child => {
                     if (child !== rootNode) {
 		        const parentIds = childIdToParentids[child.id];
                         const parents = parentIds.map(parentId => nodeById[parentId]).filter(parent => (child.distance_to_root - parent.distance_to_root) == 1);
@@ -144,7 +157,7 @@ const hierarchyMain = () => {
         
         const siblingForce = alpha => {            
             return () => {
-	        nodeData.forEach(parent => {
+	        nodeData.filter(datum => datum.display_endabled).forEach(parent => {
                     const siblings = parentIdToChildIds[parent.id]
                           .map(childId => childIdToParentids[childId])
                           .reduce((a,b) => a.concat(b), [])
@@ -166,8 +179,8 @@ const hierarchyMain = () => {
             .force('links', linkForce(linkAlpha))
             .force('sibling-force', siblingForce(siblingAlpha))
             .force('distance-to-center', distanceToCenter(distanceToCenterAlpha))
-            .force('collide', d3.forceCollide(paddingBetweenNodes).strength(1))
-	    .nodes(nodeData).on('tick', () => {
+            .force('collide', d3.forceCollide(paddingBetweenNodes).strength(1).iterations(200))
+	    .nodes(nodeData.filter(datum => datum.display_endabled)).on('tick', () => {
 		nodeGroup
 		    .attr('cx', datum => datum.x)
 		    .attr('cy', datum => datum.y);
@@ -206,7 +219,9 @@ const hierarchyMain = () => {
     
     d3.json(dataLocation)
 	.then(data => {
-	    const nodeData = data.nodes.map(datum => Object.assign(datum, {display_endabled: datum.distance_to_root == 0}));
+	    const nodeData = data.nodes
+                  .map(datum => Object.assign(datum, {display_endabled: datum.distance_to_root == 0}))
+                  .map(datum => Object.assign(datum, {relativeInitPosition: Math.random()}));
 	    const linkData = data.links;
             const rootNode = nodeData.filter(datum => datum.distance_to_root == 0)[0];
 	    const nodeById = nodeData.reduce((accumulator, node) => {
