@@ -330,6 +330,7 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d -hyperparameter-s
 	   (region-lines (split-string region-string "\n"))
 	   (number-of-region-lines (length region-lines))
 	   (current-line-index 0))
+      (delete-region (region-beginning) (region-end))
       (dolist (region-line-unnormalized region-lines)
 	(let* ((region-line (replace-regexp-in-string "	" "        " region-line-unnormalized))
 	       (index-of-first-non-white-space-character (string-match "[^\s-]" region-line))
