@@ -10,7 +10,7 @@ alias update-settings="pushd ~/code/one_off_code/ ; git pull; git add python_sta
 alias store-git-credentials="git config --global credential.helper store"
 
 function git-black {
-    black $(git status | grep modified | cut -d":" -f2)
+    black $(git status | grep modified | grep py | cut -d":" -f2)
 }
 
 function git-add-mod {
