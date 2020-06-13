@@ -31,13 +31,13 @@ body {
 }
 
 #map-svg {
-    background-color: #aadaff;
+    background-color: #D0D0D4;
 }
 
 .flight-path-clicked {
     fill: none;
-    stroke: #9000ff;
-    opacity: 0.25;
+    stroke: #1fdbff;
+    opacity: 0.5;
     stroke-width: 1;
 }
 
@@ -49,14 +49,14 @@ body {
 
 .flight-path-mouseover {
     fill: none;
-    stroke: blue;
+    stroke: #ff1fd2;
     opacity: 0.5;
     stroke-width: 1;
 }
 
 .landmass {
-    fill: #b8d8b4;
-    stroke: red;
+    fill: #8C9B80;
+    Stroke: red;
     stroke-width: 0.25;
 }
 
@@ -64,9 +64,12 @@ body {
     fill: red;
     r: 1.1;
     transition: fill 0.2s, r 0.2s;
+    stroke: #fff;
+    stroke-width: 0.3;
 }
 
 .city-market:hover {
     fill: darkred;
     r: 2.5;
+    stroke-width: 0.4;
 }
