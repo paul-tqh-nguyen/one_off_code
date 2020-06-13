@@ -3,17 +3,20 @@ const mapMain = () => {
     
     const getJSONLocation = './data/processed_data.geojson';
 
-    let currentSelectedCityMarketID = null;
     const plotContainer = document.getElementById('map');
     const svg = d3.select('#map-svg');
+    const projection = d3.geoMercator();
+    const projectionFunction = d3.geoPath().projection(projection);
     const landMassesGroupTranslateLayer = svg.append('g')
           .attr('id','land-masses-group-translate-layer');
     const landMassesGroupScaleLayer = landMassesGroupTranslateLayer.append('g')
           .attr('id','land-masses-group-scale-layer');
-    const projection = d3.geoMercator();
-    const projectionFunction = d3.geoPath().projection(projection);
+    const displayTextGroup = svg.append('g')
+          .attr('id', 'text-display-group');
+    const displayTextGroupTextInfo = {permanentTextLines: [], currentTextLines: []};
 
     const paddingAmount = 10;
+    const displayTextGroupVerticalOffset = 60;
 
     const concat = (a, b) => a.concat(b);
     const isNumber = obj => obj !== undefined && typeof(obj) === 'number' && !isNaN(obj);
@@ -74,7 +77,32 @@ const mapMain = () => {
                 .attr('height', `${plotContainer.clientHeight}px`);
             const svg_width = parseFloat(svg.attr('width'));
             const svg_height = parseFloat(svg.attr('height'));            
-
+            
+            const updateCurrentDisplayTextLines = (newTextLines) => {
+                displayTextGroupTextInfo.currentTextLines = newTextLines;
+            };
+            const updatePermanentDisplayTextLines = (newTextLines) => {
+                displayTextGroupTextInfo.permanentTextLines = newTextLines;
+            };
+            const displayTextLines = (textLines) => {
+                displayTextGroup.selectAll('*').remove();
+                textLines.forEach((textLine, textLineIndex) => {
+                    displayTextGroup
+                        .append('text')
+                        .attr('x', svg_width / 2)
+                        .attr('y', displayTextGroupVerticalOffset)
+                        .attr('dy', `${textLineIndex * 1.2}em`)
+                        .html(textLine);
+                });
+            };
+            const displayCurrentDisplayText = () => {
+                displayTextLines(displayTextGroupTextInfo.currentTextLines);
+            };
+            const displayPermanentDisplayText = () => {
+                displayTextLines(displayTextGroupTextInfo.permanentTextLines);
+            };
+            displayPermanentDisplayText();
+            
             landMassesGroupScaleLayer
                 .selectAll('path')
                 .data(landmassData)
@@ -123,6 +151,20 @@ const mapMain = () => {
                     const currentlyDisplayedFlightPathData = cityMarketDataByID[cityMarketId].flight_path_data;
                     renderFlightPaths(currentlyDisplayedFlightPathData, 'flight-path-clicked');
                     renderCirclesWithoutMouseEvents();
+                    const cityMarketTextLines = [
+                        'City Market Info:',
+                        `City Market ID: ${cityMarketId}`,
+                        `Number of Ingoing or Outgoing Flight Paths: ${datum.flight_path_data.length}`,
+                        `City Market Approximate Latitude: ${datum.lat.toFixed(3)}`,
+                        `City Market Approximate Longitude: ${datum.long.toFixed(3)}`,
+                        'City Market Airports:',
+                    ];
+                    datum.city_airports.forEach((airport, airportIndex) => {
+                        cityMarketTextLines.push(` &nbsp; &nbsp; &nbsp; &nbsp; ${datum.city_names[airportIndex]} (${airport})`);
+                    });
+                    updatePermanentDisplayTextLines(cityMarketTextLines);
+                    updateCurrentDisplayTextLines(cityMarketTextLines);
+                    displayCurrentDisplayText();
                 })
                 .on('mouseover', cityMarketIdAndDatumPair => {
                     const [cityMarketId, datum] = cityMarketIdAndDatumPair;
