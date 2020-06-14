@@ -15,7 +15,7 @@ const mapMain = () => {
           .attr('id', 'text-display-group');
     const displayTextGroupTextInfo = {permanentTextLines: [], currentTextLines: []};
 
-    const paddingAmount = 10;
+    const paddingAmount = 30;
     const displayTextGroupVerticalOffset = 60;
 
     const concat = (a, b) => a.concat(b);
@@ -95,13 +95,7 @@ const mapMain = () => {
                         .html(textLine);
                 });
             };
-            const displayCurrentDisplayText = () => {
-                displayTextLines(displayTextGroupTextInfo.currentTextLines);
-            };
-            const displayPermanentDisplayText = () => {
-                displayTextLines(displayTextGroupTextInfo.permanentTextLines);
-            };
-            displayPermanentDisplayText();
+            displayTextLines(displayTextGroupTextInfo.permanentTextLines);
             
             landMassesGroupScaleLayer
                 .selectAll('path')
@@ -115,19 +109,62 @@ const mapMain = () => {
             const landMassesGroupScaleLayerWidth = landMassesGroupScaleLayerBoundingBox.width;
             const landMassesGroupScaleLayerHeight = landMassesGroupScaleLayerBoundingBox.height;
             const landMassesGroupScaleLayerStretchFactor = Math.min( (svg_width - 2 * paddingAmount) / landMassesGroupScaleLayerWidth, (svg_height - 2 * paddingAmount) / landMassesGroupScaleLayerHeight);
-
+            
+            const generateFlightPathTextLines = (datum) => {
+                const textLines = [
+                    `Number of Passengers: ${datum.properties.PASSENGERS}`,
+                    '',
+                    `Origin City Market ID: ${datum.properties.ORIGIN_CITY_MARKET_ID}`,
+                    `City Market Approximate Latitude: ${datum.geometry.coordinates[0][1].toFixed(3)}`,
+                    `City Market Approximate Longitude: ${datum.geometry.coordinates[0][0].toFixed(3)}`,
+                    'Origin City Market Airports:',
+                ];
+                datum.properties.ORIGIN_CITY_AIRPORTS.forEach((airport, airportIndex) => {
+                    textLines.push(` &nbsp; &nbsp; &nbsp; &nbsp; ${datum.properties.ORIGIN_CITY_NAMES[airportIndex]} (${airport})`);
+                });
+                textLines.push(
+                    '',
+                    `Destination City Market ID: ${datum.properties.DEST_CITY_MARKET_ID}`,
+                    `City Market Approximate Latitude: ${datum.geometry.coordinates[1][1].toFixed(3)}`,
+                    `City Market Approximate Longitude: ${datum.geometry.coordinates[1][0].toFixed(3)}`,
+                    'Destination City Market Airports:',
+                );
+                datum.properties.DEST_CITY_AIRPORTS.forEach((airport, airportIndex) => {
+                    textLines.push(` &nbsp; &nbsp; &nbsp; &nbsp; ${datum.properties.DEST_CITY_NAMES[airportIndex]} (${airport})`);
+                });
+                return textLines;
+            };
             const renderFlightPaths = (currentlyDisplayedFlightPathData, cssClassToAdd) => {
                 const flightPaths = landMassesGroupScaleLayer
                       .selectAll(`.${cssClassToAdd}`)
                       .data(currentlyDisplayedFlightPathData);
-                flightPaths
+                const enterSelection = flightPaths
                     .enter()
     	            .append('path')
                     .attr('class', cssClassToAdd)
                     .attr('d', datum => projectionFunction(datum));
-                flightPaths
-                    .attr('class', cssClassToAdd)
-                    .attr('d', datum => projectionFunction(datum));
+                const updateSelection = flightPaths
+                      .attr('class', cssClassToAdd)
+                      .attr('d', datum => projectionFunction(datum));
+                [enterSelection, updateSelection].forEach(selection => {
+                    selection
+                        .on('click', function(datum) {
+                            selection.attr('class', 'flight-path-of-clicked-city-market');
+                            d3.select(this).attr('class', 'flight-path-clicked');
+                            const textLines = generateFlightPathTextLines(datum);
+                            updatePermanentDisplayTextLines(textLines);
+                            updateCurrentDisplayTextLines(textLines);
+                            displayTextLines(displayTextGroupTextInfo.currentTextLines);
+                        })
+                        .on('mouseover', datum => {
+                            const textLines = generateFlightPathTextLines(datum);
+                            updateCurrentDisplayTextLines(textLines);
+                            displayTextLines(displayTextGroupTextInfo.currentTextLines);
+                        })
+                        .on('mouseout', datum => {
+                            displayTextLines(displayTextGroupTextInfo.permanentTextLines);
+                        });
+                });
                 flightPaths.exit().remove();
             };
             
@@ -145,39 +182,47 @@ const mapMain = () => {
             };
             renderCirclesWithoutMouseEvents();
             
+            const generateCityMarketTextLines = (cityMarketId, datum) => {
+                const cityMarketTextLines = [
+                    'City Market Info:',
+                    `City Market ID: ${cityMarketId}`,
+                    `Number of Ingoing or Outgoing Flight Paths: ${datum.flight_path_data.length}`,
+                    `City Market Approximate Latitude: ${datum.lat.toFixed(3)}`,
+                    `City Market Approximate Longitude: ${datum.long.toFixed(3)}`,
+                    'City Market Airports:',
+                ];
+                datum.city_airports.forEach((airport, airportIndex) => {
+                    cityMarketTextLines.push(` &nbsp; &nbsp; &nbsp; &nbsp; ${datum.city_names[airportIndex]} (${airport})`);
+                });
+                return cityMarketTextLines;
+            };
             landMassesGroupScaleLayer.selectAll('.city-market')
                 .on('click', cityMarketIdAndDatumPair => {
                     const [cityMarketId, datum] = cityMarketIdAndDatumPair;
                     const currentlyDisplayedFlightPathData = cityMarketDataByID[cityMarketId].flight_path_data;
-                    renderFlightPaths(currentlyDisplayedFlightPathData, 'flight-path-clicked');
+                    renderFlightPaths(currentlyDisplayedFlightPathData, 'flight-path-of-clicked-city-market');
                     renderCirclesWithoutMouseEvents();
-                    const cityMarketTextLines = [
-                        'City Market Info:',
-                        `City Market ID: ${cityMarketId}`,
-                        `Number of Ingoing or Outgoing Flight Paths: ${datum.flight_path_data.length}`,
-                        `City Market Approximate Latitude: ${datum.lat.toFixed(3)}`,
-                        `City Market Approximate Longitude: ${datum.long.toFixed(3)}`,
-                        'City Market Airports:',
-                    ];
-                    datum.city_airports.forEach((airport, airportIndex) => {
-                        cityMarketTextLines.push(` &nbsp; &nbsp; &nbsp; &nbsp; ${datum.city_names[airportIndex]} (${airport})`);
-                    });
+                    const cityMarketTextLines = generateCityMarketTextLines(cityMarketId, datum);
                     updatePermanentDisplayTextLines(cityMarketTextLines);
                     updateCurrentDisplayTextLines(cityMarketTextLines);
-                    displayCurrentDisplayText();
+                    displayTextLines(displayTextGroupTextInfo.currentTextLines);
                 })
                 .on('mouseover', cityMarketIdAndDatumPair => {
                     const [cityMarketId, datum] = cityMarketIdAndDatumPair;
                     const currentlyDisplayedFlightPathData = cityMarketDataByID[cityMarketId].flight_path_data;
-                    renderFlightPaths(currentlyDisplayedFlightPathData, 'flight-path-mouseover');
+                    renderFlightPaths(currentlyDisplayedFlightPathData, 'flight-path-of-hovered-city-market');
                     renderCirclesWithoutMouseEvents();
+                    const cityMarketTextLines = generateCityMarketTextLines(cityMarketId, datum);
+                    updateCurrentDisplayTextLines(cityMarketTextLines);
+                    displayTextLines(displayTextGroupTextInfo.currentTextLines);
                 })
                 .on('mouseout', cityMarketIdAndDatumPair => {
                     const [cityMarketId, datum] = cityMarketIdAndDatumPair;
                     const currentlyDisplayedFlightPathData = cityMarketDataByID[cityMarketId].flight_path_data;
                     const flightPaths = landMassesGroupScaleLayer
-                          .selectAll('.flight-path-mouseover');
+                          .selectAll('.flight-path-of-hovered-city-market');
                     flightPaths.remove();
+                    displayTextLines(displayTextGroupTextInfo.permanentTextLines);
                 })
                 .attr('transform', cityMarketIdAndDatumPair => {
                     const [cityMarketId, datum] = cityMarketIdAndDatumPair;

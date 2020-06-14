@@ -34,20 +34,21 @@ body {
     background-color: #D0D0D4;
 }
 
-.flight-path-clicked {
+.flight-path-of-clicked-city-market {
     fill: none;
     stroke: #1fdbff;
     opacity: 0.5;
     stroke-width: 1;
 }
 
-.flight-path-clicked:hover {
+.flight-path-clicked, .flight-path-of-clicked-city-market:hover {
+    fill: none;
     opacity: 1;
     stroke: #DAA520;
     stroke-width: 1;
 }
 
-.flight-path-mouseover {
+.flight-path-of-hovered-city-market {
     fill: none;
     stroke: #ff1fd2;
     opacity: 0.5;
