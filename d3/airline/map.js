@@ -91,6 +91,7 @@ const mapMain = () => {
                         .append('text')
                         .attr('x', svg_width / 2)
                         .attr('y', displayTextGroupVerticalOffset)
+                        .style('font-size', Math.min(20, svg_height * 0.4 / textLines.length))
                         .attr('dy', `${textLineIndex * 1.2}em`)
                         .html(textLine);
                 });
