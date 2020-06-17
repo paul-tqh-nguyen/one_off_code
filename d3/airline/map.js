@@ -198,6 +198,7 @@ const mapMain = () => {
             };
             landMassesGroupScaleLayer.selectAll('.city-market')
                 .on('click', cityMarketIdAndDatumPair => {
+                    landMassesGroupScaleLayer.selectAll('.flight-path-clicked').remove();
                     const [cityMarketId, datum] = cityMarketIdAndDatumPair;
                     const currentlyDisplayedFlightPathData = cityMarketDataByID[cityMarketId].flight_path_data;
                     renderFlightPaths(currentlyDisplayedFlightPathData, 'flight-path-of-clicked-city-market');
