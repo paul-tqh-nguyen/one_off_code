@@ -76,7 +76,8 @@ def generate_city_market_dfs_from_us_bts_data() -> Tuple[pd.DataFrame, pd.DataFr
     origin_city_market_id_info_df = relevant_df[['ORIGIN_CITY_MARKET_ID', 'ORIGIN', 'ORIGIN_CITY_NAME']].rename(columns={'ORIGIN_CITY_MARKET_ID': 'CITY_MARKET_ID', 'ORIGIN': 'AIRPORT', 'ORIGIN_CITY_NAME': 'CITY_NAME'})
     dest_city_market_id_info_df = relevant_df[['DEST_CITY_MARKET_ID', 'DEST', 'DEST_CITY_NAME']].rename(columns={'DEST_CITY_MARKET_ID': 'CITY_MARKET_ID', 'DEST': 'AIRPORT', 'DEST_CITY_NAME': 'CITY_NAME'})
     city_market_id_info_df = pd.concat([origin_city_market_id_info_df, dest_city_market_id_info_df])
-    city_market_id_info_df = city_market_id_info_df.groupby('CITY_MARKET_ID').agg({'AIRPORT': set, 'CITY_NAME': set})
+    city_market_id_info_df = city_market_id_info_df.groupby('CITY_MARKET_ID').agg({'AIRPORT': list, 'CITY_NAME': list})
+    city_market_id_info_df = pd.DataFrame(city_market_id_info_df.progress_apply(lambda row: list(zip(*set(zip(row.AIRPORT, row.CITY_NAME)))), axis=1).tolist(), columns=['AIRPORT', 'CITY_NAME']).set_index(city_market_id_info_df.index)    
     return passenger_flow_df, city_market_id_info_df
 
 GLOBAL_AIRPORT_DB_COLUMN_NAMES = ['ICAO_Code', 'IATA_Code', 'Airport_Name', 'City_Town', 'Country', 'Latitude_Degrees', 'Latitude_Minutes', 'Latitude_Seconds', 'Latitude_Direction', 'Longitude_Degrees', 'Longitude_Minutes', 'Longitude_Seconds', 'Longitude_Direction', 'Altitude', 'Latitude_Decimal_Degrees', 'Longitude_Decimal_Degrees']
@@ -100,7 +101,7 @@ def integrate_city_market_df_with_geodata(passenger_flow_df: pd.DataFrame, city_
                                                              right_on='CITY_MARKET_ID', left_on='ORIGIN_CITY_MARKET_ID') \
                                                       .merge(city_market_id_info_df_with_geodata[['Latitude_Decimal_Degrees','Longitude_Decimal_Degrees']] \
                                                              .rename(columns={'Latitude_Decimal_Degrees':'DEST_LAT', 'Longitude_Decimal_Degrees':'DEST_LONG'}),
-                                                             right_on='CITY_MARKET_ID', left_on='DEST_CITY_MARKET_ID')    
+                                                             right_on='CITY_MARKET_ID', left_on='DEST_CITY_MARKET_ID')
     passenger_flow_df_with_geodata = pd.concat([
         passenger_flow_df_with_geodata,
         pd.DataFrame(passenger_flow_df_with_geodata.progress_apply(lambda row: (city_market_id_info_df.loc[row.ORIGIN_CITY_MARKET_ID].AIRPORT,city_market_id_info_df.loc[row.ORIGIN_CITY_MARKET_ID].CITY_NAME), axis=1).tolist(),
@@ -124,15 +125,22 @@ def generate_flight_path_feature_from_passenger_flow_row(passenger_flow_row: pd.
     properties['PASSENGERS'] = passenger_flow_row.PASSENGERS
     properties['ORIGIN_CITY_AIRPORTS'] = list(passenger_flow_row.ORIGIN_CITY_AIRPORTS)
     properties['ORIGIN_CITY_NAMES'] = list(passenger_flow_row.ORIGIN_CITY_NAMES)
+    assert len(properties['ORIGIN_CITY_AIRPORTS']) == len(properties['ORIGIN_CITY_NAMES'])
+    assert isinstance(properties['ORIGIN_CITY_AIRPORTS'], list)
+    assert isinstance(properties['ORIGIN_CITY_NAMES'], list)
     properties['DEST_CITY_AIRPORTS'] = list(passenger_flow_row.DEST_CITY_AIRPORTS)
     properties['DEST_CITY_NAMES'] = list(passenger_flow_row.DEST_CITY_NAMES)
+    assert len(properties['DEST_CITY_AIRPORTS']) == len(properties['DEST_CITY_NAMES'])
+    assert isinstance(properties['DEST_CITY_AIRPORTS'], list)
+    assert isinstance(properties['DEST_CITY_NAMES'], list)
     coordinates = [[passenger_flow_row.ORIG_LONG, passenger_flow_row.ORIG_LAT], [passenger_flow_row.DEST_LONG, passenger_flow_row.DEST_LAT]]
     path_feature = {
         'type':'Feature',
         'properties': properties,
         'geometry': {
 	    'type': 'LineString',
-	    'coordinates': coordinates}
+	    'coordinates': coordinates,
+        }
     }
     return path_feature
 
