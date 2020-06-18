@@ -9,6 +9,12 @@ body {
     margin: 0px;
 }
 
+#help {
+    font-size: 125px;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+
 /*******/
 /* SVG */
 /*******/

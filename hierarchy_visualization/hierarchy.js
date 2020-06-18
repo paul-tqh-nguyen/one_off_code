@@ -97,7 +97,7 @@ const hierarchyMain = () => {
 <p>Number of Subclasses: ${parentIdToChildIds[parent.id].length} </p>
 <p>Number of Instances: ${parent.number_of_instances} </p>
 <p>Wikidata ID: <a target="_blank" title="${parent.label}"href="https://www.wikidata.org/wiki/${parent.id.replace('wd:','')}">${parent.id}</a></p>
-</br></br></br></br></br>
+</br>
 <p>Child:</p>
 <p>Label: ${child.label} </p>
 <p>Description: ${child.description} </p>
