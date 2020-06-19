@@ -30,18 +30,84 @@ body {
     overflow-x: hidden;
     padding: 0px;
     margin: 0px;
-}
-
-table {
-    table-layout: fixed;
-    width: 100%;
-    padding-left: 2vw;
-    padding-right: 2vw;
     font-family: 'Raleway', sans-serif;
 }
 
-td {
-    padding: 20px;
+/****************/
+/* Text Display */
+/****************/
+
+table {
+    width: 100%;
+    padding-left: 2vw;
+    padding-right: 2vw;
+    background: linear-gradient(130deg, #503b94 0%, #530D8C 50%, #503b94 100%);
+}
+
+#text-display {
+    height: 88vh;
+    overflow-y: auto;
+    position: absolute;
+    margin-top: 70px;
+    margin-bottom: 30px;
+}
+
+#text-display p {
+    color: #bf9d2e;
+    padding-left: 2vw;
+    padding-right: 5vw;
+}
+
+#text-display p a {
+    color: #e8bf38;
+    padding-left: 2vw;
+    padding-right: 5vw;
+}
+
+/**************/
+/* Header Row */
+/**************/
+
+#header-row {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    left: 0px;
+    padding-left: 10px;
+    padding-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    background-color: #352270;
+    color: rgba(200, 200, 200, 1.0);
+}
+
+#header-row ul {
+    align-items: center;
+    list-style-type: none;
+    margin: 0;
+    overflow: hidden;
+}
+
+#header-row li {
+    float: left;
+}
+
+#header-row li a {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    padding-left: 4vw;
+    padding-right: 4vw;
+    font-size: 14px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+    color: #D4AF37;
+    transition: all 0.3s;
+}
+
+#header-row a:hover {
+    background-color: #281940;
 }
 
 /*******/
@@ -55,13 +121,13 @@ td {
     -ms-transform: translateX(-50%);
     transform: translateX(-50%);
     font-family: sans-serif;
-    margin-top: 30px;
+    margin-top: 70px;
     margin-bottom: 30px;
 }
 
 #hierarchy {
-    border: 1px solid purple;
-    height: 90vh;
+    border: 5px solid #352270;
+    height: 88vh;
 }
 
 #hierarchy-svg {
@@ -73,20 +139,20 @@ td {
 }
 
 .node-expandable {
-    fill: red;
+    fill: #0076ba;
 }
 
 .node-leaf {
-    fill: blue;
+    fill: #D4AF37;
 }
 
 .node:hover {
-    fill: darkmagenta;
+    fill: #00ccff;
     r: 8;
 }
 
 .node:active {
-    fill: red;
+    fill: #D4AF37;
 }
 
 .direct-edge {
@@ -97,14 +163,14 @@ td {
 }
 
 .direct-edge-highlighted {
-    stroke: #00bfff;
+    stroke: #70c1db;
     stroke-width: 7;
 }
 
 .indirect-edge {
-    stroke: #2c7500;
+    stroke: #a30098;
     stroke-width: 4;
-    stroke-opacity: 0.1;
+    stroke-opacity: 0.5;
     transition: all 0.2s;
 }
 

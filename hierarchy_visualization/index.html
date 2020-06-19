@@ -7,14 +7,24 @@
     <link rel="stylesheet" type="text/css" href="./index.css">
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://d3js.org/d3-zoom.v1.min.js"></script>
+    <script src="hierarchy.js"></script>
   </head>
   <body>
+    <div id="header-row">
+      <ul>
+      	<li><a onclick="hierarchyMain('./hierarchy_data.json')">Choice 1</a></li>
+      	<li><a onclick="hierarchyMain('./hierarchy_data.json')">Choice 1</a></li>
+      	<li><a onclick="hierarchyMain('./hierarchy_data.json')">Choice 1</a></li>
+      	<li><a onclick="hierarchyMain('./hierarchy_data.json')">Choice 1</a></li>
+      	<li><a onclick="hierarchyMain('./hierarchy_data.json')">Choice 1</a></li>
+      </ul>
+    </div>
     <table>
       <tr>
       	<td style="width:80%;">
 	  <div id="hierarchy" class="svg-container-center">
 	    <svg id="hierarchy-svg"></svg>
-	    <script src="hierarchy.js"></script>
+	    <script>hierarchyMain('./hierarchy_data.json');</script>
 	  </div>
 	</td>
       	<td id="text-display" style="width:20%;">

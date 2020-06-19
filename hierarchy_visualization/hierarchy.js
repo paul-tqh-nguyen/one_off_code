@@ -1,7 +1,8 @@
 
-const hierarchyMain = () => {
-    
-    const dataLocation = './hierarchy_data.json';
+let redraw = () => {};
+window.addEventListener('resize', redraw);
+
+const hierarchyMain = (dataLocation) => {
 
     // const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
     const sum = inputArray => inputArray.reduce((a, b) => a + b, 0);
@@ -13,6 +14,7 @@ const hierarchyMain = () => {
 
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
+    d3.select('#text-display').html('');
     
     const alphaDecay = 0.001;
     const velocityDecay = 0.1;
@@ -23,12 +25,6 @@ const hierarchyMain = () => {
     const paddingBetweenNodes = 10;
     const approximateCircumferenceDistancePerNode = 10;
     const minDistanceBetweenDepths = 100;
-    const margin = {
-        top: 100,
-        bottom: 100,
-        left: 100,
-        right: 100,
-    };
 
     const simulation = d3.forceSimulation()
 	  .alphaDecay(alphaDecay)
@@ -38,12 +34,14 @@ const hierarchyMain = () => {
     const render = (inputArgs) => {
 
         const {nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth} = inputArgs;
-                
+        
         svg
 	    .attr('width', `${plotContainer.clientWidth}px`)
-	    .attr('height', `${plotContainer.clientHeight}px`)
+	    .attr('height', `${plotContainer.clientHeight}px`);     
+        svg
 	    .selectAll('*')
 	    .remove();
+        
 	const svgWidth = parseFloat(svg.attr('width'));
 	const svgHeight = parseFloat(svg.attr('height'));
 
@@ -72,7 +70,8 @@ const hierarchyMain = () => {
                 
         const svgZoomableContent = svg.append('g');
         svg.call(d3.zoom().on('zoom', () => {
-            svgZoomableContent.attr('transform', d3.event.transform);
+            svgZoomableContent
+                .attr('transform', d3.event.transform);
         }));
 	const edgeGroup = svgZoomableContent.append('g')
 	      .selectAll('line')
@@ -143,7 +142,6 @@ const hierarchyMain = () => {
                           }
                       });
                       render(inputArgs);
-                      simulation.alpha(1);
                   }
               });
 
@@ -269,7 +267,7 @@ const hierarchyMain = () => {
                 return accumulator;
 	    }, {parentIdToChildIds: {}, childIdToParentids: {}});
             const distanceToCenterFactorByDepth = generateDistanceToCenterFactorByDepth(nodeData);
-            const redraw = () => render({
+            redraw = () => render({
                 nodeData,
                 linkData,
                 rootNode,
@@ -279,11 +277,8 @@ const hierarchyMain = () => {
                 distanceToCenterFactorByDepth
             });
 	    redraw();
-	    window.addEventListener('resize', redraw);
 	}).catch(err => {
 	    console.error(err.message);
 	    return;
 	});
 };
-
-hierarchyMain();
