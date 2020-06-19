@@ -118,7 +118,7 @@ const hierarchyMain = (dataLocation) => {
 	      .selectAll('circle')
 	      .data(nodeData.filter(datum => datum.display_endabled))
 	      .enter().append('circle')
-              .attr('class', datum => parentIdToChildIds[datum.id].filter(childId => nodeById[childId].distance_to_root - datum.distance_to_root == 1).length > 0 ? 'node node-leaf' : 'node node-expandable')
+              .attr('class', datum => parentIdToChildIds[datum.id].filter(childId => nodeById[childId].distance_to_root - datum.distance_to_root == 1).length > 0 ? 'node node-expandable' : 'node node-leaf')
               .on('mouseover', datum => {
                   d3.select('#text-display')
                       .html(`

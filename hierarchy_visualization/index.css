@@ -136,14 +136,17 @@ table {
 
 .node {
     r: 5;
+    stroke-width: 1;
     transition: fill 0.2s, r 0.2s;
 }
 
 .node-expandable {
-    fill: #0076ba;
+    stroke: #D4AF37;
+    fill: #190cab;
 }
 
 .node-leaf {
+    stroke: black;
     fill: #D4AF37;
 }
 
@@ -153,7 +156,7 @@ table {
 }
 
 .node:active {
-    fill: darkred;
+    fill: #a30098;
 }
 
 .direct-edge {
@@ -164,14 +167,14 @@ table {
 }
 
 .direct-edge-highlighted {
-    stroke: #70c1db;
+    stroke: #00b8c2;
     stroke-width: 7;
 }
 
 .indirect-edge {
-    stroke: #a30098;
+    stroke: #ff00bb;
     stroke-width: 4;
-    stroke-opacity: 0.5;
+    stroke-opacity: 0.25;
     transition: all 0.2s;
 }
 
