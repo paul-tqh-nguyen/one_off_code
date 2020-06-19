@@ -28,9 +28,9 @@ from misc_utilities import *
 # Globals #
 ###########
 
-OUTPUT_JSON_FILE = './financial_services_data.json'
+OUTPUT_JSON_FILE = './crime_data.json'
 
-START_NODE = 'wd:Q837171'
+START_NODE = 'wd:Q83267'
 
 BROWSER_IS_HEADLESS = False
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
