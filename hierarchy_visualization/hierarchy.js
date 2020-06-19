@@ -34,6 +34,14 @@ const hierarchyMain = (dataLocation) => {
 
         const {nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth} = inputArgs;
         
+        d3.select('#text-display').html(`
+<p>Label: ${rootNode.label} </p>
+<p>Description: ${rootNode.description} </p>
+<p>Number of Subclasses: ${parentIdToChildIds[rootNode.id].length} </p>
+<p>Number of Instances: ${rootNode.number_of_instances} </p>
+<p>Wikidata ID: <a target="_blank" title="${rootNode.label}"href="https://www.wikidata.org/wiki/${rootNode.id.replace('wd:','')}">${rootNode.id}</a></p>
+`,);
+        
         svg
 	    .attr('width', `${0}px`)
 	    .attr('height', `${0}px`)
