@@ -28,11 +28,11 @@ from misc_utilities import *
 # Globals #
 ###########
 
-OUTPUT_JSON_FILE = './hierarchy_data.json'
+OUTPUT_JSON_FILE = './financial_services_data.json'
 
-START_NODE = 'wd:Q10884'
+START_NODE = 'wd:Q837171'
 
-BROWSER_IS_HEADLESS = True
+BROWSER_IS_HEADLESS = False
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
 NUMBER_OF_ATTEMPTS_PER_SLEEP = 3
 SLEEPING_RANGE_SLEEP_TIME= 10

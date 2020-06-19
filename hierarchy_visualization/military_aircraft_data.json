@@ -1,0 +1,2781 @@
+{
+    "directed": true,
+    "multigraph": false,
+    "graph": {},
+    "nodes": [
+        {
+            "label": "military aircraft",
+            "description": "aircraft class designed for military duties",
+            "distance_to_root": 0,
+            "number_of_instances": 29,
+            "id": "wd:Q216916"
+        },
+        {
+            "label": "VL Viima",
+            "description": "biplane trainer",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q28314"
+        },
+        {
+            "label": "Caproni Ca.113",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q39967"
+        },
+        {
+            "label": "SIPA S.300",
+            "description": "turbojet powered basic trainer",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q43384"
+        },
+        {
+            "label": "Yokosuka MXY8",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q59864"
+        },
+        {
+            "label": "Fw 189 Uhu",
+            "description": "1938 reconnaissance aircraft family by Focke-Wulf",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q113838"
+        },
+        {
+            "label": "Letov \u0160-14",
+            "description": "Czech airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q117441"
+        },
+        {
+            "label": "J8M Sh\u016bsui",
+            "description": "1945 interceptor aircraft series by Mitsubishi",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q118964"
+        },
+        {
+            "label": "Focke-Wulf Fw 187",
+            "description": "German aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q126943"
+        },
+        {
+            "label": "Avro Canada CF-103",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q129802"
+        },
+        {
+            "label": "Kamov A-7",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q135884"
+        },
+        {
+            "label": "EM-10 Bielik",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q136378"
+        },
+        {
+            "label": "IAI Lavi",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q150245"
+        },
+        {
+            "label": "Ryan VZ-3 Vertiplane",
+            "description": "Experimental Aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q154088"
+        },
+        {
+            "label": "He 111",
+            "description": "1935 bomber aircraft family by Heinkel",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q154532"
+        },
+        {
+            "label": "F-84 Thunderjet",
+            "description": "1946 fighter-bomber family",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q160853"
+        },
+        {
+            "label": "C-101 Aviojet",
+            "description": "1977 military training aircraft series by CASA",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q165365"
+        },
+        {
+            "label": "Farman III",
+            "description": "early French aircraft designed and built by Henry Farman in 1909",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q166410"
+        },
+        {
+            "label": "Tupolev ANT-3",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q167705"
+        },
+        {
+            "label": "XB-51",
+            "description": "1949 attack aircraft prototype model by the Glenn L. Martin Company",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q170142"
+        },
+        {
+            "label": "Convair XB-53",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q170158"
+        },
+        {
+            "label": "HAL Tejas",
+            "description": "Light fighter",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q175940"
+        },
+        {
+            "label": "Letov \u0160-50",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q176109"
+        },
+        {
+            "label": "XB-15",
+            "description": "prototype bomber aircraft by Boeing",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q177035"
+        },
+        {
+            "label": "Lebed XI",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q180930"
+        },
+        {
+            "label": "Northrop Grumman E-10 MC2A",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q181112"
+        },
+        {
+            "label": "Letov \u0160-13",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q182423"
+        },
+        {
+            "label": "Do 128",
+            "description": "series of utility transport aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q187439"
+        },
+        {
+            "label": "SR-71 Blackbird",
+            "description": "1964 reconnaissance aircraft by Lockheed",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q190114"
+        },
+        {
+            "label": "bomber destroyer",
+            "description": "aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q196730"
+        },
+        {
+            "label": "Gotha Go 345",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q201302"
+        },
+        {
+            "label": "Joint Strike Fighter program",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q202568"
+        },
+        {
+            "label": "Supermarine Seafang",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q203181"
+        },
+        {
+            "label": "Ki-56",
+            "description": "military transport aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q209940"
+        },
+        {
+            "label": "Bl\u00e9riot 127",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q211347"
+        },
+        {
+            "label": "Zmaj R-1",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q217912"
+        },
+        {
+            "label": "V-22 Osprey",
+            "description": "military transport tilt-rotor",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q217935"
+        },
+        {
+            "label": "Lavochkin La-150",
+            "description": "soviet early jet fighter by Lavochkin",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q240655"
+        },
+        {
+            "label": "Tupolev TB-1",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q251785"
+        },
+        {
+            "label": "Polikarpov TB-2",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q260623"
+        },
+        {
+            "label": "Vultee P-66 Vanguard",
+            "description": "Fighter aircraft built by Vultee Aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q275552"
+        },
+        {
+            "label": "Heinkel He 219",
+            "description": "German fighter aircraft in World War II",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q276529"
+        },
+        {
+            "label": "Lavochkin La-250",
+            "description": "Soviet Interceptor Aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q280293"
+        },
+        {
+            "label": "Sikorsky Ilya Muromets",
+            "description": "Russian Airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q280488"
+        },
+        {
+            "label": "Hornet",
+            "description": "1944 fighter aircraft family by de Havilland",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q285869"
+        },
+        {
+            "label": "R-Z",
+            "description": "1935 military aircraft family",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q287195"
+        },
+        {
+            "label": "HM.1",
+            "description": "tandem training aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q287377"
+        },
+        {
+            "label": "Yokosuka K5Y",
+            "description": "military plane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q288324"
+        },
+        {
+            "label": "SAI KZ III",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q289155"
+        },
+        {
+            "label": "Silver Dart",
+            "description": "experimental aircraft by the Aerial Experiments Association",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q290968"
+        },
+        {
+            "label": "AESL Airtourer",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q291501"
+        },
+        {
+            "label": "AT-3 Tzu Chung",
+            "description": "military training aircraft by the Aerospace Industrial Development Corporation",
+            "distance_to_root": 1,
+            "number_of_instances": 11,
+            "id": "wd:Q293501"
+        },
+        {
+            "label": "AISA I-115",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q293885"
+        },
+        {
+            "label": "ALR Piranha",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q294504"
+        },
+        {
+            "label": "Zveno project",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q302122"
+        },
+        {
+            "label": "J 21 family",
+            "description": "1923 reconnaissance aircraft family by Junkers",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q315449"
+        },
+        {
+            "label": "Henschel Hs 122",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q317379"
+        },
+        {
+            "label": "Focke-Wulf Fw 57",
+            "description": "German fighter-bomber prototypes",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q319898"
+        },
+        {
+            "label": "Heinkel He 74",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q323345"
+        },
+        {
+            "label": "Friedrichshafen G.III",
+            "description": "Bomber",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q323763"
+        },
+        {
+            "label": "Siemens-Schuckert R.I",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q324308"
+        },
+        {
+            "label": "Halberstadt C.V",
+            "description": "World War I German single-engined reconnaissance biplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q324521"
+        },
+        {
+            "label": "Caproni Vizzola F.5",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q324770"
+        },
+        {
+            "label": "Fieseler Fi 166",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q325644"
+        },
+        {
+            "label": "Fieseler Fi 168",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q325659"
+        },
+        {
+            "label": "Ki-57",
+            "description": "1940 airlifter family by Mitsubishi",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q332039"
+        },
+        {
+            "label": "Sud-Ouest Bretagne",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q338344"
+        },
+        {
+            "label": "Savoia-Marchetti SM.95",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q338677"
+        },
+        {
+            "label": "warbird",
+            "description": "vintage military aircraft operated by non military forces",
+            "distance_to_root": 1,
+            "number_of_instances": 1,
+            "id": "wd:Q352409"
+        },
+        {
+            "label": "Avro 508",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q372264"
+        },
+        {
+            "label": "Il-46",
+            "description": "1952 bomber aircraft prototype by Ilyushin",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q376813"
+        },
+        {
+            "label": "Dornier Do P",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q377199"
+        },
+        {
+            "label": "Sagittario 2",
+            "description": "prototype fighter aircraft, first Italian supersonic aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q381114"
+        },
+        {
+            "label": "AM.3",
+            "description": "utility aircraft by Aeritalia and Aermacchi",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q381145"
+        },
+        {
+            "label": "I-2",
+            "description": "1924 fighter aircraft prototype by Grigorovich",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q381675"
+        },
+        {
+            "label": "Ufag C.I",
+            "description": "WWI Austria-Hungary military reconnaissance aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q385132"
+        },
+        {
+            "label": "Rogo\u017earski R-100",
+            "description": "military aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q389286"
+        },
+        {
+            "label": "LFG Roland D.II",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q389324"
+        },
+        {
+            "label": "DH.1",
+            "description": "1915 military aircraft by Airco",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q408435"
+        },
+        {
+            "label": "AS.39 Fleet Shadower",
+            "description": "prototype patrol aircraft by Airspeed",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q409151"
+        },
+        {
+            "label": "AS.10 Oxford",
+            "description": "1937 training aircraft by Airspeed",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q409219"
+        },
+        {
+            "label": "Tachikawa Ki-55",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q420171"
+        },
+        {
+            "label": "Avro 521",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q438613"
+        },
+        {
+            "label": "Mikoyan-Gurevich I-211",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q444137"
+        },
+        {
+            "label": "Blohm & Voss P 212",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q446655"
+        },
+        {
+            "label": "Junkers CL.I",
+            "description": "ground-attack aircraft by Junkers",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q446993"
+        },
+        {
+            "label": "Arado E.381",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q447575"
+        },
+        {
+            "label": "Avro 530",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q452438"
+        },
+        {
+            "label": "Henschel Hs 121",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q453193"
+        },
+        {
+            "label": "Myasishchev M-18",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q453811"
+        },
+        {
+            "label": "Avro 557 Ava",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q454848"
+        },
+        {
+            "label": "Cierva C.6",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q460304"
+        },
+        {
+            "label": "DI-3",
+            "description": "1931 fighter aircraft prototype by Grigorovich",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q465061"
+        },
+        {
+            "label": "Day fighter",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q466173"
+        },
+        {
+            "label": "Halberstadt CL.IV",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q466925"
+        },
+        {
+            "label": "Amerika Bomber",
+            "description": "Nazi Germany military initiative",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q468133"
+        },
+        {
+            "label": "Heinkel He 42",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q468768"
+        },
+        {
+            "label": "Caproni Ca.5",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q471131"
+        },
+        {
+            "label": "Amiot 120",
+            "description": "French single-engine biplane bomber aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q471910"
+        },
+        {
+            "label": "Amiot 350 family",
+            "description": "1940 bomber aircraft family by Amiot",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q471931"
+        },
+        {
+            "label": "Heinkel He 277",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q472700"
+        },
+        {
+            "label": "Miles Mentor",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q473410"
+        },
+        {
+            "label": "Arado Ar 69",
+            "description": "Beginners school and sports plane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q473931"
+        },
+        {
+            "label": "Pfalz Dr.I",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q474497"
+        },
+        {
+            "label": "LFG Roland D.VI",
+            "description": "aircraft powered by the German Mercedes D.III engine",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q474501"
+        },
+        {
+            "label": "Mikoyan MiG-29M",
+            "description": "strike fighter aircraft project",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q474572"
+        },
+        {
+            "label": "OKB-1 EF 131",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q475485"
+        },
+        {
+            "label": "Junkers Ju 268",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q477842"
+        },
+        {
+            "label": "KAI T-50 Golden Eagle",
+            "description": "family of South Korean trainer and light combat aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q482600"
+        },
+        {
+            "label": "Stinson L-1 Vigilant",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q488421"
+        },
+        {
+            "label": "Taylorcraft L-2",
+            "description": "American observation and liaison aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q488453"
+        },
+        {
+            "label": "PZL.46 Sum",
+            "description": "projected light bomber of the Polish Air Force",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q493321"
+        },
+        {
+            "label": "KF-X",
+            "description": "advanced multirole fighter aircraft under development by South Korea and Indonesia",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q495218"
+        },
+        {
+            "label": "Tachikawa Ki-36",
+            "description": "military plane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q497110"
+        },
+        {
+            "label": "Handley Page Halifax",
+            "description": "four-engine bomber aircraft family by Handley Page",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q502034"
+        },
+        {
+            "label": "Heinkel P.1077",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q502494"
+        },
+        {
+            "label": "Sukhoi T-3",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q502738"
+        },
+        {
+            "label": "Nieuport IV",
+            "description": "multi-role aircraft family by Nieuport",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q504268"
+        },
+        {
+            "label": "Kawasaki Ka 87",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q508676"
+        },
+        {
+            "label": "Junkers Ju 488",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q510445"
+        },
+        {
+            "label": "Ryan XV-8",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q514047"
+        },
+        {
+            "label": "Junkers K 47",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q514601"
+        },
+        {
+            "label": "Flettner Fl 282",
+            "description": "helicopter",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q519370"
+        },
+        {
+            "label": "He 274",
+            "description": "prototype bomber aircraft by Heinkel",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q524816"
+        },
+        {
+            "label": "Potez 630",
+            "description": "French twin-engined aircraft of World War II",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q531847"
+        },
+        {
+            "label": "Handley Page Hastings",
+            "description": "British troop-carrier and freight transport aircraft designed and built by the Handley Page Aircraft Company for the Royal Air Force",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q535179"
+        },
+        {
+            "label": "Fairey Gannet",
+            "description": "naval aircraft family",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q537678"
+        },
+        {
+            "label": "DFS 228",
+            "description": "German reconnaissance aircraft prototype",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q540741"
+        },
+        {
+            "label": "IVL A.22 Hansa",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q541797"
+        },
+        {
+            "label": "Kokusai Ki-59",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q543015"
+        },
+        {
+            "label": "DIS",
+            "description": "1941 fighter aircraft prototype by Mikoyan-Gurevich",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q543507"
+        },
+        {
+            "label": "Rumpler C.I",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q547957"
+        },
+        {
+            "label": "Ambrosini SS.4",
+            "description": "prototype fighter aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q548801"
+        },
+        {
+            "label": "Martin-Baker MB 5",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q548877"
+        },
+        {
+            "label": "Bell XP-77",
+            "description": "experimental aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q549634"
+        },
+        {
+            "label": "YAL-1",
+            "description": "airborne laser demonstrator aircraft by Boeing",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q550291"
+        },
+        {
+            "label": "Renard R.36",
+            "description": "military plane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q552722"
+        },
+        {
+            "label": "VL Py\u00f6rremyrsky",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q552753"
+        },
+        {
+            "label": "Northrop XP-56 Black Bullet",
+            "description": "experimental fighter intercepter aircraft by Northrop",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q552757"
+        },
+        {
+            "label": "VL Humu",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q552763"
+        },
+        {
+            "label": "Polikarpov I-185",
+            "description": "Soviet fighter aircraft designed in 1940",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q552779"
+        },
+        {
+            "label": "Heinkel He 118",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q552841"
+        },
+        {
+            "label": "VEF I-16",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q553093"
+        },
+        {
+            "label": "Heinkel He 72",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q553195"
+        },
+        {
+            "label": "Chengdu J-20",
+            "description": "fighter aircraft developed by China",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q560319"
+        },
+        {
+            "label": "Ar 396",
+            "description": "trainer aircraft by Arado",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q560679"
+        },
+        {
+            "label": "Heinkel Wespe",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q570626"
+        },
+        {
+            "label": "Heinkel He 116",
+            "description": "German airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q570985"
+        },
+        {
+            "label": "Flettner Fl 265",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q571367"
+        },
+        {
+            "label": "XP-67 Bat",
+            "description": "fighter aircraft prototype model by McDonnell",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q573403"
+        },
+        {
+            "label": "XP-54 Swoose Goose",
+            "description": "fighter aircraft prototype model by Vultee",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q573446"
+        },
+        {
+            "label": "PZL.38 Wilk",
+            "description": "Polish fighter-bomber",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q573462"
+        },
+        {
+            "label": "Nikitin-Shevchenko IS",
+            "description": "aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q573465"
+        },
+        {
+            "label": "Polikarpov TIS",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q573469"
+        },
+        {
+            "label": "Mitsubishi Ki-20",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q574072"
+        },
+        {
+            "label": "Bloch MB.162",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q575313"
+        },
+        {
+            "label": "Avro Lincoln",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q575356"
+        },
+        {
+            "label": "Douglas B-23 Dragon",
+            "description": "bomber aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q578552"
+        },
+        {
+            "label": "B-50 Superfortress",
+            "description": "strategic bomber aircraft family by Boeing",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q578959"
+        },
+        {
+            "label": "Ikarus S-49",
+            "description": "fighter aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q579099"
+        },
+        {
+            "label": "F7U Cutlass",
+            "description": "carrier-based fighter-bomber aircraft family",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q580542"
+        },
+        {
+            "label": "C-119 Flying Boxcar",
+            "description": "military transport aircraft family",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q583107"
+        },
+        {
+            "label": "Henschel Hs 130",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q589215"
+        },
+        {
+            "label": "Dornier Do 317",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q589371"
+        },
+        {
+            "label": "Focke-Wulf Fw 191",
+            "description": "Prototype bomber",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q589479"
+        },
+        {
+            "label": "Dornier Do 19",
+            "description": "Prototype bomber",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q589505"
+        },
+        {
+            "label": "I-Z",
+            "description": "fighter aircraft model by Grigorovich",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q589851"
+        },
+        {
+            "label": "Lockheed XF-90",
+            "description": "experimental aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q594801"
+        },
+        {
+            "label": "military glider",
+            "description": "glider for military use in combat operations",
+            "distance_to_root": 1,
+            "number_of_instances": 2,
+            "id": "wd:Q601924"
+        },
+        {
+            "label": "Polikarpov NB",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q602706"
+        },
+        {
+            "label": "Savoia-Marchetti SM.93",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q602717"
+        },
+        {
+            "label": "Vickers Windsor",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q602731"
+        },
+        {
+            "label": "XA-41",
+            "description": "1944 experimental attack aircraft by Convair",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q602753"
+        },
+        {
+            "label": "Savoia-Marchetti SM.89",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q603245"
+        },
+        {
+            "label": "F.K.3",
+            "description": "1915 multi-role military aircraft by Armstrong Whitworth",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q603667"
+        },
+        {
+            "label": "North American XB-28",
+            "description": "American bomber prototype",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q603833"
+        },
+        {
+            "label": "An-70",
+            "description": "military transport aircraft prototype by Antonov",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q607705"
+        },
+        {
+            "label": "Fa 223 Drache",
+            "description": "1940 helicopter series by Focke-Achgelis",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q609052"
+        },
+        {
+            "label": "Junkers Ju 390",
+            "description": "airplane",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q609792"
+        },
+        {
+            "label": "Cinema",
+            "description": "glider",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q613491"
+        },
+        {
+            "label": "General Airborne Transport XCG-16",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q613561"
+        },
+        {
+            "label": "Cornelius XFG-1",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q613655"
+        },
+        {
+            "label": "Gotha Ka 430",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q613733"
+        },
+        {
+            "label": "Junkers Ju 322",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q613789"
+        },
+        {
+            "label": "Ikarus Aero 2",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q614755"
+        },
+        {
+            "label": "Tupolev Tu-12",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q616144"
+        },
+        {
+            "label": "Hampden",
+            "description": "1936 bomber aircraft family by Handley Page",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q617016"
+        },
+        {
+            "label": "Kellett KD-1",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q617711"
+        },
+        {
+            "label": "PWS-33 Wy\u017ce\u0142",
+            "description": "Polish military trainer aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q618085"
+        },
+        {
+            "label": "Fletcher FBT-2",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q620220"
+        },
+        {
+            "label": "Lloyd C",
+            "description": "1915 reconnaissance aircraft family by Ungarische Lloyd",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q623520"
+        },
+        {
+            "label": "VL Kotka",
+            "description": "Finnish maritime patrol aircraft",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q624013"
+        },
+        {
+            "label": "Ar 76",
+            "description": "1934 fighter aircraft series by Arado",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q624838"
+        },
+        {
+            "label": "Arado Ar 77",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q624840"
+        },
+        {
+            "label": "Arado E.500",
+            "description": "",
+            "distance_to_root": 1,
+            "number_of_instances": 0,
+            "id": "wd:Q624880"
+        },
+        {
+            "label": "J8M1 Sh\u016bsui",
+            "description": "1945 interceptor aircraft model by Mitsubishi",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q74444730"
+        },
+        {
+            "label": "XAT-3",
+            "description": "prototype training aircraft design by AIDC",
+            "distance_to_root": 2,
+            "number_of_instances": 2,
+            "id": "wd:Q53725890"
+        },
+        {
+            "label": "XA-3 Lei Ming",
+            "description": "prototype attack aircraft by the Aerospace Industrial Development Corporation",
+            "distance_to_root": 2,
+            "number_of_instances": 2,
+            "id": "wd:Q54007125"
+        },
+        {
+            "label": "Ki-57-II",
+            "description": "1942 airlifter model by Mitsubishi",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75082199"
+        },
+        {
+            "label": "B-24 Liberator warbird",
+            "description": "Consolidated B-24 Liberator in post-military use while carrying markings honoring its military history",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q81229303"
+        },
+        {
+            "label": "Hastings C1",
+            "description": "1946 airlifter model by Handley Page",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75264138"
+        },
+        {
+            "label": "AM.3CM Bosbok",
+            "description": "utility aircraft by Aermacchi",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q67032949"
+        },
+        {
+            "label": "C-119G Flying Boxcar",
+            "description": "1950 transport aircraft model by Fairchild",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75265002"
+        },
+        {
+            "label": "A-40 Krylya Tanka",
+            "description": "glider wing set for attachment to tanks",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q276140"
+        },
+        {
+            "label": "AS.51 Horsa",
+            "description": "assault glider by Airspeed",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q409210"
+        },
+        {
+            "label": "DFS 331",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q497093"
+        },
+        {
+            "label": "Go 242",
+            "description": "1941 transport glider family by Gotha",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q701000"
+        },
+        {
+            "label": "Hamilcar",
+            "description": "assault glider by General Aircraft Limited",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1501545"
+        },
+        {
+            "label": "G-11",
+            "description": "airlift glider by Gribovsky",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1546246"
+        },
+        {
+            "label": "Waco CG-4",
+            "description": "military glider aircraft",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1752671"
+        },
+        {
+            "label": "I.Ae. 25 Ma\u00f1que",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q2349007"
+        },
+        {
+            "label": "CG-13",
+            "description": "transport glider family by Waco",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q7958846"
+        },
+        {
+            "label": "KT",
+            "description": "glider wing kit for armored vehicles",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q83416393"
+        },
+        {
+            "label": "airlift glider",
+            "description": "glider class designed for military transport duties",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q93418319"
+        },
+        {
+            "label": "Fw 189A-2 Uhu",
+            "description": "1940 reconnaissance aircraft model by Focke-Wulf",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q74476754"
+        },
+        {
+            "label": "XF-84H Thunderscreech",
+            "description": "experimental aircraft model by Republic Aviation",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q1569239"
+        },
+        {
+            "label": "F-84 Thunderstreak",
+            "description": "1950 fighter-bomber aircraft family by Republic",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q2101666"
+        },
+        {
+            "label": "F-84G Thunderjet",
+            "description": "1950 fighter-bomber aircraft model by Republic Aviation",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q20023160"
+        },
+        {
+            "label": "XF-84 Thunderjet",
+            "description": "fighter aircraft prototype model by Republic Aviation",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q76289002"
+        },
+        {
+            "label": "F-84B Thunderjet",
+            "description": "fighter aircraft model by Republic Aviation",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q76289060"
+        },
+        {
+            "label": "F-84C Thunderjet",
+            "description": "fighter aircraft model by Republic Aviation",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q76289202"
+        },
+        {
+            "label": "F-84D Thunderjet",
+            "description": "fighter aircraft model by Republic Aviation",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q76289523"
+        },
+        {
+            "label": "F-84E Thunderjet",
+            "description": "fighter aircraft model by Republic Aviation",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q76289777"
+        },
+        {
+            "label": "Hornet F3",
+            "description": "1944 fighter aircraft model by de Havilland",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75136721"
+        },
+        {
+            "label": "Lincoln B1",
+            "description": "1944 bomber aircraft model by Avro",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75240979"
+        },
+        {
+            "label": "F7U-3M Cutlass",
+            "description": "1951 fighter aircraft model by Vought",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75141337"
+        },
+        {
+            "label": "Type Q",
+            "description": "prototype anti-submarine aircraft",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q62399461"
+        },
+        {
+            "label": "Gannet AS.1",
+            "description": "anti-submarine aircraft",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q62399465"
+        },
+        {
+            "label": "Gannet AS",
+            "description": "anti-submarine aircraft series",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q62399576"
+        },
+        {
+            "label": "Gannet T",
+            "description": "operational training aircraft series",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q62413448"
+        },
+        {
+            "label": "Gannet AEW",
+            "description": "airborne early warning aircraft series",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q62414434"
+        },
+        {
+            "label": "Gannet COD.4",
+            "description": "carrier onboard delivery aircraft",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q62414490"
+        },
+        {
+            "label": "Gannet ECM.6",
+            "description": "electronic countermeasures aircraft",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q62414533"
+        },
+        {
+            "label": "Amiot 354",
+            "description": "1940 bomber aircraft model by Amiot",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q74453511"
+        },
+        {
+            "label": "He 111H-2",
+            "description": "1939 bomber aircraft model by Heinkel",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q74450726"
+        },
+        {
+            "label": "He 219A-2/R1 Uhu",
+            "description": "1943 night fighter aircraft model by Heinkel",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q74445230"
+        },
+        {
+            "label": "SR-71A Blackbird",
+            "description": "1964 reconnaissance aircraft model by Lockheed",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75261513"
+        },
+        {
+            "label": "B-50D Superfortress",
+            "description": "1949 bomber aircraft model by Boeing",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75238550"
+        },
+        {
+            "label": "B-50A Superfortress",
+            "description": "bomber aircraft model by Boeing",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q75293594"
+        },
+        {
+            "label": "Halifax I",
+            "description": "1940 bomber aircraft model by Handley Page",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q74460474"
+        },
+        {
+            "label": "Halifax III",
+            "description": "1944 bomber aircraft model by Handley Page",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q74460650"
+        },
+        {
+            "label": "Airspeed Consul",
+            "description": "twin-engine piston utility transport and airliner",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "id": "wd:Q3607211"
+        },
+        {
+            "label": "Go 242B-1",
+            "description": "1942 transport glider model by Gotha",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q75135880"
+        },
+        {
+            "label": "CG-13A",
+            "description": "1943 transport glider model by Waco",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q75135902"
+        },
+        {
+            "label": "Gannet AS4",
+            "description": "anti-submarine aircraft",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q62410696"
+        },
+        {
+            "label": "Gannet AEW.3",
+            "description": "airborne early warning aircraft",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q5430124"
+        },
+        {
+            "label": "Gannet AEW.7",
+            "description": "proposed airborne early warning aircraft design",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q62414470"
+        },
+        {
+            "label": "YF-84F Thunderstreak",
+            "description": "fighter aircraft prototype model by Republic Aviation",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q76367444"
+        },
+        {
+            "label": "F-84F Thunderstreak",
+            "description": "fighter aircraft model by Republic Aviation",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q76367452"
+        },
+        {
+            "label": "YF-84J Thunderstreak",
+            "description": "fighter aircraft prototype model by Republic Aviation",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q76367453"
+        },
+        {
+            "label": "Gannet T.2",
+            "description": "training aircraft",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q62414372"
+        },
+        {
+            "label": "Gannet T.5",
+            "description": "training aircraft",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "id": "wd:Q62414402"
+        }
+    ],
+    "links": [
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q28314"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q39967"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q43384"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q59864"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q113838"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q117441"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q118964"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q126943"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q129802"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q135884"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q136378"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q150245"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q154088"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q154532"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q160853"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q165365"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q166410"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q167705"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q170142"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q170158"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q175940"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q176109"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q177035"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q180930"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q181112"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q182423"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q187439"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q190114"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q196730"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q201302"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q202568"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q203181"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q209940"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q211347"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q217912"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q217935"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q240655"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q251785"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q260623"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q275552"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q276529"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q280293"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q280488"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q285869"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q287195"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q287377"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q288324"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q289155"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q290968"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q291501"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q293501"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q293885"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q294504"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q302122"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q315449"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q317379"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q319898"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q323345"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q323763"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q324308"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q324521"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q324770"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q325644"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q325659"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q332039"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q338344"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q338677"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q352409"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q372264"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q376813"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q377199"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q381114"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q381145"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q381675"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q385132"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q389286"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q389324"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q408435"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q409151"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q409219"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q420171"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q438613"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q444137"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q446655"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q446993"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q447575"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q452438"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q453193"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q453811"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q454848"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q460304"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q465061"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q466173"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q466925"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q468133"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q468768"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q471131"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q471910"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q471931"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q472700"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q473410"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q473931"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q474497"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q474501"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q474572"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q475485"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q477842"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q482600"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q488421"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q488453"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q493321"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q495218"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q497110"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q502034"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q502494"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q502738"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q504268"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q508676"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q510445"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q514047"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q514601"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q519370"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q524816"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q531847"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q535179"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q537678"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q540741"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q541797"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q543015"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q543507"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q547957"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q548801"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q548877"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q549634"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q550291"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q552722"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q552753"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q552757"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q552763"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q552779"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q552841"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q553093"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q553195"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q560319"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q560679"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q570626"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q570985"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q571367"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q573403"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q573446"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q573462"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q573465"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q573469"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q574072"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q575313"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q575356"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q578552"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q578959"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q579099"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q580542"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q583107"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q589215"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q589371"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q589479"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q589505"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q589851"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q594801"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q601924"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q602706"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q602717"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q602731"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q602753"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q603245"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q603667"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q603833"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q607705"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q609052"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q609792"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q613491"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q613561"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q613655"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q613733"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q613789"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q614755"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q616144"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q617016"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q617711"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q618085"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q620220"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q623520"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q624013"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q624838"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q624840"
+        },
+        {
+            "parent": "wd:Q216916",
+            "child": "wd:Q624880"
+        },
+        {
+            "parent": "wd:Q113838",
+            "child": "wd:Q74476754"
+        },
+        {
+            "parent": "wd:Q118964",
+            "child": "wd:Q74444730"
+        },
+        {
+            "parent": "wd:Q154532",
+            "child": "wd:Q74450726"
+        },
+        {
+            "parent": "wd:Q160853",
+            "child": "wd:Q1569239"
+        },
+        {
+            "parent": "wd:Q160853",
+            "child": "wd:Q2101666"
+        },
+        {
+            "parent": "wd:Q160853",
+            "child": "wd:Q20023160"
+        },
+        {
+            "parent": "wd:Q160853",
+            "child": "wd:Q76289002"
+        },
+        {
+            "parent": "wd:Q160853",
+            "child": "wd:Q76289060"
+        },
+        {
+            "parent": "wd:Q160853",
+            "child": "wd:Q76289202"
+        },
+        {
+            "parent": "wd:Q160853",
+            "child": "wd:Q76289523"
+        },
+        {
+            "parent": "wd:Q160853",
+            "child": "wd:Q76289777"
+        },
+        {
+            "parent": "wd:Q190114",
+            "child": "wd:Q75261513"
+        },
+        {
+            "parent": "wd:Q276529",
+            "child": "wd:Q74445230"
+        },
+        {
+            "parent": "wd:Q285869",
+            "child": "wd:Q75136721"
+        },
+        {
+            "parent": "wd:Q293501",
+            "child": "wd:Q53725890"
+        },
+        {
+            "parent": "wd:Q293501",
+            "child": "wd:Q54007125"
+        },
+        {
+            "parent": "wd:Q332039",
+            "child": "wd:Q75082199"
+        },
+        {
+            "parent": "wd:Q352409",
+            "child": "wd:Q81229303"
+        },
+        {
+            "parent": "wd:Q381145",
+            "child": "wd:Q67032949"
+        },
+        {
+            "parent": "wd:Q409219",
+            "child": "wd:Q3607211"
+        },
+        {
+            "parent": "wd:Q471931",
+            "child": "wd:Q74453511"
+        },
+        {
+            "parent": "wd:Q497110",
+            "child": "wd:Q420171"
+        },
+        {
+            "parent": "wd:Q502034",
+            "child": "wd:Q74460474"
+        },
+        {
+            "parent": "wd:Q502034",
+            "child": "wd:Q74460650"
+        },
+        {
+            "parent": "wd:Q535179",
+            "child": "wd:Q75264138"
+        },
+        {
+            "parent": "wd:Q537678",
+            "child": "wd:Q62399461"
+        },
+        {
+            "parent": "wd:Q537678",
+            "child": "wd:Q62399465"
+        },
+        {
+            "parent": "wd:Q537678",
+            "child": "wd:Q62399576"
+        },
+        {
+            "parent": "wd:Q537678",
+            "child": "wd:Q62413448"
+        },
+        {
+            "parent": "wd:Q537678",
+            "child": "wd:Q62414434"
+        },
+        {
+            "parent": "wd:Q537678",
+            "child": "wd:Q62414490"
+        },
+        {
+            "parent": "wd:Q537678",
+            "child": "wd:Q62414533"
+        },
+        {
+            "parent": "wd:Q575356",
+            "child": "wd:Q75240979"
+        },
+        {
+            "parent": "wd:Q578959",
+            "child": "wd:Q75238550"
+        },
+        {
+            "parent": "wd:Q578959",
+            "child": "wd:Q75293594"
+        },
+        {
+            "parent": "wd:Q580542",
+            "child": "wd:Q75141337"
+        },
+        {
+            "parent": "wd:Q583107",
+            "child": "wd:Q75265002"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q276140"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q409210"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q497093"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q701000"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q1501545"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q1546246"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q1752671"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q2349007"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q7958846"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q83416393"
+        },
+        {
+            "parent": "wd:Q601924",
+            "child": "wd:Q93418319"
+        },
+        {
+            "parent": "wd:Q701000",
+            "child": "wd:Q75135880"
+        },
+        {
+            "parent": "wd:Q7958846",
+            "child": "wd:Q75135902"
+        },
+        {
+            "parent": "wd:Q2101666",
+            "child": "wd:Q76367444"
+        },
+        {
+            "parent": "wd:Q2101666",
+            "child": "wd:Q76367452"
+        },
+        {
+            "parent": "wd:Q2101666",
+            "child": "wd:Q76367453"
+        },
+        {
+            "parent": "wd:Q62399576",
+            "child": "wd:Q62410696"
+        },
+        {
+            "parent": "wd:Q62413448",
+            "child": "wd:Q62414372"
+        },
+        {
+            "parent": "wd:Q62413448",
+            "child": "wd:Q62414402"
+        },
+        {
+            "parent": "wd:Q62414434",
+            "child": "wd:Q5430124"
+        },
+        {
+            "parent": "wd:Q62414434",
+            "child": "wd:Q62414470"
+        }
+    ]
+}
