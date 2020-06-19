@@ -1,6 +1,5 @@
 
 let redraw = () => {};
-window.addEventListener('resize', redraw);
 
 const hierarchyMain = (dataLocation) => {
 
@@ -36,9 +35,10 @@ const hierarchyMain = (dataLocation) => {
         const {nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth} = inputArgs;
         
         svg
+	    .attr('width', `${0}px`)
+	    .attr('height', `${0}px`)
 	    .attr('width', `${plotContainer.clientWidth}px`)
-	    .attr('height', `${plotContainer.clientHeight}px`);     
-        svg
+	    .attr('height', `${plotContainer.clientHeight}px`)
 	    .selectAll('*')
 	    .remove();
         
@@ -267,16 +267,20 @@ const hierarchyMain = (dataLocation) => {
                 return accumulator;
 	    }, {parentIdToChildIds: {}, childIdToParentids: {}});
             const distanceToCenterFactorByDepth = generateDistanceToCenterFactorByDepth(nodeData);
-            redraw = () => render({
-                nodeData,
-                linkData,
-                rootNode,
-                nodeById,
-                parentIdToChildIds,
-                childIdToParentids,
-                distanceToCenterFactorByDepth
-            });
+            window.removeEventListener('resize', redraw);
+            redraw = () => {
+                render({
+                    nodeData,
+                    linkData,
+                    rootNode,
+                    nodeById,
+                    parentIdToChildIds,
+                    childIdToParentids,
+                    distanceToCenterFactorByDepth
+                });
+            };
 	    redraw();
+            window.addEventListener('resize', redraw);
 	}).catch(err => {
 	    console.error(err.message);
 	    return;
