@@ -3,20 +3,22 @@ let redraw = () => {};
 
 const hierarchyMain = (dataLocationBaseName) => {
 
-    const dataLocation = `./${dataLocationBaseName}_data.json`;
-    
-    // const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
+    const isNumber = obj => typeof(obj)==='number';
     const sum = inputArray => inputArray.reduce((a, b) => a + b, 0);
     const mean = inputArray => sum(inputArray) / inputArray.length;
-    // const softmax = (inputArray) => inputArray.map(value  => Math.exp(value) / sum(inputArray.map(y =>  Math.exp(y))));
-    // const normalize = (inputArray) => inputArray.map(value  => value / sum(inputArray));
-    // const simpleStringHash = inputString => inputString.split('').map(character => character.charCodeAt(0)).reduce((a,b) => parseInt(JSON.stringify(a)+JSON.stringify(b)));
-    // const simpleStringToFloatHash = inputString => inputString.split('').map(character => character.charCodeAt(0)).reduce((a,b) => a/b);
-
+    
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
-    d3.select('#text-display').html('');
     
+    const svgZoomableContent = svg.append('g');
+    const zoom = d3.zoom().on('zoom', () => {
+        svgZoomableContent
+            .attr('transform', d3.event.transform);
+    });
+    svg.call(zoom);
+    
+    d3.select('#text-display').html('');
+
     const alphaDecay = 0.001;
     const velocityDecay = 0.1;
     const distanceToCenterAlpha = 1.0;
@@ -24,8 +26,8 @@ const hierarchyMain = (dataLocationBaseName) => {
     const siblingAlpha = 0.25;
 
     const paddingBetweenNodes = 10;
-    const approximateCircumferenceDistancePerNode = 10;
-    const minDistanceBetweenDepths = 100;
+    const approximateCircumferenceDistancePerNode = 20;
+    const minDistanceBetweenDepths = 20;
 
     const simulation = d3.forceSimulation()
 	  .alphaDecay(alphaDecay)
@@ -48,7 +50,8 @@ const hierarchyMain = (dataLocationBaseName) => {
 	    .attr('width', `${0}px`)
 	    .attr('height', `${0}px`)
 	    .attr('width', `${plotContainer.clientWidth}px`)
-	    .attr('height', `${plotContainer.clientHeight}px`)
+	    .attr('height', `${plotContainer.clientHeight}px`);
+        svgZoomableContent
 	    .selectAll('*')
 	    .remove();
         
@@ -77,29 +80,29 @@ const hierarchyMain = (dataLocationBaseName) => {
                 }
             }
         });
-                
-        const svgZoomableContent = svg.append('g');
-        svg.call(d3.zoom().on('zoom', () => {
-            svgZoomableContent
-                .attr('transform', d3.event.transform);
-        }));
-	const edgeGroup = svgZoomableContent.append('g')
+        
+        const edgeGroup = svgZoomableContent.append('g');
+        const edgeDataJoin = edgeGroup
 	      .selectAll('line')
-	      .data(linkData.filter(datum => nodeById[datum.parent].display_endabled && nodeById[datum.child].display_endabled))
+	      .data(linkData.filter(datum => nodeById[datum.parent].display_enabled && nodeById[datum.child].display_enabled));
+	const edgeEnterSelection = edgeDataJoin
 	      .enter()
-              .append('line')
-	      .attr('class', datum => nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 'indirect-edge' : 'direct-edge')
-              .on('mouseover', function(datum) {
-                  if (d3.select(this).classed('direct-edge')) {
-                      d3.select(this).attr('class', 'direct-edge direct-edge-highlighted');
-                  }
-                  if (d3.select(this).classed('indirect-edge')) {
-                      d3.select(this).attr('class', 'indirect-edge indirect-edge-highlighted');
-                  }
-                  const parent = nodeById[datum.parent];
-                  const child = nodeById[datum.child];
-                  d3.select('#text-display')
-                      .html(`
+              .append('line');
+        const updateEdges = () => {
+            [edgeDataJoin, edgeEnterSelection].map(selection => {
+                selection
+	            .attr('class', datum => nodeById[datum.child].distance_to_root - nodeById[datum.parent].distance_to_root > 1 ? 'indirect-edge' : 'direct-edge')
+                    .on('mouseover', function(datum) {
+                        if (d3.select(this).classed('direct-edge')) {
+                            d3.select(this).attr('class', 'direct-edge direct-edge-highlighted');
+                        }
+                        if (d3.select(this).classed('indirect-edge')) {
+                            d3.select(this).attr('class', 'indirect-edge indirect-edge-highlighted');
+                        }
+                        const parent = nodeById[datum.parent];
+                        const child = nodeById[datum.child];
+                        d3.select('#text-display')
+                            .html(`
 <p>Parent:</p>
 <p>Label: ${parent.label} </p>
 <p>Description: ${parent.description} </p>
@@ -114,50 +117,62 @@ const hierarchyMain = (dataLocationBaseName) => {
 <p>Number of Instances: ${child.number_of_instances} </p>
 <p>Wikidata ID: <a target="_blank" title="${child.label}"href="https://www.wikidata.org/wiki/${child.id.replace('wd:','')}">${child.id}</a></p>
 `,);
-              })
-              .on('mouseout', function(d) {
-                  if (d3.select(this).classed('direct-edge direct-edge-highlighted')) {
-                      d3.select(this).attr('class', 'direct-edge');
-                  }
-                  if (d3.select(this).classed('indirect-edge indirect-edge-highlighted')) {
-                      d3.select(this).attr('class', 'indirect-edge');
-                  }
-              });
+                    })
+                    .on('mouseout', function(d) {
+                        if (d3.select(this).classed('direct-edge direct-edge-highlighted')) {
+                            d3.select(this).attr('class', 'direct-edge');
+                        }
+                        if (d3.select(this).classed('indirect-edge indirect-edge-highlighted')) {
+                            d3.select(this).attr('class', 'indirect-edge');
+                        }
+                    });
+            });
+        };
+        updateEdges();
 
-	const nodeGroup = svgZoomableContent.append('g')
+        const nodeGroup = svgZoomableContent.append('g');
+	const nodeDataJoin = nodeGroup
 	      .selectAll('circle')
-	      .data(nodeData.filter(datum => datum.display_endabled))
-	      .enter().append('circle')
-              .attr('class', datum => parentIdToChildIds[datum.id].filter(childId => nodeById[childId].distance_to_root - datum.distance_to_root == 1).length > 0 ? 'node node-expandable' : 'node node-leaf')
-              .on('mouseover', datum => {
-                  d3.select('#text-display')
-                      .html(`
+	      .data(nodeData.filter(datum => datum.display_enabled));
+        const nodeEnterSelection = nodeDataJoin
+	      .enter()
+              .append('circle');
+        const updateNodes = () => {
+            [nodeDataJoin, nodeEnterSelection].map(selection => {
+                nodeEnterSelection
+                    .attr('class', datum => parentIdToChildIds[datum.id].filter(childId => nodeById[childId].distance_to_root - datum.distance_to_root == 1).length > 0 ? 'node node-expandable' : 'node node-leaf')
+                    .on('mouseover', datum => {
+                        d3.select('#text-display')
+                            .html(`
 <p>Label: ${datum.label} </p>
 <p>Description: ${datum.description} </p>
 <p>Number of Subclasses: ${parentIdToChildIds[datum.id].length} </p>
 <p>Number of Instances: ${datum.number_of_instances} </p>
 <p>Wikidata ID: <a target="_blank" title="${datum.label}"href="https://www.wikidata.org/wiki/${datum.id.replace('wd:','')}">${datum.id}</a></p>
 `,);
-              })
-              .on('click', datum => {
-                  const xDelta = datum.x - rootNode.x;
-                  const yDelta = datum.y - rootNode.y;
-                  const children = parentIdToChildIds[datum.id].map(childId => nodeById[childId]);
-                  if (children.length > 0) {
-                      children.filter(child => child.distance_to_root == datum.distance_to_root + 1).forEach(child => {
-                          child.display_endabled = true;
-                          if (datum !== rootNode) {
-                              child.x = datum.x + xDelta;
-                              child.y = datum.y + yDelta;
-                          }
-                      });
-                      render(inputArgs);
-                  }
-              });
+                    })
+                    .on('click', datum => {
+                        const xDelta = datum.x - rootNode.x;
+                        const yDelta = datum.y - rootNode.y;
+                        const children = parentIdToChildIds[datum.id].map(childId => nodeById[childId]);
+                        if (children.length > 0) {
+                            children.filter(child => child.distance_to_root == datum.distance_to_root + 1).forEach(child => {
+                                child.display_enabled = true;
+                                if (datum !== rootNode) {
+                                    child.x = datum.x + xDelta;
+                                    child.y = datum.y + yDelta;
+                                }
+                            });
+                            render(inputArgs);
+                        }
+                    });
+            });
+        };
+        updateNodes();
 
         const distanceToCenter = alpha => {
             return () => {
-	        nodeData.filter(datum => datum.display_endabled).forEach(datum => {
+	        nodeData.filter(datum => datum.display_enabled).forEach(datum => {
                     if (datum !== rootNode) {
                         const goalDistance = distanceToCenterFactorByDepth[datum.distance_to_root];
                         const xDelta = rootNode.x - datum.x;
@@ -173,7 +188,7 @@ const hierarchyMain = (dataLocationBaseName) => {
         
         const linkForce = alpha => {            
             return () => {
-	        nodeData.filter(datum => datum.display_endabled).forEach(child => {
+	        nodeData.filter(datum => datum.display_enabled).forEach(child => {
                     if (child !== rootNode) {
 		        const parentIds = childIdToParentids[child.id];
                         const parents = parentIds.map(parentId => nodeById[parentId]).filter(parent => (child.distance_to_root - parent.distance_to_root) == 1);
@@ -188,7 +203,7 @@ const hierarchyMain = (dataLocationBaseName) => {
         
         const siblingForce = alpha => {            
             return () => {
-	        nodeData.filter(datum => datum.display_endabled).forEach(parent => {
+	        nodeData.filter(datum => datum.display_enabled).forEach(parent => {
                     const siblings = parentIdToChildIds[parent.id]
                           .map(childId => childIdToParentids[childId])
                           .reduce((a,b) => a.concat(b), [])
@@ -217,12 +232,12 @@ const hierarchyMain = (dataLocationBaseName) => {
             .force('sibling-force', siblingForce(siblingAlpha))
             .force('distance-to-center', distanceToCenter(distanceToCenterAlpha))
             .force('collide', d3.forceCollide(paddingBetweenNodes).strength(0.5).iterations(200))
-	    .nodes(nodeData.filter(datum => datum.display_endabled)).on('tick', () => {
-		nodeGroup
+	    .nodes(nodeData.filter(datum => datum.display_enabled)).on('tick', () => {
+		nodeEnterSelection
 		    .attr('cx', datum => datum.x)
 		    .attr('cy', datum => datum.y)
                     .call(drag);
-		edgeGroup
+		edgeEnterSelection
 		    .attr('x1', datum => nodeById[datum.parent].x)
 		    .attr('y1', datum => nodeById[datum.parent].y)
 		    .attr('x2', datum => nodeById[datum.child].x)
@@ -255,9 +270,10 @@ const hierarchyMain = (dataLocationBaseName) => {
         return distanceToCenterFactorByDepth;
     };
     
+    const dataLocation = `./${dataLocationBaseName}_data.json`;
     d3.json(dataLocation)
 	.then(data => {
-	    const nodeData = data.nodes.map(datum => Object.assign(datum, {display_endabled: datum.distance_to_root == 0}));
+	    const nodeData = data.nodes.map(datum => Object.assign(datum, {display_enabled: datum.distance_to_root == 0}));
 	    const linkData = data.links;
             const rootNode = nodeData.filter(datum => datum.distance_to_root == 0)[0];
 	    const nodeById = nodeData.reduce((accumulator, node) => {
@@ -303,7 +319,7 @@ const runVisualization = () => {
     if (validDatasetNames.includes(specifiedDatasetName)) {
         hierarchyMain(specifiedDatasetName);
     } else {
-        window.location.hash='#engineer';
+        window.location.hash='#military_aircraft';
         location.reload();
     }
 };
