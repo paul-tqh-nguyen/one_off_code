@@ -298,7 +298,7 @@ const hierarchyMain = (dataLocationBaseName) => {
 };
 
 const runVisualization = () => {
-    const validDatasetNames = ['ai', 'coronary_artery_disease', 'engineer', 'financial_services', 'military_aircraft', 'violation_of_law'];
+    const validDatasetNames = ['ai', 'coronary_artery_disease', 'crime', 'engineer', 'financial_services', 'military_aircraft'];
     const specifiedDatasetName = window.location.hash.slice(1);
     if (validDatasetNames.includes(specifiedDatasetName)) {
         hierarchyMain(specifiedDatasetName);
