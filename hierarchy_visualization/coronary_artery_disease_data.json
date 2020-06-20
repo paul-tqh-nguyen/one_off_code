@@ -8,6 +8,7 @@
             "description": "Artery disease characterized by plaque building up along the inner walls of the arteries of the heart resulting in a narrowing of the arteries and a reduced blood supply to the cardiac muscles",
             "distance_to_root": 0,
             "number_of_instances": 2,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Blausen%200257%20CoronaryArtery%20Plaque.png?width=900",
             "id": "wd:Q844935"
         },
         {
@@ -15,6 +16,7 @@
             "description": "interruption of blood supply to a part of the heart",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Heart%20attack%20diagram.png?width=900",
             "id": "wd:Q12152"
         },
         {
@@ -22,6 +24,7 @@
             "description": "Human disease",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q707774"
         },
         {
@@ -29,6 +32,7 @@
             "description": "",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1444550"
         },
         {
@@ -36,6 +40,7 @@
             "description": "type of angina pectoris that is irregular. It is also classified as a type of acute coronary syndrome",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q2032041"
         },
         {
@@ -43,6 +48,7 @@
             "description": "",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q3617336"
         },
         {
@@ -50,6 +56,7 @@
             "description": "Human disease",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q4797546"
         },
         {
@@ -57,6 +64,7 @@
             "description": "Human disease",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q4797547"
         },
         {
@@ -64,6 +72,7 @@
             "description": "Human disease",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5172184"
         },
         {
@@ -71,6 +80,7 @@
             "description": "",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5172187"
         },
         {
@@ -78,6 +88,7 @@
             "description": "",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5172195"
         },
         {
@@ -85,6 +96,7 @@
             "description": "Human disease",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5172199"
         },
         {
@@ -92,6 +104,7 @@
             "description": "disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q6947906"
         },
         {
@@ -99,6 +112,7 @@
             "description": "type of cardiomyopathy caused by a narrowing of the coronary arteries which supply blood to the heart",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q12075432"
         },
         {
@@ -106,6 +120,7 @@
             "description": "",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q17084592"
         },
         {
@@ -113,6 +128,7 @@
             "description": "",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18358559"
         },
         {
@@ -120,20 +136,15 @@
             "description": "Human disease",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18556247"
-        },
-        {
-            "label": "Prinzmetal's angina",
-            "description": "cardiac chest pain at rest that occurs in cycles",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1469637"
         },
         {
             "label": "myocardial stunning",
             "description": "state when some section of the myocardium (corresponding to area of a major coronary occlusion) shows a form of contractile abnormality",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q2075261"
         },
         {
@@ -141,6 +152,7 @@
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q6947903"
         },
         {
@@ -148,6 +160,7 @@
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q7045267"
         },
         {
@@ -155,6 +168,7 @@
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q17993804"
         },
         {
@@ -162,6 +176,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557031"
         },
         {
@@ -169,6 +184,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557032"
         },
         {
@@ -176,6 +192,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557033"
         },
         {
@@ -183,6 +200,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557034"
         },
         {
@@ -190,6 +208,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557035"
         },
         {
@@ -197,6 +216,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557036"
         },
         {
@@ -204,6 +224,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557038"
         },
         {
@@ -211,6 +232,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557039"
         },
         {
@@ -218,6 +240,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557040"
         },
         {
@@ -225,6 +248,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557041"
         },
         {
@@ -232,6 +256,7 @@
             "description": "history of myocardial infarction in the absence of clinical symptoms and positive electrocardiographic findings",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557042"
         },
         {
@@ -239,6 +264,7 @@
             "description": "Human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18557043"
         },
         {
@@ -246,6 +272,7 @@
             "description": "human disease",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18558122"
         },
         {
@@ -253,6 +280,7 @@
             "description": "heart attack symptoms in women",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q22909857"
         },
         {
@@ -260,6 +288,7 @@
             "description": "A clinical syndrome defined by MYOCARDIAL ISCHEMIA symptoms; persistent elevation in the ST segments of the ELECTROCARDIOGRAM; and release of BIOMARKERS of myocardial NECROSIS (e.g., elevated TROPONIN levels). ST segment elevation in the EC",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q47439803"
         },
         {
@@ -267,6 +296,7 @@
             "description": "myocardial infarction that does not produce elevations in the ST segments of the electrocardiogram",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55082277"
         },
         {
@@ -274,6 +304,7 @@
             "description": "myocardial infarction in which the anterior wall of the heart is involved, subclassified as anteroseptal or anterolateral wall myocardial infarction.",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q67216606"
         },
         {
@@ -281,97 +312,23 @@
             "description": "heart attack occurring after a surgical procedure",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q95861371"
-        },
-        {
-            "label": "coronary restenosis",
-            "description": "Human disease",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q18556246"
         },
         {
             "label": "ischemic myocardial contracture",
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1450078"
-        },
-        {
-            "label": "anomalous left coronary artery from the pulmonary artery",
-            "description": "coronary artery anomaly in which the left coronary artery (LCA) branches off the pulmonary artery instead of the aortic sinus",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q881480"
-        },
-        {
-            "label": "Anomalous aortic origin of a coronary artery",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q4769933"
-        },
-        {
-            "label": "myocardial bridge",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q6947900"
-        },
-        {
-            "label": "coronary arterial fistula",
-            "description": "Coronary arterial fistulas are a connection between one or more of the coronary arteries and a cardiac chamber or great vessel",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q11829260"
-        },
-        {
-            "label": "congenital coronary artery aneurysm",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q55788900"
-        },
-        {
-            "label": "abnormal origin or aberrant course of coronary artery",
-            "description": "human disease",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q55788901"
-        },
-        {
-            "label": "Hyaline arteriolosclerosis",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q8205487"
-        },
-        {
-            "label": "Hyperplastic arteriolosclerosis",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q16966202"
-        },
-        {
-            "label": "coronary occlusion",
-            "description": "partial or complete obstruction of blood flow in a coronary artery",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q5172192"
-        },
-        {
-            "label": "Wellens' syndrome",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q7981210"
         },
         {
             "label": "silent myocardial ischemia",
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q16644072"
         },
         {
@@ -379,13 +336,111 @@
             "description": "damage to the myocardium resulting from restoration of blood flow to ischemic areas of the heart",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q54971821"
+        },
+        {
+            "label": "coronary occlusion",
+            "description": "partial or complete obstruction of blood flow in a coronary artery",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q5172192"
+        },
+        {
+            "label": "Wellens' syndrome",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q7981210"
+        },
+        {
+            "label": "Hyaline arteriolosclerosis",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Renal%20arterial%20hyalinosis%20-%20pas%20-%20very%20high%20mag.jpg?width=900",
+            "id": "wd:Q8205487"
+        },
+        {
+            "label": "Hyperplastic arteriolosclerosis",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q16966202"
+        },
+        {
+            "label": "coronary restenosis",
+            "description": "Human disease",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q18556246"
+        },
+        {
+            "label": "anomalous left coronary artery from the pulmonary artery",
+            "description": "coronary artery anomaly in which the left coronary artery (LCA) branches off the pulmonary artery instead of the aortic sinus",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q881480"
+        },
+        {
+            "label": "Anomalous aortic origin of a coronary artery",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q4769933"
+        },
+        {
+            "label": "myocardial bridge",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q6947900"
+        },
+        {
+            "label": "coronary arterial fistula",
+            "description": "Coronary arterial fistulas are a connection between one or more of the coronary arteries and a cardiac chamber or great vessel",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q11829260"
+        },
+        {
+            "label": "congenital coronary artery aneurysm",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q55788900"
+        },
+        {
+            "label": "abnormal origin or aberrant course of coronary artery",
+            "description": "human disease",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q55788901"
+        },
+        {
+            "label": "Prinzmetal's angina",
+            "description": "cardiac chest pain at rest that occurs in cycles",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1469637"
         },
         {
             "label": "coronary artery intramyocardial course",
             "description": "human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55789354"
         },
         {
@@ -393,6 +448,7 @@
             "description": "human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55789355"
         },
         {
@@ -400,6 +456,7 @@
             "description": "human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55789356"
         },
         {
@@ -407,6 +464,7 @@
             "description": "human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55789357"
         },
         {
@@ -414,6 +472,7 @@
             "description": "human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55789358"
         },
         {
@@ -421,20 +480,15 @@
             "description": "human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55789359"
-        },
-        {
-            "label": "chronic total occlusion  of coronary artery",
-            "description": "",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q3348621"
         },
         {
             "label": "subendocardial infarction acute myocardial infarction",
             "description": "Human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18553826"
         },
         {
@@ -442,6 +496,7 @@
             "description": "Human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18553908"
         },
         {
@@ -449,6 +504,7 @@
             "description": "Human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18553909"
         },
         {
@@ -456,6 +512,7 @@
             "description": "Human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18553910"
         },
         {
@@ -463,7 +520,16 @@
             "description": "Human disease",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18558121"
+        },
+        {
+            "label": "chronic total occlusion  of coronary artery",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q3348621"
         }
     ],
     "links": [
@@ -708,6 +774,10 @@
             "child": "wd:Q18558121"
         },
         {
+            "parent": "wd:Q5172192",
+            "child": "wd:Q3348621"
+        },
+        {
             "parent": "wd:Q55788901",
             "child": "wd:Q55789354"
         },
@@ -730,10 +800,6 @@
         {
             "parent": "wd:Q55788901",
             "child": "wd:Q55789359"
-        },
-        {
-            "parent": "wd:Q5172192",
-            "child": "wd:Q3348621"
         }
     ]
 }

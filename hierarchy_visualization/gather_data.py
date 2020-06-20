@@ -28,9 +28,14 @@ from misc_utilities import *
 # Globals #
 ###########
 
-OUTPUT_JSON_FILE = './crime_data.json'
-
-START_NODE = 'wd:Q83267'
+ROOT_NODE_TO_OUTPUT_JSON_FILE = {
+    'wd:Q11660': 'ai_data.json',
+    'wd:Q844935': 'coronary_artery_disease_data.json',
+    'wd:Q83267': 'crime_data.json',
+    'wd:Q81096': 'engineer_data.json',
+    'wd:Q837171': 'financial_services_data.json',
+    'wd:Q216916': 'military_aircraft_data.json',
+}
 
 BROWSER_IS_HEADLESS = False
 MAX_NUMBER_OF_NEW_PAGE_ATTEMPTS = 50
@@ -127,10 +132,16 @@ async def _query_wikidata_via_web_scraper(sparql_query:str, *, page: pyppeteer.p
             query_result_row_td_explore_anchors = await query_result_row_td.querySelectorAll('a.explore')
             assert len(query_result_row_td_explore_anchors) in (0,1)
             answer_is_wikidata_entity = len(query_result_row_td_explore_anchors) == 1
+            glyphicon_anchors = await query_result_row_td.querySelectorAll('a.gallery.glyphicon.glyphicon-picture')
+            assert len(glyphicon_anchors) in (0,1)
+            answer_is_image = len(glyphicon_anchors) == 1
             if answer_is_wikidata_entity:
                 anchors = await query_result_row_td.querySelectorAll('a.item-link')
                 anchor = only_one(anchors)
                 result_text = await page.evaluate('(anchor) => anchor.textContent', anchor)
+            elif answer_is_image:
+                glyphicon_anchor = only_one(glyphicon_anchors)
+                result_text = await page.evaluate('(anchor) => anchor.getAttribute("href")', glyphicon_anchor)
             else:
                 result_text = await page.evaluate('(query_result_row_td) => query_result_row_td.textContent', query_result_row_td)
             result[result_item_variable_name] = result_text
@@ -149,9 +160,10 @@ def execute_sparql_query_via_wikidata(sparql_query:str) -> List[Dict[str, str]]:
 
 INSTANCE_OF = 'wdt:P31'
 SUBCLASS_OF = 'wdt:P279'
+IMAGE = 'wdt:P18'
 
-def get_number_of_instances_for_entities(class_entities: Iterable[str]) -> Dict[str, int]:
-    query = f'''
+def get_misc_entity_info(class_entities: Iterable[str]) -> Dict[str, int]:
+    number_of_instances_query = f'''
 SELECT ?ENTITY (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
     VALUES ?ENTITY {{ {' '.join(class_entities)} }}.
     ?INSTANCE {INSTANCE_OF} ?ENTITY.
@@ -159,13 +171,28 @@ SELECT ?ENTITY (count(?INSTANCE) as ?NUM_INSTANCES) WHERE {{
 GROUP BY ?ENTITY
 HAVING(COUNT(?INSTANCE) > 0)
 '''
-    query_results = execute_sparql_query_via_wikidata(query)
-    assert implies(query_results, set(map(len,query_results)) == {2})
-    entity_to_number_of_instances = {query_result['?ENTITY']:query_result['?NUM_INSTANCES'] for query_result in query_results}
-    for class_entity in class_entities:
-        if class_entity not in entity_to_number_of_instances:
-            entity_to_number_of_instances[class_entity] = 0
-    return entity_to_number_of_instances
+    number_of_instances_query_results = execute_sparql_query_via_wikidata(number_of_instances_query)
+    assert implies(number_of_instances_query_results, set(map(len,number_of_instances_query_results)) == {2})
+    number_of_instances_query_results_as_dict = {number_of_instances_query_result['?ENTITY']:number_of_instances_query_result['?NUM_INSTANCES'] for number_of_instances_query_result  in number_of_instances_query_results}
+    
+    image_query = f'''
+SELECT ?ENTITY ?PIC WHERE {{
+    VALUES ?ENTITY {{ {' '.join(class_entities)} }}.
+    ?ENTITY {IMAGE} ?PIC.
+}}
+'''
+    image_query_results = execute_sparql_query_via_wikidata(image_query)
+    assert implies(image_query_results, set(map(len,image_query_results)) == {2})
+    image_query_results_as_dict = {image_query_result['?ENTITY']:image_query_result['?PIC'] for image_query_result  in image_query_results}
+
+    entity_to_misc_info = {
+        class_entity: {
+            'number_of_instances': number_of_instances_query_results_as_dict.get(class_entity, 0),
+            'image_url': image_query_results_as_dict.get(class_entity, ''),
+        }
+        for class_entity in class_entities
+    }
+    return entity_to_misc_info
 
 def get_subclasses_of_entities(class_entities: Iterable[str]) -> Dict[str, List[Dict[str, str]]]:
     query = f'''
@@ -184,18 +211,18 @@ SELECT ?ENTITY ?SUBCLASS ?SUBCLASSLabel ?SUBCLASSDescription WHERE {{
         answer[entity].append(query_result)
     return answer
 
-def generate_hierarchy() -> nx.DiGraph:
+def generate_hierarchy(start_node: str) -> nx.DiGraph:
     hierarchy = nx.DiGraph()
-    print(f'Gathering start node ({START_NODE}) data.')
+    print(f'Gathering start node ({start_node}) data.')
     start_node_properties = only_one(execute_sparql_query_via_wikidata(f'''
 SELECT ?itemLabel ?itemDescription WHERE {{
-    VALUES ?item {{ {START_NODE} }}
+    VALUES ?item {{ {start_node} }}
     SERVICE wikibase:label {{ bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }}
 }}
 '''))
-    hierarchy.add_node(START_NODE, label=start_node_properties['?itemLabel'], description=start_node_properties['?itemDescription'], distance_to_root=0)
+    hierarchy.add_node(start_node, label=start_node_properties['?itemLabel'], description=start_node_properties['?itemDescription'], distance_to_root=0)
     print('Initializing BFS.')
-    current_entities = {START_NODE}
+    current_entities = {start_node}
     pbar = tqdm.tqdm(unit=' breadths') ; iteration_index = 0 ; update_pbar_description = lambda : pbar.set_description(f'Hierarchy node count {len(hierarchy.nodes)}')
     while current_entities:
         update_pbar_description()
@@ -213,9 +240,12 @@ SELECT ?itemLabel ?itemDescription WHERE {{
         pbar.update()
     pbar.close()
     print('Gathering instance counts.')
-    entity_to_number_of_instances = get_number_of_instances_for_entities(hierarchy.nodes)
-    for entity, number_of_instances in entity_to_number_of_instances.items():
-        hierarchy.nodes[entity]['number_of_instances'] = int(number_of_instances)
+    entity_to_misc_info = get_misc_entity_info(hierarchy.nodes)
+    for entity, misc_info in entity_to_misc_info.items():
+        number_of_instances = int(misc_info['number_of_instances'])
+        hierarchy.nodes[entity]['number_of_instances'] = number_of_instances
+        image_url = misc_info['image_url']
+        hierarchy.nodes[entity]['image_url'] = image_url
     print('Hierarchy gathering complete.')
     return hierarchy
 
@@ -225,11 +255,13 @@ SELECT ?itemLabel ?itemDescription WHERE {{
 
 @debug_on_error
 def gather_data() -> None:
-    hierarchy = generate_hierarchy()
-    json_data = nx.readwrite.node_link_data(hierarchy, {'source': 'parent', 'target': 'child'})
-    with open(OUTPUT_JSON_FILE, 'w') as file_handle:
-        json.dump(json_data, file_handle, indent=4)
-    print(f'Hierarchy data exported to {OUTPUT_JSON_FILE}')
+    for start_node, output_json_file in ROOT_NODE_TO_OUTPUT_JSON_FILE.items():
+        hierarchy = generate_hierarchy(start_node)
+        json_data = nx.readwrite.node_link_data(hierarchy, {'source': 'parent', 'target': 'child'})
+        with open(output_json_file, 'w') as file_handle:
+            json.dump(json_data, file_handle, indent=4)
+        print(f'Hierarchy data exported to {output_json_file}')
+        print()
     return 
 
 if __name__ == '__main__':

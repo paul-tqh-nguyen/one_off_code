@@ -5,9 +5,10 @@
     "nodes": [
         {
             "label": "artificial intelligence",
-            "description": "is intelligence demonstrated by machines, in contrast to the natural intelligence displayed by humans and animals.",
+            "description": "intelligence demonstrated by machines, in contrast to the natural intelligence displayed by humans and animals",
             "distance_to_root": 0,
             "number_of_instances": 11,
+            "image_url": "",
             "id": "wd:Q11660"
         },
         {
@@ -15,6 +16,7 @@
             "description": "branch of statistics and computer science, which studies algorithms and architectures that learn from observed facts",
             "distance_to_root": 1,
             "number_of_instances": 4,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Machine%20learning%20workflow%20diagram.png?width=900",
             "id": "wd:Q2539"
         },
         {
@@ -22,6 +24,7 @@
             "description": "field of computer science and linguistics",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q30642"
         },
         {
@@ -29,6 +32,7 @@
             "description": "interdisciplinary scientific study of the mind and its processes",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q147638"
         },
         {
@@ -36,6 +40,7 @@
             "description": "computer system that emulates the decision-making ability of a human expert",
             "distance_to_root": 1,
             "number_of_instances": 3,
+            "image_url": "",
             "id": "wd:Q184609"
         },
         {
@@ -43,6 +48,7 @@
             "description": "computational model used in machine learning, based on connected, hierarchical functions",
             "distance_to_root": 2,
             "number_of_instances": 2,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Neural%20network.svg?width=900",
             "id": "wd:Q192776"
         },
         {
@@ -50,6 +56,7 @@
             "description": "computer-based information system that supports business or organizational decision-making",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q330268"
         },
         {
@@ -57,6 +64,7 @@
             "description": "",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1122090"
         },
         {
@@ -64,6 +72,7 @@
             "description": "subfield of artificial intelligence",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1197129"
         },
         {
@@ -71,6 +80,7 @@
             "description": "holographic program in Star Trek",
             "distance_to_root": 1,
             "number_of_instances": 2,
+            "image_url": "",
             "id": "wd:Q1226311"
         },
         {
@@ -78,6 +88,7 @@
             "description": "technical, scientific and social aspects involved in building, maintaining and using knowledge-based system",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1540472"
         },
         {
@@ -85,6 +96,7 @@
             "description": "type of algorithm",
             "distance_to_root": 1,
             "number_of_instances": 4,
+            "image_url": "",
             "id": "wd:Q1981968"
         },
         {
@@ -92,6 +104,7 @@
             "description": "theoretical class of AI able to perform any intelligence-based task a human can",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q2264109"
         },
         {
@@ -99,6 +112,7 @@
             "description": "",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q3153007"
         },
         {
@@ -106,6 +120,7 @@
             "description": "field of artificial intelligence dedicated to representing information about the world in a form that a computer system can utilize to solve complex tasks",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q3478658"
         },
         {
@@ -113,6 +128,7 @@
             "description": "planning and organizing done by an artificial intelligence",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q4117674"
         },
         {
@@ -120,6 +136,7 @@
             "description": "applications of intelligence exhibited by machines",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q4781507"
         },
         {
@@ -127,6 +144,7 @@
             "description": "methods in artificial intelligence research that are based on high-level symbolic representations of problems, logic and search, dominant from the 1950s until the 1980s",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5514059"
         },
         {
@@ -134,6 +152,7 @@
             "description": "artificial intelligence as depicted in works of fiction",
             "distance_to_root": 1,
             "number_of_instances": 3,
+            "image_url": "",
             "id": "wd:Q25933185"
         },
         {
@@ -141,6 +160,7 @@
             "description": "development of AI systems that are able to detect and respond to human emotions in an empathic way",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q28130520"
         },
         {
@@ -148,6 +168,7 @@
             "description": "methods and techniques in the application of artificial intelligence technology",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q40890078"
         },
         {
@@ -155,6 +176,7 @@
             "description": "method for artificial intelligence",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q50818671"
         },
         {
@@ -162,237 +184,23 @@
             "description": "overview of field as applied to Wikimedia",
             "distance_to_root": 1,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q56248890"
         },
         {
-            "label": "cognitive neuroscience",
-            "description": "",
-            "distance_to_root": 2,
+            "label": "Artificial Chemist",
+            "description": "autonomous system that incorporates artificial intelligence to perform chemical changes",
+            "distance_to_root": 1,
             "number_of_instances": 0,
-            "id": "wd:Q1138951"
-        },
-        {
-            "label": "cognitive science of religion",
-            "description": "the study of religious thought and behavior from the perspective of the cognitive and evolutionary sciences",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1570453"
-        },
-        {
-            "label": "cognitive anthropology",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q2853045"
-        },
-        {
-            "label": "Cognitive hearing science",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q5141209"
-        },
-        {
-            "label": "embodied cognitive science",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q5370104"
-        },
-        {
-            "label": "cognitive geography",
-            "description": "interdisciplinary study of cognitive science and geography",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q23579684"
-        },
-        {
-            "label": "Metaheuristic",
-            "description": "optimization technique",
-            "distance_to_root": 2,
-            "number_of_instances": 2,
-            "id": "wd:Q1385229"
-        },
-        {
-            "label": "informed search algorithm",
-            "description": "type of search algorithm in which you have preliminary information (generally heuristic)",
-            "distance_to_root": 2,
-            "number_of_instances": 5,
-            "id": "wd:Q88775728"
-        },
-        {
-            "label": "diagnostic expert system",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q59138843"
-        },
-        {
-            "label": "rule-based expert system",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q59138899"
-        },
-        {
-            "label": "frame-based expert system",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q59138925"
-        },
-        {
-            "label": "metaexpert system",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q59139052"
-        },
-        {
-            "label": "monitoring expert system",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q59154480"
-        },
-        {
-            "label": "planning expert system",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q59154494"
-        },
-        {
-            "label": "Group decision support systems",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q107415"
-        },
-        {
-            "label": "FORDEC",
-            "description": "Structured Decision Making Method (Aviation)",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1389380"
-        },
-        {
-            "label": "Automated Decision support system",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1641902"
-        },
-        {
-            "label": "Diagnosis",
-            "description": "subfield of artificial intelligence",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q3025858"
-        },
-        {
-            "label": "Clinical decision support system",
-            "description": "diagnosis assisted by a machine",
-            "distance_to_root": 2,
-            "number_of_instances": 1,
-            "id": "wd:Q5133829"
-        },
-        {
-            "label": "Intelligent decision support systems",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q6044094"
-        },
-        {
-            "label": "Marketing decision support system",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q6770906"
-        },
-        {
-            "label": "Spatial decision support system",
-            "description": "computerised aid to land use decisions",
-            "distance_to_root": 2,
-            "number_of_instances": 1,
-            "id": "wd:Q7574057"
-        },
-        {
-            "label": "speech recognition",
-            "description": "inter-disciplinary sub-field of computational linguistics that develops methodologies and technologies that enables the recognition and translation of spoken language into text by computers",
-            "distance_to_root": 2,
-            "number_of_instances": 1,
-            "id": "wd:Q189436"
-        },
-        {
-            "label": "natural language understanding",
-            "description": "subtopic of natural language processing in artificial intelligence",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1078276"
-        },
-        {
-            "label": "part-of-speech tagging",
-            "description": "the process of identifying the grammatical type of words in a text",
-            "distance_to_root": 2,
-            "number_of_instances": 5,
-            "id": "wd:Q1271424"
-        },
-        {
-            "label": "natural language generation",
-            "description": "software process",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1513879"
-        },
-        {
-            "label": "Morphological analysis",
-            "description": "heuristic method",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1898737"
-        },
-        {
-            "label": "text segmentation",
-            "description": "process of dividing written text into meaningful units, such as words, sentences, or topics",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q1948408"
-        },
-        {
-            "label": "tokenization",
-            "description": "breaking a stream of text up into chunks for analysis or further processing",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q2438971"
-        },
-        {
-            "label": "text simplification",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q3484781"
-        },
-        {
-            "label": "computer-based question classification",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q46346005"
-        },
-        {
-            "label": "biomedical natural language processing",
-            "description": "",
-            "distance_to_root": 2,
-            "number_of_instances": 0,
-            "id": "wd:Q51751772"
+            "image_url": "",
+            "id": "wd:Q96246713"
         },
         {
             "label": "Explanation-based learning",
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q133580"
         },
         {
@@ -400,6 +208,7 @@
             "description": "branch of machine learning",
             "distance_to_root": 2,
             "number_of_instances": 1,
+            "image_url": "",
             "id": "wd:Q197536"
         },
         {
@@ -407,6 +216,7 @@
             "description": "machine learning task of learning a function that maps an input to an output based on example input-output pairs",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q334384"
         },
         {
@@ -414,6 +224,7 @@
             "description": "branch of machine learning",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q378859"
         },
         {
@@ -421,6 +232,7 @@
             "description": "biological theory of intelligence",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q652594"
         },
         {
@@ -428,6 +240,7 @@
             "description": "field of machine learning",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q830687"
         },
         {
@@ -435,6 +248,7 @@
             "description": "science of extracting information from chemical systems by data-driven means",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q910067"
         },
         {
@@ -442,6 +256,7 @@
             "description": "class of machine learning techniques",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1041418"
         },
         {
@@ -449,6 +264,7 @@
             "description": "machine learning technique",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1152135"
         },
         {
@@ -456,6 +272,7 @@
             "description": "term in statistical learning",
             "distance_to_root": 2,
             "number_of_instances": 1,
+            "image_url": "",
             "id": "wd:Q1744628"
         },
         {
@@ -463,6 +280,7 @@
             "description": "subfield of machine learning",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q6027324"
         },
         {
@@ -470,6 +288,7 @@
             "description": "form of machine learning where a model learns multiple tasks",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q6934509"
         },
         {
@@ -477,6 +296,7 @@
             "description": "summary of algorithms for nonlinear dimensionality reduction",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q7049464"
         },
         {
@@ -484,6 +304,7 @@
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q7079636"
         },
         {
@@ -491,6 +312,7 @@
             "description": "in computer science and statistics",
             "distance_to_root": 2,
             "number_of_instances": 2,
+            "image_url": "",
             "id": "wd:Q7094097"
         },
         {
@@ -498,6 +320,7 @@
             "description": "subdiscipline of artificial intelligence",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q7604413"
         },
         {
@@ -505,6 +328,7 @@
             "description": "Machine Learning Algorithm",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q16766476"
         },
         {
@@ -512,6 +336,7 @@
             "description": "a set of techniques that learn a feature: a transformation of raw data input to a representation that can be effectively exploited in machine learning tasks",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q17013334"
         },
         {
@@ -519,6 +344,7 @@
             "description": "interdisciplinary research area at the intersection of quantum physics and machine learning",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q18811578"
         },
         {
@@ -526,6 +352,7 @@
             "description": "research field that lies at the intersection of machine learning and computer security",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q20312394"
         },
         {
@@ -533,6 +360,7 @@
             "description": "software framework",
             "distance_to_root": 2,
             "number_of_instances": 4,
+            "image_url": "",
             "id": "wd:Q21169670"
         },
         {
@@ -540,6 +368,7 @@
             "description": "machine learning methods that use a predefined set of kernels and learn an optimal linear or non-linear combination of kernels as part of the algorithm",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q25048660"
         },
         {
@@ -547,6 +376,7 @@
             "description": "machine learning combining different information resources, such as images and text",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q25052564"
         },
         {
@@ -554,6 +384,7 @@
             "description": "topic in machine learning",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q29043227"
         },
         {
@@ -561,6 +392,7 @@
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q30314784"
         },
         {
@@ -568,6 +400,7 @@
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q41589189"
         },
         {
@@ -575,6 +408,7 @@
             "description": "automated machine learning or AutoML is the process of automating the end-to-end process of machine learning.",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q43967068"
         },
         {
@@ -582,6 +416,7 @@
             "description": "machine learning technique to convert and image to another image",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q45318647"
         },
         {
@@ -589,6 +424,7 @@
             "description": "machine learning that interacts will humans",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q51666139"
         },
         {
@@ -596,6 +432,7 @@
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q64227998"
         },
         {
@@ -603,13 +440,79 @@
             "description": "",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q77562367"
+        },
+        {
+            "label": "Metaheuristic",
+            "description": "optimization technique",
+            "distance_to_root": 2,
+            "number_of_instances": 2,
+            "image_url": "",
+            "id": "wd:Q1385229"
+        },
+        {
+            "label": "informed search algorithm",
+            "description": "type of search algorithm in which you have preliminary information (generally heuristic)",
+            "distance_to_root": 2,
+            "number_of_instances": 5,
+            "image_url": "",
+            "id": "wd:Q88775728"
+        },
+        {
+            "label": "diagnostic expert system",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q59138843"
+        },
+        {
+            "label": "rule-based expert system",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q59138899"
+        },
+        {
+            "label": "frame-based expert system",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q59138925"
+        },
+        {
+            "label": "metaexpert system",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q59139052"
+        },
+        {
+            "label": "monitoring expert system",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q59154480"
+        },
+        {
+            "label": "planning expert system",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q59154494"
         },
         {
             "label": "friendly artificial intelligence",
             "description": "hypothetical artificial general intelligence that would have a positive effect on humanity",
             "distance_to_root": 2,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q4168796"
         },
         {
@@ -617,6 +520,7 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q348261"
         },
         {
@@ -624,6 +528,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q669754"
         },
         {
@@ -631,6 +536,7 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q786435"
         },
         {
@@ -638,6 +544,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1136838"
         },
         {
@@ -645,13 +552,15 @@
             "description": "class of artificial neural network where connections between units form a directed graph along a temporal sequence",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/RecurrentLayerNeuralNetwork%20english.png?width=900",
             "id": "wd:Q1457734"
         },
         {
             "label": "autoregressive model",
             "description": "representation of a type of random process",
             "distance_to_root": 3,
-            "number_of_instances": 3,
+            "number_of_instances": 4,
+            "image_url": "",
             "id": "wd:Q2202883"
         },
         {
@@ -659,6 +568,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q2434543"
         },
         {
@@ -666,6 +576,7 @@
             "description": "an artificial neural network that uses radial basis functions as activation functions",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q2679684"
         },
         {
@@ -673,20 +584,15 @@
             "description": "type of neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q3504403"
-        },
-        {
-            "label": "language model",
-            "description": "statistical model of structure of language",
-            "distance_to_root": 3,
-            "number_of_instances": 5,
-            "id": "wd:Q3621696"
         },
         {
             "label": "Kohonen neural network",
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q4316454"
         },
         {
@@ -694,6 +600,7 @@
             "description": "artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q4875410"
         },
         {
@@ -701,6 +608,7 @@
             "description": "type of artifical neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5064071"
         },
         {
@@ -708,6 +616,7 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5156806"
         },
         {
@@ -715,13 +624,15 @@
             "description": "artificial neural network based expert systems where the ANN generates inferencing rules e.g., fuzzy-multi layer perceptron where linguistic and natural form of inputs are used",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5161689"
         },
         {
-            "label": "Echo state network",
-            "description": "",
+            "label": "echo state network",
+            "description": "recurrent neural network with a sparsely connected hidden layer",
             "distance_to_root": 4,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q5332763"
         },
         {
@@ -729,13 +640,23 @@
             "description": "artificial neural network wherein connections between the nodes do not form a cycle",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/FeedForwardNN.png?width=900",
             "id": "wd:Q5441227"
+        },
+        {
+            "label": "generative model",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 5,
+            "image_url": "",
+            "id": "wd:Q5532625"
         },
         {
             "label": "Liquid state machine",
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q6557482"
         },
         {
@@ -743,6 +664,7 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q7259628"
         },
         {
@@ -750,6 +672,7 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q7617824"
         },
         {
@@ -757,6 +680,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q9067355"
         },
         {
@@ -764,6 +688,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q16954980"
         },
         {
@@ -771,6 +696,7 @@
             "description": "artificial intelligence algorithm made by Google_Deepmind in London",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q20722857"
         },
         {
@@ -778,13 +704,15 @@
             "description": "type of artificial neural network",
             "distance_to_root": 4,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q21948731"
         },
         {
             "label": "generative adversarial network",
             "description": "deep learning method",
-            "distance_to_root": 3,
+            "distance_to_root": 4,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q25104379"
         },
         {
@@ -792,6 +720,7 @@
             "description": "neural network with external memory",
             "distance_to_root": 4,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q25325414"
         },
         {
@@ -799,6 +728,7 @@
             "description": "memory-augmented neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q28015646"
         },
         {
@@ -806,6 +736,7 @@
             "description": "artificial neural network architecture",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q28324912"
         },
         {
@@ -813,6 +744,7 @@
             "description": "type of convolutional neural network",
             "distance_to_root": 5,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q28325009"
         },
         {
@@ -820,6 +752,7 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q39017646"
         },
         {
@@ -827,6 +760,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q43744058"
         },
         {
@@ -834,6 +768,7 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q51289900"
         },
         {
@@ -841,6 +776,7 @@
             "description": "special artificial neural network that can handle graphs",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q54811238"
         },
         {
@@ -848,6 +784,7 @@
             "description": "",
             "distance_to_root": 5,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55080127"
         },
         {
@@ -855,6 +792,7 @@
             "description": "subclass of neural networks",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q55441204"
         },
         {
@@ -862,13 +800,15 @@
             "description": "deep learning neural network for natural language processing",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q85124095"
         },
         {
-            "label": "Transformer model",
-            "description": "machine learning model",
+            "label": "transformer",
+            "description": "A machine learning model from Google Brain",
             "distance_to_root": 3,
-            "number_of_instances": 5,
+            "number_of_instances": 6,
+            "image_url": "",
             "id": "wd:Q85810444"
         },
         {
@@ -876,6 +816,7 @@
             "description": "artificial neural network",
             "distance_to_root": 5,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94496683"
         },
         {
@@ -883,6 +824,7 @@
             "description": "type of convolutional neural network",
             "distance_to_root": 5,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94694243"
         },
         {
@@ -890,6 +832,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94694326"
         },
         {
@@ -897,6 +840,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94694375"
         },
         {
@@ -904,6 +848,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 5,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94694421"
         },
         {
@@ -911,6 +856,7 @@
             "description": "type of convolutional neural network",
             "distance_to_root": 5,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94694459"
         },
         {
@@ -918,6 +864,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94695514"
         },
         {
@@ -925,6 +872,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94695592"
         },
         {
@@ -932,6 +880,7 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94695663"
         },
         {
@@ -939,69 +888,207 @@
             "description": "type of artificial neural network",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q94695738"
         },
         {
-            "label": "boosting",
-            "description": "method in machine learning",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q466303"
+            "label": "speech recognition",
+            "description": "inter-disciplinary sub-field of computational linguistics that develops methodologies and technologies that enables the recognition and translation of spoken language into text by computers",
+            "distance_to_root": 2,
+            "number_of_instances": 1,
+            "image_url": "",
+            "id": "wd:Q189436"
         },
         {
-            "label": "natural language inference",
-            "description": "computational task in natural language understanding",
-            "distance_to_root": 3,
+            "label": "natural language understanding",
+            "description": "subtopic of natural language processing in artificial intelligence",
+            "distance_to_root": 2,
             "number_of_instances": 0,
-            "id": "wd:Q29515364"
+            "image_url": "",
+            "id": "wd:Q1078276"
         },
         {
-            "label": "word embedding",
-            "description": "method in natural language processing",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q18395344"
+            "label": "part-of-speech tagging",
+            "description": "the process of identifying the grammatical type of words in a text",
+            "distance_to_root": 2,
+            "number_of_instances": 5,
+            "image_url": "",
+            "id": "wd:Q1271424"
         },
         {
-            "label": "sentence embedding",
+            "label": "natural language generation",
+            "description": "software process",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1513879"
+        },
+        {
+            "label": "Morphological analysis",
+            "description": "heuristic method",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1898737"
+        },
+        {
+            "label": "text segmentation",
+            "description": "process of dividing written text into meaningful units, such as words, sentences, or topics",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1948408"
+        },
+        {
+            "label": "tokenization",
+            "description": "breaking a stream of text up into chunks for analysis or further processing",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q2438971"
+        },
+        {
+            "label": "text simplification",
             "description": "",
-            "distance_to_root": 3,
+            "distance_to_root": 2,
             "number_of_instances": 0,
-            "id": "wd:Q29043221"
+            "image_url": "",
+            "id": "wd:Q3484781"
         },
         {
-            "label": "fastText",
-            "description": "embedding method and program",
-            "distance_to_root": 3,
+            "label": "computer-based question classification",
+            "description": "",
+            "distance_to_root": 2,
             "number_of_instances": 0,
-            "id": "wd:Q29124045"
+            "image_url": "",
+            "id": "wd:Q46346005"
         },
         {
-            "label": "graph embedding",
-            "description": "concept in machine learning",
-            "distance_to_root": 3,
+            "label": "biomedical natural language processing",
+            "description": "",
+            "distance_to_root": 2,
             "number_of_instances": 0,
-            "id": "wd:Q32081746"
+            "image_url": "",
+            "id": "wd:Q51751772"
         },
         {
-            "label": "knowledge graph embedding",
-            "description": "machine learning embedding of knowledge graph",
-            "distance_to_root": 4,
+            "label": "cognitive neuroscience",
+            "description": "",
+            "distance_to_root": 2,
             "number_of_instances": 0,
-            "id": "wd:Q33003557"
+            "image_url": "",
+            "id": "wd:Q1138951"
         },
         {
-            "label": "inductive programming",
-            "description": "learning programs from data",
-            "distance_to_root": 3,
+            "label": "cognitive science of religion",
+            "description": "the study of religious thought and behavior from the perspective of the cognitive and evolutionary sciences",
+            "distance_to_root": 2,
             "number_of_instances": 0,
-            "id": "wd:Q15712089"
+            "image_url": "",
+            "id": "wd:Q1570453"
+        },
+        {
+            "label": "cognitive anthropology",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q2853045"
+        },
+        {
+            "label": "Cognitive hearing science",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q5141209"
+        },
+        {
+            "label": "embodied cognitive science",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q5370104"
+        },
+        {
+            "label": "cognitive geography",
+            "description": "interdisciplinary study of cognitive science and geography",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q23579684"
+        },
+        {
+            "label": "Group decision support systems",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q107415"
+        },
+        {
+            "label": "FORDEC",
+            "description": "Structured Decision Making Method (Aviation)",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1389380"
+        },
+        {
+            "label": "Automated Decision support system",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1641902"
+        },
+        {
+            "label": "AI diagnostics",
+            "description": "in artificial intelligence studies, the methods determine if a system's behavior is correct",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q3025858"
+        },
+        {
+            "label": "Clinical decision support system",
+            "description": "diagnosis assisted by a machine",
+            "distance_to_root": 2,
+            "number_of_instances": 1,
+            "image_url": "",
+            "id": "wd:Q5133829"
+        },
+        {
+            "label": "Intelligent decision support systems",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q6044094"
+        },
+        {
+            "label": "Marketing decision support system",
+            "description": "",
+            "distance_to_root": 2,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q6770906"
+        },
+        {
+            "label": "Spatial decision support system",
+            "description": "computerised aid to land use decisions",
+            "distance_to_root": 2,
+            "number_of_instances": 1,
+            "image_url": "",
+            "id": "wd:Q7574057"
         },
         {
             "label": "independent component analysis",
             "description": "in signal processing, a computational method",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q1259145"
         },
         {
@@ -1009,223 +1096,15 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q25051436"
-        },
-        {
-            "label": "Restricted Boltzmann machine",
-            "description": "artificial neural network",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q7316287"
-        },
-        {
-            "label": "Parody generator",
-            "description": "",
-            "distance_to_root": 3,
-            "number_of_instances": 1,
-            "id": "wd:Q7139384"
-        },
-        {
-            "label": "sentence boundary disambiguation",
-            "description": "",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q7451191"
-        },
-        {
-            "label": "decompounding",
-            "description": "",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q47165059"
-        },
-        {
-            "label": "Isomap",
-            "description": "nonlinear dimensionality reduction\u00a0method",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q6086067"
-        },
-        {
-            "label": "deep reinforcement learning",
-            "description": "",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q55080229"
-        },
-        {
-            "label": "Sparse dictionary learning",
-            "description": "a representation learning method",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q25304494"
-        },
-        {
-            "label": "Quantitative Structure\u2013Activity Relationship",
-            "description": "branch of science",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q766383"
-        },
-        {
-            "label": "proteochemometrics",
-            "description": "field of research",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q50327360"
-        },
-        {
-            "label": "developmental cognitive neuroscience",
-            "description": "subfield of neuroscience",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q47149375"
-        },
-        {
-            "label": "highway network",
-            "description": "deep neural network",
-            "distance_to_root": 4,
-            "number_of_instances": 1,
-            "id": "wd:Q42417573"
-        },
-        {
-            "label": "genetic algorithm",
-            "description": "competitive algorithm for searching a problem space",
-            "distance_to_root": 3,
-            "number_of_instances": 1,
-            "id": "wd:Q187787"
-        },
-        {
-            "label": "local search",
-            "description": "method for problem solving in optimization",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q1868524"
-        },
-        {
-            "label": "active learning",
-            "description": "machine learning strategy in which a learning algorithm interactively queries for new labels",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q4677561"
-        },
-        {
-            "label": "label propagation algorithm",
-            "description": "",
-            "distance_to_root": 3,
-            "number_of_instances": 0,
-            "id": "wd:Q25111428"
-        },
-        {
-            "label": "perceptron",
-            "description": "algorithm for supervised learning of binary classifiers",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q690207"
-        },
-        {
-            "label": "multilayer perceptron",
-            "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q2991667"
-        },
-        {
-            "label": "Probabilistic neural network",
-            "description": "type of artificial neural network",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q7246859"
-        },
-        {
-            "label": "convolutional neural network",
-            "description": "artificial neural network",
-            "distance_to_root": 4,
-            "number_of_instances": 1,
-            "id": "wd:Q17084460"
-        },
-        {
-            "label": "Boltzmann machine",
-            "description": "type of stochastic recurrent neural network",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q194706"
-        },
-        {
-            "label": "bidirectional associative memory",
-            "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q506355"
-        },
-        {
-            "label": "winner-take-all",
-            "description": "computational principle applied in computational models of neural networks",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q769931"
-        },
-        {
-            "label": "Hopfield network",
-            "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q1407668"
-        },
-        {
-            "label": "Long Short-Term Memory",
-            "description": "recurrent neural network architecture",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q6673524"
-        },
-        {
-            "label": "recursive neural network",
-            "description": "Type of neural network which utilizes recursion",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q18393747"
-        },
-        {
-            "label": "Jordan Network",
-            "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q20082799"
-        },
-        {
-            "label": "Elman Network",
-            "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q20082800"
-        },
-        {
-            "label": "gated recurrent unit",
-            "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q25325415"
-        },
-        {
-            "label": "Hamming neural network",
-            "description": "",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q30891811"
-        },
-        {
-            "label": "neural history compressor",
-            "description": "type of artificial neural network",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q94695713"
         },
         {
             "label": "document classification",
             "description": "problem in library science, information science and computer science",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q302088"
         },
         {
@@ -1233,6 +1112,7 @@
             "description": "",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q6934605"
         },
         {
@@ -1240,27 +1120,359 @@
             "description": "the task of classifying the elements of a given set into two groups (predicting which group each one belongs to) on the basis of a classification rule",
             "distance_to_root": 3,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q17005494"
         },
         {
-            "label": "recursive cascade correlation neural network",
-            "description": "type of recursive neural network",
-            "distance_to_root": 5,
+            "label": "Quantitative Structure\u2013Activity Relationship",
+            "description": "branch of science",
+            "distance_to_root": 3,
             "number_of_instances": 0,
-            "id": "wd:Q94695789"
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/QSAR-protocol.jpg?width=900",
+            "id": "wd:Q766383"
         },
         {
-            "label": "recursive neural tensor network",
-            "description": "type of recursive neural network",
+            "label": "proteochemometrics",
+            "description": "field of research",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q50327360"
+        },
+        {
+            "label": "Restricted Boltzmann machine",
+            "description": "artificial neural network",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q7316287"
+        },
+        {
+            "label": "Isomap",
+            "description": "nonlinear dimensionality reduction\u00a0method",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q6086067"
+        },
+        {
+            "label": "Boltzmann machine",
+            "description": "type of stochastic recurrent neural network",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q194706"
+        },
+        {
+            "label": "bidirectional associative memory",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/DAP.png?width=900",
+            "id": "wd:Q506355"
+        },
+        {
+            "label": "winner-take-all",
+            "description": "computational principle applied in computational models of neural networks",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q769931"
+        },
+        {
+            "label": "Hopfield network",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1407668"
+        },
+        {
+            "label": "Long Short-Term Memory",
+            "description": "recurrent neural network architecture",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/The%20LSTM%20cell.png?width=900",
+            "id": "wd:Q6673524"
+        },
+        {
+            "label": "recursive neural network",
+            "description": "Type of neural network which utilizes recursion",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q18393747"
+        },
+        {
+            "label": "Jordan Network",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q20082799"
+        },
+        {
+            "label": "Elman Network",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/DiagramElmanNet%20english.png?width=900",
+            "id": "wd:Q20082800"
+        },
+        {
+            "label": "gated recurrent unit",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q25325415"
+        },
+        {
+            "label": "Hamming neural network",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q30891811"
+        },
+        {
+            "label": "neural history compressor",
+            "description": "type of artificial neural network",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q94695713"
+        },
+        {
+            "label": "developmental cognitive neuroscience",
+            "description": "subfield of neuroscience",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q47149375"
+        },
+        {
+            "label": "deep reinforcement learning",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q55080229"
+        },
+        {
+            "label": "perceptron",
+            "description": "algorithm for supervised learning of binary classifiers",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q690207"
+        },
+        {
+            "label": "multilayer perceptron",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q2991667"
+        },
+        {
+            "label": "Probabilistic neural network",
+            "description": "type of artificial neural network",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q7246859"
+        },
+        {
+            "label": "convolutional neural network",
+            "description": "artificial neural network",
+            "distance_to_root": 4,
+            "number_of_instances": 1,
+            "image_url": "https://commons.wikimedia.org/wiki/Special:FilePath/Conv%20layers.png?width=900",
+            "id": "wd:Q17084460"
+        },
+        {
+            "label": "genetic algorithm",
+            "description": "competitive algorithm for searching a problem space",
+            "distance_to_root": 3,
+            "number_of_instances": 1,
+            "image_url": "",
+            "id": "wd:Q187787"
+        },
+        {
+            "label": "local search",
+            "description": "method for problem solving in optimization",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1868524"
+        },
+        {
+            "label": "word embedding",
+            "description": "method in natural language processing",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q18395344"
+        },
+        {
+            "label": "sentence embedding",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q29043221"
+        },
+        {
+            "label": "fastText",
+            "description": "embedding method and program",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q29124045"
+        },
+        {
+            "label": "graph embedding",
+            "description": "concept in machine learning",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q32081746"
+        },
+        {
+            "label": "knowledge graph embedding",
+            "description": "machine learning embedding of knowledge graph",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q33003557"
+        },
+        {
+            "label": "natural language inference",
+            "description": "computational task in natural language understanding",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q29515364"
+        },
+        {
+            "label": "sentence boundary disambiguation",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q7451191"
+        },
+        {
+            "label": "decompounding",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q47165059"
+        },
+        {
+            "label": "boosting",
+            "description": "method in machine learning",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q466303"
+        },
+        {
+            "label": "stochastic block model",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q25053762"
+        },
+        {
+            "label": "image model",
+            "description": "machine learning model",
+            "distance_to_root": 4,
+            "number_of_instances": 1,
+            "image_url": "",
+            "id": "wd:Q96369982"
+        },
+        {
+            "label": "Sparse dictionary learning",
+            "description": "a representation learning method",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q25304494"
+        },
+        {
+            "label": "highway network",
+            "description": "deep neural network",
+            "distance_to_root": 4,
+            "number_of_instances": 1,
+            "image_url": "",
+            "id": "wd:Q42417573"
+        },
+        {
+            "label": "Parody generator",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 1,
+            "image_url": "",
+            "id": "wd:Q7139384"
+        },
+        {
+            "label": "active learning",
+            "description": "machine learning strategy in which a learning algorithm interactively queries for new labels",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q4677561"
+        },
+        {
+            "label": "label propagation algorithm",
+            "description": "",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q25111428"
+        },
+        {
+            "label": "inductive programming",
+            "description": "learning programs from data",
+            "distance_to_root": 3,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q15712089"
+        },
+        {
+            "label": "genetic algorithm scheduling",
+            "description": "",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q5532874"
+        },
+        {
+            "label": "kernel perceptron",
+            "description": "",
             "distance_to_root": 5,
             "number_of_instances": 0,
-            "id": "wd:Q94695794"
+            "image_url": "",
+            "id": "wd:Q17093018"
+        },
+        {
+            "label": "Inductive logic programming",
+            "description": "learning logic programs from data",
+            "distance_to_root": 4,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q1464197"
         },
         {
             "label": "Word2vec",
             "description": "group of related models that are used to produce word embeddings",
             "distance_to_root": 4,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q22673982"
         },
         {
@@ -1268,20 +1480,31 @@
             "description": "unsupervised learning algorithm for obtaining vector representations for words",
             "distance_to_root": 4,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q22826110"
         },
         {
-            "label": "genetic algorithm scheduling",
-            "description": "",
-            "distance_to_root": 4,
+            "label": "recursive cascade correlation neural network",
+            "description": "type of recursive neural network",
+            "distance_to_root": 5,
             "number_of_instances": 0,
-            "id": "wd:Q5532874"
+            "image_url": "",
+            "id": "wd:Q94695789"
+        },
+        {
+            "label": "recursive neural tensor network",
+            "description": "type of recursive neural network",
+            "distance_to_root": 5,
+            "number_of_instances": 0,
+            "image_url": "",
+            "id": "wd:Q94695794"
         },
         {
             "label": "beam search",
             "description": "search algorithm",
             "distance_to_root": 4,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q2835852"
         },
         {
@@ -1289,21 +1512,8 @@
             "description": "heuristic local search algorithm",
             "distance_to_root": 5,
             "number_of_instances": 0,
+            "image_url": "",
             "id": "wd:Q58945661"
-        },
-        {
-            "label": "Inductive logic programming",
-            "description": "learning logic programs from data",
-            "distance_to_root": 4,
-            "number_of_instances": 0,
-            "id": "wd:Q1464197"
-        },
-        {
-            "label": "kernel perceptron",
-            "description": "",
-            "distance_to_root": 5,
-            "number_of_instances": 0,
-            "id": "wd:Q17093018"
         }
     ],
     "links": [
@@ -1394,6 +1604,10 @@
         {
             "parent": "wd:Q11660",
             "child": "wd:Q56248890"
+        },
+        {
+            "parent": "wd:Q11660",
+            "child": "wd:Q96246713"
         },
         {
             "parent": "wd:Q2539",
@@ -1657,10 +1871,6 @@
         },
         {
             "parent": "wd:Q192776",
-            "child": "wd:Q3621696"
-        },
-        {
-            "parent": "wd:Q192776",
             "child": "wd:Q4316454"
         },
         {
@@ -1686,6 +1896,10 @@
         {
             "parent": "wd:Q192776",
             "child": "wd:Q5441227"
+        },
+        {
+            "parent": "wd:Q192776",
+            "child": "wd:Q5532625"
         },
         {
             "parent": "wd:Q192776",
@@ -1852,38 +2066,6 @@
             "child": "wd:Q4168796"
         },
         {
-            "parent": "wd:Q1138951",
-            "child": "wd:Q47149375"
-        },
-        {
-            "parent": "wd:Q1385229",
-            "child": "wd:Q466303"
-        },
-        {
-            "parent": "wd:Q88775728",
-            "child": "wd:Q187787"
-        },
-        {
-            "parent": "wd:Q88775728",
-            "child": "wd:Q1868524"
-        },
-        {
-            "parent": "wd:Q1078276",
-            "child": "wd:Q29515364"
-        },
-        {
-            "parent": "wd:Q1513879",
-            "child": "wd:Q7139384"
-        },
-        {
-            "parent": "wd:Q1948408",
-            "child": "wd:Q7451191"
-        },
-        {
-            "parent": "wd:Q1948408",
-            "child": "wd:Q47165059"
-        },
-        {
             "parent": "wd:Q197536",
             "child": "wd:Q55080229"
         },
@@ -1960,6 +2142,18 @@
             "child": "wd:Q33003557"
         },
         {
+            "parent": "wd:Q1385229",
+            "child": "wd:Q466303"
+        },
+        {
+            "parent": "wd:Q88775728",
+            "child": "wd:Q187787"
+        },
+        {
+            "parent": "wd:Q88775728",
+            "child": "wd:Q1868524"
+        },
+        {
             "parent": "wd:Q1457734",
             "child": "wd:Q194706"
         },
@@ -2028,6 +2222,18 @@
             "child": "wd:Q21948731"
         },
         {
+            "parent": "wd:Q5532625",
+            "child": "wd:Q25053762"
+        },
+        {
+            "parent": "wd:Q5532625",
+            "child": "wd:Q25104379"
+        },
+        {
+            "parent": "wd:Q5532625",
+            "child": "wd:Q96369982"
+        },
+        {
             "parent": "wd:Q7617824",
             "child": "wd:Q7316287"
         },
@@ -2040,32 +2246,32 @@
             "child": "wd:Q42417573"
         },
         {
-            "parent": "wd:Q18395344",
-            "child": "wd:Q22673982"
+            "parent": "wd:Q1078276",
+            "child": "wd:Q29515364"
         },
         {
-            "parent": "wd:Q18395344",
-            "child": "wd:Q22826110"
+            "parent": "wd:Q1513879",
+            "child": "wd:Q7139384"
         },
         {
-            "parent": "wd:Q32081746",
-            "child": "wd:Q33003557"
+            "parent": "wd:Q1948408",
+            "child": "wd:Q7451191"
         },
         {
-            "parent": "wd:Q15712089",
-            "child": "wd:Q1464197"
+            "parent": "wd:Q1948408",
+            "child": "wd:Q47165059"
         },
         {
-            "parent": "wd:Q187787",
-            "child": "wd:Q5532874"
+            "parent": "wd:Q1138951",
+            "child": "wd:Q47149375"
         },
         {
-            "parent": "wd:Q1868524",
-            "child": "wd:Q2835852"
+            "parent": "wd:Q18393747",
+            "child": "wd:Q94695789"
         },
         {
-            "parent": "wd:Q1868524",
-            "child": "wd:Q58945661"
+            "parent": "wd:Q18393747",
+            "child": "wd:Q94695794"
         },
         {
             "parent": "wd:Q690207",
@@ -2096,12 +2302,32 @@
             "child": "wd:Q94694459"
         },
         {
-            "parent": "wd:Q18393747",
-            "child": "wd:Q94695789"
+            "parent": "wd:Q187787",
+            "child": "wd:Q5532874"
         },
         {
-            "parent": "wd:Q18393747",
-            "child": "wd:Q94695794"
+            "parent": "wd:Q1868524",
+            "child": "wd:Q2835852"
+        },
+        {
+            "parent": "wd:Q1868524",
+            "child": "wd:Q58945661"
+        },
+        {
+            "parent": "wd:Q18395344",
+            "child": "wd:Q22673982"
+        },
+        {
+            "parent": "wd:Q18395344",
+            "child": "wd:Q22826110"
+        },
+        {
+            "parent": "wd:Q32081746",
+            "child": "wd:Q33003557"
+        },
+        {
+            "parent": "wd:Q15712089",
+            "child": "wd:Q1464197"
         },
         {
             "parent": "wd:Q2835852",

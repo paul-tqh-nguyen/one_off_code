@@ -37,14 +37,16 @@ const hierarchyMain = (dataLocationBaseName) => {
     const render = (inputArgs) => {
 
         const {nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth} = inputArgs;
+
+        const htmlTextForNode = datum => `
+<p>Label: ${datum.label} </p>
+<p>Description: ${datum.description} </p>
+<p>Number of Subclasses: ${parentIdToChildIds[datum.id].length} </p>
+<p>Number of Instances: ${datum.number_of_instances} </p>
+<p>Wikidata ID: <a target="_blank" title="${datum.label}"href="https://www.wikidata.org/wiki/${datum.id.replace('wd:','')}">${datum.id}</a></p>
+`;
         
-        d3.select('#text-display').html(`
-<p>Label: ${rootNode.label} </p>
-<p>Description: ${rootNode.description} </p>
-<p>Number of Subclasses: ${parentIdToChildIds[rootNode.id].length} </p>
-<p>Number of Instances: ${rootNode.number_of_instances} </p>
-<p>Wikidata ID: <a target="_blank" title="${rootNode.label}"href="https://www.wikidata.org/wiki/${rootNode.id.replace('wd:','')}">${rootNode.id}</a></p>
-`,);
+        d3.select('#text-display').html(htmlTextForNode(rootNode));
         
         svg
 	    .attr('width', `${0}px`)
@@ -104,18 +106,10 @@ const hierarchyMain = (dataLocationBaseName) => {
                         d3.select('#text-display')
                             .html(`
 <p>Parent:</p>
-<p>Label: ${parent.label} </p>
-<p>Description: ${parent.description} </p>
-<p>Number of Subclasses: ${parentIdToChildIds[parent.id].length} </p>
-<p>Number of Instances: ${parent.number_of_instances} </p>
-<p>Wikidata ID: <a target="_blank" title="${parent.label}"href="https://www.wikidata.org/wiki/${parent.id.replace('wd:','')}">${parent.id}</a></p>
+${htmlTextForNode(parent)}
 </br>
 <p>Child:</p>
-<p>Label: ${child.label} </p>
-<p>Description: ${child.description} </p>
-<p>Number of Subclasses: ${parentIdToChildIds[child.id].length} </p>
-<p>Number of Instances: ${child.number_of_instances} </p>
-<p>Wikidata ID: <a target="_blank" title="${child.label}"href="https://www.wikidata.org/wiki/${child.id.replace('wd:','')}">${child.id}</a></p>
+${htmlTextForNode(child)}
 `,);
                     })
                     .on('mouseout', function(d) {
@@ -143,26 +137,46 @@ const hierarchyMain = (dataLocationBaseName) => {
                     .attr('class', datum => parentIdToChildIds[datum.id].filter(childId => nodeById[childId].distance_to_root - datum.distance_to_root == 1).length > 0 ? 'node node-expandable' : 'node node-leaf')
                     .on('mouseover', datum => {
                         d3.select('#text-display')
-                            .html(`
-<p>Label: ${datum.label} </p>
-<p>Description: ${datum.description} </p>
-<p>Number of Subclasses: ${parentIdToChildIds[datum.id].length} </p>
-<p>Number of Instances: ${datum.number_of_instances} </p>
-<p>Wikidata ID: <a target="_blank" title="${datum.label}"href="https://www.wikidata.org/wiki/${datum.id.replace('wd:','')}">${datum.id}</a></p>
-`,);
+                            .html(htmlTextForNode(datum));
                     })
                     .on('click', datum => {
-                        const xDelta = datum.x - rootNode.x;
-                        const yDelta = datum.y - rootNode.y;
                         const children = parentIdToChildIds[datum.id].map(childId => nodeById[childId]);
                         if (children.length > 0) {
-                            children.filter(child => child.distance_to_root == datum.distance_to_root + 1).forEach(child => {
-                                child.display_enabled = true;
-                                if (datum !== rootNode) {
-                                    child.x = datum.x + xDelta;
-                                    child.y = datum.y + yDelta;
-                                }
-                            });
+                            const xDelta = datum.x - rootNode.x;
+                            const yDelta = datum.y - rootNode.y;
+                            const immediateChildren = children.filter(child => child.distance_to_root == datum.distance_to_root + 1);
+                            if (immediateChildren.every(child => child.display_enabled)) {
+                                const remainingChildren = [];
+                                remainingChildren.push(...immediateChildren.filter(child => {
+                                    const otherParents = childIdToParentids[child.id].filter(parentId => parentId !== datum.id).map(otherParentId => nodeById[otherParentId]);
+                                    const otherImmediateParents = otherParents.filter(otherParent => otherParent.distance_to_root == child.distance_to_root + 1);
+                                    const otherDisplayedImmediateParents = otherImmediateParents.filter(otherParent => otherParent.display_enabled);
+                                    return otherDisplayedImmediateParents.length === 0;
+                                }));
+                                while (remainingChildren.length > 0) {
+                                    const child = remainingChildren.pop();
+                                    child.display_enabled = false;
+                                    const grandChildren = parentIdToChildIds[child.id].map(grandChildId => nodeById[grandChildId])
+                                          .filter(grandChild => grandChild.display_enabled)
+                                          .filter(grandChild => grandChild.distance_to_root == child.distance_to_root + 1)
+                                          .filter(grandChild => {
+                                              const parentsOfGrandChild = childIdToParentids[grandChild.id].map(grandChildId => nodeById[grandChildId]);
+                                              const immediateParentsOfGrandChild = parentsOfGrandChild.filter(parentOfGrandChild => parentOfGrandChild.distance_to_root == grandChild.distance_to_root + 1);
+                                              const displayedImmediateParentsOfGrandChild = immediateParentsOfGrandChild.filter(parentOfGrandChild => parentOfGrandChild.display_enabled);
+                                              const grandChildHasNoDisplayedParent = displayedImmediateParentsOfGrandChild.length === 0;
+                                              return grandChildHasNoDisplayedParent;
+                                          });
+                                    remainingChildren.push(...grandChildren);
+                                };
+                            } else {
+                                immediateChildren.forEach(child => {
+                                    child.display_enabled = true;
+                                    if (datum !== rootNode) {
+                                        child.x = datum.x + xDelta;
+                                        child.y = datum.y + yDelta;
+                                    }
+                                });
+                            }
                             render(inputArgs);
                         }
                     });
