@@ -28,6 +28,7 @@
 
 body {
     overflow-x: hidden;
+    overflow-y: hidden;
     padding: 0px;
     margin: 0px;
     font-family: 'Raleway', sans-serif;
@@ -38,21 +39,27 @@ body {
 /****************/
 
 table {
+    padding-top: 70px;
+    padding-bottom: 70px;
     width: 100vw;
     padding-left: 2vw;
     padding-right: 2vw;
     background: linear-gradient(130deg, #503b94 0%, #530D8C 50%, #503b94 100%);
 }
 
+tr {
+}
+
 #text-display {
     height: 88vh;
     overflow-y: auto;
     position: absolute;
-    margin-top: 70px;
     margin-bottom: 30px;
 }
 
 #text-display p {
+    margin-top: 5px;
+    margin-bottom: 5px;
     color: #bf9d2e;
     padding-left: 2vw;
     padding-right: 5vw;
@@ -110,6 +117,10 @@ table {
     background-color: #281940;
 }
 
+img {
+    border: 5px solid #352270;
+}
+
 /*******/
 /* SVG */
 /*******/
@@ -121,7 +132,6 @@ table {
     -ms-transform: translateX(-50%);
     transform: translateX(-50%);
     font-family: sans-serif;
-    margin-top: 70px;
     margin-bottom: 30px;
 }
 

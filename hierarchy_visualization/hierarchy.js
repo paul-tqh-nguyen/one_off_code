@@ -9,6 +9,7 @@ const hierarchyMain = (dataLocationBaseName) => {
     
     const plotContainer = document.getElementById('hierarchy');
     const svg = d3.select('#hierarchy-svg');
+    const textDisplayDOMElement = document.getElementById('text-display');
     
     const svgZoomableContent = svg.append('g');
     const zoom = d3.zoom().on('zoom', () => {
@@ -37,16 +38,6 @@ const hierarchyMain = (dataLocationBaseName) => {
     const render = (inputArgs) => {
 
         const {nodeData, linkData, rootNode, nodeById, parentIdToChildIds, childIdToParentids, distanceToCenterFactorByDepth} = inputArgs;
-
-        const htmlTextForNode = datum => `
-<p>Label: ${datum.label} </p>
-<p>Description: ${datum.description} </p>
-<p>Number of Subclasses: ${parentIdToChildIds[datum.id].length} </p>
-<p>Number of Instances: ${datum.number_of_instances} </p>
-<p>Wikidata ID: <a target="_blank" title="${datum.label}"href="https://www.wikidata.org/wiki/${datum.id.replace('wd:','')}">${datum.id}</a></p>
-`;
-        
-        d3.select('#text-display').html(htmlTextForNode(rootNode));
         
         svg
 	    .attr('width', `${0}px`)
@@ -56,6 +47,16 @@ const hierarchyMain = (dataLocationBaseName) => {
         svgZoomableContent
 	    .selectAll('*')
 	    .remove();
+
+        const htmlTextForNode = datum => `
+<p>Label: ${datum.label} </p>
+<p>Description: ${datum.description} </p>
+<p>Number of Subclasses: ${parentIdToChildIds[datum.id].length} </p>
+<p>Number of Instances: ${datum.number_of_instances} </p>
+<p>Wikidata ID: <a target="_blank" title="${datum.label}"href="https://www.wikidata.org/wiki/${datum.id.replace('wd:','')}">${datum.id}</a></p>
+` + (datum.image_url ? `<p><img style="max-height: ${textDisplayDOMElement.clientHeight * 0.8}px; max-width: ${textDisplayDOMElement.clientWidth * 0.8}px" src="${datum.image_url}" alt=""></p>` : '');
+        
+        d3.select('#text-display').html(htmlTextForNode(rootNode));
         
 	const svgWidth = parseFloat(svg.attr('width'));
 	const svgHeight = parseFloat(svg.attr('height'));
