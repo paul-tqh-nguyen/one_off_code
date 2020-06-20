@@ -1,8 +1,10 @@
 
 let redraw = () => {};
 
-const hierarchyMain = (dataLocation) => {
+const hierarchyMain = (dataLocationBaseName) => {
 
+    const dataLocation = `./${dataLocationBaseName}_data.json`;
+    
     // const shuffle = (inputArray) => inputArray.sort(() => Math.random() - 0.5);
     const sum = inputArray => inputArray.reduce((a, b) => a + b, 0);
     const mean = inputArray => sum(inputArray) / inputArray.length;
@@ -293,4 +295,45 @@ const hierarchyMain = (dataLocation) => {
 	    console.error(err.message);
 	    return;
 	});
+};
+
+const runVisualization = () => {
+    const validDatasetNames = ['ai', 'coronary_artery_disease', 'engineer', 'financial_services', 'military_aircraft', 'violation_of_law'];
+    const specifiedDatasetName = window.location.hash.slice(1);
+    if (validDatasetNames.includes(specifiedDatasetName)) {
+        hierarchyMain(specifiedDatasetName);
+    } else {
+        window.location.hash='#engineer';
+        location.reload();
+    }
+};
+
+const runAIVisualization = () => {
+    window.location.hash='#ai';
+    location.reload();
+};
+
+const runCoronaryArteryDiseaseVisualization = () => {
+    window.location.hash='#coronary_artery_disease';
+    location.reload();
+};
+
+const runCrimeVisualization = () => {
+    window.location.hash='#crime';
+    location.reload();
+};
+
+const runEngineerVisualization = () => {
+    window.location.hash='#engineer';
+    location.reload();
+};
+
+const runFinancialServicesVisualization = () => {
+    window.location.hash='#financial_services';
+    location.reload();
+};
+
+const runMilitaryAircraftVisualization = () => {
+    window.location.hash='#military_aircraft';
+    location.reload();
 };

@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Wikidata Subclass Hierarchy</title>
+    <title>Wikidata Hierarchy Explorer</title>
     <link rel="stylesheet" type="text/css" href="./index.css">
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://d3js.org/d3-zoom.v1.min.js"></script>
@@ -12,12 +12,12 @@
   <body>
     <div id="header-row">
       <ul>
-      	<li><a onclick="hierarchyMain('./ai_data.json')">Artificial Intelligence</a></li>
-      	<li><a onclick="hierarchyMain('./coronary_artery_disease.json')">Coronary Artery Disease</a></li>
-      	<li><a onclick="hierarchyMain('./crime_data.json')">Crime</a></li>
-      	<li><a onclick="hierarchyMain('./engineer_data.json')">Engineer</a></li>
-      	<li><a onclick="hierarchyMain('./financial_services_data.json')">Financial Services</a></li>
-      	<li><a onclick="hierarchyMain('./military_aircraft_data.json')">Military Aircraft</a></li>
+      	<li><a onclick="runAIVisualization()">Artificial Intelligence</a></li>
+      	<li><a onclick="runCoronaryArteryDiseaseVisualization()">Coronary Artery Disease</a></li>
+      	<li><a onclick="runCrimeVisualization()">Crime</a></li>
+      	<li><a onclick="runEngineerVisualization()">Engineer</a></li>
+      	<li><a onclick="runFinancialServicesVisualization()">Financial Services</a></li>
+      	<li><a onclick="runMilitaryAircraftVisualization()">Military Aircraft</a></li>
       </ul>
     </div>
     <table>
@@ -31,6 +31,6 @@
 	</td>
       </tr>
     </table>
-    <script>hierarchyMain('./engineer_data.json');</script>
+    <script>runVisualization()</script>
   </body>
 </html>
