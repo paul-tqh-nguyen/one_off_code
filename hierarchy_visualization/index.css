@@ -161,6 +161,12 @@ img {
     background-color: #352270;
 }
 
+#header-row li {
+    height: 2vw;
+    padding-top: 2vw;
+    float: left;
+}
+
 #header-row li a {
     display: block;
     text-align: center;
@@ -168,21 +174,25 @@ img {
     padding-left: 3vw;
     padding-right: 3vw;
     font-size: 1vw;
-    padding-top: 18px;
-    padding-bottom: 18px;
     color: #D4AF37;
     transition: all 0.3s;
 }
 
-#header-row li {
-    float: left;
+#header-row ul {
+    position: relative;
 }
 
-#header-row a:hover {
+#header-row a {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#header-row li:hover {
     background-color: #281940;
 }
 
-#header-row-show-help-button {
+#header-row-show-help-button i {
+    font-size: 2vw;
 }
 
 /*******/
