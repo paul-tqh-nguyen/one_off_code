@@ -328,17 +328,6 @@ ${htmlTextForNode(child)}
 	});
 };
 
-const runVisualization = () => {
-    const validDatasetNames = ['ai', 'coronary_artery_disease', 'crime', 'engineer', 'financial_services', 'military_aircraft'];
-    const specifiedDatasetName = window.location.hash.slice(1);
-    if (validDatasetNames.includes(specifiedDatasetName)) {
-        hierarchyMain(specifiedDatasetName);
-    } else {
-        window.location.hash='#military_aircraft';
-        location.reload();
-    }
-};
-
 const runAIVisualization = () => {
     window.location.hash='#ai';
     location.reload();
@@ -368,3 +357,18 @@ const runMilitaryAircraftVisualization = () => {
     window.location.hash='#military_aircraft';
     location.reload();
 };
+
+const runVisualization = () => {
+    const validDatasetNames = ['ai', 'coronary_artery_disease', 'crime', 'engineer', 'financial_services', 'military_aircraft'];
+    const specifiedDatasetName = window.location.hash.slice(1);
+    if (validDatasetNames.includes(specifiedDatasetName)) {
+        hierarchyMain(specifiedDatasetName);
+    } else {
+        runMilitaryAircraftVisualization();
+    }
+};
+
+const toggleHelp = () => {
+    document.getElementById('help-display').classList.toggle('hide');
+};
+

@@ -4,9 +4,10 @@
   <head>
     <meta charset="utf-8">
     <title>Wikidata Hierarchy Explorer</title>
-    <link rel="stylesheet" type="text/css" href="./index.css">
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://d3js.org/d3-zoom.v1.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="./index.css">
     <script src="hierarchy.js"></script>
   </head>
   <body>
@@ -18,6 +19,26 @@
       	<li><a onclick="runEngineerVisualization()">Engineer</a></li>
       	<li><a onclick="runFinancialServicesVisualization()">Financial Services</a></li>
       	<li><a onclick="runMilitaryAircraftVisualization()">Military Aircraft</a></li>
+      	<li><a onclick="toggleHelp()" id="header-row-show-help-button"><i style="font-size:24px" class="fa"> &#xf059;</i></a></li>
+      </ul>
+    </div>
+    <div id="help-display" class="hide">
+      <ul>
+      	<li>
+	  <p>
+	    aaaaaaaaaaaaaa aaaaaaaaaaaaaa aaaaaaaaaaaaaa
+	  </p>
+      	</li>
+      	<li>
+	  <p>
+	    bbbbbbbbbbbbbb bbbbbbbbbbbbbb bbbbbbbbbbbbbb
+	  </p>
+      	</li>
+      	<li id="close-help-display" onclick="toggleHelp()">
+	  <p>
+	    <a id="close-help-display-anchor">Close</a>
+	  </p>
+	</li>
       </ul>
     </div>
     <table>
