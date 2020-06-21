@@ -87,7 +87,7 @@ const hierarchyMain = (dataLocationBaseName) => {
         const edgeGroup = svgZoomableContent.append('g');
         const edgeDataJoin = edgeGroup
 	      .selectAll('line')
-	      .data(linkData.filter(datum => nodeById[datum.parent].display_enabled && nodeById[datum.child].display_enabled));
+	      .data(linkData.filter(datum => nodeById[datum.parent].displayEnabled && nodeById[datum.child].displayEnabled));
 	const edgeEnterSelection = edgeDataJoin
 	      .enter()
               .append('line');
@@ -128,7 +128,7 @@ ${htmlTextForNode(child)}
         const nodeGroup = svgZoomableContent.append('g');
 	const nodeDataJoin = nodeGroup
 	      .selectAll('circle')
-	      .data(nodeData.filter(datum => datum.display_enabled));
+	      .data(nodeData.filter(datum => datum.displayEnabled));
         const nodeEnterSelection = nodeDataJoin
 	      .enter()
               .append('circle');
@@ -146,24 +146,24 @@ ${htmlTextForNode(child)}
                             const xDelta = datum.x - rootNode.x;
                             const yDelta = datum.y - rootNode.y;
                             const immediateChildren = children.filter(child => child.distance_to_root == datum.distance_to_root + 1);
-                            if (immediateChildren.every(child => child.display_enabled)) {
+                            if (immediateChildren.every(child => child.displayEnabled)) {
                                 const remainingChildren = [];
                                 remainingChildren.push(...immediateChildren.filter(child => {
                                     const otherParents = childIdToParentids[child.id].filter(parentId => parentId !== datum.id).map(otherParentId => nodeById[otherParentId]);
                                     const otherImmediateParents = otherParents.filter(otherParent => otherParent.distance_to_root == child.distance_to_root + 1);
-                                    const otherDisplayedImmediateParents = otherImmediateParents.filter(otherParent => otherParent.display_enabled);
+                                    const otherDisplayedImmediateParents = otherImmediateParents.filter(otherParent => otherParent.displayEnabled);
                                     return otherDisplayedImmediateParents.length === 0;
                                 }));
                                 while (remainingChildren.length > 0) {
                                     const child = remainingChildren.pop();
-                                    child.display_enabled = false;
+                                    child.displayEnabled = false;
                                     const grandChildren = parentIdToChildIds[child.id].map(grandChildId => nodeById[grandChildId])
-                                          .filter(grandChild => grandChild.display_enabled)
+                                          .filter(grandChild => grandChild.displayEnabled)
                                           .filter(grandChild => grandChild.distance_to_root == child.distance_to_root + 1)
                                           .filter(grandChild => {
                                               const parentsOfGrandChild = childIdToParentids[grandChild.id].map(grandChildId => nodeById[grandChildId]);
                                               const immediateParentsOfGrandChild = parentsOfGrandChild.filter(parentOfGrandChild => parentOfGrandChild.distance_to_root == grandChild.distance_to_root + 1);
-                                              const displayedImmediateParentsOfGrandChild = immediateParentsOfGrandChild.filter(parentOfGrandChild => parentOfGrandChild.display_enabled);
+                                              const displayedImmediateParentsOfGrandChild = immediateParentsOfGrandChild.filter(parentOfGrandChild => parentOfGrandChild.displayEnabled);
                                               const grandChildHasNoDisplayedParent = displayedImmediateParentsOfGrandChild.length === 0;
                                               return grandChildHasNoDisplayedParent;
                                           });
@@ -171,7 +171,7 @@ ${htmlTextForNode(child)}
                                 };
                             } else {
                                 immediateChildren.forEach(child => {
-                                    child.display_enabled = true;
+                                    child.displayEnabled = true;
                                     if (datum !== rootNode) {
                                         child.x = datum.x + xDelta;
                                         child.y = datum.y + yDelta;
@@ -187,7 +187,7 @@ ${htmlTextForNode(child)}
 
         const distanceToCenter = alpha => {
             return () => {
-	        nodeData.filter(datum => datum.display_enabled).forEach(datum => {
+	        nodeData.filter(datum => datum.displayEnabled).forEach(datum => {
                     if (datum !== rootNode) {
                         const goalDistance = distanceToCenterFactorByDepth[datum.distance_to_root];
                         const xDelta = rootNode.x - datum.x;
@@ -203,7 +203,7 @@ ${htmlTextForNode(child)}
         
         const linkForce = alpha => {            
             return () => {
-	        nodeData.filter(datum => datum.display_enabled).forEach(child => {
+	        nodeData.filter(datum => datum.displayEnabled).forEach(child => {
                     if (child !== rootNode) {
 		        const parentIds = childIdToParentids[child.id];
                         const parents = parentIds.map(parentId => nodeById[parentId]).filter(parent => (child.distance_to_root - parent.distance_to_root) == 1);
@@ -218,13 +218,15 @@ ${htmlTextForNode(child)}
         
         const siblingForce = alpha => {            
             return () => {
-	        nodeData.filter(datum => datum.display_enabled).forEach(parent => {
+	        nodeData.filter(datum => datum.displayEnabled).forEach(parent => {
                     const siblings = parentIdToChildIds[parent.id]
+                          .filter(childId => nodeById[childId].displayEnabled)
                           .map(childId => childIdToParentids[childId])
                           .reduce((a,b) => a.concat(b), [])
                           .filter(siblingId => siblingId !== parent.id)
                           .map(siblingId => nodeById[siblingId])
-                          .filter(sibling => sibling.distance_to_root == parent.distance_to_root);
+                          .filter(sibling => sibling.distance_to_root == parent.distance_to_root)
+                          .filter(sibling => sibling.displayEnabled);
                     if (siblings.length > 0) {
                         const siblingMeanX = mean(siblings.map(sibling => sibling.x)); 
                         const siblingMeanY = mean(siblings.map(sibling => sibling.y));
@@ -247,7 +249,7 @@ ${htmlTextForNode(child)}
             .force('sibling-force', siblingForce(siblingAlpha))
             .force('distance-to-center', distanceToCenter(distanceToCenterAlpha))
             .force('collide', d3.forceCollide(paddingBetweenNodes).strength(0.5).iterations(200))
-	    .nodes(nodeData.filter(datum => datum.display_enabled)).on('tick', () => {
+	    .nodes(nodeData.filter(datum => datum.displayEnabled)).on('tick', () => {
 		nodeEnterSelection
 		    .attr('cx', datum => datum.x)
 		    .attr('cy', datum => datum.y)
@@ -288,7 +290,7 @@ ${htmlTextForNode(child)}
     const dataLocation = `./${dataLocationBaseName}_data.json`;
     d3.json(dataLocation)
 	.then(data => {
-	    const nodeData = data.nodes.map(datum => Object.assign(datum, {display_enabled: datum.distance_to_root == 0}));
+	    const nodeData = data.nodes.map(datum => Object.assign(datum, {displayEnabled: datum.distance_to_root == 0}));
 	    const linkData = data.links;
             const rootNode = nodeData.filter(datum => datum.distance_to_root == 0)[0];
 	    const nodeById = nodeData.reduce((accumulator, node) => {
