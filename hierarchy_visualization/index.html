@@ -23,23 +23,46 @@
       </ul>
     </div>
     <div id="help-display" class="hide">
-      <ul>
-      	<li>
-	  <p>
-	    aaaaaaaaaaaaaa aaaaaaaaaaaaaa aaaaaaaaaaaaaa
-	  </p>
-      	</li>
-      	<li>
-	  <p>
-	    bbbbbbbbbbbbbb bbbbbbbbbbbbbb bbbbbbbbbbbbbb
-	  </p>
-      	</li>
-      	<li id="close-help-display" onclick="toggleHelp()">
-	  <p>
-	    <a id="close-help-display-anchor">Close</a>
-	  </p>
-	</li>
-      </ul>
+      <div id="help-display-text">
+	<h3>Wikidata Class Hierarchy Visualization</h3>
+	<p>
+	  <a target="_blank" href="https://www.wikidata.org/wiki/Wikidata:Main_Page">Wikidata</a> is an open <a target="_blank" href="https://en.wikipedia.org/wiki/Knowledge_base">knowledge base</a> with a class hierarchy via the <a target="_blank" href="https://www.wikidata.org/wiki/Property:P279">subclass property</a>.
+	</p>
+	<p>
+	  Class hierarchies are useful as they convey taxonomical information and properties inherited by subclasses.
+	</p>
+	<p>
+	  This application focuses on conveying transitive and sibling relationships in the <a target="_blank" href="https://www.wikidata.org/wiki/Wikidata:Main_Page">Wikidata</a> class hierarchy.
+	</p>
+	<p>
+	  The data visualized here are a microscopic slice of <a target="_blank" href="https://www.wikidata.org/wiki/Wikidata:Main_Page">Wikidata</a>. 
+	</p>
+	<p>
+	  If you’re interested in visualizing other <a target="_blank" href="https://www.wikidata.org/wiki/Wikidata:Main_Page">Wikidata</a> classes, the source code is available here. 
+	</p>
+	<p>
+	  Feel free to <a target="_blank" href="https://paul-tqh-nguyen.github.io/about/#contact">reach out</a> for help or report problems.
+	</p>
+	<h3>Usage Instructions</h3>
+	<p>
+	  The header at the top of the page contains classes that we can browse the subclasses of. Click them to explore them.
+	</p>
+	<p>
+	  Blue dots are dots with subclasses. Click on them to expand them and explore their subclasses. Click on them again to collapse them.
+	</p>
+	<p>
+	  Yellow dots are classes with no subclasses. 
+	</p>
+	<p>
+	  Hover over the dots or links and see their information in the sidebar.
+	</p>
+	<p>
+	  Scroll to zoom, drag & drop dots, or click and drag to pan as necessary.
+	</p>
+	<p id="close-help-display" >
+	  <a onclick="toggleHelp()" id="close-help-display-anchor">Close</a>
+	</p>
+      </div>
     </div>
     <table>
       <tr>

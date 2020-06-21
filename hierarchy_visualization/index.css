@@ -7,19 +7,19 @@
 
 /* latin-ext */
 @font-face {
-  font-family: 'Raleway';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Raleway'), local('Raleway-Regular'), url(https://fonts.gstatic.com/s/raleway/v14/1Ptug8zYS_SKggPNyCMIT4ttDfCmxA.woff2) format('woff2');
-  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    font-family: 'Raleway';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Raleway'), local('Raleway-Regular'), url(https://fonts.gstatic.com/s/raleway/v14/1Ptug8zYS_SKggPNyCMIT4ttDfCmxA.woff2) format('woff2');
+    unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
 @font-face {
-  font-family: 'Raleway';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Raleway'), local('Raleway-Regular'), url(https://fonts.gstatic.com/s/raleway/v14/1Ptug8zYS_SKggPNyC0IT4ttDfA.woff2) format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    font-family: 'Raleway';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Raleway'), local('Raleway-Regular'), url(https://fonts.gstatic.com/s/raleway/v14/1Ptug8zYS_SKggPNyC0IT4ttDfA.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /***********/
@@ -34,8 +34,13 @@ body {
     font-family: 'Raleway', sans-serif;
 }
 
+h3 {
+    text-align: center;
+    color: #bf9d2e;
+}
+
 p {
-     color: #bf9d2e;
+    color: #bf9d2e;
 }
 
 a {
@@ -54,20 +59,19 @@ ul {
 /****************/
 
 #help-display {
+    transition: all 0.5s;
     z-index: 20;
     position: fixed;
-    top: 15vh;
-    bottom: 15vh;
-    right: 15vw;
-    left: 15vw;
+    top: 12vh;
+    bottom: 12vh;
+    right: 10vw;
+    left: 10vw;
     padding-left: 10px;
     padding-right: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-evenly;
     background-color: #352270;
     border: 5px solid black;
-    transition: all 0.5s;
+    border-radius: 100px;
+    overflow-y: auto;
 }
 
 #help-display.hide {
@@ -75,18 +79,30 @@ ul {
     bottom: 100vh;
 }
 
+#help-display-text {
+    padding: 30px;
+}
+
+#help-display h3 {
+    padding-top: 10px;
+}
+
 #help-display p {
+    margin-top: 1em;
+    margin-bottom: 1em;
     color: #e8bf38;
     text-align: center;
 }
 
 #close-help-display {
-    padding-top: 10px;
-    cursor: pointer;
+    padding-top: 30px;
+    padding-bottom: 30px;
 }
 
 #close-help-display-anchor {
+    cursor: pointer;
     border: 5px solid black;
+    border-radius: 25px;
     padding: 10px;
 }
 
@@ -118,12 +134,13 @@ table {
 }
 
 #text-display p a {;
-    padding-left: 2vw;
-    padding-right: 5vw;
-}
+		   padding-left: 2vw;
+		   padding-right: 5vw;
+		  }
 
 img {
     border: 5px solid #352270;
+    border-radius: 50px;
 }
 
 /**************/
