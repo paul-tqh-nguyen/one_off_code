@@ -46,7 +46,7 @@ CUSTOMER_SIMILARITY_LABEL_OUTPUT_PNG_FILE_LOCATION = './customer_similarity_comm
 ###################
 
 def clean_data(data_df: pd.DataFrame) -> pd.DataFrame:
-    data_df.InvoiceDate = data_df.InvoiceDate = pd.to_datetime(data_df.InvoiceDate, format="%m/%d/%Y %H:%M")
+    data_df.InvoiceDate = pd.to_datetime(data_df.InvoiceDate, format="%m/%d/%Y %H:%M")
     data_df.drop(data_df.index[data_df.CustomerID != data_df.CustomerID], inplace=True)
     data_df = data_df.astype({'CustomerID': int}, copy=False)
     assert len(data_df[data_df.isnull().any(axis=1)])==0, "Raw data contains NaN"
