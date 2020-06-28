@@ -1,0 +1,10 @@
+name: ecommerce
+dependencies:
+  - python=3.7
+  - pandas
+  - tqdm
+  - scikit-learn
+  - matplotlib
+  - numpy
+  - networkx
+  - conda-forge::python-louvain
