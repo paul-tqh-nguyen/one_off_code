@@ -31,7 +31,7 @@ from misc_utilities import *
 with warnings_suppressed():
     tqdm.tqdm.pandas()
 
-MAX_NUMBER_OF_CLUSTERS_TO_TRY = 3#10
+MAX_NUMBER_OF_CLUSTERS_TO_TRY = 10
 
 # https://www.kaggle.com/carrie1/ecommerce-data
 RAW_DATA_CSV_FILE_LOCATION = './data/data.csv'
