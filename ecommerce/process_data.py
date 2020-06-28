@@ -150,7 +150,7 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
         plot.set_ylabel('Silhouette Score')
         cluster_counts, silhouette_scores = zip(*sorted(cluster_label_to_silhouette_score.items(), key=lambda pair: pair[0]))
         plot.plot(cluster_counts, silhouette_scores, '-')
-        plot.set_xlim(left=0, right=11)
+        plot.set_xlim(left=0, right=MAX_NUMBER_OF_CLUSTERS_TO_TRY+1)
         silhouette_y_axis_upper_bound = math.ceil(max(cluster_label_to_silhouette_score.values()) * 1.1 * 100) / 100
         plot.set_ylim(bottom=0.0, top=silhouette_y_axis_upper_bound)
         y_tick_delta = 0.05
