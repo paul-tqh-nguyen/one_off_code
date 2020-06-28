@@ -182,7 +182,7 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
 @debug_on_error
 def main() -> None:
     print('Importing & cleaning data.')
-    data_df = pd.read_csv('./data/data.csv', encoding="ISO-8859-1")
+    data_df = pd.read_csv(RAW_DATA_CSV_FILE_LOCATION, encoding="ISO-8859-1")
     data_df = clean_data(data_df)
     print('Generating RFM data.')
     rfm_df = generate_rfm_df(data_df)
