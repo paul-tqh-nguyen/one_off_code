@@ -115,7 +115,7 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
     rfm_np = scaler.transform(rfm_np)
     pca = PCA(n_components=2, copy=False)
     pca.fit(rfm_np)
-    rfm_np = pca.transform(rfm_np)
+    rfm_np_2_dim = pca.transform(rfm_np)
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
         plot = figure.add_subplot(111)
         plot.set_title('RFM PCA Visualization with 2 Principal Components')
@@ -123,20 +123,19 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
         plot.set_ylabel('PCA 2')
         plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
         plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
-        plot.scatter(rfm_np[:,0], rfm_np[:,1], alpha=0.25)
+        plot.scatter(rfm_np_2_dim[:,0], rfm_np_2_dim[:,1], alpha=0.25)
         figure.savefig(RFM_PCA_VISUALIZATION_OUTPUT_PNG_FILE_LOCATION)
     cluster_label_to_silhouette_score = {}
     for cluster_count in tqdm_with_message(range(2, MAX_NUMBER_OF_CLUSTERS_TO_TRY+1), post_yield_message_func=lambda index: f'Visualizing {cluster_count} clusters'):
         kmeans = KMeans(init='k-means++', n_clusters=cluster_count, n_init=100)
         labels = kmeans.fit_predict(rfm_np)
-        cluster_centers = kmeans.cluster_centers_
         with temp_plt_figure(figsize=(20.0,10.0)) as figure:
             plot = figure.add_subplot(111)
             plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
             plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
             cluster_label_to_color_map = matplotlib.cm.rainbow(np.linspace(0, 1, cluster_count))
             colors = np.array([cluster_label_to_color_map[label] for label in labels])
-            plot.scatter(rfm_np[:,0], rfm_np[:,1], c=colors, alpha=0.25)
+            plot.scatter(rfm_np_2_dim[:,0], rfm_np_2_dim[:,1], c=colors, alpha=0.25)
             silhouette_score_value = silhouette_score(rfm_np, labels)
             cluster_label_to_silhouette_score[cluster_count] = silhouette_score_value
             plot.set_title(f'RFM PCA Visualization with 2 Principal Components and {cluster_count} Clusters (Silhouette Score of {silhouette_score_value})')
@@ -168,7 +167,7 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
         cluster_label_to_color_map = matplotlib.cm.rainbow(np.linspace(0, 1, number_of_communities))
         labels = (customer_louvain_community_label_df.loc[customer_id].community_label for customer_id in rfm_df.index)
         colors = np.array([cluster_label_to_color_map[label] for label in labels])
-        plot.scatter(rfm_np[:,0], rfm_np[:,1], c=colors, alpha=0.25)
+        plot.scatter(rfm_np_2_dim[:,0], rfm_np_2_dim[:,1], c=colors, alpha=0.25)
         plot.set_title(f'Customer Purchase-Similarity Communities via Louvain ({number_of_communities} Communities)')
         plot.set_xlabel('PCA 1')
         plot.set_ylabel('PCA 2')
