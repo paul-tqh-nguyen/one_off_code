@@ -8,3 +8,4 @@ dependencies:
   - numpy
   - networkx
   - conda-forge::python-louvain
+  - seaborn

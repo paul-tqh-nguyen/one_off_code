@@ -12,6 +12,7 @@
 import math
 import tqdm
 import matplotlib.cm
+import seaborn as sns
 import pandas as pd
 import numpy as np
 import networkx as nx
@@ -31,15 +32,16 @@ from misc_utilities import *
 with warnings_suppressed():
     tqdm.tqdm.pandas()
 
-MAX_NUMBER_OF_CLUSTERS_TO_TRY = 10
+MAX_NUMBER_OF_CLUSTERS_TO_TRY = 15
 
 # https://www.kaggle.com/carrie1/ecommerce-data
 RAW_DATA_CSV_FILE_LOCATION = './data/data.csv'
 
-RFM_PCA_VISUALIZATION_OUTPUT_PNG_FILE_LOCATION = './rfm_pca.png'
 RFM_PCA_VISUALIZATION_WITH_CLUSTERS_OUTPUT_PNG_FILE_LOCATION_TEMPLATE = './rfm_pca_{cluster_count}_clusters.png'
+RFM_PAIR_PLOT_VISUALIZATION_WITH_CLUSTERS_OUTPUT_PNG_FILE_LOCATION_TEMPLATE = './rfm_pair_plot_{cluster_count}_clusters.png'
 RFM_CLUSTER_SILHOUETTE_SCORE_OUPUT_PNG_FILE_LOCATION = './rfm_silhouette_scores.png'
 CUSTOMER_SIMILARITY_LABEL_OUTPUT_PNG_FILE_LOCATION = './customer_similarity_communities.png'
+CUSTOMER_SIMILARITY_LABEL_PAIR_PLOT_OUTPUT_PNG_FILE_LOCATION = './customer_similarity_pair_plot.png'
 
 ###################
 # Data Processing #
@@ -82,15 +84,10 @@ def generate_rfm_df(data_df: pd.DataFrame) -> pd.DataFrame:
     rfm_df = append_invoice_count_data(rfm_df, data_df)
     print('Calculating monetary data.')
     rfm_df = append_overall_purchase_amount_data(rfm_df, data_df)
-    rfm_df.drop(rfm_df[rfm_df.CustomerOverallPurchaseAmount <= 0].index, inplace=True)
+    rfm_df.drop(rfm_df[rfm_df.CustomerOverallPurchaseAmount < 0.01].index, inplace=True)
     assert len(rfm_df[rfm_df.DaysSinceLastPurchase < 0]) == 0
     assert len(rfm_df[rfm_df.InvoiceCount <= 0]) == 0
     assert len(rfm_df[rfm_df.CustomerOverallPurchaseAmount <= 0]) == 0
-    rfm_df.rename(columns={'DaysSinceLastPurchase': 'recency', 'InvoiceCount': 'frequency', 'CustomerOverallPurchaseAmount': 'monetary'}, inplace=True)
-    print('Normalizing RFM data.')
-    rfm_df.recency = rfm_df.recency.progress_map(lambda number_of_days_since_last_purchase: 1+number_of_days_since_last_purchase)
-    rfm_df = rfm_df.progress_apply(np.log10)
-    assert len(rfm_df[rfm_df.isnull().any(axis=1)])==0, "RFM data contains NaN"
     return rfm_df
 
 def generate_customer_similarity_labels_via_louvain(data_df: pd.DataFrame) -> pd.DataFrame:
@@ -107,24 +104,15 @@ def generate_customer_similarity_labels_via_louvain(data_df: pd.DataFrame) -> pd
 # Visualize Data #
 ##################
 
-def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label_df: pd.DataFrame) -> None:
+def visualize_rfm_pca_and_kmeans(rfm_visualization_df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, dict]:
     print('Visualizing principal components.')
-    rfm_np = rfm_df.to_numpy()
+    rfm_np = rfm_visualization_df.to_numpy()
     scaler = StandardScaler(copy=False)
     scaler.fit(rfm_np)
     rfm_np = scaler.transform(rfm_np)
     pca = PCA(n_components=2, copy=False)
     pca.fit(rfm_np)
     rfm_np_2_dim = pca.transform(rfm_np)
-    with temp_plt_figure(figsize=(20.0,10.0)) as figure:
-        plot = figure.add_subplot(111)
-        plot.set_title('RFM PCA Visualization with 2 Principal Components')
-        plot.set_xlabel('PCA 1')
-        plot.set_ylabel('PCA 2')
-        plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
-        plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
-        plot.scatter(rfm_np_2_dim[:,0], rfm_np_2_dim[:,1], alpha=0.25)
-        figure.savefig(RFM_PCA_VISUALIZATION_OUTPUT_PNG_FILE_LOCATION)
     cluster_label_to_silhouette_score = {}
     for cluster_count in tqdm_with_message(range(2, MAX_NUMBER_OF_CLUSTERS_TO_TRY+1), post_yield_message_func=lambda index: f'Visualizing {cluster_count} clusters'):
         kmeans = KMeans(init='k-means++', n_clusters=cluster_count, n_init=100)
@@ -134,6 +122,7 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
             plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
             plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
             cluster_label_to_color_map = matplotlib.cm.rainbow(np.linspace(0, 1, cluster_count))
+            cluster_label_to_color_map = dict(enumerate(cluster_label_to_color_map))
             colors = np.array([cluster_label_to_color_map[label] for label in labels])
             plot.scatter(rfm_np_2_dim[:,0], rfm_np_2_dim[:,1], c=colors, alpha=0.25)
             silhouette_score_value = silhouette_score(rfm_np, labels)
@@ -142,6 +131,14 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
             plot.set_xlabel('PCA 1')
             plot.set_ylabel('PCA 2')
             figure.savefig(RFM_PCA_VISUALIZATION_WITH_CLUSTERS_OUTPUT_PNG_FILE_LOCATION_TEMPLATE.format(cluster_count=cluster_count))
+            rfm_visualization_df['ClusterLabel'] = pd.Series({customer_id: label for (customer_id, label) in zip(rfm_visualization_df.index, labels)})
+            pairplot = sns.pairplot(rfm_visualization_df, hue='ClusterLabel', palette=cluster_label_to_color_map, height=4.0)
+            pairplot.fig.suptitle(f'Log RFM Pairplot with {cluster_count} Clusters', y=1.04)
+            pairplot._legend.remove()
+            pairplot.savefig(RFM_PAIR_PLOT_VISUALIZATION_WITH_CLUSTERS_OUTPUT_PNG_FILE_LOCATION_TEMPLATE.format(cluster_count=cluster_count))
+    return rfm_np, rfm_np_2_dim, cluster_label_to_silhouette_score
+
+def visualize_silhouette_scores(rfm_np: np.ndarray, cluster_label_to_silhouette_score: dict) -> None:
     print('Visualizing Silhouette scores.')
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
         plot = figure.add_subplot(111)
@@ -158,6 +155,9 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
         plot.set_xticks(range(max(cluster_label_to_silhouette_score.keys())+2))
         plot.grid(True)
         figure.savefig(RFM_CLUSTER_SILHOUETTE_SCORE_OUPUT_PNG_FILE_LOCATION)
+    return 
+
+def visualize_cluster_similarity_communities(rfm_np_2_dim: np.ndarray, customer_louvain_community_label_df: pd.DataFrame, rfm_visualization_df: pd.DataFrame) -> None:
     print('Visualizing customer purchase-similarity communities.')
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
         plot = figure.add_subplot(111)
@@ -165,13 +165,31 @@ def visualize_rfm_via_pca(rfm_df: pd.DataFrame, customer_louvain_community_label
         plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
         number_of_communities = len(customer_louvain_community_label_df.community_label.unique())
         cluster_label_to_color_map = matplotlib.cm.rainbow(np.linspace(0, 1, number_of_communities))
-        labels = (customer_louvain_community_label_df.loc[customer_id].community_label for customer_id in rfm_df.index)
+        cluster_label_to_color_map = dict(enumerate(cluster_label_to_color_map))
+        labels = [customer_louvain_community_label_df.loc[customer_id].community_label for customer_id in rfm_visualization_df.index]
         colors = np.array([cluster_label_to_color_map[label] for label in labels])
         plot.scatter(rfm_np_2_dim[:,0], rfm_np_2_dim[:,1], c=colors, alpha=0.25)
         plot.set_title(f'Customer Purchase-Similarity Communities via Louvain ({number_of_communities} Communities)')
         plot.set_xlabel('PCA 1')
         plot.set_ylabel('PCA 2')
         figure.savefig(CUSTOMER_SIMILARITY_LABEL_OUTPUT_PNG_FILE_LOCATION)
+        rfm_visualization_df['ClusterLabel'] = pd.Series({customer_id: label for (customer_id, label) in zip(rfm_visualization_df.index, labels)})
+        pairplot = sns.pairplot(rfm_visualization_df, hue='ClusterLabel', palette=cluster_label_to_color_map, height=4.0)
+        pairplot.fig.suptitle(f'Log RFM Pairplot with {len(labels)} Purchase Communities', y=1.04)
+        pairplot._legend.remove()
+        pairplot.savefig(CUSTOMER_SIMILARITY_LABEL_PAIR_PLOT_OUTPUT_PNG_FILE_LOCATION.format(cluster_count=len(labels)))
+    return
+
+def visualize_rfm(rfm_df: pd.DataFrame, customer_louvain_community_label_df: pd.DataFrame) -> None:
+    rfm_visualization_df = rfm_df.copy()
+    rfm_visualization_df.rename(columns={'DaysSinceLastPurchase': 'recency', 'InvoiceCount': 'frequency', 'CustomerOverallPurchaseAmount': 'monetary'}, inplace=True)
+    print('Normalizing RFM data.')
+    rfm_visualization_df.recency = rfm_visualization_df.recency.progress_map(lambda number_of_days_since_last_purchase: 1+number_of_days_since_last_purchase)
+    rfm_visualization_df = rfm_visualization_df.progress_apply(np.log10)
+    assert len(rfm_visualization_df[rfm_visualization_df.isnull().any(axis=1)])==0, "RFM data contains NaN"
+    rfm_np, rfm_np_2_dim, cluster_label_to_silhouette_score = visualize_rfm_pca_and_kmeans(rfm_visualization_df)
+    visualize_silhouette_scores(rfm_np, cluster_label_to_silhouette_score)
+    visualize_cluster_similarity_communities(rfm_np_2_dim, customer_louvain_community_label_df, rfm_visualization_df)
     return
 
 ##########
@@ -188,7 +206,7 @@ def main() -> None:
     print('Generating similar purchase graph.')
     customer_louvain_community_label_df = generate_customer_similarity_labels_via_louvain(data_df)
     print('Visualizing cluster data.')
-    visualize_rfm_via_pca(rfm_df, customer_louvain_community_label_df)
+    visualize_rfm(rfm_df, customer_louvain_community_label_df)
     return
         
 if __name__ == '__main__':
