@@ -107,9 +107,9 @@ def combine_ecommerce_and_geo_data(ecommerce_df: pd.DataFrame, world_geojson_dat
             country_df = cummulative_df.loc[feature_country_name].copy()
             if isinstance(country_df, pd.Series):
                 country_df = cummulative_df.loc['Brazil'].to_frame().transpose()
-            country_df.InvoiceDate = country_df.InvoiceDate.map(lambda date: date.strftime('%m/%d/%Y')) # too small for parallel maps
+            country_df.InvoiceDate = country_df.InvoiceDate.map(lambda date: date.strftime('%m/%d/%Y')) # size too small for parallel_map
             sales_info_dict = country_df.set_index('InvoiceDate').to_dict(orient='index')
-            feature['properties']['sales_data'] = sales_info_dict
+            feature['properties']['salesData'] = sales_info_dict
     return world_geojson_data
 
 ##########

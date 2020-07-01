@@ -717,7 +717,7 @@
             "type": "Feature",
             "properties": {
                 "name": "United Arab Emirates",
-                "sales_data": {
+                "salesData": {
                     "02/14/2011": {
                         "InvoiceCountToDate": 2263,
                         "QuantitySoldToDate": 879666,
@@ -4166,7 +4166,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Australia",
-                "sales_data": {
+                "salesData": {
                     "12/01/2010": {
                         "InvoiceCountToDate": 1,
                         "QuantitySoldToDate": 107,
@@ -5495,7 +5495,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Austria",
-                "sales_data": {
+                "salesData": {
                     "12/15/2010": {
                         "InvoiceCountToDate": 70,
                         "QuantitySoldToDate": 83605,
@@ -6047,7 +6047,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Belgium",
-                "sales_data": {
+                "salesData": {
                     "12/03/2010": {
                         "InvoiceCountToDate": 89,
                         "QuantitySoldToDate": 89008,
@@ -8111,7 +8111,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Brazil",
-                "sales_data": {
+                "salesData": {
                     "04/15/2011": {
                         "InvoiceCountToDate": 208,
                         "QuantitySoldToDate": 111988,
@@ -9494,7 +9494,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Canada",
-                "sales_data": {
+                "salesData": {
                     "03/14/2011": {
                         "InvoiceCountToDate": 209,
                         "QuantitySoldToDate": 112076,
@@ -12850,7 +12850,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Switzerland",
-                "sales_data": {
+                "salesData": {
                     "12/03/2010": {
                         "InvoiceCountToDate": 2185,
                         "QuantitySoldToDate": 848468,
@@ -16810,7 +16810,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Cyprus",
-                "sales_data": {
+                "salesData": {
                     "12/14/2010": {
                         "InvoiceCountToDate": 215,
                         "QuantitySoldToDate": 115668,
@@ -16998,7 +16998,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Czech Republic",
-                "sales_data": {
+                "salesData": {
                     "02/28/2011": {
                         "InvoiceCountToDate": 235,
                         "QuantitySoldToDate": 121414,
@@ -17182,7 +17182,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Germany",
-                "sales_data": {
+                "salesData": {
                     "12/01/2010": {
                         "InvoiceCountToDate": 1087,
                         "QuantitySoldToDate": 386808,
@@ -19128,7 +19128,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Denmark",
-                "sales_data": {
+                "salesData": {
                     "12/09/2010": {
                         "InvoiceCountToDate": 240,
                         "QuantitySoldToDate": 122114,
@@ -20220,7 +20220,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Spain",
-                "sales_data": {
+                "salesData": {
                     "12/03/2010": {
                         "InvoiceCountToDate": 2034,
                         "QuantitySoldToDate": 786297,
@@ -21360,7 +21360,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Finland",
-                "sales_data": {
+                "salesData": {
                     "12/16/2010": {
                         "InvoiceCountToDate": 580,
                         "QuantitySoldToDate": 267431,
@@ -21967,7 +21967,7 @@
             "type": "Feature",
             "properties": {
                 "name": "France",
-                "sales_data": {
+                "salesData": {
                     "12/01/2010": {
                         "InvoiceCountToDate": 628,
                         "QuantitySoldToDate": 277292,
@@ -23974,7 +23974,7 @@
             "type": "Feature",
             "properties": {
                 "name": "United Kingdom",
-                "sales_data": {
+                "salesData": {
                     "12/01/2010": {
                         "InvoiceCountToDate": 2384,
                         "QuantitySoldToDate": 901319,
@@ -27083,7 +27083,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Greece",
-                "sales_data": {
+                "salesData": {
                     "01/24/2011": {
                         "InvoiceCountToDate": 1689,
                         "QuantitySoldToDate": 504665,
@@ -30508,7 +30508,7 @@
             "type": "Feature",
             "properties": {
                 "name": "EIRE",
-                "sales_data": {
+                "salesData": {
                     "12/01/2010": {
                         "InvoiceCountToDate": 262,
                         "QuantitySoldToDate": 130091,
@@ -32221,7 +32221,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Iceland",
-                "sales_data": {
+                "salesData": {
                     "12/07/2010": {
                         "InvoiceCountToDate": 1695,
                         "QuantitySoldToDate": 506014,
@@ -32366,7 +32366,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Israel",
-                "sales_data": {
+                "salesData": {
                     "12/15/2010": {
                         "InvoiceCountToDate": 1702,
                         "QuantitySoldToDate": 508097,
@@ -32509,7 +32509,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Italy",
-                "sales_data": {
+                "salesData": {
                     "12/03/2010": {
                         "InvoiceCountToDate": 1708,
                         "QuantitySoldToDate": 512307,
@@ -33353,7 +33353,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Japan",
-                "sales_data": {
+                "salesData": {
                     "12/05/2010": {
                         "InvoiceCountToDate": 1763,
                         "QuantitySoldToDate": 520338,
@@ -35060,7 +35060,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Lebanon",
-                "sales_data": {
+                "salesData": {
                     "04/15/2011": {
                         "InvoiceCountToDate": 208,
                         "QuantitySoldToDate": 111988,
@@ -35603,7 +35603,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Lithuania",
-                "sales_data": {
+                "salesData": {
                     "12/05/2010": {
                         "InvoiceCountToDate": 1794,
                         "QuantitySoldToDate": 546368,
@@ -40099,7 +40099,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Netherlands",
-                "sales_data": {
+                "salesData": {
                     "12/01/2010": {
                         "InvoiceCountToDate": 1796,
                         "QuantitySoldToDate": 546495,
@@ -40633,7 +40633,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Norway",
-                "sales_data": {
+                "salesData": {
                     "12/01/2010": {
                         "InvoiceCountToDate": 1897,
                         "QuantitySoldToDate": 748378,
@@ -43480,7 +43480,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Poland",
-                "sales_data": {
+                "salesData": {
                     "12/03/2010": {
                         "InvoiceCountToDate": 1937,
                         "QuantitySoldToDate": 765913,
@@ -44059,7 +44059,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Portugal",
-                "sales_data": {
+                "salesData": {
                     "12/03/2010": {
                         "InvoiceCountToDate": 1961,
                         "QuantitySoldToDate": 769491,
@@ -47598,7 +47598,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Saudi Arabia",
-                "sales_data": {
+                "salesData": {
                     "02/24/2011": {
                         "InvoiceCountToDate": 2032,
                         "QuantitySoldToDate": 785902,
@@ -49910,7 +49910,7 @@
             "type": "Feature",
             "properties": {
                 "name": "Sweden",
-                "sales_data": {
+                "salesData": {
                     "12/14/2010": {
                         "InvoiceCountToDate": 2140,
                         "QuantitySoldToDate": 812721,
@@ -52969,7 +52969,7 @@
             "type": "Feature",
             "properties": {
                 "name": "USA",
-                "sales_data": {
+                "salesData": {
                     "04/19/2011": {
                         "InvoiceCountToDate": 2256,
                         "QuantitySoldToDate": 878273,
@@ -55958,7 +55958,7 @@
             "type": "Feature",
             "properties": {
                 "name": "RSA",
-                "sales_data": {
+                "salesData": {
                     "04/15/2011": {
                         "InvoiceCountToDate": 208,
                         "QuantitySoldToDate": 111988,
