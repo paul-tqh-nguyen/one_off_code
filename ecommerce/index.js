@@ -63,33 +63,35 @@ const choroplethMain = () => {
             };
             
             const landmassData = data.features;
-            landMassesGroup
+            const landMassesGroupSelection = landMassesGroup
                 .selectAll('path')
-                .data(landmassData)
-                .enter()
-                .append('path')
-                .attr('class', datum => datum.properties.salesData ? 'land-mass land-mass-with-purchases' : 'land-mass land-mass-without-purchases')
-                .on('mouseover', function (datum) {
-                    landMassesGroup
-                        .selectAll('path')
-                        .style('transition', 'fill-opacity 1.0s')
-                        .style('fill-opacity', 0.75);
-                    d3.select(this)
-                        .style('transition', 'fill-opacity 0.5s')
-                        .style('fill-opacity', 1);
-                    d3.select(this).raise();
-                    const [mouseX, mouseY] = d3.mouse(this);
-                    updateToolTip(mouseX, mouseY, datum);
-                })
-                .on('mouseout', () => {
-                    landMassesGroup
-                        .selectAll('path')
-                        .style('transition', 'fill-opacity 0.5s')
-                        .style('fill-opacity', 1);
-                    toolTipGroup.selectAll('*').remove();
-                })
-                .attr('d', datum => projectionFunction(datum));
-            
+                  .data(landmassData);
+            [landMassesGroupSelection, landMassesGroupSelection.enter().append('path')].forEach(selection => {
+                selection
+                    .attr('class', datum => datum.properties.salesData ? 'land-mass land-mass-with-purchases' : 'land-mass land-mass-without-purchases')
+                    .on('mouseover', function (datum) {
+                        if (datum.properties.salesData) {
+                            landMassesGroup
+                                .selectAll('path')
+                                .style('transition', 'fill-opacity 1.0s')
+                                .style('fill-opacity', 0.5);
+                            d3.select(this)
+                                .style('transition', 'fill-opacity 0.5s')
+                                .style('fill-opacity', 1);
+                        }
+                        d3.select(this).raise();
+                        const [mouseX, mouseY] = d3.mouse(this);
+                        updateToolTip(mouseX, mouseY, datum);
+                    })
+                    .on('mouseout', () => {
+                        landMassesGroup
+                            .selectAll('path')
+                            .style('transition', 'fill-opacity 0.5s')
+                            .style('fill-opacity', 1);
+                        toolTipGroup.selectAll('*').remove();
+                    })
+                    .attr('d', datum => projectionFunction(datum));
+            });
         };
         redraw();
         window.addEventListener('resize', redraw);
