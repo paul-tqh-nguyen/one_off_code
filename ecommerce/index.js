@@ -8,26 +8,25 @@ const choroplethMain = () => {
     const landMassesGroup = svg.append('g').attr('id', 'land-masses-group');
     const toolTipGroup = svg.append('g').attr('id', 'tool-tip-group');
     
-    const paddingAmount = 0;
-    
     const toolTipFontSize = 10;
     const toolTipTextPadding = toolTipFontSize;
     const toolTipBackgroundColor = 'red';
     const toolTipTransitionTime = 500;
-
+    const toolTipMargin = 10;
+    
     d3.json(geoJSONLocation).then(data => {
         const redraw = () => {
             svg
-                .attr('width', `${plotContainer.clientWidth}px`)
-                .attr('height', `${plotContainer.clientHeight}px`);
+                .attr('width', `${window.innerWidth * 0.80}px`)
+                .attr('height', `${window.innerHeight * 0.80}px`);
             const svgWidth = parseFloat(svg.attr('width'));
             const svgHeight = parseFloat(svg.attr('height'));
             
             const projection = d3.geoMercator()
-                  .fitExtent([[paddingAmount, paddingAmount], [svgWidth-paddingAmount, svgHeight-paddingAmount]], data);
+                  .fitExtent([[0, 0], [svgWidth, svgHeight]], data);
             const projectionFunction = d3.geoPath().projection(projection);
             
-            const updateToolTip = (x, y, datum) => {
+            const updateToolTip = (mouseX, mouseY, datum) => {
                 const toolTipBoundingBox = toolTipGroup
                       .append('rect')
                       .style('stroke-width', 1)
@@ -50,8 +49,10 @@ const choroplethMain = () => {
                 const textLinesGroupBBox = textLinesGroup.node().getBBox();
                 const toolTipBoundingBoxWidth = textLinesGroupBBox.width + 2 * toolTipTextPadding;
                 const toolTipBoundingBoxHeight = textLinesGroupBBox.height + toolTipTextPadding;
-                const toolTipX = x + 10;
-                const toolTipY = y + 10;
+                const mouseCloserToRight = mouseX > parseFloat(svg.attr('width')) - mouseX;
+                const toolTipX = mouseCloserToRight ? toolTipMargin : parseFloat(svg.attr('width')) - toolTipMargin - toolTipBoundingBoxWidth;
+                const mouseCloserToBottom = mouseY > parseFloat(svg.attr('height')) - mouseY;
+                const toolTipY = mouseCloserToBottom ? toolTipMargin : parseFloat(svg.attr('height')) - toolTipMargin - toolTipBoundingBoxHeight;
                 toolTipBoundingBox
                     .attr('x', toolTipX)
                     .attr('y', toolTipY)
@@ -64,7 +65,7 @@ const choroplethMain = () => {
             
             const landmassData = data.features;
             const landMassesGroupSelection = landMassesGroup
-                .selectAll('path')
+                  .selectAll('path')
                   .data(landmassData);
             [landMassesGroupSelection, landMassesGroupSelection.enter().append('path')].forEach(selection => {
                 selection
@@ -73,10 +74,8 @@ const choroplethMain = () => {
                         if (datum.properties.salesData) {
                             landMassesGroup
                                 .selectAll('path')
-                                .style('transition', 'fill-opacity 1.0s')
                                 .style('fill-opacity', 0.5);
                             d3.select(this)
-                                .style('transition', 'fill-opacity 0.5s')
                                 .style('fill-opacity', 1);
                         }
                         d3.select(this).raise();
@@ -86,12 +85,23 @@ const choroplethMain = () => {
                     .on('mouseout', () => {
                         landMassesGroup
                             .selectAll('path')
-                            .style('transition', 'fill-opacity 0.5s')
                             .style('fill-opacity', 1);
                         toolTipGroup.selectAll('*').remove();
                     })
                     .attr('d', datum => projectionFunction(datum));
             });
+            
+            const landMassesGroupBoundingBox = landMassesGroup.node().getBBox();
+            const landMassesGroupWidth = landMassesGroupBoundingBox.width;
+            const landMassesGroupHeight = landMassesGroupBoundingBox.height;
+            if (svgWidth > landMassesGroupWidth) {
+                svg.attr('width', landMassesGroupWidth);
+                landMassesGroup.attr('transform', `translate(${-landMassesGroupBoundingBox.x} 0)`);
+            } else if (svgHeight > landMassesGroupHeight) {
+                svg.attr('height', landMassesGroupHeight);
+                landMassesGroup.attr('transform', `translate(0 ${-landMassesGroupBoundingBox.y})`);
+            }
+            
         };
         redraw();
         window.addEventListener('resize', redraw);
