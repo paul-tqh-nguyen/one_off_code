@@ -85,7 +85,7 @@ body {
 
 #main-display {
     position: fixed;
-    transition: all 0.5s;
+    transition: left 0.5s;
     left: -200vw;
     top: 10vh;
     width: 80vw;
