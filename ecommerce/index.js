@@ -77,6 +77,7 @@ const choroplethMain = () => {
                                 .style('fill-opacity', 0.5);
                             d3.select(this)
                                 .style('fill-opacity', 1);
+                            console.log(`datum.properties.salesData ${JSON.stringify(datum.properties.salesData)}`);
                         }
                         d3.select(this).raise();
                         const [mouseX, mouseY] = d3.mouse(this);

@@ -313,6 +313,10 @@ def timer(section_name: str = None, exitCallback: Callable[[], None] = None) -> 
 
 # General Utilities
 
+from collections import defaultdict
+def recursive_defaultdict() -> defaultdict:
+    return defaultdict(recursive_defaultdict)
+
 def is_ascii(input_string: str) -> bool:
     return all(ord(character) < 128 for character in input_string)
 

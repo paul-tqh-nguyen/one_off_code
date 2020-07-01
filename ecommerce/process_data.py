@@ -16,7 +16,6 @@ import pandas as pd
 import numpy as np
 import multiprocessing as mp
 from pandarallel import pandarallel
-from typing import List, Tuple
 
 from misc_utilities import *
 
@@ -107,8 +106,10 @@ def combine_ecommerce_and_geo_data(ecommerce_df: pd.DataFrame, world_geojson_dat
             country_df = cummulative_df.loc[feature_country_name].copy()
             if isinstance(country_df, pd.Series):
                 country_df = cummulative_df.loc['Brazil'].to_frame().transpose()
-            country_df.InvoiceDate = country_df.InvoiceDate.map(lambda date: date.strftime('%m/%d/%Y')) # size too small for parallel_map
-            sales_info_dict = country_df.set_index('InvoiceDate').to_dict(orient='index')
+            country_df.set_index('InvoiceDate', inplace=True)
+            sales_info_dict = recursive_defaultdict()
+            for date, info in country_df.to_dict(orient='index').items():
+                sales_info_dict[date.year][date.month][date.day] = info
             feature['properties']['salesData'] = sales_info_dict
     return world_geojson_data
 
