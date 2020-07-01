@@ -12,6 +12,7 @@
 
 import json
 import tqdm
+import datetime
 import pandas as pd
 import numpy as np
 import multiprocessing as mp
@@ -37,7 +38,7 @@ OUTPUT_GEOJSON_FILE_LOCATION = './data/processed_data.geojson'
 # Data Processing #
 ###################
 
-class NpEncoder(json.JSONEncoder):
+class CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -45,8 +46,10 @@ class NpEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
+        elif isinstance(obj, (datetime.datetime, datetime.date)):
+            return obj.isoformat()
         else:
-            return super(NpEncoder, self).default(obj)
+            return super(CustomEncoder, self).default(obj)
 
 ###################
 # Data Processing #
@@ -111,6 +114,8 @@ def combine_ecommerce_and_geo_data(ecommerce_df: pd.DataFrame, world_geojson_dat
             for date, info in country_df.to_dict(orient='index').items():
                 sales_info_dict[date.year][date.month][date.day] = info
             feature['properties']['salesData'] = sales_info_dict
+    world_geojson_data['earliestDate'] = cummulative_df.InvoiceDate.min()
+    world_geojson_data['latestDate'] = cummulative_df.InvoiceDate.max()
     return world_geojson_data
 
 ##########
@@ -127,7 +132,7 @@ def main() -> None:
     assert set(ecommerce_df.Country.unique()).issubset({feature['properties']['name'] for feature in world_geojson_data['features']})
     world_geojson_data = combine_ecommerce_and_geo_data(ecommerce_df, world_geojson_data)
     with open(OUTPUT_GEOJSON_FILE_LOCATION, 'w') as file_handle:
-        json.dump(world_geojson_data, file_handle, indent=4, cls=NpEncoder)
+        json.dump(world_geojson_data, file_handle, indent=4, cls=CustomEncoder)
     return
 
 if __name__ == '__main__':
