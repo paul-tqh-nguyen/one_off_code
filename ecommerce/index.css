@@ -99,3 +99,19 @@ body {
 #main-display.show {
     left: 10vw;
 }
+
+/**************/
+/* Choropleth */
+/**************/
+
+#land-masses-group .land-mass {
+    stroke-width: 1px;
+    stroke-linejoin: round;
+    stroke: green;
+    fill: #fff;
+}
+
+#land-masses-group .land-mass:hover {
+    stroke-width: 2px;
+    stroke: red;
+}

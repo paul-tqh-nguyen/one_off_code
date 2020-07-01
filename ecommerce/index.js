@@ -5,9 +5,9 @@ const choroplethMain = () => {
 
     const plotContainer = document.getElementById('main-display');
     const svg = d3.select('#choropleth-svg');
-    const landMassesGroup = svg.append('g');
+    const landMassesGroup = svg.append('g').attr('id', 'land-masses-group');
 
-    const paddingAmount = 30;
+    const paddingAmount = 0;
 
     d3.json(geoJSONLocation).then(data => {
         const redraw = () => {
@@ -16,11 +16,11 @@ const choroplethMain = () => {
                 .attr('height', `${plotContainer.clientHeight}px`);
             const svgWidth = parseFloat(svg.attr('width'));
             const svgHeight = parseFloat(svg.attr('height'));
-
+            
             const landmassData = data.features;
-
+            
             const projection = d3.geoMercator()
-                  .translate([svgWidth / 2, svgHeight / 2]);
+                  .fitExtent([[paddingAmount, paddingAmount], [svgWidth-paddingAmount, svgHeight-paddingAmount]], data);
             const projectionFunction = d3.geoPath().projection(projection);
                 
             const landMassSelection = landMassesGroup
@@ -28,19 +28,10 @@ const choroplethMain = () => {
                   .data(landmassData);
             [landMassSelection, landMassSelection.enter().append('path')].map(selection => {
                 selection
-                    .attr('class', 'landmass')
+                    .attr('class', 'land-mass')
                     .attr('d', datum => projectionFunction(datum));
             });
-            
-            const landMassesGroupBoundingBox = landMassesGroup.node().getBBox();
-            const landMassesGroupWidth = landMassesGroupBoundingBox.width;
-            const landMassesGroupHeight = landMassesGroupBoundingBox.height;
-            const landMassesGroupX = landMassesGroupBoundingBox.x;
-            const landMassesGroupY = landMassesGroupBoundingBox.y;
-            const landMassesGroupStretchFactor = Math.min( (svgWidth - 2 * paddingAmount) / landMassesGroupWidth, (svgHeight - 2 * paddingAmount) / landMassesGroupHeight);
-
-            landMassesGroup
-                .attr('transform', `scale(${landMassesGroupStretchFactor}) translate(${-landMassesGroupBoundingBox.x + 2 * paddingAmount} ${-landMassesGroupBoundingBox.y + 2 * paddingAmount})`);
+                        
         };
         redraw();
         window.addEventListener('resize', redraw);
