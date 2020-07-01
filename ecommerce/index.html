@@ -5,11 +5,10 @@
     <meta charset="utf-8">
     <title>Temporal Choropleth Map of U.K. Retailer Sales</title>
     <link rel="stylesheet" type="text/css" href="./index.css">
-    <script src="./index.js"></script>
     <script src="https://d3js.org/d3.v5.js"></script>
   </head>
   <body>
-    <div id="help-display" class="show">
+    <div id="help-display">
       <div id="help-display-text-container">
 	<div id="help-display-text">
 	  <h3>Temporal Choropleth Map of U.K. Retailer Sales</h3>
@@ -18,18 +17,9 @@
 	</div>
       </div>
     </div>
-    <!-- <table id="display-table" style="table-layout: fixed; width: 100%"> -->
-    <!--   <tr> -->
-    <!-- 	<td style="width:2%;"> -->
-    <!-- 	  <div id="open-help-button" onclick="toggleHelp()"><a>Help</a></div> -->
-    <!-- 	</td> -->
-    <!-- 	<td style="width:98%;"> -->
-    <!-- 	  <div id="map" class="svg-container-center"> -->
-    <!-- 	    <svg id="map-svg"></svg> -->
-    <!--         <script src="map.js"></script> -->
-    <!-- 	  </div> -->
-    <!-- 	</td> -->
-    <!--   </tr> -->
-    <!-- </table> -->
+    <div id="main-display" class="show">
+      <svg id="choropleth-svg"></svg>
+      <script src="index.js"></script>
+    </div>
   </body>
 </html>
