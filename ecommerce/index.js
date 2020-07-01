@@ -6,8 +6,8 @@ const choroplethMain = () => {
     const plotContainer = document.getElementById('main-display');
     const svg = d3.select('#choropleth-svg');
     const landMassesGroup = svg.append('g');
-    const projection = d3.geoMercator();
-    const projectionFunction = d3.geoPath().projection(projection);
+
+    const paddingAmount = 30;
 
     d3.json(geoJSONLocation).then(data => {
         const redraw = () => {
@@ -18,19 +18,33 @@ const choroplethMain = () => {
             const svgHeight = parseFloat(svg.attr('height'));
 
             const landmassData = data.features;
+
+            const projection = d3.geoMercator()
+                  .translate([svgWidth / 2, svgHeight / 2]);
+            const projectionFunction = d3.geoPath().projection(projection);
+                
+            const landMassSelection = landMassesGroup
+                  .selectAll('path')
+                  .data(landmassData);
+            [landMassSelection, landMassSelection.enter().append('path')].map(selection => {
+                selection
+                    .attr('class', 'landmass')
+                    .attr('d', datum => projectionFunction(datum));
+            });
             
+            const landMassesGroupBoundingBox = landMassesGroup.node().getBBox();
+            const landMassesGroupWidth = landMassesGroupBoundingBox.width;
+            const landMassesGroupHeight = landMassesGroupBoundingBox.height;
+            const landMassesGroupX = landMassesGroupBoundingBox.x;
+            const landMassesGroupY = landMassesGroupBoundingBox.y;
+            const landMassesGroupStretchFactor = Math.min( (svgWidth - 2 * paddingAmount) / landMassesGroupWidth, (svgHeight - 2 * paddingAmount) / landMassesGroupHeight);
+
             landMassesGroup
-                .selectAll('path')
-                .data(landmassData)
-                .enter()
-    	        .append('path')
-                .attr('class', 'landmass')
-                .attr('d', datum => projectionFunction(datum));
+                .attr('transform', `scale(${landMassesGroupStretchFactor}) translate(${-landMassesGroupBoundingBox.x + 2 * paddingAmount} ${-landMassesGroupBoundingBox.y + 2 * paddingAmount})`);
         };
         redraw();
         window.addEventListener('resize', redraw);
     }).catch((error) => {
-        console.error('Could not load geographic data.');
         console.error(error);
     });
 };
