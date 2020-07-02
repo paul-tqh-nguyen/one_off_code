@@ -21,7 +21,7 @@ function git-add-mod {
     git add $(git status | grep modified | cut -d":" -f2)
 }
 alias gam="git-add-mod"
-alias update-via-upstream="git pull --rebase upstream master && git push"
+alias update-via-upstream="git pull --rebase upstream master && git fetch upstream && git push"
 
 alias ipynb-to-py="jupyter nbconvert --to script"
 export PYTHONSTARTUP=$HOME/code/one_off_code/python_startup.py
