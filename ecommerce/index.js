@@ -1,3 +1,4 @@
+const parseTimestamp = (timestampStr) => new Date(new Date(timestampStr).getTime() + (new Date(timestampStr).getTimezoneOffset() * 60 * 1000));
 
 const choroplethMain = () => {
     
@@ -22,10 +23,10 @@ const choroplethMain = () => {
     const sliderPeriod = 50;
     
     d3.json(geoJSONLocation).then(data => {
-        const earliestDate = new Date(Date.parse(data.earliestDate));
-        const latestDate = new Date(Date.parse(data.latestDate));
+        const earliestDate = parseTimestamp(new Date(Date.parse(data.earliestDate)));
+        const latestDate = parseTimestamp(new Date(Date.parse(data.latestDate)));
         const numberOfDays = 1 + (latestDate - earliestDate) / (1000 * 60 * 60 *24);
-        const enumeratedDates = d3.range(0, numberOfDays).map(numberOfDaysPassed => new Date(earliestDate.getDate()+numberOfDaysPassed));
+        const enumeratedDates = d3.range(0, numberOfDays).map(numberOfDaysPassed => parseTimestamp(new Date(earliestDate.getDate()+numberOfDaysPassed)));
         const timeSlider = d3.sliderTop()
               .min(earliestDate)
               .max(latestDate)
@@ -125,14 +126,12 @@ const choroplethMain = () => {
             timeSlider
                 .width(parseFloat(svg.attr('width')) * 0.50)
                 .on('onchange', sliderValue => {
-                    console.log('\n\n');
-                    console.log(`earliestDate.getMonth() ${JSON.stringify(earliestDate.getMonth())}`);
-                    console.log(`earliestDate.getDay() ${JSON.stringify(earliestDate.getDay())}`);
-                    console.log(`earliestDate.getFullYear() ${JSON.stringify(earliestDate.getFullYear())}`);
-                    console.log(`earliestDate ${JSON.stringify(earliestDate)}`);
-                    console.log(`latestDate ${JSON.stringify(latestDate)}`);
-                    console.log(`timeSlider.value() ${timeSlider.value()}`);
-                    console.log(`timeSlider.value() ${timeSlider.value().getTime()}`);
+                    console.log(`\n\n\n`);
+                    console.log(`earliestDate ${earliestDate}`);
+                    console.log(`data.earliestDate ${JSON.stringify(data.earliestDate)}`);
+                    console.log(`latestDate ${latestDate}`);
+                    console.log(`data.latestDate ${JSON.stringify(data.latestDate)}`);
+                    console.log(`sliderValue ${sliderValue}`);
                 });
             sliderGroup.call(timeSlider);
             sliderGroup
