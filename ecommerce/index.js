@@ -17,17 +17,21 @@ const choroplethMain = () => {
     const toolTipMargin = 10;
     
     const sliderBackgroundColor = 'red';
-    const sliderPadding = 15;
+    const sliderTopMargin = 10;
+    const sliderPadding = 20;
     
     d3.json(geoJSONLocation).then(data => {
         const earliestDate = new Date(Date.parse(data.earliestDate));
         const latestDate = new Date(Date.parse(data.latestDate));
         const numberOfDays = 1 + (latestDate - earliestDate) / (1000 * 60 * 60 *24);
-        const enumeratedDates = d3.range(0, numberOfDays).map(numberOfDaysPassed => {
-            const date = new Date();
-            date.setDate(earliestDate.getDate()+numberOfDaysPassed);
-            return date;
-        });
+        const enumeratedDates = d3.range(0, numberOfDays).map(numberOfDaysPassed => new Date(earliestDate.getDate()+numberOfDaysPassed));
+        const timeSlider = d3.sliderTop()
+              .min(earliestDate)
+              .max(latestDate)
+              .step(1000 * 60 * 60 * 24)
+              .tickFormat(d3.timeFormat('%m/%d/%Y'))
+              .tickValues(enumeratedDates)
+              .default(earliestDate);
         const redraw = () => {
             svg
                 .attr('width', `${window.innerWidth * 0.80}px`)
@@ -115,15 +119,9 @@ const choroplethMain = () => {
                 svg.attr('height', landMassesGroupHeight);
                 landMassesGroup.attr('transform', `translate(0 ${-landMassesGroupBoundingBox.y})`);
             }
-            
-            const timeSlider = d3.sliderTop()
-                  .min(earliestDate)
-                  .max(latestDate)
-                  .step(1000 * 60 * 60 * 24)
+
+            timeSlider
                   .width(parseFloat(svg.attr('width')) * 0.50)
-                  .tickFormat(d3.timeFormat('%m/%d/%Y'))
-                  .tickValues(enumeratedDates)
-                  .default(earliestDate)
                   .on('onchange', sliderValue => {
                       console.log(`sliderValue ${JSON.stringify(sliderValue)}`);
                   });
@@ -141,20 +139,20 @@ const choroplethMain = () => {
             sliderBoundingBox
                 .attr('width', 0)
                 .attr('height', 0);
-            const sliderGroupBoundingBox = sliderGroup.node().getBBox();
-            const sliderGroupX = sliderGroupBoundingBox.x;
-            const sliderGroupY = sliderGroupBoundingBox.y;
-            const sliderGroupWidth = sliderGroupBoundingBox.width;
-            const sliderGroupHeight = sliderGroupBoundingBox.height;
             sliderGroup.select('.slider').raise();
+            const sliderTrackInsetBoundingBox = sliderGroup.select('.track-inset').node().getBBox();
+            const sliderTrackInsetX = sliderTrackInsetBoundingBox.x;
+            const sliderTrackInsetY = sliderTrackInsetBoundingBox.y;
+            const sliderTrackInsetWidth = sliderTrackInsetBoundingBox.width;
+            const sliderTrackInsetHeight = sliderTrackInsetBoundingBox.height;
             sliderBoundingBox
                   .style('stroke-width', 1)
                   .style('stroke', 'black')
                   .style('fill', sliderBackgroundColor)
-                  .attr('x', sliderGroupX - sliderPadding / 2)
-                  .attr('y', sliderGroupY - sliderPadding / 2)
-                  .attr('width', sliderGroupWidth + 2 * sliderPadding)
-                  .attr('height', sliderGroupHeight + 2 * sliderPadding);
+                  .attr('x', sliderTrackInsetX - sliderPadding)
+                  .attr('y', sliderTrackInsetY - sliderPadding - sliderTopMargin)
+                  .attr('width', sliderTrackInsetWidth + 2 * sliderPadding)
+                  .attr('height', sliderTrackInsetHeight + 2 * sliderPadding + sliderTopMargin);
             sliderGroup.select('.slider').raise();
             
         };
