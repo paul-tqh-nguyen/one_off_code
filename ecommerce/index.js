@@ -79,7 +79,7 @@ const choroplethMain = () => {
                     .attr('x', toolTipX)
                     .attr('y', toolTipY);
             };
-                        
+            
             const landmassData = data.features;
             const landMassesGroupSelection = landMassesGroup
                   .selectAll('path')
@@ -121,10 +121,16 @@ const choroplethMain = () => {
             }
 
             timeSlider
-                  .width(parseFloat(svg.attr('width')) * 0.50)
-                  .on('onchange', sliderValue => {
-                      console.log(`sliderValue ${JSON.stringify(sliderValue)}`);
-                  });
+                .width(parseFloat(svg.attr('width')) * 0.50)
+                .on('onchange', sliderValue => {
+                    console.log('\n\n');
+                    console.log(`earliestDate.getMonth() ${JSON.stringify(earliestDate.getMonth())}`);
+                    console.log(`earliestDate.getDay() ${JSON.stringify(earliestDate.getDay())}`);
+                    console.log(`earliestDate.getFullYear() ${JSON.stringify(earliestDate.getFullYear())}`);
+                    console.log(`earliestDate ${JSON.stringify(earliestDate)}`);
+                    console.log(`latestDate ${JSON.stringify(latestDate)}`);
+                    console.log(`timeSlider.value() ${JSON.stringify(timeSlider.value())}`);
+                });
             sliderGroup.call(timeSlider);
             sliderGroup
                 .attr('transform', `translate(${parseFloat(svg.attr('width')) * 0.25} ${parseFloat(svg.attr('height')) * 0.92})`);
@@ -146,13 +152,13 @@ const choroplethMain = () => {
             const sliderTrackInsetWidth = sliderTrackInsetBoundingBox.width;
             const sliderTrackInsetHeight = sliderTrackInsetBoundingBox.height;
             sliderBoundingBox
-                  .style('stroke-width', 1)
-                  .style('stroke', 'black')
-                  .style('fill', sliderBackgroundColor)
-                  .attr('x', sliderTrackInsetX - sliderPadding)
-                  .attr('y', sliderTrackInsetY - sliderPadding - sliderTopMargin)
-                  .attr('width', sliderTrackInsetWidth + 2 * sliderPadding)
-                  .attr('height', sliderTrackInsetHeight + 2 * sliderPadding + sliderTopMargin);
+                .style('stroke-width', 1)
+                .style('stroke', 'black')
+                .style('fill', sliderBackgroundColor)
+                .attr('x', sliderTrackInsetX - sliderPadding)
+                .attr('y', sliderTrackInsetY - sliderPadding - sliderTopMargin)
+                .attr('width', sliderTrackInsetWidth + 2 * sliderPadding)
+                .attr('height', sliderTrackInsetHeight + 2 * sliderPadding + sliderTopMargin);
             sliderGroup.select('.slider').raise();
             
         };
