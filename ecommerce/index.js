@@ -8,12 +8,16 @@ const choroplethMain = () => {
     const landMassesGroup = svg.append('g').attr('id', 'land-masses-group');
     const toolTipGroup = svg.append('g').attr('id', 'tool-tip-group');
     const sliderGroup = svg.append('g').attr('id', 'slider-group');
-    
+    const sliderBoundingBox = sliderGroup
+          .append('rect');    
     const toolTipFontSize = 10;
     const toolTipTextPadding = toolTipFontSize;
     const toolTipBackgroundColor = 'red';
     const toolTipTransitionTime = 500;
     const toolTipMargin = 10;
+    
+    const sliderBackgroundColor = 'red';
+    const sliderPadding = 15;
     
     d3.json(geoJSONLocation).then(data => {
         const earliestDate = new Date(Date.parse(data.earliestDate));
@@ -125,10 +129,33 @@ const choroplethMain = () => {
                   });
             sliderGroup.call(timeSlider);
             sliderGroup
-                .attr('transform', `translate(${parseFloat(svg.attr('width')) * 0.25} ${parseFloat(svg.attr('height')) * 0.95})`);
+                .attr('transform', `translate(${parseFloat(svg.attr('width')) * 0.25} ${parseFloat(svg.attr('height')) * 0.92})`);
             sliderGroup.selectAll('.tick').remove();
             sliderGroup.selectAll('.handle')
                 .attr('d','M -5.5,-5.5 v 11 l 12,0 v -11 z');
+            sliderGroup
+                .selectAll('.parameter-value')
+                .select('text')
+                .attr('transform', 'translate(0 13)');
+            sliderGroup.selectAll('.track-overlay').remove();
+            sliderBoundingBox
+                .attr('width', 0)
+                .attr('height', 0);
+            const sliderGroupBoundingBox = sliderGroup.node().getBBox();
+            const sliderGroupX = sliderGroupBoundingBox.x;
+            const sliderGroupY = sliderGroupBoundingBox.y;
+            const sliderGroupWidth = sliderGroupBoundingBox.width;
+            const sliderGroupHeight = sliderGroupBoundingBox.height;
+            sliderGroup.select('.slider').raise();
+            sliderBoundingBox
+                  .style('stroke-width', 1)
+                  .style('stroke', 'black')
+                  .style('fill', sliderBackgroundColor)
+                  .attr('x', sliderGroupX - sliderPadding / 2)
+                  .attr('y', sliderGroupY - sliderPadding / 2)
+                  .attr('width', sliderGroupWidth + 2 * sliderPadding)
+                  .attr('height', sliderGroupHeight + 2 * sliderPadding);
+            sliderGroup.select('.slider').raise();
             
         };
         redraw();
