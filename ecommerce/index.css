@@ -107,19 +107,7 @@ body {
     transition: fill-opacity 0.5s;
     stroke-width: 1px;
     stroke-linejoin: round;
-    stroke: green;
-}
-
-#land-masses-group .land-mass:hover {
-    stroke: red;
-}
-
-#land-masses-group .land-mass-with-purchases {
-    fill: #fff;
-}
-
-#land-masses-group .land-mass-without-purchases {
-    fill: #ccc;
+    stroke: #0079b5;
 }
 
 #tool-tip-group .tool-tip-text {

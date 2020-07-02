@@ -1,5 +1,26 @@
 const parseTimestamp = (timestampStr) => new Date(new Date(timestampStr).getTime() + (new Date(timestampStr).getTimezoneOffset() * 60 * 1000));
 
+const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)];
+};
+
+const lerp = (start, end, floatValue) => {
+    return start + floatValue * (end - start);
+};
+
+const createColorInterpolator = (startHexColor, endHexColor) => {
+    const [startR, startG, startB] = hexToRgb(startHexColor);
+    const [endR, endG, endB] = hexToRgb(endHexColor);
+    const colorInterpolator = (floatValue) => {
+        const r = lerp(startR, endR, floatValue);
+        const g = lerp(startG, endG, floatValue);
+        const b = lerp(startB, endB, floatValue);
+        return `rgb(${r}, ${g}, ${b})`;
+    };
+    return colorInterpolator;
+};
+
 const choroplethMain = () => {
     
     const geoJSONLocation = './data/processed_data.geojson';
@@ -21,6 +42,11 @@ const choroplethMain = () => {
     const sliderTopMargin = 10;
     const sliderPadding = 20;
     const sliderPeriod = 50;
+
+    const landMassWithoutPurchaseColor = '#cccccc';
+    const landMassStartColor = '#ffffff';
+    const landMassEndColor = '#289e00';
+    const colorMap = createColorInterpolator(landMassStartColor, landMassEndColor);
     
     d3.json(geoJSONLocation).then(data => {
         const earliestDate = parseTimestamp(new Date(Date.parse(data.earliestDate)));
@@ -52,7 +78,7 @@ const choroplethMain = () => {
                       .style('stroke-width', 1)
                       .style('stroke', 'black')
                       .style('fill', toolTipBackgroundColor);
-                const toolTipTextLines = [
+                const toolTipTextLines = [ // @todo fix this
                     'l1',
                     'l2',
                 ];
@@ -89,16 +115,14 @@ const choroplethMain = () => {
                   .data(landmassData);
             [landMassesGroupSelection, landMassesGroupSelection.enter().append('path')].forEach(selection => {
                 selection
-                    .attr('class', datum => datum.properties.salesData ? 'land-mass land-mass-with-purchases' : 'land-mass land-mass-without-purchases')
+                    .attr('class', 'land-mass')
+                    .attr('fill', datum => datum.properties.salesData ? landMassStartColor : landMassWithoutPurchaseColor)
                     .on('mouseover', function (datum) {
-                        if (datum.properties.salesData) {
-                            landMassesGroup
-                                .selectAll('path')
-                                .style('fill-opacity', 0.5);
-                            d3.select(this)
-                                .style('fill-opacity', 1);
-                        }
-                        d3.select(this).raise();
+                        landMassesGroup
+                            .selectAll('path')
+                            .style('fill-opacity', 0.25);
+                        d3.select(this)
+                            .style('fill-opacity', 1);
                         const [mouseX, mouseY] = d3.mouse(this);
                         updateToolTip(mouseX, mouseY, datum);
                     })
@@ -123,16 +147,25 @@ const choroplethMain = () => {
                 landMassesGroup.attr('transform', `translate(0 ${-landMassesGroupBoundingBox.y})`);
             }
 
+            const updateLandMassFill = (sliderValue) => {
+                const dateRange = latestDate.getTime()-earliestDate.getTime();
+                const floatValue = (sliderValue.getTime()-earliestDate.getTime()) / dateRange;
+                landMassesGroup
+                    .selectAll('path')
+                    .data(landmassData)
+                    .style('fill', datum => {
+                        if (datum.properties.salesData) {
+                            console.log('\n\n\n');
+                            console.log(`datum.properties ${JSON.stringify(datum.properties)}`);
+                            return colorMap(floatValue);
+                        } else {
+                            return landMassWithoutPurchaseColor;
+                        }
+                    });
+            };
             timeSlider
                 .width(parseFloat(svg.attr('width')) * 0.50)
-                .on('onchange', sliderValue => {
-                    console.log(`\n\n\n`);
-                    console.log(`earliestDate ${earliestDate}`);
-                    console.log(`data.earliestDate ${JSON.stringify(data.earliestDate)}`);
-                    console.log(`latestDate ${latestDate}`);
-                    console.log(`data.latestDate ${JSON.stringify(data.latestDate)}`);
-                    console.log(`sliderValue ${sliderValue}`);
-                });
+                .on('onchange', updateLandMassFill);
             sliderGroup.call(timeSlider);
             sliderGroup
                 .attr('transform', `translate(${parseFloat(svg.attr('width')) * 0.25} ${parseFloat(svg.attr('height')) * 0.92})`);
@@ -173,6 +206,7 @@ const choroplethMain = () => {
                         clearInterval(timer);
                     } else {
                         timeSlider.value(new Date(timeSlider.value().getTime() + 1000 * 3600 * 24));
+                        updateLandMassFill(timeSlider.value());
                     }
                 }, sliderPeriod);
             };
