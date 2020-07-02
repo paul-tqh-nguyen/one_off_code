@@ -19,6 +19,7 @@ const choroplethMain = () => {
     const sliderBackgroundColor = 'red';
     const sliderTopMargin = 10;
     const sliderPadding = 20;
+    const sliderPeriod = 50;
     
     d3.json(geoJSONLocation).then(data => {
         const earliestDate = new Date(Date.parse(data.earliestDate));
@@ -32,6 +33,7 @@ const choroplethMain = () => {
               .tickFormat(d3.timeFormat('%m/%d/%Y'))
               .tickValues(enumeratedDates)
               .default(earliestDate);
+        let timer;
         const redraw = () => {
             svg
                 .attr('width', `${window.innerWidth * 0.80}px`)
@@ -129,7 +131,8 @@ const choroplethMain = () => {
                     console.log(`earliestDate.getFullYear() ${JSON.stringify(earliestDate.getFullYear())}`);
                     console.log(`earliestDate ${JSON.stringify(earliestDate)}`);
                     console.log(`latestDate ${JSON.stringify(latestDate)}`);
-                    console.log(`timeSlider.value() ${JSON.stringify(timeSlider.value())}`);
+                    console.log(`timeSlider.value() ${timeSlider.value()}`);
+                    console.log(`timeSlider.value() ${timeSlider.value().getTime()}`);
                 });
             sliderGroup.call(timeSlider);
             sliderGroup
@@ -160,6 +163,21 @@ const choroplethMain = () => {
                 .attr('width', sliderTrackInsetWidth + 2 * sliderPadding)
                 .attr('height', sliderTrackInsetHeight + 2 * sliderPadding + sliderTopMargin);
             sliderGroup.select('.slider').raise();
+            
+            const stopTimer = () => {
+                clearInterval(timer);
+            };
+            const startTimer = () => {
+                clearInterval(timer);
+                timer = setInterval(() => {
+                    if (timeSlider.value().getTime() >= latestDate.getTime()) {
+                        clearInterval(timer);
+                    } else {
+                        timeSlider.value(new Date(timeSlider.value().getTime() + 1000 * 3600 * 24));
+                    }
+                }, sliderPeriod);
+            };
+            startTimer();
             
         };
         redraw();
