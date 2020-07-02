@@ -5,17 +5,17 @@ const hexToRgb = (hex) => {
     return [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)];
 };
 
-const lerp = (start, end, floatValue) => {
-    return start + floatValue * (end - start);
+const interpolate = (start, end, floatValue) => {
+    return start + Math.pow(floatValue, 0.25) * (end - start);
 };
 
 const createColorInterpolator = (startHexColor, endHexColor) => {
     const [startR, startG, startB] = hexToRgb(startHexColor);
     const [endR, endG, endB] = hexToRgb(endHexColor);
     const colorInterpolator = (floatValue) => {
-        const r = lerp(startR, endR, floatValue);
-        const g = lerp(startG, endG, floatValue);
-        const b = lerp(startB, endB, floatValue);
+        const r = interpolate(startR, endR, floatValue);
+        const g = interpolate(startG, endG, floatValue);
+        const b = interpolate(startB, endB, floatValue);
         return `rgb(${r}, ${g}, ${b})`;
     };
     return colorInterpolator;
@@ -44,7 +44,7 @@ const choroplethMain = () => {
     const sliderPeriod = 50;
 
     const landMassWithoutPurchaseColor = '#cccccc';
-    const landMassStartColor = '#ffffff';
+    const landMassStartColor = landMassWithoutPurchaseColor; // '#ffffff';
     const landMassEndColor = '#289e00';
     const colorMap = createColorInterpolator(landMassStartColor, landMassEndColor);
     
@@ -146,17 +146,25 @@ const choroplethMain = () => {
                 svg.attr('height', landMassesGroupHeight);
                 landMassesGroup.attr('transform', `translate(0 ${-landMassesGroupBoundingBox.y})`);
             }
-
-            const updateLandMassFill = (sliderValue) => {
+            
+            const relevantSalesDataForDate = (date, salesData) => {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const day = date.getDay();
+                console.log(`year ${JSON.stringify(year)}`);
+                console.log(`month ${JSON.stringify(month)}`);
+                console.log(`day ${JSON.stringify(day)}`);
+            };
+            const updateLandMassFill = (sliderDate) => {
                 const dateRange = latestDate.getTime()-earliestDate.getTime();
-                const floatValue = (sliderValue.getTime()-earliestDate.getTime()) / dateRange;
+                const floatValue = (sliderDate.getTime()-earliestDate.getTime()) / dateRange;
                 landMassesGroup
                     .selectAll('path')
                     .data(landmassData)
                     .style('fill', datum => {
                         if (datum.properties.salesData) {
-                            console.log('\n\n\n');
-                            console.log(`datum.properties ${JSON.stringify(datum.properties)}`);
+                            const relevantSalesData = relevantSalesDataForDate(sliderDate, datum.properties.salesData);
+                            console.log(`relevantSalesData ${JSON.stringify(relevantSalesData)}`);
                             return colorMap(floatValue);
                         } else {
                             return landMassWithoutPurchaseColor;
