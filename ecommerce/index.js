@@ -177,7 +177,6 @@ const choroplethMain = () => {
                     }
                 }, sliderPeriod);
             };
-            startTimer();
             
         };
         redraw();
