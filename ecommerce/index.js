@@ -39,7 +39,7 @@ const choroplethMain = () => {
     const playButtonBoundingBox = playButtonGroup.append('rect').attr('id', 'play-button');
     const playButtonText = playButtonGroup.append('text').attr('id', 'play-button-text');
     
-    const toolTipFontSize = 10;
+    const toolTipFontSize = 12;
     const toolTipTextPadding = toolTipFontSize;
     const toolTipBackgroundColor = 'red';
     const toolTipTransitionTime = 500;
@@ -100,15 +100,21 @@ const choroplethMain = () => {
                   .style('stroke-width', 1)
                   .style('stroke', 'black')
                   .style('fill', toolTipBackgroundColor);
-            console.log(`datum.properties.salesData ${JSON.stringify(datum.properties.salesData)}`);
-            const toolTipTextLines = [
-                'l1',
-                'l2',
-                'l2',
-                'l2',
-                'l2',
-                'l2',
-                'l2',
+            const relevantSalesData = datum.properties.salesData ? relevantSalesDataForDate(timeSlider.value(), datum.properties.salesData) : null;
+            const toolTipTextLines = relevantSalesData ? [
+                `Country: ${datum.properties.name}`,
+                `Invoice Count To Date: ${relevantSalesData.InvoiceCountToDate}`,
+                `Quantity Sold To Date: ${relevantSalesData.QuantitySoldToDate}`,
+                `Amount Paid To Date: $${relevantSalesData.AmountPaidToDate.toFixed(2)}`,
+                `Unique Customer ID Count To Date: ${relevantSalesData.UniqueCustomerIDCountToDate}`,
+                `Unique Stock Code Count To Date: ${relevantSalesData.UniqueStockCodeCountToDate}`,
+            ] : [
+                `Country: ${datum.properties.name}`,
+                `Invoice Count To Date: 0`,
+                `Quantity Sold To Date: 0`,
+                `Amount Paid To Date: $0`,
+                `Unique Customer ID Count To Date: 0`,
+                `Unique Stock Code Count To Date: 0`,
             ];
             const textLinesGroup = toolTipGroup.append('g');
             toolTipTextLines.forEach((textLine, textLineIndex) => {
