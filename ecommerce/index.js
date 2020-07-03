@@ -263,6 +263,9 @@ const choroplethMain = () => {
                 .attr('transform', `translate(${parseFloat(svg.attr('width')) * playButtonHorizontalOffsetPortion} ${parseFloat(svg.attr('height')) * playButtonVerticalOffsetPortion})`)
                 .on('click', () => {
                     if (playButtonText.text() === 'Play') {
+                        if (timeSlider.value().getTime() == latestDate.getTime()) {
+                            timeSlider.value(earliestDate);
+                        }
                         startTimer();
                     } else {
                         stopTimer();
