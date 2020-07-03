@@ -1,3 +1,4 @@
+
 const parseTimestamp = (timestampStr) => new Date(new Date(timestampStr).getTime() + (new Date(timestampStr).getTimezoneOffset() * 60 * 1000));
 
 const hexToRgb = (hex) => {
@@ -21,6 +22,9 @@ const createColorInterpolator = (startHexColor, endHexColor) => {
     return colorInterpolator;
 };
 
+const dayBefore = (date) => new Date(date.getTime() - 1000 * 3600 * 24);
+const dayAfter = (date) => new Date(date.getTime() + 1000 * 3600 * 24);
+
 const choroplethMain = () => {
     
     const geoJSONLocation = './data/processed_data.geojson';
@@ -30,18 +34,27 @@ const choroplethMain = () => {
     const landMassesGroup = svg.append('g').attr('id', 'land-masses-group');
     const toolTipGroup = svg.append('g').attr('id', 'tool-tip-group');
     const sliderGroup = svg.append('g').attr('id', 'slider-group');
-    const sliderBoundingBox = sliderGroup
-          .append('rect');    
+    const sliderBoundingBox = sliderGroup.append('rect');
+    const playButtonGroup = svg.append('g').attr('id', 'play-button-group');
+    const playButtonBoundingBox = playButtonGroup.append('rect').attr('id', 'play-button');
+    const playButtonText = playButtonGroup.append('text').attr('id', 'play-button-text');
+    
     const toolTipFontSize = 10;
     const toolTipTextPadding = toolTipFontSize;
     const toolTipBackgroundColor = 'red';
     const toolTipTransitionTime = 500;
     const toolTipMargin = 10;
-    
-    const sliderBackgroundColor = 'red';
+
+    const sliderWidthPortion = 0.50;
+    const sliderHorizontalOffsetPortion = 0.35;
+    const sliderVerticalOffsetPortion = 0.92;
     const sliderTopMargin = 10;
     const sliderPadding = 20;
-    const sliderPeriod = 50;
+    const sliderPeriod = 25;
+    
+    const playButtonHorizontalOffsetPortion = 0.10;
+    const playButtonVerticalOffsetPortion = sliderVerticalOffsetPortion;
+    const playButtonTextPadding = 20;
 
     const landMassWithoutPurchaseColor = '#cccccc';
     const landMassStartColor = '#eeeeee';
@@ -49,7 +62,7 @@ const choroplethMain = () => {
     const colorMap = createColorInterpolator(landMassStartColor, landMassEndColor);
     
     d3.json(geoJSONLocation).then(data => {
-        const earliestDate = parseTimestamp(new Date(Date.parse(data.earliestDate)));
+        const earliestDate = dayBefore(parseTimestamp(new Date(Date.parse(data.earliestDate))));
         const latestDate = parseTimestamp(new Date(Date.parse(data.latestDate)));
         const numberOfDays = 1 + (latestDate - earliestDate) / (1000 * 60 * 60 *24);
         const maximumTotalRevenue = data.maximumTotalRevenue;
@@ -90,7 +103,7 @@ const choroplethMain = () => {
                         .attr('class', 'tool-tip-text')
                         .attr('dx', toolTipTextPadding)
                         .attr('dy', `${(1+textLineIndex) * 1.2 * toolTipFontSize + toolTipTextPadding / 4}px`)
-                        .html(textLine);
+                        .text(textLine);
                 });
                 const textLinesGroupBBox = textLinesGroup.node().getBBox();
                 const toolTipBoundingBoxWidth = textLinesGroupBBox.width + 2 * toolTipTextPadding;
@@ -161,7 +174,7 @@ const choroplethMain = () => {
                             }
                         }
                     }
-                    currentDate = new Date(currentDate.getTime() - 1000 * 3600 * 24);
+                    currentDate = dayBefore(currentDate);
                 }
                 return relevantSalesData; 
             };
@@ -182,11 +195,11 @@ const choroplethMain = () => {
                     });
             };
             timeSlider
-                .width(parseFloat(svg.attr('width')) * 0.50)
+                .width(parseFloat(svg.attr('width')) * sliderWidthPortion)
                 .on('onchange', updateLandMassFill);
             sliderGroup.call(timeSlider);
             sliderGroup
-                .attr('transform', `translate(${parseFloat(svg.attr('width')) * 0.25} ${parseFloat(svg.attr('height')) * 0.92})`);
+                .attr('transform', `translate(${parseFloat(svg.attr('width')) * sliderHorizontalOffsetPortion} ${parseFloat(svg.attr('height')) * sliderVerticalOffsetPortion})`);
             sliderGroup.selectAll('.tick').remove();
             sliderGroup.selectAll('.handle')
                 .attr('d','M -5.5,-5.5 v 11 l 12,0 v -11 z');
@@ -205,30 +218,56 @@ const choroplethMain = () => {
             const sliderTrackInsetWidth = sliderTrackInsetBoundingBox.width;
             const sliderTrackInsetHeight = sliderTrackInsetBoundingBox.height;
             sliderBoundingBox
-                .style('stroke-width', 1)
-                .style('stroke', 'black')
-                .style('fill', sliderBackgroundColor)
+                .attr('id', 'slider-bounding-box')
                 .attr('x', sliderTrackInsetX - sliderPadding)
                 .attr('y', sliderTrackInsetY - sliderPadding - sliderTopMargin)
                 .attr('width', sliderTrackInsetWidth + 2 * sliderPadding)
                 .attr('height', sliderTrackInsetHeight + 2 * sliderPadding + sliderTopMargin);
             sliderGroup.select('.slider').raise();
             
+            const sliderGroupBoundingBox = sliderGroup.node().getBBox();
+            const renderPlayButton = (playButtonTextString) => {
+                playButtonText
+                    .text(playButtonTextString)
+                    .attr('x', sliderGroupBoundingBox.x)
+                    .attr('y', sliderGroupBoundingBox.y);
+                playButtonBoundingBox
+                    .attr('x', sliderGroupBoundingBox.x)
+                    .attr('y', sliderGroupBoundingBox.y)
+                    .attr('width', playButtonText.node().getBBox().width + 2 * playButtonTextPadding)
+                    .attr('height', sliderBoundingBox.attr('height'));
+                playButtonText
+                    .attr('transform', `translate(${playButtonTextPadding} ${playButtonBoundingBox.node().getBBox().height / 2 + playButtonText.node().getBBox().height / 2})`);
+            };
+            renderPlayButton('Play');
             const stopTimer = () => {
                 clearInterval(timer);
+                renderPlayButton('Play');
             };
             const startTimer = () => {
                 clearInterval(timer);
                 timer = setInterval(() => {
                     if (timeSlider.value().getTime() >= latestDate.getTime()) {
                         clearInterval(timer);
+                        renderPlayButton('Play');
                     } else {
-                        timeSlider.value(new Date(timeSlider.value().getTime() + 1000 * 3600 * 24));
+                        timeSlider.value(dayAfter(timeSlider.value()));
                         updateLandMassFill(timeSlider.value());
+                        renderPlayButton('Pause');
                     }
                 }, sliderPeriod);
             };
-            startTimer();
+            playButtonGroup
+                .attr('x', sliderGroupBoundingBox.x)
+                .attr('y', sliderGroupBoundingBox.y)
+                .attr('transform', `translate(${parseFloat(svg.attr('width')) * playButtonHorizontalOffsetPortion} ${parseFloat(svg.attr('height')) * playButtonVerticalOffsetPortion})`)
+                .on('click', () => {
+                    if (playButtonText.text() === 'Play') {
+                        startTimer();
+                    } else {
+                        stopTimer();
+                    }
+                });
             
         };
         redraw();

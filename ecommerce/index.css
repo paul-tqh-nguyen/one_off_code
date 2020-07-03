@@ -110,5 +110,20 @@ body {
     stroke: #0079b5;
 }
 
-#tool-tip-group .tool-tip-text {
+#slider-bounding-box {
+    stroke-width: 1;
+    stroke: black;
+    fill: red;
 }
+
+#play-button {
+    stroke-linejoin: round;
+    stroke-width: 1;
+    fill: red;
+    stroke: black;
+}
+
+#play-button-group {
+    cursor: pointer;
+}
+ 
