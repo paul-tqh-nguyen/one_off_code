@@ -74,54 +74,70 @@ const choroplethMain = () => {
               .tickValues(d3.range(0, numberOfDays))
               .default(earliestDate);
         let timer;
-        const redraw = () => {
-            svg
-                .attr('width', `${window.innerWidth * 0.80}px`)
-                .attr('height', `${window.innerHeight * 0.80}px`);
-            const svgWidth = parseFloat(svg.attr('width'));
-            const svgHeight = parseFloat(svg.attr('height'));
-            
-            const projection = d3.geoMercator()
-                  .fitExtent([[0, 0], [svgWidth, svgHeight]], data);
+        
+        const relevantSalesDataForDate = (date, salesData) => {
+            let currentDate = parseTimestamp(new Date(date));
+            let relevantSalesData = null;
+            while (currentDate > earliestDate && !relevantSalesData) {
+                const year = currentDate.getFullYear().toString();
+                if (salesData[year]) {
+                    const month = (currentDate.getMonth()+1).toString();
+                    if (salesData[year][month]) {
+                        const day = currentDate.getDate().toString();
+                        if (salesData[year][month][day]) {
+                            relevantSalesData = salesData[year][month][day];
+                        }
+                    }
+                }
+                currentDate = dayBefore(currentDate);
+            }
+            return relevantSalesData; 
+        };
+        
+        const updateToolTip = (mouseX, mouseY, datum) => {
+            const toolTipBoundingBox = toolTipGroup
+                  .append('rect')
+                  .style('stroke-width', 1)
+                  .style('stroke', 'black')
+                  .style('fill', toolTipBackgroundColor);
+            console.log(`datum.properties.salesData ${JSON.stringify(datum.properties.salesData)}`);
+            const toolTipTextLines = [
+                'l1',
+                'l2',
+                'l2',
+                'l2',
+                'l2',
+                'l2',
+                'l2',
+            ];
+            const textLinesGroup = toolTipGroup.append('g');
+            toolTipTextLines.forEach((textLine, textLineIndex) => {
+                textLinesGroup
+                    .append('text')
+                    .style('font-size', toolTipFontSize)
+                    .attr('class', 'tool-tip-text')
+                    .attr('dx', toolTipTextPadding)
+                    .attr('dy', `${(1+textLineIndex) * 1.2 * toolTipFontSize + toolTipTextPadding / 4}px`)
+                    .text(textLine);
+            });
+            const textLinesGroupBBox = textLinesGroup.node().getBBox();
+            const toolTipBoundingBoxWidth = textLinesGroupBBox.width + 2 * toolTipTextPadding;
+            const toolTipBoundingBoxHeight = textLinesGroupBBox.height + toolTipTextPadding;
+            const mouseCloserToRight = mouseX > parseFloat(svg.attr('width')) - mouseX;
+            const toolTipX = mouseCloserToRight ? toolTipMargin : parseFloat(svg.attr('width')) - toolTipMargin - toolTipBoundingBoxWidth;
+            const toolTipY = toolTipMargin;
+            toolTipBoundingBox
+                .attr('x', toolTipX)
+                .attr('y', toolTipY)
+                .attr('width', toolTipBoundingBoxWidth)
+                .attr('height', toolTipBoundingBoxHeight);
+            textLinesGroup.selectAll('*')
+                .attr('x', toolTipX)
+                .attr('y', toolTipY);
+        };
+
+        const renderLandMasses = (projection) => {
             const projectionFunction = d3.geoPath().projection(projection);
-            
-            const updateToolTip = (mouseX, mouseY, datum) => {
-                const toolTipBoundingBox = toolTipGroup
-                      .append('rect')
-                      .style('stroke-width', 1)
-                      .style('stroke', 'black')
-                      .style('fill', toolTipBackgroundColor);
-                const toolTipTextLines = [ // @todo fix this
-                    'l1',
-                    'l2',
-                ];
-                const textLinesGroup = toolTipGroup.append('g');
-                toolTipTextLines.forEach((textLine, textLineIndex) => {
-                    textLinesGroup
-                        .append('text')
-                        .style('font-size', toolTipFontSize)
-                        .attr('class', 'tool-tip-text')
-                        .attr('dx', toolTipTextPadding)
-                        .attr('dy', `${(1+textLineIndex) * 1.2 * toolTipFontSize + toolTipTextPadding / 4}px`)
-                        .text(textLine);
-                });
-                const textLinesGroupBBox = textLinesGroup.node().getBBox();
-                const toolTipBoundingBoxWidth = textLinesGroupBBox.width + 2 * toolTipTextPadding;
-                const toolTipBoundingBoxHeight = textLinesGroupBBox.height + toolTipTextPadding;
-                const mouseCloserToRight = mouseX > parseFloat(svg.attr('width')) - mouseX;
-                const toolTipX = mouseCloserToRight ? toolTipMargin : parseFloat(svg.attr('width')) - toolTipMargin - toolTipBoundingBoxWidth;
-                const mouseCloserToBottom = mouseY > parseFloat(svg.attr('height')) - mouseY;
-                const toolTipY = mouseCloserToBottom ? toolTipMargin : parseFloat(svg.attr('height')) - toolTipMargin - toolTipBoundingBoxHeight;
-                toolTipBoundingBox
-                    .attr('x', toolTipX)
-                    .attr('y', toolTipY)
-                    .attr('width', toolTipBoundingBoxWidth)
-                    .attr('height', toolTipBoundingBoxHeight);
-                textLinesGroup.selectAll('*')
-                    .attr('x', toolTipX)
-                    .attr('y', toolTipY);
-            };
-            
             const landmassData = data.features;
             const landMassesGroupSelection = landMassesGroup
                   .selectAll('path')
@@ -147,53 +163,25 @@ const choroplethMain = () => {
                     })
                     .attr('d', datum => projectionFunction(datum));
             });
-            
-            const landMassesGroupBoundingBox = landMassesGroup.node().getBBox();
-            const landMassesGroupWidth = landMassesGroupBoundingBox.width;
-            const landMassesGroupHeight = landMassesGroupBoundingBox.height;
-            if (svgWidth > landMassesGroupWidth) {
-                svg.attr('width', landMassesGroupWidth);
-                landMassesGroup.attr('transform', `translate(${-landMassesGroupBoundingBox.x} 0)`);
-            }
-            if (svgHeight > landMassesGroupHeight) {
-                svg.attr('height', landMassesGroupHeight);
-                landMassesGroup.attr('transform', `translate(0 ${-landMassesGroupBoundingBox.y})`);
-            }
-            
-            const relevantSalesDataForDate = (date, salesData) => {
-                let currentDate = parseTimestamp(new Date(date));
-                let relevantSalesData = null;
-                while (currentDate > earliestDate && !relevantSalesData) {
-                    const year = currentDate.getFullYear().toString();
-                    if (salesData[year]) {
-                        const month = (currentDate.getMonth()+1).toString();
-                        if (salesData[year][month]) {
-                            const day = currentDate.getDate().toString();
-                            if (salesData[year][month][day]) {
-                                relevantSalesData = salesData[year][month][day];
-                            }
-                        }
+        };
+
+        const updateLandMassFill = (sliderDate) => {
+            const landmassData = data.features;
+            landMassesGroup
+                .selectAll('path')
+                .data(landmassData)
+                .style('fill', datum => {
+                    if (datum.properties.salesData) {
+                        const relevantSalesData = relevantSalesDataForDate(sliderDate, datum.properties.salesData);
+                        const floatValue = relevantSalesData ? relevantSalesData.AmountPaidToDate / maximumTotalRevenue : 0;
+                        return colorMap(floatValue);
+                    } else {
+                        return landMassWithoutPurchaseColor;
                     }
-                    currentDate = dayBefore(currentDate);
-                }
-                return relevantSalesData; 
-            };
-            const updateLandMassFill = (sliderDate) => {
-                landMassesGroup
-                    .selectAll('path')
-                    .data(landmassData)
-                    .style('fill', datum => {
-                        if (datum.properties.salesData) {
-                            const relevantSalesData = relevantSalesDataForDate(sliderDate, datum.properties.salesData);
-                            const floatValue = relevantSalesData ? relevantSalesData.AmountPaidToDate / maximumTotalRevenue : 0;
-                            // if (relevantSalesData && datum.properties.name === 'Australia') {                                
-                            // }
-                            return colorMap(floatValue);
-                        } else {
-                            return landMassWithoutPurchaseColor;
-                        }
-                    });
-            };
+                });
+        };
+        
+        const renderSlider = () => {;
             timeSlider
                 .width(parseFloat(svg.attr('width')) * sliderWidthPortion)
                 .on('onchange', updateLandMassFill);
@@ -224,7 +212,9 @@ const choroplethMain = () => {
                 .attr('width', sliderTrackInsetWidth + 2 * sliderPadding)
                 .attr('height', sliderTrackInsetHeight + 2 * sliderPadding + sliderTopMargin);
             sliderGroup.select('.slider').raise();
-            
+        };
+
+        const renderPlayButton = () => {
             const sliderGroupBoundingBox = sliderGroup.node().getBBox();
             const renderPlayButton = (playButtonTextString) => {
                 playButtonText
@@ -271,7 +261,32 @@ const choroplethMain = () => {
                         stopTimer();
                     }
                 });
+        };
+        
+        const redraw = () => {
+            svg
+                .attr('width', `${window.innerWidth * 0.80}px`)
+                .attr('height', `${window.innerHeight * 0.80}px`);
+            const svgWidth = parseFloat(svg.attr('width'));
+            const svgHeight = parseFloat(svg.attr('height'));
             
+            const projection = d3.geoMercator().fitExtent([[0, 0], [svgWidth, svgHeight]], data);
+            renderLandMasses(projection);
+            
+            const landMassesGroupBoundingBox = landMassesGroup.node().getBBox();
+            const landMassesGroupWidth = landMassesGroupBoundingBox.width;
+            const landMassesGroupHeight = landMassesGroupBoundingBox.height;
+            if (svgWidth > landMassesGroupWidth) {
+                svg.attr('width', landMassesGroupWidth);
+                landMassesGroup.attr('transform', `translate(${-landMassesGroupBoundingBox.x} 0)`);
+            }
+            if (svgHeight > landMassesGroupHeight) {
+                svg.attr('height', landMassesGroupHeight);
+                landMassesGroup.attr('transform', `translate(0 ${-landMassesGroupBoundingBox.y})`);
+            }
+
+            renderSlider();
+            renderPlayButton();            
         };
         redraw();
         window.addEventListener('resize', redraw);

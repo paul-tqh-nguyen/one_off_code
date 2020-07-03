@@ -113,14 +113,14 @@ body {
 #slider-bounding-box {
     stroke-width: 1;
     stroke: black;
-    fill: red;
+    fill: #65bf47;
 }
 
 #play-button {
     stroke-linejoin: round;
     stroke-width: 1;
-    fill: red;
     stroke: black;
+    fill: #65bf47;
 }
 
 #play-button-group {
