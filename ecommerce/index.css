@@ -110,6 +110,10 @@ body {
     stroke: #0079b5;
 }
 
+#tool-tip-bounding-box {
+    fill: #65bf47;
+}
+
 #slider-bounding-box {
     stroke-width: 1;
     stroke: black;

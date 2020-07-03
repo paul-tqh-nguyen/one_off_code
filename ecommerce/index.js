@@ -40,9 +40,7 @@ const choroplethMain = () => {
     const playButtonText = playButtonGroup.append('text').attr('id', 'play-button-text');
     
     const toolTipFontSize = 12;
-    const toolTipTextPadding = toolTipFontSize;
-    const toolTipBackgroundColor = 'red';
-    const toolTipTransitionTime = 500;
+    const toolTipTextPadding = 10;
     const toolTipMargin = 10;
 
     const sliderWidthPortion = 0.50;
@@ -74,6 +72,7 @@ const choroplethMain = () => {
               .tickValues(d3.range(0, numberOfDays))
               .default(earliestDate);
         let timer;
+        let toolTipTimer;
         
         const relevantSalesDataForDate = (date, salesData) => {
             let currentDate = parseTimestamp(new Date(date));
@@ -95,24 +94,21 @@ const choroplethMain = () => {
         };
         
         const updateToolTip = (mouseX, mouseY, datum) => {
-            const toolTipBoundingBox = toolTipGroup
-                  .append('rect')
-                  .style('stroke-width', 1)
-                  .style('stroke', 'black')
-                  .style('fill', toolTipBackgroundColor);
+            const toolTipBoundingBox = d3.select('#tool-tip-bounding-box');
+            toolTipGroup.selectAll('text').remove();
             const relevantSalesData = datum.properties.salesData ? relevantSalesDataForDate(timeSlider.value(), datum.properties.salesData) : null;
             const toolTipTextLines = relevantSalesData ? [
                 `Country: ${datum.properties.name}`,
-                `Invoice Count To Date: ${relevantSalesData.InvoiceCountToDate}`,
-                `Quantity Sold To Date: ${relevantSalesData.QuantitySoldToDate}`,
-                `Amount Paid To Date: $${relevantSalesData.AmountPaidToDate.toFixed(2)}`,
-                `Unique Customer ID Count To Date: ${relevantSalesData.UniqueCustomerIDCountToDate}`,
-                `Unique Stock Code Count To Date: ${relevantSalesData.UniqueStockCodeCountToDate}`,
+                `Invoice Count To Date: ${relevantSalesData.InvoiceCountToDate.toLocaleString()}`,
+                `Quantity Sold To Date: ${relevantSalesData.QuantitySoldToDate.toLocaleString()}`,
+                `Amount Paid To Date: $${(Math.round(relevantSalesData.AmountPaidToDate * 1e2) / 1e2).toLocaleString()}`,
+                `Unique Customer ID Count To Date: ${relevantSalesData.UniqueCustomerIDCountToDate.toLocaleString()}`,
+                `Unique Stock Code Count To Date: ${relevantSalesData.UniqueStockCodeCountToDate.toLocaleString()}`,
             ] : [
                 `Country: ${datum.properties.name}`,
                 `Invoice Count To Date: 0`,
                 `Quantity Sold To Date: 0`,
-                `Amount Paid To Date: $0`,
+                `Amount Paid To Date: $0.00`,
                 `Unique Customer ID Count To Date: 0`,
                 `Unique Stock Code Count To Date: 0`,
             ];
@@ -121,7 +117,7 @@ const choroplethMain = () => {
                 textLinesGroup
                     .append('text')
                     .style('font-size', toolTipFontSize)
-                    .attr('class', 'tool-tip-text')
+                    .attr('id', 'tool-tip-text')
                     .attr('dx', toolTipTextPadding)
                     .attr('dy', `${(1+textLineIndex) * 1.2 * toolTipFontSize + toolTipTextPadding / 4}px`)
                     .text(textLine);
@@ -141,7 +137,7 @@ const choroplethMain = () => {
                 .attr('x', toolTipX)
                 .attr('y', toolTipY);
         };
-
+        
         const renderLandMasses = (projection) => {
             const projectionFunction = d3.geoPath().projection(projection);
             const landmassData = data.features;
@@ -158,13 +154,21 @@ const choroplethMain = () => {
                             .style('fill-opacity', 0.25);
                         d3.select(this)
                             .style('fill-opacity', 1);
+                        const toolTipBoundingBox = toolTipGroup
+                              .append('rect')
+                              .style('stroke-width', 1)
+                              .style('stroke', 'black')
+                              .attr('id', 'tool-tip-bounding-box');
                         const [mouseX, mouseY] = d3.mouse(this);
-                        updateToolTip(mouseX, mouseY, datum);
+                        toolTipTimer = setInterval(() => {
+                            updateToolTip(mouseX, mouseY, datum);
+                        }, sliderPeriod);
                     })
                     .on('mouseout', () => {
                         landMassesGroup
                             .selectAll('path')
                             .style('fill-opacity', 1);
+                        clearInterval(toolTipTimer);
                         toolTipGroup.selectAll('*').remove();
                     })
                     .attr('d', datum => projectionFunction(datum));
@@ -304,6 +308,6 @@ const choroplethMain = () => {
 choroplethMain();
 
 const toggleHelp = () => {
-    document.getElementById("help-display").classList.toggle("show");
-    document.getElementById("main-display").classList.toggle("show");
+    document.getElementById('help-display').classList.toggle('show');
+    document.getElementById('main-display').classList.toggle('show');
 };
