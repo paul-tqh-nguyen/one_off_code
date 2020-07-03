@@ -35538,13 +35538,13 @@
                 "name": "Lebanon",
                 "salesData": {
                     "2011": {
-                        "4": {
-                            "15": {
-                                "InvoiceCountToDate": 208,
-                                "QuantitySoldToDate": 111988,
-                                "AmountPaidToDate": 189286.1499999999,
-                                "UniqueCustomerIDCountToDate": 45,
-                                "UniqueStockCodeCountToDate": 1162
+                        "1": {
+                            "27": {
+                                "InvoiceCountToDate": 1791,
+                                "QuantitySoldToDate": 545746,
+                                "AmountPaidToDate": 986337.4700000008,
+                                "UniqueCustomerIDCountToDate": 294,
+                                "UniqueStockCodeCountToDate": 2656
                             }
                         }
                     }
@@ -56598,13 +56598,13 @@
                 "name": "RSA",
                 "salesData": {
                     "2011": {
-                        "4": {
-                            "15": {
-                                "InvoiceCountToDate": 208,
-                                "QuantitySoldToDate": 111988,
-                                "AmountPaidToDate": 189286.1499999999,
-                                "UniqueCustomerIDCountToDate": 45,
-                                "UniqueStockCodeCountToDate": 1162
+                        "10": {
+                            "13": {
+                                "InvoiceCountToDate": 2031,
+                                "QuantitySoldToDate": 785822,
+                                "AmountPaidToDate": 1345098.790000001,
+                                "UniqueCustomerIDCountToDate": 340,
+                                "UniqueStockCodeCountToDate": 2713
                             }
                         }
                     }
@@ -57419,5 +57419,6 @@
         }
     ],
     "earliestDate": "2010-12-01",
-    "latestDate": "2011-12-09"
+    "latestDate": "2011-12-09",
+    "maximumTotalRevenue": 8263846.444000013
 }

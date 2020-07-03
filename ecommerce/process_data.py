@@ -108,7 +108,7 @@ def combine_ecommerce_and_geo_data(ecommerce_df: pd.DataFrame, world_geojson_dat
         if feature_country_name in country_names:
             country_df = cummulative_df.loc[feature_country_name].copy()
             if isinstance(country_df, pd.Series):
-                country_df = cummulative_df.loc['Brazil'].to_frame().transpose()
+                country_df = cummulative_df.loc[feature_country_name].to_frame().transpose()
             country_df.set_index('InvoiceDate', inplace=True)
             sales_info_dict = recursive_defaultdict()
             for date, info in country_df.to_dict(orient='index').items():
@@ -116,6 +116,7 @@ def combine_ecommerce_and_geo_data(ecommerce_df: pd.DataFrame, world_geojson_dat
             feature['properties']['salesData'] = sales_info_dict
     world_geojson_data['earliestDate'] = cummulative_df.InvoiceDate.min()
     world_geojson_data['latestDate'] = cummulative_df.InvoiceDate.max()
+    world_geojson_data['maximumTotalRevenue'] = cummulative_df.AmountPaidToDate.max()
     return world_geojson_data
 
 ##########

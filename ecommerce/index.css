@@ -104,7 +104,7 @@ body {
 /**************/
 
 #land-masses-group .land-mass {
-    transition: fill-opacity 0.5s;
+    transition: fill-opacity 0.5s, fill 0.5s;
     stroke-width: 1px;
     stroke-linejoin: round;
     stroke: #0079b5;

@@ -44,7 +44,7 @@ const choroplethMain = () => {
     const sliderPeriod = 50;
 
     const landMassWithoutPurchaseColor = '#cccccc';
-    const landMassStartColor = landMassWithoutPurchaseColor; // '#ffffff';
+    const landMassStartColor = '#eeeeee';
     const landMassEndColor = '#289e00';
     const colorMap = createColorInterpolator(landMassStartColor, landMassEndColor);
     
@@ -52,13 +52,13 @@ const choroplethMain = () => {
         const earliestDate = parseTimestamp(new Date(Date.parse(data.earliestDate)));
         const latestDate = parseTimestamp(new Date(Date.parse(data.latestDate)));
         const numberOfDays = 1 + (latestDate - earliestDate) / (1000 * 60 * 60 *24);
-        const enumeratedDates = d3.range(0, numberOfDays).map(numberOfDaysPassed => parseTimestamp(new Date(earliestDate.getDate()+numberOfDaysPassed)));
+        const maximumTotalRevenue = data.maximumTotalRevenue;
         const timeSlider = d3.sliderTop()
               .min(earliestDate)
               .max(latestDate)
               .step(1000 * 60 * 60 * 24)
               .tickFormat(d3.timeFormat('%m/%d/%Y'))
-              .tickValues(enumeratedDates)
+              .tickValues(d3.range(0, numberOfDays))
               .default(earliestDate);
         let timer;
         const redraw = () => {
@@ -148,23 +148,33 @@ const choroplethMain = () => {
             }
             
             const relevantSalesDataForDate = (date, salesData) => {
-                const year = date.getFullYear();
-                const month = date.getMonth();
-                const day = date.getDay();
-                console.log(`year ${JSON.stringify(year)}`);
-                console.log(`month ${JSON.stringify(month)}`);
-                console.log(`day ${JSON.stringify(day)}`);
+                let currentDate = parseTimestamp(new Date(date));
+                let relevantSalesData = null;
+                while (currentDate > earliestDate && !relevantSalesData) {
+                    const year = currentDate.getFullYear().toString();
+                    if (salesData[year]) {
+                        const month = (currentDate.getMonth()+1).toString();
+                        if (salesData[year][month]) {
+                            const day = currentDate.getDate().toString();
+                            if (salesData[year][month][day]) {
+                                relevantSalesData = salesData[year][month][day];
+                            }
+                        }
+                    }
+                    currentDate = new Date(currentDate.getTime() - 1000 * 3600 * 24);
+                }
+                return relevantSalesData; 
             };
             const updateLandMassFill = (sliderDate) => {
-                const dateRange = latestDate.getTime()-earliestDate.getTime();
-                const floatValue = (sliderDate.getTime()-earliestDate.getTime()) / dateRange;
                 landMassesGroup
                     .selectAll('path')
                     .data(landmassData)
                     .style('fill', datum => {
                         if (datum.properties.salesData) {
                             const relevantSalesData = relevantSalesDataForDate(sliderDate, datum.properties.salesData);
-                            console.log(`relevantSalesData ${JSON.stringify(relevantSalesData)}`);
+                            const floatValue = relevantSalesData ? relevantSalesData.AmountPaidToDate / maximumTotalRevenue : 0;
+                            // if (relevantSalesData && datum.properties.name === 'Australia') {                                
+                            // }
                             return colorMap(floatValue);
                         } else {
                             return landMassWithoutPurchaseColor;
@@ -218,6 +228,7 @@ const choroplethMain = () => {
                     }
                 }, sliderPeriod);
             };
+            startTimer();
             
         };
         redraw();
