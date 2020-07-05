@@ -86,17 +86,6 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     )
     figure.title.text = 'Movement of 260 Caribou from 1988 to 2016'
     figure.add_tile(tile_provider)
-
-    # animal_id_groupby = locations_df.groupby('animal_id').apply(lambda group: group.set_index('timestamp').sort_index()[['longitude_x', 'latitude_y']]).groupby('animal_id')
-    # number_of_unique_animal_ids = animal_id_groupby.ngroups
-    # colors = matplotlib.cm.rainbow(np.linspace(0, 1, number_of_unique_animal_ids))
-    # colors = eager_map(lambda rgb_triple: bokeh.colors.RGB(*rgb_triple), colors * 255)
-    # random.seed(0)
-    # random.shuffle(colors)
-    # for (animal_id, group), color in zip(animal_id_groupby, colors):
-    #     xs = [group.longitude_x.tolist()]
-    #     ys = [group.latitude_y.tolist()]
-    #     figure.multi_line(xs, ys, line_width=2, line_alpha=0.25, line_color=color, legend_label=animal_id)
     
     animal_id_groupby = locations_df.groupby('animal_id').apply(lambda group: group.set_index('timestamp').sort_index()[['longitude_x', 'latitude_y']]).groupby('animal_id')
     xs_series = animal_id_groupby.apply(lambda group: group.longitude_x.tolist()).rename('xs')
