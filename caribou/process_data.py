@@ -85,9 +85,9 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     )
     figure.add_tile(tile_provider)
     
-    animal_id_groupby = locations_df.groupby('animal_id')
-    xs = animal_id_groupby.apply(lambda group: group.set_index('timestamp').sort_index().longitude_x.tolist()).tolist()
-    ys = animal_id_groupby.apply(lambda group: group.set_index('timestamp').sort_index().latitude_y.tolist()).tolist()
+    animal_id_groupby = locations_df.groupby('animal_id').apply(lambda group: group.set_index('timestamp').sort_index()[['longitude_x', 'latitude_y']]).groupby('animal_id')
+    xs = animal_id_groupby.apply(lambda group: group.longitude_x.tolist()).tolist()
+    ys = animal_id_groupby.apply(lambda group: group.latitude_y.tolist()).tolist()
     number_of_unique_animal_ids = len(locations_df.animal_id.unique())
     colors = matplotlib.cm.rainbow(np.linspace(0, 1, number_of_unique_animal_ids))
     colors = eager_map(lambda rgb_triple: bokeh.colors.RGB(*rgb_triple), colors * 255)
