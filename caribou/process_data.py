@@ -15,9 +15,6 @@ import tqdm
 import datetime
 import random
 import matplotlib.cm
-import bokeh.plotting
-import bokeh.models
-import bokeh.tile_providers
 import pandas as pd
 import numpy as np
 import multiprocessing as mp
@@ -25,6 +22,11 @@ from pandarallel import pandarallel
 from typing import Tuple
 
 from misc_utilities import *
+
+import bokeh.layouts
+import bokeh.plotting
+import bokeh.models
+import bokeh.tile_providers
 
 # @todo update these imports
 
@@ -63,9 +65,9 @@ def process_data(locations_df: pd.DataFrame) -> pd.DataFrame:
     locations_df['latitude_y'] = locations_df.latitude.parallel_map(wgs84_lat_to_web_mercator_y)
     return locations_df
 
-##########
-# Driver #
-##########
+#################
+# Visualization #
+#################
 
 def create_output_html(locations_df: pd.DataFrame) -> None:
     bokeh.plotting.output_file(OUTPUT_HTML_FILE, mode='inline')
@@ -76,7 +78,7 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     min_latitude_y = locations_df.latitude_y.min()
     max_latitude_y = locations_df.latitude_y.max()
 
-    figure = bokeh.plotting.figure(
+    map_figure = bokeh.plotting.figure(
         plot_width=1600, 
         plot_height=800,
         x_range=(min_longitude_x, max_longitude_x),
@@ -84,12 +86,16 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
         x_axis_type='mercator',
         y_axis_type='mercator',
     )
-    figure.title.text = 'Movement of 260 Caribou from 1988 to 2016'
-    figure.add_tile(tile_provider)
+    map_figure.sizing_mode = 'scale_width'
+    map_figure.add_layout(bokeh.models.Title(text='Movement of 260 Caribou from 1988 to 2016', align='center'), 'above')
+    map_figure.add_tile(tile_provider)
+    
+    start_date = locations_df.timestamp.min()
+    end_date = locations_df.timestamp.max()
     
     animal_id_groupby = locations_df.groupby('animal_id').apply(lambda group: group.set_index('timestamp').sort_index()[['longitude_x', 'latitude_y']]).groupby('animal_id')
-    xs_series = animal_id_groupby.apply(lambda group: group.longitude_x.tolist()).rename('xs')
-    ys_series = animal_id_groupby.apply(lambda group: group.latitude_y.tolist()).rename('ys')
+    xs_series = animal_id_groupby.apply(lambda group: group.longitude_x.tolist()).rename('xs') # parallel_apply slower
+    ys_series = animal_id_groupby.apply(lambda group: group.latitude_y.tolist()).rename('ys') # parallel_apply slower
     colors = matplotlib.cm.rainbow(np.linspace(0, 1, animal_id_groupby.ngroups))
     colors = eager_map(lambda rgb_triple: bokeh.colors.RGB(*rgb_triple), colors * 255)
     random.seed(0)
@@ -97,10 +103,51 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     multi_line_data_source_df = xs_series.to_frame().join(ys_series.to_frame())
     multi_line_data_source_df['color'] = pd.Series(colors, index=xs_series.index)
     multi_line_data_source = bokeh.models.ColumnDataSource(multi_line_data_source_df)
-    figure.multi_line(xs='xs', ys='ys', line_color='color', source=multi_line_data_source, line_width=2, line_alpha=0.25)
+    map_figure.multi_line(xs='xs', ys='ys', line_color='color', source=multi_line_data_source, line_width=2, line_alpha=0.25)
+
+    location_by_date = mp.Manager().dict()
+    def update_location_by_date_via_row(row: pd.Series) -> None:
+        animal_id, date = row.name
+        year = date.year
+        month = date.month
+        day = date.day
+        location_by_date[animal_id][year][month][day] = dict(longitudeX=row.longitude_x, latitudeY=row.latitude_y)
+        return
+    def update_location_by_date_via_group(group: pd.DataFrame) -> None:
+        animal_id = group.index[0][0]
+        location_by_date[animal_id] = recursive_defaultdict()
+        group.apply(update_location_by_date_via_row, axis=1) # nested apply, don't parallelize
+        return 
+    animal_id_groupby.parallel_apply(update_location_by_date_via_group)
+    location_by_date = dict(location_by_date)
     
-    bokeh.plotting.save(figure)
+    def animal_id_group_earliest_row(group: pd.DataFrame) -> pd.DataFrame:
+        group = group.copy()
+        group['alpha'] = group.index.map(lambda pair: float(pair[1].date() == start_date))
+        return group.iloc[0]
+    caribou_initial_location_df = animal_id_groupby.parallel_apply(animal_id_group_earliest_row)
+    caribou_initial_location_df['color'] = multi_line_data_source_df.color
+    caribou_circles_data_source = bokeh.models.ColumnDataSource(caribou_initial_location_df)
+    caribou_circles_glyph = bokeh.models.Circle(x='longitude_x', y='latitude_y', line_width=1, size=10, line_color='black', fill_color='color', fill_alpha='alpha', line_alpha='alpha')
+    map_figure.add_glyph(caribou_circles_data_source, caribou_circles_glyph)
+    
+    date_slider = bokeh.models.DateSlider(start=start_date, end=end_date, value=start_date, step=1, title='Date', align='center')
+    date_slider_callback = bokeh.models.callbacks.CustomJS(
+        args=dict(
+            dateSlider=date_slider, locationByDate=location_by_date, caribouCirclesDataSource=caribou_circles_data_source
+        ), code='''
+console.log(new Date(dateSlider.value));
+console.log(caribouCirclesDataSource.data);
+''')
+    date_slider.js_on_change('value', date_slider_callback)    
+    
+    layout = bokeh.layouts.column(map_figure, date_slider)
+    bokeh.plotting.save(layout, title='Caribou Movement')
     return
+
+##########
+# Driver #
+##########
 
 @debug_on_error
 def main() -> None:
