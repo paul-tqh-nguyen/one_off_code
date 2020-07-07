@@ -54,9 +54,9 @@ function files-with-suffix {
 }
 
 function spellcheck-files {
-    extension = $1
-    files = $(files-with-suffix $extension)
-    for e in 
+    EXTENSION = $1
+    FILES = $(files-with-suffix $EXTENSION)
+    for e in FILES
     do
 	echo $e
 	spellcheck $e;
