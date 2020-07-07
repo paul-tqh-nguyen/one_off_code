@@ -13,6 +13,19 @@ function spellcheck {
     cat $1 | aspell -a | grep -v "^\*" | grep -v "^$"
 }
 
+function files-with-suffix {
+    find . -type f -name "*.$1"
+}
+
+function spellcheck-files-with-suffix {
+    for e in $(files-with-suffix $1)
+    do
+	echo $e
+	spellcheck $e;
+	printf "\n\n"
+    done
+}
+
 function pipe-filter {
     python3 -c "
 import sys
@@ -23,14 +36,6 @@ for line in sys.stdin:
     if all(substring not in line for substring in substrings_to_remove):
         sys.stdout.write(line)
 "
-}
-
-function files-with-suffix {
-    find . -type f -name "*.$1"
-}
-
-function spellcheck-files-with-suffix {
-    
 }
 
 function git-black {
