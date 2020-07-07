@@ -25,6 +25,10 @@ for line in sys.stdin:
 "
 }
 
+function files-with-suffix {
+    find . -type f -name "*.$1"
+}
+
 function git-black {
     black $(git status | grep modified | grep py | cut -d":" -f2)
 }
