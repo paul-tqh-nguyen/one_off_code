@@ -52,7 +52,9 @@ function files-with-suffix {
 function spellcheck {
     for file in $@
     do
+	echo $file
 	cat $file | aspell -a | grep -v "^\*" | grep -v "^$"
+	printf "\n\n"
     done
 }
 
