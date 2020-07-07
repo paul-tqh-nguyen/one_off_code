@@ -55,7 +55,7 @@ function files-with-suffix {
 
 function spellcheck-files {
     EXTENSION = $1
-    FILES = $(files-with-suffix $EXTENSION)
+    FILES = ${files-with-suffix EXTENSION}
     for e in FILES
     do
 	echo $e
