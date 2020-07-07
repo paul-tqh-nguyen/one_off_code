@@ -54,7 +54,7 @@ function files-with-suffix {
 }
 
 function spellcheck-files {
-    for e in ${files-with-suffix $1}
+    for e in ${(files-with-suffix $1)}
     do
 	echo $e
 	spellcheck $e;
