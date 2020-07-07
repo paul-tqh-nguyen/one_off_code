@@ -53,7 +53,7 @@ function files-with-suffix {
     find . -type f -name "*.$1"
 }
 
-function spellcheck-files-with-suffix {
+function spellcheck-files {
     for e in $(files-with-suffix $1)
     do
 	echo $e
