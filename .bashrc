@@ -13,6 +13,18 @@ function spellcheck {
     cat $1 | aspell -a | grep -v "^\*" | grep -v "^$"
 }
 
+function pipe-filter {
+    python3 -c "
+import sys
+
+substrings_to_remove = sys.argv[1:]
+
+for line in sys.stdin:
+    if all(substring not in line for substring in substrings_to_remove):
+        sys.stdout.write(line)
+"
+}
+
 function git-black {
     black $(git status | grep modified | grep py | cut -d":" -f2)
 }
