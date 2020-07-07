@@ -45,21 +45,14 @@ function set-title() {
 
 # Spell Checking
 
-function spellcheck {
-    cat $1 | aspell -a | grep -v "^\*" | grep -v "^$"
-}
-
 function files-with-suffix {
     find . -type f -name "*.$1"
 }
 
-function spellcheck-files {
-    local files = $(files-with-suffix $($1))
-    for e in $files
+function spellcheck {
+    for file in $@
     do
-	echo $e
-	spellcheck $e;
-	printf "\n\n"
+	cat $file | aspell -a | grep -v "^\*" | grep -v "^$"
     done
 }
 
