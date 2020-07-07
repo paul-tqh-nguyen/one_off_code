@@ -29,6 +29,10 @@ function files-with-suffix {
     find . -type f -name "*.$1"
 }
 
+function spellcheck-files-with-suffix {
+    
+}
+
 function git-black {
     black $(git status | grep modified | grep py | cut -d":" -f2)
 }
