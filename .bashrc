@@ -9,18 +9,6 @@ alias untar="tar -xvf"
 alias update-settings="pushd ~/code/one_off_code/ ; git pull; git add python_startup.py .emacs .bashrc ; git commit -m \"Update .bashrc and .emacs and python_startup.py files. Timestamp: $(date +\"%T\")\" ; git push ; source ~/code/one_off_code/.bashrc  ; popd"
 alias store-git-credentials="git config --global credential.helper store"
 
-function pipe-filter {
-    python3 -c "
-import sys
-
-substrings_to_remove = sys.argv[1:]
-
-for line in sys.stdin:
-    if all(substring not in line for substring in substrings_to_remove):
-        sys.stdout.write(line)
-"
-}
-
 function filesize {
     num_bytes=$(cat $1 | wc --bytes)
     if [ "1024" -gt "$num_bytes" ]
