@@ -353,6 +353,7 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d -hyperparameter-s
 
 (cond
  ((eq system-type 'darwin)
+  (setq ispell-program-name "/usr/local/bin/aspell")
   (setq mac-command-modifier 'meta)
   (setq mac-function-modifier 'control)
   (setq mac-option-modifier nil)
