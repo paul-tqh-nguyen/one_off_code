@@ -10,7 +10,7 @@ alias update-settings="pushd ~/code/one_off_code/ ; git pull; git add python_sta
 alias store-git-credentials="git config --global credential.helper store"
 
 function filesize {
-    num_bytes=$(cat $1 | wc --bytes)
+    num_bytes=$(cat $1 | wc -c)
     if [ "1024" -gt "$num_bytes" ]
     then
 	echo $(echo "$num_bytes") bytes
