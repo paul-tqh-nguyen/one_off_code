@@ -69,15 +69,12 @@ def process_data(locations_df: pd.DataFrame) -> pd.DataFrame:
 # Visualization #
 #################
 
-def create_output_html(locations_df: pd.DataFrame) -> None:
-    bokeh.plotting.output_file(OUTPUT_HTML_FILE, mode='inline')
+def _initialize_map_figure(locations_df: pd.DataFrame) -> bokeh.plotting.Figure:    
     tile_provider = bokeh.tile_providers.get_provider(bokeh.tile_providers.ESRI_IMAGERY)
-    
     min_longitude_x = locations_df.longitude_x.min()
     max_longitude_x = locations_df.longitude_x.max()
     min_latitude_y = locations_df.latitude_y.min()
     max_latitude_y = locations_df.latitude_y.max()
-
     map_figure = bokeh.plotting.figure(
         plot_width=1600, 
         plot_height=800,
@@ -89,11 +86,9 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     map_figure.sizing_mode = 'scale_width'
     map_figure.add_layout(bokeh.models.Title(text='Movement of 260 Caribou from 1988 to 2016', align='center'), 'above')
     map_figure.add_tile(tile_provider)
-    
-    start_date = locations_df.timestamp.min()
-    end_date = locations_df.timestamp.max()
-    
-    animal_id_groupby = locations_df.groupby('animal_id').apply(lambda group: group.set_index('timestamp').sort_index()[['longitude_x', 'latitude_y']]).groupby('animal_id')
+    return map_figure
+
+def _generate_multi_line_data_source_df(animal_id_groupby: pd.core.groupby.generic.DataFrameGroupBy) -> pd.DataFrame:
     xs_series = animal_id_groupby.apply(lambda group: group.longitude_x.tolist()).rename('xs') # parallel_apply slower
     ys_series = animal_id_groupby.apply(lambda group: group.latitude_y.tolist()).rename('ys') # parallel_apply slower
     colors = matplotlib.cm.rainbow(np.linspace(0, 1, animal_id_groupby.ngroups))
@@ -102,9 +97,14 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     random.shuffle(colors)
     multi_line_data_source_df = xs_series.to_frame().join(ys_series.to_frame())
     multi_line_data_source_df['color'] = pd.Series(colors, index=xs_series.index)
+    return multi_line_data_source_df
+
+def _draw_caribou_lines(multi_line_data_source_df: pd.DataFrame, map_figure: bokeh.plotting.Figure) -> None:
     multi_line_data_source = bokeh.models.ColumnDataSource(multi_line_data_source_df)
     map_figure.multi_line(xs='xs', ys='ys', line_color='color', source=multi_line_data_source, line_width=2, line_alpha=0.25)
+    return
 
+def _generate_location_by_date(animal_id_groupby: pd.core.groupby.generic.DataFrameGroupBy) -> dict:
     location_by_date = mp.Manager().dict()
     def update_location_by_date_via_row(row: pd.Series) -> None:
         animal_id, date = row.name
@@ -120,9 +120,14 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
         return 
     animal_id_groupby.parallel_apply(update_location_by_date_via_group)
     location_by_date = dict(location_by_date)
+    return location_by_date
+
+def _generate_date_slider(locations_df: pd.DataFrame, multi_line_data_source_df: pd.DataFrame, animal_id_groupby: pd.core.groupby.generic.DataFrameGroupBy, map_figure: bokeh.plotting.Figure) -> bokeh.models.DateSlider:
+    start_date = locations_df.timestamp.min()
+    end_date = locations_df.timestamp.max()
     
     def animal_id_group_earliest_row(group: pd.DataFrame) -> pd.DataFrame:
-        group = group.copy()
+        group = group.copy(deep=False)
         group['alpha'] = group.index.map(lambda pair: float(pair[1].date() == start_date))
         return group.iloc[0]
     caribou_initial_location_df = animal_id_groupby.parallel_apply(animal_id_group_earliest_row)
@@ -132,6 +137,7 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     map_figure.add_glyph(caribou_circles_data_source, caribou_circles_glyph)
     
     date_slider = bokeh.models.DateSlider(start=start_date, end=end_date, value=start_date, step=1, title='Date', align='center')
+    location_by_date = _generate_location_by_date(animal_id_groupby)
     date_slider_callback = bokeh.models.callbacks.CustomJS(
         args=dict(
             dateSlider=date_slider, locationByDate=location_by_date, caribouCirclesDataSource=caribou_circles_data_source
@@ -139,8 +145,16 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
 console.log(new Date(dateSlider.value));
 console.log(caribouCirclesDataSource.data);
 ''')
-    date_slider.js_on_change('value', date_slider_callback)    
-    
+    date_slider.js_on_change('value', date_slider_callback)
+    return date_slider
+
+def create_output_html(locations_df: pd.DataFrame) -> None:
+    bokeh.plotting.output_file(OUTPUT_HTML_FILE, mode='inline')
+    map_figure = _initialize_map_figure(locations_df)
+    animal_id_groupby = locations_df.groupby('animal_id').apply(lambda group: group.set_index('timestamp').sort_index()[['longitude_x', 'latitude_y']]).groupby('animal_id')
+    multi_line_data_source_df = _generate_multi_line_data_source_df(animal_id_groupby)
+    _draw_caribou_lines(multi_line_data_source_df, map_figure)
+    date_slider = _generate_date_slider(locations_df, multi_line_data_source_df, animal_id_groupby, map_figure)
     layout = bokeh.layouts.column(map_figure, date_slider)
     bokeh.plotting.save(layout, title='Caribou Movement')
     return
