@@ -63,6 +63,7 @@ def wgs84_lat_to_web_mercator_y(latitude: float) -> float:
 def process_data(locations_df: pd.DataFrame) -> pd.DataFrame:
     locations_df['longitude_x'] = locations_df.longitude.parallel_map(wgs84_long_to_web_mercator_x)
     locations_df['latitude_y'] = locations_df.latitude.parallel_map(wgs84_lat_to_web_mercator_y)
+    locations_df['date'] = locations_df.timestamp.parallel_map(datetime.datetime.date)
     return locations_df
 
 #################
@@ -105,82 +106,47 @@ def _draw_caribou_lines(multi_line_data_source_df: pd.DataFrame, map_figure: bok
     return
 
 def _generate_location_by_date(locations_df: pd.DataFrame) -> dict:
-    locations_df = locations_df[['animal_id', 'timestamp', 'longitude_x', 'latitude_y']].copy(deep=False)
-    locations_df['date'] = locations_df.timestamp.parallel_map(datetime.datetime.date)
+    locations_df = locations_df[['animal_id', 'timestamp', 'date', 'longitude_x', 'latitude_y']]
     indices_of_earliest_timestamp_for_animal_and_date = locations_df.groupby(['animal_id', 'date'])['timestamp'].idxmin()
     locations_df = locations_df.iloc[indices_of_earliest_timestamp_for_animal_and_date]
-    locations_df.drop(columns=['timestamp'], inplace=True)
+    locations_df = locations_df[['animal_id', 'date', 'longitude_x', 'latitude_y']]
     
-    # manager = mp.Manager()
-    # location_by_date = manager.dict()
-    # current_date = locations_df.date.min()
-    # latest_date = locations_df.date.max()
-    # while current_date < latest_date:
-    #     location_by_date[current_date.isoformat()] = dict()
-    #     current_date += datetime.timedelta(days=1)
-    
-    # def _update_location_by_date(group: pd.DataFrame) -> None:
-    #     assert len(group.date.unique() == 1)
-    #     date = group.date.iloc[0]
-    #     date_string = date.isoformat()
-    #     location_by_date[date_string] = group[['animal_id', 'longitude_x', 'latitude_y']].set_index('animal_id').to_dict(orient='index')
-    #     return
-    # locations_df.groupby(['date']).parallel_apply(_update_location_by_date)
-    
-    def _interpolate_positions_for_animal_id_group(group: pd.DataFrame) -> pd.DataFrame:
-        assert all(group.date == group.date.sort_values())
-        animal_id = group.iloc[0].name
-        group = group.set_index('date')
-        previous_date = group.index.min()
-        for row in group.itertuples():
-            row_date = row.Index
-            number_of_days_since_previous_date = (row_date - previous_date).days
-            if number_of_days_since_previous_date > 1:
-                previous_row = group.loc[previous_date]
-                for day_count_delta_since_previous_date in range(1, number_of_days_since_previous_date):
-                    interpolated_row_date = row_date + datetime.timedelta(days=day_count_delta_since_previous_date)
-                    interpolation_amount = day_count_delta_since_previous_date / number_of_days_since_previous_date
-                    interpolated_longitude_x = lerp(previous_row.longitude_x, row.longitude_x, interpolation_amount)
-                    interpolated_latitude_y = lerp(previous_row.latitude_y, row.latitude_y, interpolation_amount)
-                    group = group.append(pd.Series({
-                        'animal_id': animal_id,
-                        'longitude_x': interpolated_longitude_x,
-                        'latitude_y': interpolated_latitude_y,
-                    }, name=interpolated_row_date))
-        return group
-    locations_df_with_interpolations = locations_df.groupby(['animal_id']).parallel_apply(_interpolate_positions_for_animal_id_group)
-    breakpoint()
-    
+    manager = mp.Manager()
+    location_by_date = manager.dict()    
+    def _update_location_by_date(group: pd.DataFrame) -> None:
+        assert len(group.date.unique() == 1)
+        date = group.date.iloc[0]
+        date_string = date.isoformat()
+        location_by_date[date_string] = group[['animal_id', 'longitude_x', 'latitude_y']].set_index('animal_id').to_dict(orient='index')
+        return
+    locations_df.groupby(['date']).parallel_apply(_update_location_by_date)
+        
     location_by_date = dict(location_by_date)
     return location_by_date
 
+def _generate_earliest_and_latest_date_by_animal_id_dict(locations_df: pd.DataFrame) -> dict:
+    earliest_latest_date_df = locations_df.groupby(['animal_id']).agg({'date': ['min', 'max']})
+    earliest_latest_date_df.columns = earliest_latest_date_df.columns.get_level_values(1)
+    earliest_latest_date_df.rename(columns={'min': 'latest_date', 'max': 'earliest_date'}, inplace=True)
+    earliest_latest_date_df = earliest_latest_date_df.parallel_applymap(datetime.date.isoformat)
+    earliest_and_latest_date_by_animal_id_dict = earliest_latest_date_df.to_dict(orient='index')
+    return earliest_and_latest_date_by_animal_id_dict
+
 def _generate_date_slider(locations_df: pd.DataFrame, multi_line_data_source_df: pd.DataFrame, animal_id_groupby: pd.core.groupby.generic.DataFrameGroupBy, map_figure: bokeh.plotting.Figure) -> bokeh.models.DateSlider:
-    start_date = locations_df.timestamp.min().date() #- datetime.timedelta(days=1)
+    start_date = locations_df.timestamp.min().date()
     end_date = locations_df.timestamp.max().date()
-    
-    # caribou_initial_location_df = animal_id_groupby.parallel_apply(lambda group: group.iloc[0])
-    # caribou_initial_location_df['color'] = multi_line_data_source_df.color
-    # caribou_initial_location_df['alpha'] = pd.Series(0.0, index=caribou_initial_location_df.index)
-    # caribou_circles_data_source = bokeh.models.ColumnDataSource(caribou_initial_location_df)
-    # caribou_circles_glyph = bokeh.models.Circle(x='longitude_x', y='latitude_y', line_width=1, size=10, line_color='black', fill_color='color', fill_alpha='alpha', line_alpha='alpha')
-    # map_figure.add_glyph(caribou_circles_data_source, caribou_circles_glyph)
     
     date_slider = bokeh.models.DateSlider(start=start_date, end=end_date, value=start_date, step=1, title='Date', align='center')
     location_by_date = _generate_location_by_date(locations_df)
+    earliest_and_latest_date_by_animal_id_dict = _generate_earliest_and_latest_date_by_animal_id_dict(locations_df)
+    with open('./slider_callback.js', 'r') as f:
+        js_callback_code = f.read()
+    animal_ids = locations_df.animal_id.unique().tolist()
     date_slider_callback = bokeh.models.callbacks.CustomJS(
         args=dict(
-            dateSlider=date_slider, locationByDate=location_by_date
-        ), code='''
-console.clear();
-const date = new Date(dateSlider.value + (new Date(dateSlider.value).getTimezoneOffset() * 60 * 1000));
-const dateString = `${date.getFullYear()}-${((date.getMonth() > 8) ? (date.getMonth() + 1) : ('0' + (date.getMonth() + 1)))}-${((date.getDate() > 9) ? date.getDate() : ('0' + date.getDate()))}`;
-console.log(date);
-console.log(dateString);
-console.log(locationByDate);
-console.log(Object.keys(locationByDate)[0]);
-console.log(Object.keys(locationByDate));
-console.log(locationByDate[dateString]);
-''')
+            dateSlider=date_slider, locationByDate=location_by_date, earliestAndLatestDateByAnimalId=earliest_and_latest_date_by_animal_id_dict, animalIds=animal_ids
+        ),
+        code=js_callback_code)
     date_slider.js_on_change('value', date_slider_callback)
     return date_slider
 
