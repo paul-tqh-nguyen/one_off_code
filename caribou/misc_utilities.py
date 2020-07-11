@@ -370,8 +370,8 @@ def n_choose_k(n: int, k: int):
     return numerator // denominator
 
 def lerp(start: float, end: float, floatValue: float) -> float:
-    return start + floatValue * (end - start);
-};
+    return start + floatValue * (end - start)
+
 def false(*args, **kwargs) -> bool:
     return False
 

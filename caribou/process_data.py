@@ -110,7 +110,7 @@ def _generate_location_by_date(locations_df: pd.DataFrame) -> dict:
     indices_of_earliest_timestamp_for_animal_and_date = locations_df.groupby(['animal_id', 'date'])['timestamp'].idxmin()
     locations_df = locations_df.iloc[indices_of_earliest_timestamp_for_animal_and_date]
     locations_df.drop(columns=['timestamp'], inplace=True)
-
+    
     # manager = mp.Manager()
     # location_by_date = manager.dict()
     # current_date = locations_df.date.min()
@@ -127,26 +127,31 @@ def _generate_location_by_date(locations_df: pd.DataFrame) -> dict:
     #     return
     # locations_df.groupby(['date']).parallel_apply(_update_location_by_date)
     
-    def _update_location_by_date(group: pd.DataFrame) -> None:
+    def _interpolate_positions_for_animal_id_group(group: pd.DataFrame) -> pd.DataFrame:
         assert all(group.date == group.date.sort_values())
-        new_df = pd.DataFrame()
+        animal_id = group.iloc[0].name
         group = group.set_index('date')
         previous_date = group.index.min()
         for row in group.itertuples():
             row_date = row.Index
-            if previous_date < row_date:
-                number_of_days = (row_date - previous_date).days
-                # @todo finish this
-                while previous_date < row_date:
-                    previous_date_row = group.iloc[previous_date]
-                    new_df
-            
-        breakpoint()
-        return
-    locations_df.groupby(['animal_id']).apply(_update_location_by_date)
+            number_of_days_since_previous_date = (row_date - previous_date).days
+            if number_of_days_since_previous_date > 1:
+                previous_row = group.loc[previous_date]
+                for day_count_delta_since_previous_date in range(1, number_of_days_since_previous_date):
+                    interpolated_row_date = row_date + datetime.timedelta(days=day_count_delta_since_previous_date)
+                    interpolation_amount = day_count_delta_since_previous_date / number_of_days_since_previous_date
+                    interpolated_longitude_x = lerp(previous_row.longitude_x, row.longitude_x, interpolation_amount)
+                    interpolated_latitude_y = lerp(previous_row.latitude_y, row.latitude_y, interpolation_amount)
+                    group = group.append(pd.Series({
+                        'animal_id': animal_id,
+                        'longitude_x': interpolated_longitude_x,
+                        'latitude_y': interpolated_latitude_y,
+                    }, name=interpolated_row_date))
+        return group
+    locations_df_with_interpolations = locations_df.groupby(['animal_id']).parallel_apply(_interpolate_positions_for_animal_id_group)
+    breakpoint()
     
     location_by_date = dict(location_by_date)
-    breakpoint()
     return location_by_date
 
 def _generate_date_slider(locations_df: pd.DataFrame, multi_line_data_source_df: pd.DataFrame, animal_id_groupby: pd.core.groupby.generic.DataFrameGroupBy, map_figure: bokeh.plotting.Figure) -> bokeh.models.DateSlider:
