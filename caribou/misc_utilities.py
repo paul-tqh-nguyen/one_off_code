@@ -369,6 +369,9 @@ def n_choose_k(n: int, k: int):
     denominator = reduce(int.__mul__, range(1, k+1), 1)
     return numerator // denominator
 
+def lerp(start: float, end: float, floatValue: float) -> float:
+    return start + floatValue * (end - start);
+};
 def false(*args, **kwargs) -> bool:
     return False
 
