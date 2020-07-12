@@ -102,7 +102,7 @@ def _generate_multi_line_data_source_df(animal_id_groupby: pd.core.groupby.gener
 
 def _draw_caribou_lines(multi_line_data_source_df: pd.DataFrame, map_figure: bokeh.plotting.Figure) -> None:
     multi_line_data_source = bokeh.models.ColumnDataSource(multi_line_data_source_df)
-    map_figure.multi_line(xs='xs', ys='ys', line_color='color', source=multi_line_data_source, line_width=2, line_alpha=0.25)
+    map_figure.multi_line(xs='xs', ys='ys', line_color='color', source=multi_line_data_source, line_width=2, line_alpha=0.5)
     return
 
 def _generate_location_by_date_string(locations_df: pd.DataFrame) -> dict:
