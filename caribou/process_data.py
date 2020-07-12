@@ -162,7 +162,7 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     multi_line_data_source_df = _generate_multi_line_data_source_df(animal_id_groupby)
     _draw_caribou_lines(multi_line_data_source_df, map_figure)
     caribou_circles_data_source = _generate_caribou_circles_data_source(multi_line_data_source_df)
-    map_figure.circle(x='longitude_x', y='latitude_y', color='color', alpha='alpha', line_color="black", line_width=2, size=12, source=caribou_circles_data_source)
+    map_figure.circle(x='longitude_x', y='latitude_y', color='color', alpha='alpha', line_color="black", line_width=2, size=10, source=caribou_circles_data_source)
     date_slider = _generate_date_slider(locations_df, caribou_circles_data_source)
     layout = bokeh.layouts.column(map_figure, date_slider)
     bokeh.plotting.save(layout, title='Caribou Movement')
