@@ -5,27 +5,29 @@ const onlyOne = (iterable) => {
     return iterable[0];
 };
 
-const timerPeriod = 25;
+const timerPeriod = 1;
 
-const main = () => {
+const main = (dateSlider, timerBox) => {
     const playButtonDiv = onlyOne(document.getElementsByClassName('play-pause-button'));
     const playButton = onlyOne(playButtonDiv.getElementsByTagName('button'));
-    
-    const dateSliderDiv = onlyOne(document.getElementsByClassName('date-slider'));
-    const dateSliderHandleDiv = onlyOne(dateSliderDiv.querySelectorAll('div.noUi-handle.noUi-handle-lower'));
     
     const timer = onlyOne(timerBox);
     if (timer !== null) {
         clearInterval(timer);
     }
     if (playButton.innerHTML  === 'Play') {
+        if (dateSlider.value >= dateSlider.end) {
+            dateSlider.value = dateSlider.start;
+        }
         timerBox[0] = setInterval(() => {
-            const sliderValue = parseInt(dateSliderHandleDiv.getAttribute('aria-valuenow'));
-            const sliderNextDayValueString = `${sliderValue + 1000 * 3600 * 24}.0`;
-            dateSliderHandleDiv.setAttribute('aria-valuenow', sliderNextDayValueString);
+            if (dateSlider.value >= dateSlider.end) {
+                clearInterval(timerBox[0]);
+            } else {
+                dateSlider.value += 1000 * 3600 * 24;
+            }
         }, timerPeriod);
     }
     playButton.innerHTML = playButton.innerHTML === 'Pause' ? 'Play' : 'Pause';
 };
 
-main();
+main(dateSlider, timerBox);

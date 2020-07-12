@@ -167,7 +167,7 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     play_button = bokeh.models.Button(label='Play', css_classes=['play-pause-button'])
     with open('./play_button_callback.js', 'r') as f:
         js_callback_code = f.read()
-    play_button.js_on_click(bokeh.models.callbacks.CustomJS(args=dict(timerBox=[None]), code=js_callback_code))
+    play_button.js_on_click(bokeh.models.callbacks.CustomJS(args=dict(dateSlider=date_slider, timerBox=[None]), code=js_callback_code))
     layout = bokeh.layouts.column(map_figure, date_slider, play_button)
     bokeh.plotting.save(layout, title='Caribou Movement')
     return

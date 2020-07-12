@@ -60,7 +60,6 @@ const generateAnimalIdToLaterDateString = (date, endDate, remainingAnimalIds, lo
 };
 
 const main = (dateSlider, caribouCirclesDataSource, locationByDateString, animalIds, startDateString, endDateString) => {
-    console.clear();
     const date = dateFromInt(dateSlider.value);
     const startDate = dateFromString(startDateString);
     const endDate = dateFromString(endDateString);
