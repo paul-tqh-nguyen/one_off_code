@@ -137,7 +137,7 @@ def _generate_date_slider(locations_df: pd.DataFrame, caribou_circles_data_sourc
     start_date = locations_df.timestamp.min().date() - datetime.timedelta(days=1)
     end_date = locations_df.timestamp.max().date()
     
-    date_slider = bokeh.models.DateSlider(start=start_date, end=end_date, value=start_date, step=1, title='Date', align='center')
+    date_slider = bokeh.models.DateSlider(start=start_date, end=end_date, value=start_date, step=1, title='Date', align='center', css_classes=['date-slider'])
     location_by_date_string = _generate_location_by_date_string(locations_df)
     animal_ids = locations_df.animal_id.unique().tolist()
     with open('./slider_callback.js', 'r') as f:

@@ -90,21 +90,19 @@ const main = (dateSlider, caribouCirclesDataSource, locationByDateString, animal
             }
         });
     }
-    if (Object.keys(animalIdToLocation).length > 0) {
-        const caribouCount = caribouCirclesDataSource.data.index.length;
-        for (let i = 0; i < caribouCount; i++) {
-            const animalId = caribouCirclesDataSource.data.animal_id[i];
-            const caribouLocation = animalIdToLocation[animalId];
-            if (caribouLocation) {
-                caribouCirclesDataSource.data.longitude_x[i] = caribouLocation.longitude_x;
-                caribouCirclesDataSource.data.latitude_y[i] = caribouLocation.latitude_y;
-                caribouCirclesDataSource.data.alpha[i] = 1.0;
-            } else {
-                caribouCirclesDataSource.data.alpha[i] = 0.0;
-            }
+    const caribouCount = caribouCirclesDataSource.data.index.length;
+    for (let i = 0; i < caribouCount; i++) {
+        const animalId = caribouCirclesDataSource.data.animal_id[i];
+        const caribouLocation = animalIdToLocation[animalId];
+        if (caribouLocation) {
+            caribouCirclesDataSource.data.longitude_x[i] = caribouLocation.longitude_x;
+            caribouCirclesDataSource.data.latitude_y[i] = caribouLocation.latitude_y;
+            caribouCirclesDataSource.data.alpha[i] = 1.0;
+        } else {
+            caribouCirclesDataSource.data.alpha[i] = 0.0;
         }
-        caribouCirclesDataSource.change.emit();
     }
+    caribouCirclesDataSource.change.emit();
 };
 
 main(dateSlider, caribouCirclesDataSource, locationByDateString, animalIds, startDateString, endDateString);
