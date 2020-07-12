@@ -168,7 +168,23 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     with open('./play_button_callback.js', 'r') as f:
         js_callback_code = f.read()
     play_button.js_on_click(bokeh.models.callbacks.CustomJS(args=dict(dateSlider=date_slider, timerBox=[None]), code=js_callback_code))
-    layout = bokeh.layouts.column(map_figure, date_slider, play_button)
+    next_date_button = bokeh.models.Button(label='Next Date')
+    next_date_button.js_on_click(bokeh.models.callbacks.CustomJS(args=dict(dateSlider=date_slider), code='''
+if (dateSlider.value < dateSlider.end) {
+    dateSlider.value += 1000 * 3600 * 24;
+}
+'''))
+    previous_date_button = bokeh.models.Button(label='Previous Date')
+    previous_date_button.js_on_click(bokeh.models.callbacks.CustomJS(args=dict(dateSlider=date_slider), code='''
+if (dateSlider.start < dateSlider.value) {
+    dateSlider.value -= 1000 * 3600 * 24;
+}
+'''))
+    layout = bokeh.layouts.column(
+        map_figure,
+        date_slider,
+        bokeh.layouts.row(previous_date_button, play_button, next_date_button),
+    )
     bokeh.plotting.save(layout, title='Caribou Movement')
     return
 
