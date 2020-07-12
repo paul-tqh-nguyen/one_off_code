@@ -77,8 +77,8 @@ def _initialize_map_figure(locations_df: pd.DataFrame) -> bokeh.plotting.Figure:
     min_latitude_y = locations_df.latitude_y.min()
     max_latitude_y = locations_df.latitude_y.max()
     map_figure = bokeh.plotting.figure(
-        plot_width=1600, 
-        plot_height=800,
+        plot_width=1200, 
+        plot_height=600,
         x_range=(min_longitude_x, max_longitude_x),
         y_range=(min_latitude_y, max_latitude_y),
         x_axis_type='mercator',
