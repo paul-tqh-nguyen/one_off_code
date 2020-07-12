@@ -126,9 +126,10 @@ def _generate_location_by_date_string(locations_df: pd.DataFrame) -> dict:
 
 def _generate_caribou_circles_data_source(multi_line_data_source_df: pd.DataFrame) -> None:
     caribou_circles_df = multi_line_data_source_df[['color']].copy(deep=False)
-    caribou_circles_df['xs'] = 0
-    caribou_circles_df['ys'] = 0
+    caribou_circles_df['longitude_x'] = 0
+    caribou_circles_df['latitude_y'] = 0
     caribou_circles_df['alpha'] = 0.0
+    caribou_circles_df.reset_index(inplace=True)
     caribou_circles_data_source = bokeh.models.ColumnDataSource(caribou_circles_df)
     return caribou_circles_data_source
 
@@ -161,7 +162,7 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     multi_line_data_source_df = _generate_multi_line_data_source_df(animal_id_groupby)
     _draw_caribou_lines(multi_line_data_source_df, map_figure)
     caribou_circles_data_source = _generate_caribou_circles_data_source(multi_line_data_source_df)
-    map_figure.circle(x='xs', y='ys', color='color', size=10, alpha='alpha', source=caribou_circles_data_source)
+    map_figure.circle(x='longitude_x', y='latitude_y', color='color', alpha='alpha', line_color="black", line_width=3, size=15, source=caribou_circles_data_source)
     date_slider = _generate_date_slider(locations_df, caribou_circles_data_source)
     layout = bokeh.layouts.column(map_figure, date_slider)
     bokeh.plotting.save(layout, title='Caribou Movement')
