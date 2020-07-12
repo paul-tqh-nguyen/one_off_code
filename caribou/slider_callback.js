@@ -82,9 +82,13 @@ const main = (dateSlider, caribouCirclesDataSource, locationByDateString, animal
                 const earlierLocation = locationByDateString[earlierDateString][animalId];
                 const laterLocation = locationByDateString[laterDateString][animalId];
                 const interpolationAmount = (dateSlider.value - dateStringToInt(earlierDateString)) / (dateStringToInt(laterDateString) - dateStringToInt(earlierDateString));
+                console.log(`earlierLocation ${JSON.stringify(earlierLocation)}`);
+                console.log(`laterLocation ${JSON.stringify(laterLocation)}`);
                 animalIdToLocation[animalId] = {
                     'longitude_x': lerp(earlierLocation.longitude_x, laterLocation.longitude_x, interpolationAmount),
                     'latitude_y': lerp(earlierLocation.latitude_y, laterLocation.latitude_y, interpolationAmount),
+                    'longitude': lerp(earlierLocation.longitude, laterLocation.longitude, interpolationAmount),
+                    'latitude': lerp(earlierLocation.latitude, laterLocation.latitude, interpolationAmount),
                 };
             }
         });
@@ -96,6 +100,8 @@ const main = (dateSlider, caribouCirclesDataSource, locationByDateString, animal
         if (caribouLocation) {
             caribouCirclesDataSource.data.longitude_x[i] = caribouLocation.longitude_x;
             caribouCirclesDataSource.data.latitude_y[i] = caribouLocation.latitude_y;
+            caribouCirclesDataSource.data.longitude[i] = caribouLocation.longitude;
+            caribouCirclesDataSource.data.latitude[i] = caribouLocation.latitude;
             caribouCirclesDataSource.data.alpha[i] = 1.0;
         } else {
             caribouCirclesDataSource.data.alpha[i] = 0.0;

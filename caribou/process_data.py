@@ -75,6 +75,14 @@ def _initialize_map_figure(locations_df: pd.DataFrame) -> bokeh.plotting.Figure:
     max_longitude_x = locations_df.longitude_x.max()
     min_latitude_y = locations_df.latitude_y.min()
     max_latitude_y = locations_df.latitude_y.max()
+    hover = bokeh.models.HoverTool(
+        names=['caribou_circles'],
+        tooltips=[
+            ('ID', '@animal_id'),
+            ('Longitude', '@longitude'),
+            ('Latitude', '@latitude'),
+        ],
+    )
     map_figure = bokeh.plotting.figure(
         plot_width=1200, 
         plot_height=600,
@@ -82,6 +90,7 @@ def _initialize_map_figure(locations_df: pd.DataFrame) -> bokeh.plotting.Figure:
         y_range=(min_latitude_y, max_latitude_y),
         x_axis_type='mercator',
         y_axis_type='mercator',
+        tools=['pan', 'box_zoom', 'wheel_zoom', 'reset', hover]
     )
     map_figure.sizing_mode = 'scale_width'
     map_figure.add_layout(bokeh.models.Title(text='Movement of 260 Caribou from 1988 to 2016', align='center'), 'above')
@@ -102,14 +111,12 @@ def _generate_multi_line_data_source_df(locations_df: pd.DataFrame) -> pd.DataFr
 
 def _draw_caribou_lines(multi_line_data_source_df: pd.DataFrame, map_figure: bokeh.plotting.Figure) -> None:
     multi_line_data_source = bokeh.models.ColumnDataSource(multi_line_data_source_df)
-    map_figure.multi_line(xs='xs', ys='ys', line_color='color', source=multi_line_data_source, line_width=2, line_alpha=0.5)
+    map_figure.multi_line(xs='xs', ys='ys', line_color='color', source=multi_line_data_source, line_width=2, line_alpha=0.5, name='caribou_lines')
     return
 
 def _generate_location_by_date_string(locations_df: pd.DataFrame) -> dict:
-    locations_df = locations_df[['animal_id', 'timestamp', 'date', 'longitude_x', 'latitude_y']]
     indices_of_earliest_timestamp_for_animal_and_date = locations_df.groupby(['animal_id', 'date'])['timestamp'].idxmin()
     locations_df = locations_df.loc[indices_of_earliest_timestamp_for_animal_and_date]
-    locations_df = locations_df[['animal_id', 'date', 'longitude_x', 'latitude_y']]
     
     manager = mp.Manager()
     location_by_date_string = manager.dict()    
@@ -117,7 +124,7 @@ def _generate_location_by_date_string(locations_df: pd.DataFrame) -> dict:
         assert len(group.date.unique() == 1)
         date = group.date.iloc[0]
         date_string = date.isoformat()
-        location_by_date_string[date_string] = group[['animal_id', 'longitude_x', 'latitude_y']].set_index('animal_id').to_dict(orient='index')
+        location_by_date_string[date_string] = group[['animal_id', 'longitude_x', 'latitude_y', 'longitude', 'latitude']].set_index('animal_id').to_dict(orient='index')
         return
     locations_df.groupby(['date']).parallel_apply(_update_location_by_date_string)
         
@@ -128,6 +135,8 @@ def _generate_caribou_circles_data_source(multi_line_data_source_df: pd.DataFram
     caribou_circles_df = multi_line_data_source_df[['color']].copy(deep=False)
     caribou_circles_df['longitude_x'] = 0
     caribou_circles_df['latitude_y'] = 0
+    caribou_circles_df['longitude'] = 0
+    caribou_circles_df['latitude'] = 0
     caribou_circles_df['alpha'] = 0.0
     caribou_circles_df.reset_index(inplace=True)
     caribou_circles_data_source = bokeh.models.ColumnDataSource(caribou_circles_df)
@@ -161,7 +170,7 @@ def create_output_html(locations_df: pd.DataFrame) -> None:
     multi_line_data_source_df = _generate_multi_line_data_source_df(locations_df)
     _draw_caribou_lines(multi_line_data_source_df, map_figure)
     caribou_circles_data_source = _generate_caribou_circles_data_source(multi_line_data_source_df)
-    map_figure.circle(x='longitude_x', y='latitude_y', color='color', alpha='alpha', line_color='black', line_width=2, size=10, source=caribou_circles_data_source)
+    map_figure.circle(x='longitude_x', y='latitude_y', color='color', alpha='alpha', line_color='black', line_width=2, size=10, source=caribou_circles_data_source, name='caribou_circles')
     date_slider = _generate_date_slider(locations_df, caribou_circles_data_source)
     play_button = bokeh.models.Button(label='Play', css_classes=['play-pause-button'])
     with open('./play_button_callback.js', 'r') as f:
@@ -194,6 +203,11 @@ if (dateSlider.start < dateSlider.value) {
 @debug_on_error
 def main() -> None:
     locations_df = pd.read_csv(LOCATIONS_CSV_FILE, parse_dates=['timestamp'])
+    
+    # animal_ids = locations_df.animal_id.unique().tolist()
+    # animal_ids = animal_ids[:100] # @todo remove these
+    # locations_df = locations_df[locations_df.animal_id.isin(animal_ids)]
+    
     locations_df = process_data(locations_df)
     create_output_html(locations_df)
     return
