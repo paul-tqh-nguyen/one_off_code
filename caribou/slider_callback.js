@@ -79,12 +79,6 @@ const main = (dateSlider, caribouCirclesDataSource, locationByDateString, animal
             const earlierDateString = animalIdToEarlierDateString[animalId];
             const laterDateString = animalIdToLaterDateString[animalId];
             if (earlierDateString && laterDateString) {
-                console.clear();
-                console.log(`date ${JSON.stringify(date)}`);
-                console.log(`earlierDateString ${JSON.stringify(earlierDateString)}`);
-                console.log(`laterDateString ${JSON.stringify(laterDateString)}`);
-                console.log(`earlierLocation ${JSON.stringify(earlierLocation)}`);
-                console.log(`laterLocation ${JSON.stringify(laterLocation)}`);
                 const earlierLocation = locationByDateString[earlierDateString][animalId];
                 const laterLocation = locationByDateString[laterDateString][animalId];
                 const interpolationAmount = (dateSlider.value - dateStringToInt(earlierDateString)) / (dateStringToInt(laterDateString) - dateStringToInt(earlierDateString));
