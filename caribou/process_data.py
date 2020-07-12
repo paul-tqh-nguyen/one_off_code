@@ -108,7 +108,7 @@ def _draw_caribou_lines(multi_line_data_source_df: pd.DataFrame, map_figure: bok
 def _generate_location_by_date_string(locations_df: pd.DataFrame) -> dict:
     locations_df = locations_df[['animal_id', 'timestamp', 'date', 'longitude_x', 'latitude_y']]
     indices_of_earliest_timestamp_for_animal_and_date = locations_df.groupby(['animal_id', 'date'])['timestamp'].idxmin()
-    locations_df = locations_df.iloc[indices_of_earliest_timestamp_for_animal_and_date]
+    locations_df = locations_df.loc[indices_of_earliest_timestamp_for_animal_and_date]
     locations_df = locations_df[['animal_id', 'date', 'longitude_x', 'latitude_y']]
     
     manager = mp.Manager()
@@ -195,6 +195,9 @@ if (dateSlider.start < dateSlider.value) {
 @debug_on_error
 def main() -> None:
     locations_df = pd.read_csv(LOCATIONS_CSV_FILE, parse_dates=['timestamp'])
+    print(f"locations_df.animal_id.unique() {repr(locations_df.animal_id.unique())}")
+    locations_df = locations_df[locations_df.animal_id.isin(['MO_car151', 'MO_car161'])]
+    print(f"len(locations_df) {repr(len(locations_df))}")
     locations_df = process_data(locations_df)
     create_output_html(locations_df)
     return
