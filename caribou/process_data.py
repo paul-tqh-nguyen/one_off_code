@@ -35,7 +35,7 @@ import bokeh.tile_providers
 ###########
 
 pandarallel.initialize(nb_workers=mp.cpu_count(), progress_bar=False, verbose=0)
-OUTPUT_HTML_FILE = 'output.html'
+OUTPUT_HTML_FILE = 'caribou.html'
 
 # https://www.kaggle.com/jessemostipak/caribou-location-tracking
 LOCATIONS_CSV_FILE = './data/locations.csv'
@@ -84,15 +84,14 @@ def _initialize_map_figure(locations_df: pd.DataFrame) -> bokeh.plotting.Figure:
         ],
     )
     map_figure = bokeh.plotting.figure(
-        plot_width=1200, 
-        plot_height=600,
+        plot_width=800, 
         x_range=(min_longitude_x, max_longitude_x),
         y_range=(min_latitude_y, max_latitude_y),
         x_axis_type='mercator',
         y_axis_type='mercator',
-        tools=['pan', 'box_zoom', 'wheel_zoom', 'reset', hover]
+        tools=['pan', 'box_zoom', 'wheel_zoom', 'reset', hover],
     )
-    map_figure.sizing_mode = 'scale_width'
+    map_figure.sizing_mode = 'scale_both'
     map_figure.add_layout(bokeh.models.Title(text='Movement of 260 Caribou from 1988 to 2016', align='center'), 'above')
     map_figure.add_tile(tile_provider)
     return map_figure
@@ -191,7 +190,7 @@ if (dateSlider.start < dateSlider.value) {
     layout = bokeh.layouts.column(
         map_figure,
         date_slider,
-        bokeh.layouts.row(previous_date_button, play_button, next_date_button),
+        bokeh.layouts.row(previous_date_button, play_button, next_date_button, sizing_mode='stretch_width'),
     )
     bokeh.plotting.save(layout, title='Caribou Movement')
     return
@@ -204,12 +203,6 @@ if (dateSlider.start < dateSlider.value) {
 def main() -> None:
     locations_df = pd.read_csv(LOCATIONS_CSV_FILE, parse_dates=['timestamp'])
     locations_df = process_data(locations_df)
-    
-    # animal_ids = locations_df.animal_id.unique().tolist()
-    # animal_ids = animal_ids[:100] # @todo remove these
-    # animal_ids = ['GR_C08']
-    # locations_df = locations_df[locations_df.animal_id.isin(animal_ids)]
-    
     create_output_html(locations_df)
     return
 

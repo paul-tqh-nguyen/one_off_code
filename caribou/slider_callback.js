@@ -84,23 +84,6 @@ const main = (dateSlider, caribouCirclesDataSource, locationByDateString, animal
                     'longitude': lerp(earlierLocation.longitude, laterLocation.longitude, interpolationAmount),
                     'latitude': lerp(earlierLocation.latitude, laterLocation.latitude, interpolationAmount),
                 };
-                if (animalId == 'GR_C08') {
-                    // Nov 17, 18, 19 of 2001
-                    console.log('\n\n\n\n\n');
-                    console.log(`earlierDateString ${JSON.stringify(earlierDateString)}`);
-                    console.log(`dateString ${JSON.stringify(dateString)}`);
-                    console.log(`laterDateString ${JSON.stringify(laterDateString)}`);
-                    console.log('\n\n');
-                    console.log(`earlierLocation.longitude_x ${JSON.stringify(earlierLocation.longitude_x)}`);
-                    console.log(`animalIdToLocation[animalId].longitude_x ${JSON.stringify(animalIdToLocation[animalId].longitude_x)}`);
-                    console.log(`laterLocation.longitude_x ${JSON.stringify(laterLocation.longitude_x)}`);
-                    console.log('\n\n');
-                    console.log(`earlierLocation.latitude_y ${JSON.stringify(earlierLocation.latitude_y)}`);
-                    console.log(`animalIdToLocation[animalId].latitude_y ${JSON.stringify(animalIdToLocation[animalId].latitude_y)}`);
-                    console.log(`laterLocation.latitude_y ${JSON.stringify(laterLocation.latitude_y)}`);
-                    console.log('\n\n');
-                    console.log(`animalIdToLocation[animalId] ${JSON.stringify(animalIdToLocation[animalId])}`);
-                }
             }
         });
     }
