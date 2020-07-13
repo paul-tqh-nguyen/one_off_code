@@ -23,16 +23,14 @@ const generateAnimalIdToEarlierDateString = (date, startDate, remainingAnimalIds
         currentDate = dayBeforeDate(currentDate);
         const currentDateString = dateToString(currentDate);
         const locations = locationByDateString[currentDateString];
-        const animalIdsFound = new Set();
         if (locations) {
             Object.keys(locations).forEach((animalId) => {
-                if (remainingAnimalIds.has(animalId)) {
+                if (remainingAnimalIdsWithoutEarlierDate.has(animalId)) {
                     animalIdToEarlierDateString[animalId] = currentDateString;
-                    animalIdsFound.add(animalId);
+                    remainingAnimalIdsWithoutEarlierDate.delete(animalId);
                 }
             });
         }
-        animalIdsFound.forEach((animalId) => remainingAnimalIdsWithoutEarlierDate.delete(animalId));
     }
     return animalIdToEarlierDateString;
 };  
@@ -45,16 +43,14 @@ const generateAnimalIdToLaterDateString = (date, endDate, remainingAnimalIds, lo
         currentDate = dayAfterDate(currentDate);
         const currentDateString = dateToString(currentDate);
         const locations = locationByDateString[currentDateString];
-        const animalIdsFound = new Set();
         if (locations) {
             Object.keys(locations).forEach((animalId) => {
-                if (remainingAnimalIds.has(animalId)) {
+                if (remainingAnimalIdsWithoutLaterDate.has(animalId)) {
                     animalIdToLaterDateString[animalId] = currentDateString;
-                    animalIdsFound.add(animalId);
+                    remainingAnimalIdsWithoutLaterDate.delete(animalId);
                 }
             });
         }
-        animalIdsFound.forEach((animalId) => remainingAnimalIdsWithoutLaterDate.delete(animalId));
     }
     return animalIdToLaterDateString;
 };
@@ -82,14 +78,29 @@ const main = (dateSlider, caribouCirclesDataSource, locationByDateString, animal
                 const earlierLocation = locationByDateString[earlierDateString][animalId];
                 const laterLocation = locationByDateString[laterDateString][animalId];
                 const interpolationAmount = (dateSlider.value - dateStringToInt(earlierDateString)) / (dateStringToInt(laterDateString) - dateStringToInt(earlierDateString));
-                console.log(`earlierLocation ${JSON.stringify(earlierLocation)}`);
-                console.log(`laterLocation ${JSON.stringify(laterLocation)}`);
                 animalIdToLocation[animalId] = {
                     'longitude_x': lerp(earlierLocation.longitude_x, laterLocation.longitude_x, interpolationAmount),
                     'latitude_y': lerp(earlierLocation.latitude_y, laterLocation.latitude_y, interpolationAmount),
                     'longitude': lerp(earlierLocation.longitude, laterLocation.longitude, interpolationAmount),
                     'latitude': lerp(earlierLocation.latitude, laterLocation.latitude, interpolationAmount),
                 };
+                if (animalId == 'GR_C08') {
+                    // Nov 17, 18, 19 of 2001
+                    console.log('\n\n\n\n\n');
+                    console.log(`earlierDateString ${JSON.stringify(earlierDateString)}`);
+                    console.log(`dateString ${JSON.stringify(dateString)}`);
+                    console.log(`laterDateString ${JSON.stringify(laterDateString)}`);
+                    console.log('\n\n');
+                    console.log(`earlierLocation.longitude_x ${JSON.stringify(earlierLocation.longitude_x)}`);
+                    console.log(`animalIdToLocation[animalId].longitude_x ${JSON.stringify(animalIdToLocation[animalId].longitude_x)}`);
+                    console.log(`laterLocation.longitude_x ${JSON.stringify(laterLocation.longitude_x)}`);
+                    console.log('\n\n');
+                    console.log(`earlierLocation.latitude_y ${JSON.stringify(earlierLocation.latitude_y)}`);
+                    console.log(`animalIdToLocation[animalId].latitude_y ${JSON.stringify(animalIdToLocation[animalId].latitude_y)}`);
+                    console.log(`laterLocation.latitude_y ${JSON.stringify(laterLocation.latitude_y)}`);
+                    console.log('\n\n');
+                    console.log(`animalIdToLocation[animalId] ${JSON.stringify(animalIdToLocation[animalId])}`);
+                }
             }
         });
     }

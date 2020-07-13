@@ -203,12 +203,13 @@ if (dateSlider.start < dateSlider.value) {
 @debug_on_error
 def main() -> None:
     locations_df = pd.read_csv(LOCATIONS_CSV_FILE, parse_dates=['timestamp'])
+    locations_df = process_data(locations_df)
     
     # animal_ids = locations_df.animal_id.unique().tolist()
     # animal_ids = animal_ids[:100] # @todo remove these
+    # animal_ids = ['GR_C08']
     # locations_df = locations_df[locations_df.animal_id.isin(animal_ids)]
     
-    locations_df = process_data(locations_df)
     create_output_html(locations_df)
     return
 
