@@ -53,9 +53,10 @@ if os.uname()[1] == "demouser-DGX-Station":
 
 # Debugging Utilities
 
+from typing import Generator
 from contextlib import contextmanager
 @contextmanager
-def safe_cuda_memory():
+def safe_cuda_memory() -> Generator:
     try:
         yield
     except RuntimeError as err:
@@ -64,9 +65,10 @@ def safe_cuda_memory():
         else:
             print("CUDA ran out of memory.")
 
+from typing import Generator
 from contextlib import contextmanager
 @contextmanager
-def warnings_suppressed() -> None:
+def warnings_suppressed() -> Generator:
     import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -74,9 +76,10 @@ def warnings_suppressed() -> None:
     return
 
 import io
+from typing import Generator
 from contextlib import contextmanager
 @contextmanager
-def std_out(stream: io.TextIOWrapper) -> None:
+def std_out(stream: io.TextIOWrapper) -> Generator:
     import sys
     original_std_out = sys.stdout
     sys.stdout = stream
@@ -84,19 +87,21 @@ def std_out(stream: io.TextIOWrapper) -> None:
     sys.stdout = original_std_out
     return
 
+from typing import Generator
 from contextlib import contextmanager
 @contextmanager
-def suppressed_output() -> None:
+def suppressed_output() -> Generator:
+    import os
     import sys
     with open(os.devnull, 'w') as dev_null:
         with std_out(dev_null):
             yield
     return
 
-from typing import Callable, Union
+from typing import Callable, Union, Generator
 from contextlib import contextmanager
 @contextmanager
-def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -> None:
+def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -> Generator:
     import sys
     from io import StringIO
     temporary_std_out = StringIO()
@@ -112,18 +117,24 @@ def shell(shell_command: str) -> str:
     return subprocess.check_output(shell_command, shell=True).decode('utf-8')
 
 def pid() -> int:
+    import os
     return os.getpid()
 
-def file(obj) -> str:
+from typing import Optional
+def file(obj) -> Optional[str]:
     import inspect
+    file_location: Optional[str] = None
     try:
         file_location = inspect.getfile(obj)
         source_file_location = inspect.getsourcefile(obj)
     except TypeError as err:
         module = inspect.getmodule(obj)
-        file_location = inspect.getfile(module)
-        source_file_location = inspect.getsourcefile(module)
-    if file_location != source_file_location:
+        if module:
+            file_location = inspect.getfile(module)
+            source_file_location = inspect.getsourcefile(module)
+        else:
+            file_location = source_file_location = None
+    if None in {file_location, source_file_location} or file_location != source_file_location:
         print("Consider using inspect.getsourcefile as well.")
     return file_location
 
@@ -145,7 +156,8 @@ def doc(obj) -> None:
     print(inspect.getdoc(obj))
     return
 
-def parent_classes(obj) -> None:
+from typing import Tuple
+def parent_classes(obj) -> Tuple[type, ...]:
     import inspect
     cls = obj if inspect.isclass(obj) else type(obj)
     return inspect.getmro(cls)
@@ -237,8 +249,10 @@ def trace(func: Callable) -> Callable:
     return decorating_function
 
 BOGUS_TOKEN = object()
-def dpn(expression_string: str, given_frame=None):
+import types
+def dpn(expression_string: str, given_frame=Optional[types.FrameType]):
     """dpn == debug print name"""
+    import os
     import sys
     import inspect
     try:
@@ -275,10 +289,10 @@ dpf = __dpf_hack_by_paul__() # usage is like a='a' ; dpf.a
 
 # Timing Utilities
 
-from typing import Callable
+from typing import Callable, Generator
 from contextlib import contextmanager
 @contextmanager
-def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None) -> None:
+def timeout(time: int, functionToExecuteOnTimeout: Callable[[], None] = None) -> Generator:
     """NB: This cannot be nested."""
     import signal
     def _raise_timeout(*args, **kwargs):
@@ -294,10 +308,10 @@ def timeout(time: float, functionToExecuteOnTimeout: Callable[[], None] = None) 
         signal.signal(signal.SIGALRM, signal.SIG_IGN)
     return
 
-from typing import Callable
+from typing import Callable, Generator
 from contextlib import contextmanager
 @contextmanager
-def timer(section_name: str = None, exitCallback: Callable[[], None] = None) -> None:
+def timer(section_name: str = None, exitCallback: Callable[[float], None] = None) -> Generator:
     import time
     start_time = time.time()
     yield
@@ -320,9 +334,10 @@ def recursive_defaultdict() -> defaultdict:
 def is_ascii(input_string: str) -> bool:
     return all(ord(character) < 128 for character in input_string)
 
+from typing import Generator
 from contextlib import contextmanager
 @contextmanager
-def temp_plt_figure(*args, **kwargs) -> None:
+def temp_plt_figure(*args, **kwargs) -> Generator:
     import matplotlib.pyplot as plt
     figure = plt.figure(*args, **kwargs)
     yield figure
@@ -416,6 +431,7 @@ def powerset(iterable: Iterable) -> Iterable:
     return subset_iterable
 
 def n_choose_k(n: int, k: int):
+    from functools import reduce
     k = min(k, n-k)
     numerator = reduce(int.__mul__, range(n, n-k, -1), 1)
     denominator = reduce(int.__mul__, range(1, k+1), 1)
@@ -423,7 +439,7 @@ def n_choose_k(n: int, k: int):
 
 def lerp(start: float, end: float, floatValue: float) -> float:
     return start + floatValue * (end - start);
-};
+
 def false(*args, **kwargs) -> bool:
     return False
 
@@ -437,8 +453,7 @@ def unzip(zipped_item: Iterable) -> Iterable:
 
 from collections import Counter
 def histogram(iterator: Iterable) -> Counter:
-    from collections import Counter
-    counter = Counter()
+    counter: Counter = Counter()
     for element in iterator:
         counter[element]+=1
     return counter
