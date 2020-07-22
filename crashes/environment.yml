@@ -4,6 +4,7 @@ dependencies:
   - pandas
   - tqdm
   - conda-forge::shapely
+  - conda-forge::git-lfs
   - pip
   - pip:
     - pandarallel
