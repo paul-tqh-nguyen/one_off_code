@@ -2,7 +2,6 @@ name: crashes
 dependencies:
   - python=3.7
   - pandas
-  - tqdm
   - conda-forge::shapely
   - conda-forge::git-lfs
   - pip
