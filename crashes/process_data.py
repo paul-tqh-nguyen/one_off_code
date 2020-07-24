@@ -139,7 +139,7 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     df = _guess_boroughs_and_zip_codes(df, borough_geojson, zip_code_geojson)
     df.drop(df[df['BOROUGH'].isnull()].index, inplace=True)
     df.drop(df[df['ZIP CODE'].isnull()].index, inplace=True)
-    df[df['ZIP CODE'] == 11249] = 11211 # our ZIP code geojson glues 11249 and 11211 together
+    df[df['ZIP CODE'] == 11249]['ZIP CODE'] = 11211 # our ZIP code geojson glues 11249 and 11211 together
     df['ZIP CODE'] = df['ZIP CODE'].map(int)
     df['BOROUGH'] = df['BOROUGH'].parallel_map(str.lower)
     df.astype({'ZIP CODE': int}, copy=False)
