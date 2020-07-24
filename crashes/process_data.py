@@ -171,7 +171,7 @@ def generate_output_dict(df: pd.DataFrame, borough_geojson: dict, zip_code_geojs
     crash_data_dict = MANAGER.dict()
     
     def _note_zip_code_rows(group: pd.DataFrame, dict_for_borough: mp.managers.DictProxy) -> None:
-        zip_code: int = only_one(group['ZIP CODE'].unique())
+        zip_code = str(only_one(group['ZIP CODE'].unique()))
         dict_for_borough[zip_code] = list(group.to_dict(orient='index').values())
         return
     
