@@ -48,8 +48,14 @@ from functools import reduce
 
 
 if os.uname()[1] == "demouser-DGX-Station":
-    import numpy as np
-    import networkx as nx
+    try:
+        import numpy as np
+    except:
+        pass
+    try:
+        import networkx as nx
+    except:
+        pass
 
 # Debugging Utilities
 
