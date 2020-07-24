@@ -1,12 +1,11 @@
 name: greviews
 dependencies:
+  - python=3.7
+  - pytorch==1.4.0
+  - pandas
+  - scikit-learn
+  - conda-forge::mypy
   - pip
   - pip:
     - transformers
     - pandarallel
-  - python=3.7
-  - pytorch
-  - pytorch::torchtext
-  - pandas
-  - scikit-learn
-  - conda-forge::mypy
