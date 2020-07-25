@@ -125,7 +125,22 @@ def load_data_frames() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 class Classifier(ABC):
     
     @abstractmethod
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, dropout_probability: float, gradient_clipping_max_threshold: float, *args, **kwargs):
+        '''
+        The initializer must populate the following attributes:
+            self.model_name
+            self.number_of_epochs
+            self.batch_size
+            self.learning_rate
+            self.max_sequence_length
+            self.dropout_probability
+            self.gradient_clipping_max_threshold
+            self.tokenizer
+            self.model
+            self.optimizer
+            self.loss_function
+            self.scheduler
+        '''
         pass
     
     def dataset_to_dataloader(self, dataset: data.Dataset) -> data.DataLoader:
@@ -135,7 +150,7 @@ class Classifier(ABC):
     def train_one_epoch(self) -> float:
         self.model.train()
         total_loss = 0
-        for encoding in tqdm_with_message(self.training_dataloader, post_yield_message_func = lambda index: f'Training Loss Per Batch {total_loss/(index+1):.8f}', total=len(self.training_dataloader)):
+        for encoding in tqdm_with_message(self.training_dataloader, post_yield_message_func = lambda index: f'Training Loss Per Batch      {total_loss/(index+1):.8f}', total=len(self.training_dataloader)):
             prediction_distributions = self.model(encoding)
             targets = encoding['sentiment_id'].to(self.model.device)
             loss = self.loss_function(prediction_distributions, targets)
@@ -151,9 +166,10 @@ class Classifier(ABC):
     def _evaluate(self, dataloader_type: Literal['validation', 'testing']) -> float:
         total_loss = 0
         self.model.eval()
+        tqdm_padding = ' '*3 if dataloader_type == 'validation' else ''
         dataloader = self.validation_dataloader if dataloader_type == 'validation' else self.testing_dataloader
         with torch.no_grad():
-            for encoding in tqdm_with_message(dataloader, post_yield_message_func = lambda index: f'{dataloader_type.capitalize()} Loss Per Batch {total_loss/(index+1):.8f}', total=len(dataloader)):
+            for encoding in tqdm_with_message(dataloader, post_yield_message_func = lambda index: f'{dataloader_type.capitalize()} Loss Per Batch {tqdm_padding}{total_loss/(index+1):.8f}', total=len(dataloader)):
                 prediction_distributions = self.model(encoding)
                 targets = encoding['sentiment_id'].to(self.model.device)
                 loss = self.loss_function(prediction_distributions, targets)
@@ -229,7 +245,7 @@ class BERTDataset(data.Dataset): # @todo can we make this model agnostic?
         self.tokenizer = tokenizer
         self.max_sequence_length = max_sequence_length
         
-    def encode_string(input_string: str) -> dict:
+    def encode_string(self, input_string: str) -> dict:
         return self.tokenizer.encode_plus(input_string, max_length=self.max_sequence_length, truncation=True, return_token_type_ids=False, padding='max_length', return_attention_mask=True, return_tensors='pt')
         
     def __getitem__(self, index):
