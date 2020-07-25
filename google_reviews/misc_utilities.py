@@ -292,9 +292,10 @@ def temp_plt_figure(*args, **kwargs) -> Generator:
     plt.close(figure)
     return
 
-from typing import List, Iterable
-def only_one(items: List):
+from typing import Iterable
+def only_one(items: Iterable):
     assert isinstance(items, Iterable)
+    items = [e for e in items]
     assert len(items) == 1
     return items[0]
 
@@ -405,4 +406,3 @@ def histogram(iterator: Iterable) -> Counter:
     for element in iterator:
         counter[element]+=1
     return counter
-
