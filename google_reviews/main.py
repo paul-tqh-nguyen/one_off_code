@@ -219,8 +219,8 @@ class Classifier(ABC):
     @classmethod
     def hyperparameter_search(cls,
                               model_name_choices: Iterable[str],
-                              number_of_epochs_choices: Iterable[int] = [10],
-                              batch_size_choices: Iterable[int] = [1, 32, 64, 128],
+                              number_of_epochs_choices: Iterable[int] = [30],
+                              batch_size_choices: Iterable[int] = [1, 32, 64],
                               learning_rate_choices: Iterable[float] = [
                                   4e-7, 4e-5, 4e-3,
                                   2e-7, 2e-5, 2e-3,
@@ -467,6 +467,7 @@ def main() -> None:
         print(f'Using CUDA device {args.cuda_device_id}.')
     else:
         print(f'Using CPU.')
+    print(f'Process id: {os.getpid()}')
     perform_hyperparameter_search()
     return
 
