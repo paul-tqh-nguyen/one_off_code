@@ -9,6 +9,7 @@
 ###########
 
 import os
+import json
 import operator
 import itertools
 import random
@@ -48,14 +49,8 @@ NUMBER_OF_WORKERS = mp.cpu_count()
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 RANDOM_SEED = 1234
 
-NUMBER_OF_SENTIMENTS = 3
-
-# MAX_SEQUENCE_LENGTH = 160
-# NUMBER_OF_EPOCHS = 10
-# BATCH_SIZE = 1
-# LEARNING_RATE = 2e-5
-# DROPOUT_PROBABILITY = 0.3
-# GRADIENT_CLIPPING_MAX_THRESHOLD = 1.0
+SENTIMENT_ID_TO_SENTIMENT = ['Negative', 'Neutral', 'Positive']
+NUMBER_OF_SENTIMENTS = len(SENTIMENT_ID_TO_SENTIMENT)
 
 #############################
 # Sanity Checking Utilities #
@@ -103,8 +98,6 @@ def move_dict_value_tensors_to_device(input_dict: dict, device: torch.device) ->
 ################################
 # Data Preprocessing Utilities #
 ################################
-
-SENTIMENT_ID_TO_SENTIMENT = ['Negative', 'Neutral', 'Positive']
 
 def score_to_sentiment_id(score: int) -> int:
     if score < 3:
@@ -219,12 +212,17 @@ class Classifier(ABC):
     @classmethod
     def hyperparameter_search(cls,
                               model_name_choices: Iterable[str],
-                              number_of_epochs_choices: Iterable[int],
-                              batch_size_choices: Iterable[int],
-                              learning_rate_choices: Iterable[float],
-                              max_sequence_length_choices: Iterable[int],
-                              dropout_probability_choices: Iterable[float],
-                              gradient_clipping_max_threshold_choices: Iterable[float]) -> Generator[Callable[[None], None], None, None]:
+                              number_of_epochs_choices: Iterable[int] = [10],
+                              batch_size_choices: Iterable[int] = [1, 32, 64, 128],
+                              learning_rate_choices: Iterable[float] = [
+                                  4e-7, 4e-5, 4e-3,
+                                  2e-7, 2e-5, 2e-3,
+                                  1e-7, 1e-5, 1e-3,
+                              ],
+                              max_sequence_length_choices: Iterable[int] = [160],
+                              dropout_probability_choices: Iterable[float] = [0.0, 0.25, 0.5],
+                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 3.0, 5.0, 10.0],
+    ) -> Generator[Callable[[None], None], None, None]:
         hyparameter_list_choices = list(itertools.product(
             model_name_choices,
             number_of_epochs_choices,
@@ -277,6 +275,41 @@ class Classifier(ABC):
         dataloader = data.DataLoader(dataset, batch_size=self.batch_size, num_workers=NUMBER_OF_WORKERS)
         return dataloader
 
+    @property
+    def checkpoint_directory(self) -> str:
+        return f'{self.model_name.replace("-", "_")}_epochs_{self.number_of_epochs}_batch_{self.batch_size}_lr_{self.learning_rate}_seq_len_{self.max_sequence_length}_dropout_{self.dropout_probability}_grad_clip_{self.gradient_clipping_max_threshold}'
+    
+    @property
+    def checkpoint_file(self) -> str:
+        return os.path.join(self.checkpoint_directory, 'best-performing-model.pt')
+    
+    def save_model_parameters(self) -> None:
+        torch.save(self.model.state_dict(), self.checkpoint_file)
+        return
+
+    def load_model_parameters(self) -> None:
+        self.model.load_state_dict(torch.load(self.checkpoint_file))
+        return
+
+    def note_results(self, file_base_name: str, epoch_index: int, loss_per_example: float, accuracy_per_example: float, auxillary_information: dict = {}) -> None:
+        result_json_file = os.path.join(sellf.checkpoint_directory, file_base_name)
+        result_data = dict(auxillary_information)
+        result_data.update({
+            'model_name': self.model_name,
+            'number_of_epochs': self.number_of_epochs,
+            'batch_size': self.batch_size,
+            'learning_rate': self.learning_rate,
+            'max_sequence_length': self.max_sequence_length,
+            'dropout_probability': self.dropout_probability,
+            'gradient_clipping_max_threshold': self.gradient_clipping_max_threshold,
+            'epoch': epoch_index,
+            'loss_per_example': loss_per_example,
+            'accuracy_per_example': accuracy_per_example,
+        })
+        with open(result_json_file, 'w') as file_handle:
+            json.dump(result_data, file_handle, indent=4)
+        return
+
     def train_one_epoch(self) -> Tuple[float, float]:
         self.model.train()
         total_loss = 0
@@ -318,41 +351,37 @@ class Classifier(ABC):
 
     def test(self) -> Tuple[float, float]:
         return self._evaluate('testing')
-
-    @property
-    def checkpoint_directory(self) -> str:
-        return f'{self.model_name.replace("-", "_")}_epochs_{self.number_of_epochs}_batch_{self.batch_size}_lr_{self.learning_rate}_seq_len_{self.max_sequence_length}_dropout_{self.dropout_probability}_grad_clip_{self.gradient_clipping_max_threshold}'
-    
-    @property
-    def checkpoint_file(self) -> str:
-        return os.path.join(self.checkpoint_directory, 'best-performing-model.pt')
-    
-    def save_model_parameters(self) -> None:
-        torch.save(self.model.state_dict(), self.checkpoint_file)
-        return
-
-    def load_model_parameters(self) -> None:
-        self.model.load_state_dict(torch.load(self.checkpoint_file))
-        return
-    
+        
     def train(self) -> None:
-        best_validation_loss = float('inf')
-        for epoch_index in range(self.number_of_epochs):
-            print(f'Training Epoch {epoch_index}')
-            training_loss, training_accuracy = self.train_one_epoch()
-            validation_loss, validation_accuracy = self.validate()
-            if validation_loss < best_validation_loss:
-                best_validation_loss = validation_loss
-                self.save_model_parameters()
-            print(f'Training Loss Per Example:       {training_loss:.8f}')
-            print(f'Validation Loss Per Example:     {validation_loss:.8f}')
-            print(f'Training Accuracy Per Example:   {training_accuracy:.8f}')
-            print(f'Validation Accuracy Per Example: {validation_accuracy:.8f}')
-            print()
-        self.load_model_parameters()
-        testing_loss, testing_accuracy = self.test()
-        print(f'Testing Loss Per Example:        {validation_loss:.8f}')
-        print(f'Testing Accuracy Per Example:    {testing_accuracy:.8f}')
+        testing_result_file = os.path.join(self.checkpoint_directory, 'testing_results.json')
+        if os.path.exists(testing_result_file):
+            print(f'Model already trained and tested (results stored in {self.checkpoint_directory}).')
+        else:
+            best_validation_loss = float('inf')
+            best_validation_epoch = None
+            for epoch_index in range(self.number_of_epochs):
+                print()
+                print(f'Saving results to {self.checkpoint_directory} .')
+                print()
+                print(f'Training Epoch {epoch_index}')
+                training_loss, training_accuracy = self.train_one_epoch()
+                validation_loss, validation_accuracy = self.validate()
+                if validation_loss < best_validation_loss:
+                    best_validation_loss = validation_loss
+                    best_validation_epoch = epoch_index
+                    self.save_model_parameters()
+                self.note_results(f'training_epoch_{epoch_index}_results.json', epoch_index, training_loss, training_accuracy)
+                self.note_results(f'valildation_epoch_{epoch_index}_results.json', epoch_index, valildation_loss, valildation_accuracy)
+                print(f'Training Loss Per Example:       {training_loss:.8f}')
+                print(f'Validation Loss Per Example:     {validation_loss:.8f}')
+                print(f'Training Accuracy Per Example:   {training_accuracy:.8f}')
+                print(f'Validation Accuracy Per Example: {validation_accuracy:.8f}')
+                print()
+            self.load_model_parameters()
+            testing_loss, testing_accuracy = self.test()
+            self.note_results('testing_results.json', epoch_index, testing_loss, testing_accuracy, {'best_validation_epoch': best_validation_epoch})
+            print(f'Testing Loss Per Example:        {validation_loss:.8f}')
+            print(f'Testing Accuracy Per Example:    {testing_accuracy:.8f}')
         return
 
 class TransformersClassifierType(type):
@@ -389,24 +418,37 @@ class RobertaClassifier(metaclass=TransformersClassifierType, transformer_model_
 @debug_on_error
 def main() -> None:
     _sanity_check_classifier_class_attributes()
-    # bert_classifier = BertClassifier('bert-base-cased', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
-    # bert_classifier.train()
-    # roberta_classifier = RobertaClassifier('roberta-base', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
-    # roberta_classifier.train()
-    hyperparameter_search_callback_generator = BertClassifier.hyperparameter_search(
-        model_name_choices = ['bert-base-cased'],
-        number_of_epochs_choices = [10],
-        batch_size_choices = [1, 32, 64, 128],
-        learning_rate_choices = [
-            4e-7, 4e-5, 4e-3,
-            2e-7, 2e-5, 2e-3,
-            1e-7, 1e-5, 1e-3,
+    # Bert Hyperparameter Search Callbacks
+    bert_hyperparameter_search_callbacks = BertClassifier.hyperparameter_search(
+        model_name_choices = [
+            'bert-base-cased',
+            'bert-base-uncased',
+            'bert-large-cased',
+            'bert-large-uncased',
+            'bert-base-multilingual-uncased',
+            'bert-base-multilingual-cased',
+            # 'bert-large-uncased-whole-word-masking',
+            # 'bert-large-cased-whole-word-masking',
+            # 'bert-large-uncased-whole-word-masking-finetuned-squad',
+            # 'bert-large-cased-whole-word-masking-finetuned-squad',
         ],
-        max_sequence_length_choices = [160],
-        dropout_probability_choices = [0.0, 0.25, 0.5],
-        gradient_clipping_max_threshold_choices = [1.0, 3.0, 5.0, 10.0],
     )
-    breakpoint()
+    # Roberta Hyperparameter Search Callbacks
+    roberta_hyperparameter_search_callbacks = RobertaClassifier.hyperparameter_search(
+        model_name_choices = [
+            'roberta-base',
+            'roberta-large',
+            'distilroberta-base',
+            # 'roberta-large-mnli',
+        ]
+    )
+    # Execute Hyperparameter Search
+    all_hyperparameter_search_callbacks = roundrobin(
+        bert_hyperparameter_search_callbacks,
+        roberta_hyperparameter_search_callbacks,
+    )
+    for callback in all_hyperparameter_search_callbacks:
+        callback()
     return
         
 if __name__ == '__main__':
