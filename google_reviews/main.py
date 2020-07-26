@@ -84,6 +84,15 @@ def _sanity_check_sequence_length(df: pd.DataFrame, tokenizer: transformers.toke
     assert sum(number_of_strings_with_length for length, number_of_strings_with_length in length_historgram.items() if length < max_sequence_length) / len(df) > 0.99
     return 
 
+def _sanity_check_classifier_class_attributes() -> None:
+    assert BertClassifier.transformer_module.transformer_model == BertModel
+    assert BertClassifier.transformer_model_tokenizer == BertTokenizer
+    assert RobertaClassifier.transformer_module.transformer_model == RobertaModel
+    assert RobertaClassifier.transformer_model_tokenizer == RobertaTokenizer
+    global_classifier_names = {var_name for var_name, value in globals().items() if Classifier in parent_classes(value) and Classifier != value}
+    assert len(global_classifier_names) == 2
+    return 
+
 ##################################
 # Application-Specific Utilities #
 ##################################
@@ -91,9 +100,9 @@ def _sanity_check_sequence_length(df: pd.DataFrame, tokenizer: transformers.toke
 def move_dict_value_tensors_to_device(input_dict: dict, device: torch.device) -> dict:
     return {key: value.to(device) if isinstance(value, torch.Tensor) else value for key, value in input_dict.items()}
 
-######################
-# Data Preprocessing #
-######################
+################################
+# Data Preprocessing Utilities #
+################################
 
 def score_to_sentiment_id(score: int) -> int:
     if score < 3:
@@ -195,7 +204,6 @@ class TransformersModuleType(type):
         updated_attributes = dict(attributes)
         updated_attributes.update({
             'transformer_model': transformer_model,
-            'transformer_model_tokenizer': transformer_model_tokenizer,
         })
         
         return type(class_name, bases+(TransformerModule,), updated_attributes)
@@ -218,7 +226,7 @@ class Classifier(ABC):
         self.tokenizer = self.__class__.transformer_model_tokenizer.from_pretrained(self.model_name)
         self._load_data()
         
-        self.model: nn.Module = self.__class__.transformer_model(self.model_name, self.dropout_probability).to(DEVICE)
+        self.model: nn.Module = self.__class__.transformer_module(self.model_name, self.dropout_probability).to(DEVICE)
         self.optimizer: torch.optim.Optimizer = AdamW(self.model.parameters(), lr=self.learning_rate, correct_bias=False)
         self.loss_function: Callable = nn.CrossEntropyLoss().to(DEVICE)
         self.scheduler: torch.optim.lr_scheduler.LambdaLR = get_linear_schedule_with_warmup(self.optimizer, num_warmup_steps=0, num_training_steps=len(self.training_dataloader)*self.number_of_epochs)
@@ -304,33 +312,26 @@ class TransformersClassifierType(type):
     def __new__(meta, class_name: str, bases: Tuple[type, ...], attributes: dict, transformer_model_spec: TransformerModelSpec):
         
         transformer_model, transformer_model_tokenizer = TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR[transformer_model_spec]
+
+        class TransformerModule(metaclass=TransformersModuleType, transformer_model_spec=transformer_model_spec):
+            pass
         
         updated_attributes = dict(attributes)
         updated_attributes.update({
-            'transformer_model': transformer_model,
             'transformer_model_tokenizer': transformer_model_tokenizer,
+            'transformer_module': TransformerModule,
         })
         
         return type(class_name, bases+(Classifier,), updated_attributes)
 
-###################
-# Bert Classifier #
-###################
-
-class BertModule(metaclass=TransformersModuleType, transformer_model_spec='bert'):
-    pass
+###########################
+# Transformer Classifiers #
+###########################
 
 class BertClassifier(metaclass=TransformersClassifierType, transformer_model_spec='bert'):
     pass
 
-######################
-# Roberta Classifier #
-######################
-
-class RobertaModule(metaclass=TransformersModuleType, transformer_model_spec='roberta'):
-    pass
-
-class BertClassifier(metaclass=TransformersClassifierType, transformer_model_spec='bert'):
+class RobertaClassifier(metaclass=TransformersClassifierType, transformer_model_spec='roberta'):    
     pass
         
 ##########
@@ -339,10 +340,11 @@ class BertClassifier(metaclass=TransformersClassifierType, transformer_model_spe
 
 @debug_on_error
 def main() -> None:
-    # bert_classifier = BertClassifier('bert-base-cased', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
-    # bert_classifier.train()
-    roberta_classifier = RobertaClassifier('roberta-base', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
-    roberta_classifier.train()
+    _sanity_check_classifier_class_attributes()
+    bert_classifier = BertClassifier('bert-base-cased', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
+    bert_classifier.train()
+    # roberta_classifier = RobertaClassifier('roberta-base', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
+    # roberta_classifier.train()
     breakpoint()
     return
         
