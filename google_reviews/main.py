@@ -242,10 +242,11 @@ class Classifier(ABC):
         random.shuffle(hyparameter_list_choices)
         for (model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold) in hyparameter_list_choices:
             def training_callback() -> None:
-                with safe_cuda_memory():
-                    classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold)
-                    classifier.train()
-                    return
+                with timer():
+                    with safe_cuda_memory():
+                        classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold)
+                        classifier.train()
+                        return
             yield training_callback
     
     def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, dropout_probability: float, gradient_clipping_max_threshold: float):
