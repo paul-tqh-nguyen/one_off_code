@@ -8,14 +8,17 @@
 # Imports #
 ###########
 
+import os
 import operator
+import itertools
+import random
 import multiprocessing as mp
 import pandas as pd
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from pandarallel import pandarallel
 from collections import OrderedDict
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Iterable, Generator
 from typing_extensions import Literal
 
 from misc_utilities import *
@@ -38,8 +41,8 @@ from torch.utils import data
 pandarallel.initialize(nb_workers=mp.cpu_count(), progress_bar=False, verbose=0)
 
 # https://bit.ly/3ez5TOO
-APPS_CSV_FILE_LOCATION = './data/apps.csv'
-REVIEWS_CSV_FILE_LOCATION = './data/reviews.csv'
+APPS_CSV_FILE = './data/apps.csv'
+REVIEWS_CSV_FILE = './data/reviews.csv'
 
 NUMBER_OF_WORKERS = mp.cpu_count()
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -47,15 +50,12 @@ RANDOM_SEED = 1234
 
 NUMBER_OF_SENTIMENTS = 3
 
-MAX_SEQUENCE_LENGTH = 160
-
-SAVED_MODEL_LOCATION = './best-performing-model.pt'
-
-NUMBER_OF_EPOCHS = 10
-BATCH_SIZE = 64
-LEARNING_RATE = 2e-5
-DROPOUT_PROBABILITY = 0.3
-GRADIENT_CLIPPING_MAX_THRESHOLD = 1.0
+# MAX_SEQUENCE_LENGTH = 160
+# NUMBER_OF_EPOCHS = 10
+# BATCH_SIZE = 1
+# LEARNING_RATE = 2e-5
+# DROPOUT_PROBABILITY = 0.3
+# GRADIENT_CLIPPING_MAX_THRESHOLD = 1.0
 
 #############################
 # Sanity Checking Utilities #
@@ -125,7 +125,7 @@ def preprocess_data_frame(df: pd.DataFrame) -> pd.DataFrame:
 
 @lru_cache(maxsize=1)
 def load_data_frames() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    df = pd.read_csv(REVIEWS_CSV_FILE_LOCATION)
+    df = pd.read_csv(REVIEWS_CSV_FILE)
     df = preprocess_data_frame(df)
     assert not df.isnull().any().any()
     training_df, testing_df = train_test_split(df, test_size=0.1, random_state=RANDOM_SEED)
@@ -215,6 +215,33 @@ class TransformersModuleType(type):
 ######################################
 
 class Classifier(ABC):
+
+    @classmethod
+    def hyperparameter_search(cls,
+                              model_name_choices: Iterable[str],
+                              number_of_epochs_choices: Iterable[int],
+                              batch_size_choices: Iterable[int],
+                              learning_rate_choices: Iterable[float],
+                              max_sequence_length_choices: Iterable[int],
+                              dropout_probability_choices: Iterable[float],
+                              gradient_clipping_max_threshold_choices: Iterable[float]) -> Generator[Callable[[None], None], None, None]:
+        hyparameter_list_choices = list(itertools.product(
+            model_name_choices,
+            number_of_epochs_choices,
+            batch_size_choices,
+            learning_rate_choices,
+            max_sequence_length_choices,
+            dropout_probability_choices,
+            gradient_clipping_max_threshold_choices,
+        ))
+        random.shuffle(hyparameter_list_choices)
+        for (model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold) in hyparameter_list_choices:
+            with safe_cuda_memory():
+                def training_callback() -> None:
+                    classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold)
+                    classifier.train()
+                    return
+                yield training_callback
     
     def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, dropout_probability: float, gradient_clipping_max_threshold: float):
         self.model_name = model_name
@@ -224,6 +251,9 @@ class Classifier(ABC):
         self.max_sequence_length = max_sequence_length
         self.dropout_probability = dropout_probability
         self.gradient_clipping_max_threshold = gradient_clipping_max_threshold
+        
+        if not os.path.exists(self.checkpoint_directory):
+            os.makedirs(self.checkpoint_directory)
         
         self.tokenizer = self.__class__.transformer_model_tokenizer.from_pretrained(self.model_name)
         self._load_data()
@@ -277,11 +307,10 @@ class Classifier(ABC):
                 prediction_distributions = self.model(encoding)
                 targets = encoding['sentiment_id'].to(self.model.device)
                 loss = self.loss_function(prediction_distributions, targets)
-                nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.gradient_clipping_max_threshold)
                 total_loss += loss.item()
                 total_accuracy += prediction_distributions.argmax(dim=1).eq(targets).sum().item()
         mean_loss = total_loss / len(dataloader.dataset)
-        mean_accuracy = total_accuracy / len(self.training_dataloader.dataset)
+        mean_accuracy = total_accuracy / len(dataloader.dataset)
         return mean_loss, mean_accuracy
 
     def validate(self) -> Tuple[float, float]:
@@ -290,12 +319,20 @@ class Classifier(ABC):
     def test(self) -> Tuple[float, float]:
         return self._evaluate('testing')
 
-    def save_model_parameters(self, saved_model_location: str) -> None:
-        torch.save(self.model.state_dict(), saved_model_location)
+    @property
+    def checkpoint_directory(self) -> str:
+        return f'{self.model_name.replace("-", "_")}_epochs_{self.number_of_epochs}_batch_{self.batch_size}_lr_{self.learning_rate}_seq_len_{self.max_sequence_length}_dropout_{self.dropout_probability}_grad_clip_{self.gradient_clipping_max_threshold}'
+    
+    @property
+    def checkpoint_file(self) -> str:
+        return os.path.join(self.checkpoint_directory, 'best-performing-model.pt')
+    
+    def save_model_parameters(self) -> None:
+        torch.save(self.model.state_dict(), self.checkpoint_file)
         return
 
-    def load_model_parameters(self, saved_model_location: str) -> None:
-        self.model.load_state_dict(torch.load(saved_model_location))
+    def load_model_parameters(self) -> None:
+        self.model.load_state_dict(torch.load(self.checkpoint_file))
         return
     
     def train(self) -> None:
@@ -306,13 +343,13 @@ class Classifier(ABC):
             validation_loss, validation_accuracy = self.validate()
             if validation_loss < best_validation_loss:
                 best_validation_loss = validation_loss
-                self.save_model_parameters(SAVED_MODEL_LOCATION)
+                self.save_model_parameters()
             print(f'Training Loss Per Example:       {training_loss:.8f}')
             print(f'Validation Loss Per Example:     {validation_loss:.8f}')
             print(f'Training Accuracy Per Example:   {training_accuracy:.8f}')
             print(f'Validation Accuracy Per Example: {validation_accuracy:.8f}')
             print()
-        self.load_model_parameters(SAVED_MODEL_LOCATION)
+        self.load_model_parameters()
         testing_loss, testing_accuracy = self.test()
         print(f'Testing Loss Per Example:        {validation_loss:.8f}')
         print(f'Testing Accuracy Per Example:    {testing_accuracy:.8f}')
@@ -352,10 +389,23 @@ class RobertaClassifier(metaclass=TransformersClassifierType, transformer_model_
 @debug_on_error
 def main() -> None:
     _sanity_check_classifier_class_attributes()
-    bert_classifier = BertClassifier('bert-base-cased', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
-    bert_classifier.train()
+    # bert_classifier = BertClassifier('bert-base-cased', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
+    # bert_classifier.train()
     # roberta_classifier = RobertaClassifier('roberta-base', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
     # roberta_classifier.train()
+    hyperparameter_search_callback_generator = BertClassifier.hyperparameter_search(
+        model_name_choices = ['bert-base-cased'],
+        number_of_epochs_choices = [10],
+        batch_size_choices = [1, 32, 64, 128],
+        learning_rate_choices = [
+            4e-7, 4e-5, 4e-3,
+            2e-7, 2e-5, 2e-3,
+            1e-7, 1e-5, 1e-3,
+        ],
+        max_sequence_length_choices = [160],
+        dropout_probability_choices = [0.0, 0.25, 0.5],
+        gradient_clipping_max_threshold_choices = [1.0, 3.0, 5.0, 10.0],
+    )
     breakpoint()
     return
         
