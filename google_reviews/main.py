@@ -10,6 +10,7 @@
 
 import os
 import json
+import argparse
 import operator
 import itertools
 import random
@@ -91,6 +92,12 @@ def _sanity_check_classifier_class_attributes() -> None:
 ##################################
 # Application-Specific Utilities #
 ##################################
+
+def set_cuda_device_id(cuda_device_id: int) -> None:
+    assert DEVICE.type == 'cuda', 'No CUDA devices available.'
+    assert cuda_device_id < torch.cuda.device_count()
+    torch.cuda.set_device(cuda_device_id)
+    return
 
 def move_dict_value_tensors_to_device(input_dict: dict, device: torch.device) -> dict:
     return {key: value.to(device) if isinstance(value, torch.Tensor) else value for key, value in input_dict.items()}
@@ -292,7 +299,7 @@ class Classifier(ABC):
         return
 
     def note_results(self, file_base_name: str, epoch_index: int, loss_per_example: float, accuracy_per_example: float, auxillary_information: dict = {}) -> None:
-        result_json_file = os.path.join(sellf.checkpoint_directory, file_base_name)
+        result_json_file = os.path.join(self.checkpoint_directory, file_base_name)
         result_data = dict(auxillary_information)
         result_data.update({
             'model_name': self.model_name,
@@ -415,8 +422,7 @@ class RobertaClassifier(metaclass=TransformersClassifierType, transformer_model_
 # Driver #
 ##########
 
-@debug_on_error
-def main() -> None:
+def perform_hyperparameter_search() -> None:
     _sanity_check_classifier_class_attributes()
     # Bert Hyperparameter Search Callbacks
     bert_hyperparameter_search_callbacks = BertClassifier.hyperparameter_search(
@@ -450,6 +456,19 @@ def main() -> None:
     for callback in all_hyperparameter_search_callbacks:
         callback()
     return
-        
+
+@debug_on_error
+def main() -> None:
+    parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
+    parser.add_argument('-cuda-device-id', type=int, default=0, help="Perform hyperparameter search on specified CUDA device with the given id.")
+    args = parser.parse_args()
+    set_cuda_device_id(args.cuda_device_id)
+    if torch.device('cuda').type == 'cuda':
+        print(f'Using CUDA device {args.cuda_device_id}.')
+    else:
+        print(f'Using CPU.')
+    perform_hyperparameter_search()
+    return
+
 if __name__ == '__main__':
     main()
