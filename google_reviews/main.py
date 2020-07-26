@@ -104,13 +104,15 @@ def move_dict_value_tensors_to_device(input_dict: dict, device: torch.device) ->
 # Data Preprocessing Utilities #
 ################################
 
+SENTIMENT_ID_TO_SENTIMENT = ['Negative', 'Neutral', 'Positive']
+
 def score_to_sentiment_id(score: int) -> int:
     if score < 3:
-        sentiment = 0
+        sentiment = SENTIMENT_ID_TO_SENTIMENT.index('Negative')
     elif score == 3:
-        sentiment = 1
+        sentiment = SENTIMENT_ID_TO_SENTIMENT.index('Neutral')
     elif score > 3:
-        sentiment = 2
+        sentiment = SENTIMENT_ID_TO_SENTIMENT.index('Positive')
     return sentiment
 
 def preprocess_data_frame(df: pd.DataFrame) -> pd.DataFrame:
@@ -245,9 +247,10 @@ class Classifier(ABC):
         dataloader = data.DataLoader(dataset, batch_size=self.batch_size, num_workers=NUMBER_OF_WORKERS)
         return dataloader
 
-    def train_one_epoch(self) -> float:
+    def train_one_epoch(self) -> Tuple[float, float]:
         self.model.train()
         total_loss = 0
+        total_accuracy = 0
         for encoding in tqdm_with_message(self.training_dataloader, post_yield_message_func = lambda index: f'Training Loss Per Batch      {total_loss/(index+1):.8f}', total=len(self.training_dataloader)):
             prediction_distributions = self.model(encoding)
             targets = encoding['sentiment_id'].to(self.model.device)
@@ -258,11 +261,14 @@ class Classifier(ABC):
             self.scheduler.step()
             self.optimizer.zero_grad()
             total_loss += loss.item()
+            total_accuracy += prediction_distributions.argmax(dim=1).eq(targets).sum().item()
         mean_loss = total_loss / len(self.training_dataloader.dataset)
-        return mean_loss
+        mean_accuracy = total_accuracy / len(self.training_dataloader.dataset)
+        return mean_loss, mean_accuracy
 
-    def _evaluate(self, dataloader_type: Literal['validation', 'testing']) -> float:
+    def _evaluate(self, dataloader_type: Literal['validation', 'testing']) -> Tuple[float, float]:
         total_loss = 0
+        total_accuracy = 0
         self.model.eval()
         tqdm_padding = ' '*3 if dataloader_type == 'validation' else ' '*6
         dataloader = self.validation_dataloader if dataloader_type == 'validation' else self.testing_dataloader
@@ -273,13 +279,15 @@ class Classifier(ABC):
                 loss = self.loss_function(prediction_distributions, targets)
                 nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=self.gradient_clipping_max_threshold)
                 total_loss += loss.item()
+                total_accuracy += prediction_distributions.argmax(dim=1).eq(targets).sum().item()
         mean_loss = total_loss / len(dataloader.dataset)
-        return mean_loss
+        mean_accuracy = total_accuracy / len(self.training_dataloader.dataset)
+        return mean_loss, mean_accuracy
 
-    def validate(self) -> float:
+    def validate(self) -> Tuple[float, float]:
         return self._evaluate('validation')
 
-    def test(self) -> float:
+    def test(self) -> Tuple[float, float]:
         return self._evaluate('testing')
 
     def save_model_parameters(self, saved_model_location: str) -> None:
@@ -294,17 +302,20 @@ class Classifier(ABC):
         best_validation_loss = float('inf')
         for epoch_index in range(self.number_of_epochs):
             print(f'Training Epoch {epoch_index}')
-            training_loss = self.train_one_epoch()
-            validation_loss = self.validate()
+            training_loss, training_accuracy = self.train_one_epoch()
+            validation_loss, validation_accuracy = self.validate()
             if validation_loss < best_validation_loss:
                 best_validation_loss = validation_loss
                 self.save_model_parameters(SAVED_MODEL_LOCATION)
-            print(f'Training Loss Per Example:   {training_loss:.8f}')
-            print(f'Validation Loss Per Example: {validation_loss:.8f}')
+            print(f'Training Loss Per Example:       {training_loss:.8f}')
+            print(f'Validation Loss Per Example:     {validation_loss:.8f}')
+            print(f'Training Accuracy Per Example:   {training_accuracy:.8f}')
+            print(f'Validation Accuracy Per Example: {validation_accuracy:.8f}')
             print()
         self.load_model_parameters(SAVED_MODEL_LOCATION)
-        testing_loss = self.test()
-        print(f'Testing Loss Per Example:    {validation_loss:.8f}')
+        testing_loss, testing_accuracy = self.test()
+        print(f'Testing Loss Per Example:        {validation_loss:.8f}')
+        print(f'Testing Accuracy Per Example:    {testing_accuracy:.8f}')
         return
 
 class TransformersClassifierType(type):
@@ -333,7 +344,7 @@ class BertClassifier(metaclass=TransformersClassifierType, transformer_model_spe
 
 class RobertaClassifier(metaclass=TransformersClassifierType, transformer_model_spec='roberta'):    
     pass
-        
+
 ##########
 # Driver #
 ##########
