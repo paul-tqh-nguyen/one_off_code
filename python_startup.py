@@ -66,7 +66,7 @@ def safe_cuda_memory() -> Generator:
     try:
         yield
     except RuntimeError as err:
-        if 'CUDA out of memory' not in str(err):
+        if not any(cuda_err_substring in str(err) for cuda_err_substring in {'CUDA error: out of memory', 'CUDA out of memory'}):
             raise
         else:
             print("CUDA ran out of memory.")

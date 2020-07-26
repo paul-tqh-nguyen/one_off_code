@@ -381,7 +381,7 @@ class Classifier(ABC):
                     best_validation_epoch = epoch_index
                     self.save_model_parameters()
                 self.note_results(f'training_epoch_{epoch_index}_results.json', epoch_index, training_loss, training_accuracy)
-                self.note_results(f'valildation_epoch_{epoch_index}_results.json', epoch_index, valildation_loss, valildation_accuracy)
+                self.note_results(f'validation_epoch_{epoch_index}_results.json', epoch_index, validation_loss, validation_accuracy)
                 print(f'Training Loss Per Example:       {training_loss:.8f}')
                 print(f'Validation Loss Per Example:     {validation_loss:.8f}')
                 print(f'Training Accuracy Per Example:   {training_accuracy:.8f}')
