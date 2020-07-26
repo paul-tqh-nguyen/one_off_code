@@ -241,12 +241,12 @@ class Classifier(ABC):
         ))
         random.shuffle(hyparameter_list_choices)
         for (model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold) in hyparameter_list_choices:
-            with safe_cuda_memory():
-                def training_callback() -> None:
+            def training_callback() -> None:
+                with safe_cuda_memory():
                     classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold)
                     classifier.train()
                     return
-                yield training_callback
+            yield training_callback
     
     def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, dropout_probability: float, gradient_clipping_max_threshold: float):
         self.model_name = model_name
@@ -366,9 +366,11 @@ class Classifier(ABC):
         else:
             best_validation_loss = float('inf')
             best_validation_epoch = None
+            print()
+            print(f'Saving results to {self.checkpoint_directory} .')
+            print(f'Using CUDA device {torch.cuda.current_device()}.' if torch.device('cuda').type == 'cuda' else 'Using CPU.')
+            print(f'Process id: {os.getpid()}')
             for epoch_index in range(self.number_of_epochs):
-                print()
-                print(f'Saving results to {self.checkpoint_directory} .')
                 print()
                 print(f'Training Epoch {epoch_index}')
                 training_loss, training_accuracy = self.train_one_epoch()
@@ -463,11 +465,6 @@ def main() -> None:
     parser.add_argument('-cuda-device-id', type=int, default=0, help="Perform hyperparameter search on specified CUDA device with the given id.")
     args = parser.parse_args()
     set_cuda_device_id(args.cuda_device_id)
-    if torch.device('cuda').type == 'cuda':
-        print(f'Using CUDA device {args.cuda_device_id}.')
-    else:
-        print(f'Using CPU.')
-    print(f'Process id: {os.getpid()}')
     perform_hyperparameter_search()
     return
 
