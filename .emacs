@@ -286,9 +286,9 @@
   (gpu-farm-int (lambda (device-id)
 		  (insert
 		   (format "conda deactivate
-conda activate ml
-cd ~/code/one_off_code/tweet_sentiment_extraction/
-for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d -hyperparameter-search-roberta ; done" device-id))
+conda activate greviews
+cd ~/code/one_off_code/google_reviews
+for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done" device-id))
 		  (comint-send-input))))
 
 ;; Start Up Shells
