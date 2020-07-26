@@ -219,16 +219,16 @@ class Classifier(ABC):
     @classmethod
     def hyperparameter_search(cls,
                               model_name_choices: Iterable[str],
-                              number_of_epochs_choices: Iterable[int] = [30],
+                              number_of_epochs_choices: Iterable[int] = [15],
                               batch_size_choices: Iterable[int] = [1, 32, 64],
                               learning_rate_choices: Iterable[float] = [
-                                  4e-7, 4e-5, 4e-3,
-                                  2e-7, 2e-5, 2e-3,
-                                  1e-7, 1e-5, 1e-3,
+                                  4e-5, 4e-3,
+                                  2e-5, 2e-3,
+                                  1e-5, 1e-3,
                               ],
                               max_sequence_length_choices: Iterable[int] = [160],
-                              dropout_probability_choices: Iterable[float] = [0.0, 0.25, 0.5],
-                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 3.0, 5.0, 10.0],
+                              dropout_probability_choices: Iterable[float] = [0.5],
+                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 10.0],
     ) -> Generator[Callable[[None], None], None, None]:
         hyparameter_list_choices = list(itertools.product(
             model_name_choices,
@@ -432,8 +432,8 @@ def perform_hyperparameter_search() -> None:
         model_name_choices = [
             'bert-base-cased',
             'bert-base-uncased',
-            'bert-large-cased',
-            'bert-large-uncased',
+            # 'bert-large-cased', # memory issues
+            # 'bert-large-uncased', # memory issues
             'bert-base-multilingual-uncased',
             'bert-base-multilingual-cased',
             # 'bert-large-uncased-whole-word-masking',
@@ -446,9 +446,9 @@ def perform_hyperparameter_search() -> None:
     roberta_hyperparameter_search_callbacks = RobertaClassifier.hyperparameter_search(
         model_name_choices = [
             'roberta-base',
-            'roberta-large',
+            # 'roberta-large', # memory issues
             'distilroberta-base',
-            # 'roberta-large-mnli',
+            # 'roberta-large-mnli', 
         ]
     )
     # Execute Hyperparameter Search
