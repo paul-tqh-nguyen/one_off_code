@@ -8,6 +8,7 @@
 # Imports #
 ###########
 
+import operator
 import multiprocessing as mp
 import pandas as pd
 from abc import ABC, abstractmethod
@@ -20,7 +21,9 @@ from typing_extensions import Literal
 from misc_utilities import *
 
 import transformers 
-from transformers import BertModel, BertTokenizer, AdamW, get_linear_schedule_with_warmup
+from transformers import AdamW, get_linear_schedule_with_warmup
+from transformers import BertModel, BertTokenizer
+from transformers import RobertaModel, RobertaTokenizer
 from sklearn.model_selection import train_test_split
 import torch
 from torch import nn
@@ -209,23 +212,34 @@ class Classifier(ABC):
         print(f'Testing Loss Per Example:    {validation_loss:.8f}')
         return
 
-###################
-# BERT Classifier #
-###################
+###################################
+# Transformer Metaclass Utilities #
+###################################
 
-class BERTModule(nn.Module):
+TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR = {
+    'bert': (BertModel, BertTokenizer),
+    'roberta': (RobertaModel, RobertaTokenizer),
+}
+
+TransformerModelSpec = operator.getitem(Literal, tuple(TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR.keys()))
+
+##################################
+# Transformer Module Metaclasses #
+##################################
+
+class TransformerModule(nn.Module):
     
     def __init__(self, model_name: str, dropout_probability: float):
         super().__init__()
         self.model_name = model_name
         self.dropout_probability = dropout_probability
-        self.bert_model = BertModel.from_pretrained(self.model_name)
+        self.pretrained_model = self.__class__.transformer_model.from_pretrained(self.model_name)
         self.dropout_layer = nn.Dropout(self.dropout_probability)
         self.prediction_layers = nn.Sequential(OrderedDict([
-            ("fully_connected_layer", nn.Linear(self.bert_model.config.hidden_size, NUMBER_OF_SENTIMENTS)),
-            ("softmax_layer", nn.Softmax(dim=1)),
+            ('fully_connected_layer', nn.Linear(self.pretrained_model.config.hidden_size, NUMBER_OF_SENTIMENTS)),
+            ('softmax_layer', nn.Softmax(dim=1)),
         ]))
-
+    
     @property
     def device(self) -> torch.device:
         return only_one({parameter.device for parameter in self.parameters()})
@@ -234,12 +248,33 @@ class BERTModule(nn.Module):
         encoding = move_dict_value_tensors_to_device(encoding, self.device)
         input_ids = encoding['input_ids']
         attention_mask = encoding['attention_mask']
-        _, pooled_output = self.bert_model(input_ids=input_ids, attention_mask=attention_mask)
+        _, pooled_output = self.pretrained_model(input_ids=input_ids, attention_mask=attention_mask)
         pooled_output = self.dropout_layer(pooled_output)
         prediction = self.prediction_layers(pooled_output)
         return prediction
 
-class BERTDataset(data.Dataset): # @todo can we make this model agnostic?
+class TransformersModuleType(type):
+
+    def __new__(meta, class_name: str, bases: Tuple[type, ...], attributes: dict, transformer_model_spec: TransformerModelSpec):
+        
+        transformer_model, transformer_model_tokenizer = TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR[transformer_model_spec]
+        
+        updated_attributes = dict(attributes)
+        updated_attributes.update({
+            'transformer_model': transformer_model,
+            'transformer_model_tokenizer': transformer_model_tokenizer,
+        })
+        
+        return type(class_name, bases+(TransformerModule,), updated_attributes)
+
+###################
+# Bert Classifier #
+###################
+
+class BertModule(metaclass=TransformersModuleType, transformer_model_spec='bert'):
+    pass
+
+class BertDataset(data.Dataset): # @todo can we make this model agnostic?
     def __init__(self, df: pd.DataFrame, tokenizer: transformers.tokenization_utils.PreTrainedTokenizer, max_sequence_length: int):
         self.df = df.reset_index()
         self.tokenizer = tokenizer
@@ -263,7 +298,7 @@ class BERTDataset(data.Dataset): # @todo can we make this model agnostic?
     def __len__(self):
         return len(self.df)
 
-class BERTClassifier(Classifier): # @todo can we make this class a function of the model name alone and use it for all transformers models?
+class BertClassifier(Classifier): # @todo can we make this class a function of the model name alone and use it for all transformers models? Can we use metaclasses here?
 
     def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, dropout_probability: float, gradient_clipping_max_threshold: float):
         self.model_name = model_name
@@ -277,7 +312,7 @@ class BERTClassifier(Classifier): # @todo can we make this class a function of t
         self.tokenizer = BertTokenizer.from_pretrained(self.model_name)
         self._load_data()
         
-        self.model: nn.Module = BERTModule(self.model_name, self.dropout_probability).to(DEVICE)
+        self.model: nn.Module = BertModule(self.model_name, self.dropout_probability).to(DEVICE)
         self.optimizer: torch.optim.Optimizer = AdamW(self.model.parameters(), lr=self.learning_rate, correct_bias=False)
         self.loss_function: Callable = nn.CrossEntropyLoss().to(DEVICE)
         self.scheduler: torch.optim.lr_scheduler.LambdaLR = get_linear_schedule_with_warmup(self.optimizer, num_warmup_steps=0, num_training_steps=len(self.training_dataloader)*self.number_of_epochs)
@@ -287,9 +322,96 @@ class BERTClassifier(Classifier): # @todo can we make this class a function of t
         _sanity_check_sequence_length(training_df, self.tokenizer, self.max_sequence_length)
         _sanity_check_sequence_length(validation_df, self.tokenizer, self.max_sequence_length)
         _sanity_check_sequence_length(testing_df, self.tokenizer, self.max_sequence_length)
-        self.training_dataloader: data.DataLoader = self.dataset_to_dataloader(BERTDataset(training_df, self.tokenizer, self.max_sequence_length))
-        self.validation_dataloader: data.DataLoader = self.dataset_to_dataloader(BERTDataset(validation_df, self.tokenizer, self.max_sequence_length))
-        self.testing_dataloader: data.DataLoader = self.dataset_to_dataloader(BERTDataset(testing_df, self.tokenizer, self.max_sequence_length))
+        self.training_dataloader: data.DataLoader = self.dataset_to_dataloader(BertDataset(training_df, self.tokenizer, self.max_sequence_length))
+        self.validation_dataloader: data.DataLoader = self.dataset_to_dataloader(BertDataset(validation_df, self.tokenizer, self.max_sequence_length))
+        self.testing_dataloader: data.DataLoader = self.dataset_to_dataloader(BertDataset(testing_df, self.tokenizer, self.max_sequence_length))
+        return
+        
+
+######################
+# Roberta Classifier #
+######################
+
+class RobertaModule(metaclass=TransformersModuleType, transformer_model_spec='roberta'):
+    pass
+
+class RobertaModule(nn.Module):
+    
+    def __init__(self, model_name: str, dropout_probability: float):
+        super().__init__()
+        self.model_name = model_name
+        self.dropout_probability = dropout_probability
+        self.pretrained_model = RobertaModel.from_pretrained(self.model_name)
+        self.dropout_layer = nn.Dropout(self.dropout_probability)
+        self.prediction_layers = nn.Sequential(OrderedDict([
+            ('fully_connected_layer', nn.Linear(self.pretrained_model.config.hidden_size, NUMBER_OF_SENTIMENTS)),
+            ('softmax_layer', nn.Softmax(dim=1)),
+        ]))
+
+    @property
+    def device(self) -> torch.device:
+        return only_one({parameter.device for parameter in self.parameters()})
+        
+    def forward(self, encoding: dict) -> torch.Tensor:
+        encoding = move_dict_value_tensors_to_device(encoding, self.device)
+        input_ids = encoding['input_ids']
+        attention_mask = encoding['attention_mask']
+        _, pooled_output = self.pretrained_model(input_ids=input_ids, attention_mask=attention_mask)
+        pooled_output = self.dropout_layer(pooled_output)
+        prediction = self.prediction_layers(pooled_output)
+        return prediction
+
+class RobertaDataset(data.Dataset):
+    def __init__(self, df: pd.DataFrame, tokenizer: transformers.tokenization_utils.PreTrainedTokenizer, max_sequence_length: int):
+        self.df = df.reset_index()
+        self.tokenizer = tokenizer
+        self.max_sequence_length = max_sequence_length
+        
+    def encode_string(self, input_string: str) -> dict:
+        return self.tokenizer.encode_plus(input_string, max_length=self.max_sequence_length, truncation=True, return_token_type_ids=False, padding='max_length', return_attention_mask=True, return_tensors='pt')
+        
+    def __getitem__(self, index):
+        row = self.df.iloc[index]
+        encoding = self.encode_string(row.content)
+        item = {
+            'review_string': row.content,
+            'sentiment_id': torch.tensor(row.sentiment_id, dtype=torch.long),
+            'input_ids': encoding['input_ids'].flatten(),
+            'attention_mask': encoding['attention_mask'].flatten(),
+        }
+        assert len(item['input_ids']) == len(item['attention_mask']) <= self.max_sequence_length
+        return item
+    
+    def __len__(self):
+        return len(self.df)
+
+class RobertaClassifier(Classifier):
+
+    def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, dropout_probability: float, gradient_clipping_max_threshold: float):
+        self.model_name = model_name
+        self.number_of_epochs = number_of_epochs
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.max_sequence_length = max_sequence_length
+        self.dropout_probability = dropout_probability
+        self.gradient_clipping_max_threshold = gradient_clipping_max_threshold
+        
+        self.tokenizer = RobertaTokenizer.from_pretrained(self.model_name)
+        self._load_data()
+        
+        self.model: nn.Module = RobertaModule(self.model_name, self.dropout_probability).to(DEVICE)
+        self.optimizer: torch.optim.Optimizer = AdamW(self.model.parameters(), lr=self.learning_rate, correct_bias=False)
+        self.loss_function: Callable = nn.CrossEntropyLoss().to(DEVICE)
+        self.scheduler: torch.optim.lr_scheduler.LambdaLR = get_linear_schedule_with_warmup(self.optimizer, num_warmup_steps=0, num_training_steps=len(self.training_dataloader)*self.number_of_epochs)
+
+    def _load_data(self) -> None:
+        training_df, validation_df, testing_df = load_data_frames()
+        _sanity_check_sequence_length(training_df, self.tokenizer, self.max_sequence_length)
+        _sanity_check_sequence_length(validation_df, self.tokenizer, self.max_sequence_length)
+        _sanity_check_sequence_length(testing_df, self.tokenizer, self.max_sequence_length)
+        self.training_dataloader: data.DataLoader = self.dataset_to_dataloader(RobertaDataset(training_df, self.tokenizer, self.max_sequence_length))
+        self.validation_dataloader: data.DataLoader = self.dataset_to_dataloader(RobertaDataset(validation_df, self.tokenizer, self.max_sequence_length))
+        self.testing_dataloader: data.DataLoader = self.dataset_to_dataloader(RobertaDataset(testing_df, self.tokenizer, self.max_sequence_length))
         return
         
 ##########
@@ -298,8 +420,10 @@ class BERTClassifier(Classifier): # @todo can we make this class a function of t
 
 @debug_on_error
 def main() -> None:
-    bert_classifier = BERTClassifier('bert-base-cased', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
-    bert_classifier.train()
+    # bert_classifier = BertClassifier('bert-base-cased', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
+    # bert_classifier.train()
+    roberta_classifier = RobertaClassifier('roberta-base', NUMBER_OF_EPOCHS, BATCH_SIZE, LEARNING_RATE, MAX_SEQUENCE_LENGTH, DROPOUT_PROBABILITY, GRADIENT_CLIPPING_MAX_THRESHOLD)
+    roberta_classifier.train()
     breakpoint()
     return
         
