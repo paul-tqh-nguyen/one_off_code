@@ -277,9 +277,8 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
 
 (defun gpu-farm ()
   (interactive)
-  (gpu-farm-int (lambda (device-id)
-		  (insert (format *gpu-command-template* device-id)))))
- 
+  (gpu-farm-int 'identity))
+
 (defun gpu-farm-kill ()
   (interactive)
   (gpu-farm-int (lambda (device-id)
@@ -287,9 +286,17 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
 		  (kill-this-buffer)
 		  (add-to-list 'kill-buffer-query-functions 'process-kill-buffer-query-function))))
 
+(defun gpu-farm-load ()
+  (interactive)
+  (gpu-farm-int (lambda (device-id)
+		  (erase-buffer)
+		  (comint-send-input)
+		  (insert (format *gpu-command-template* device-id)))))
+
 (defun gpu-farm-initialize ()
   (interactive)
   (gpu-farm-int (lambda (device-id)
+		  (erase-buffer)
 		  (insert (format *gpu-command-template* device-id))
 		  (comint-send-input))))
 
