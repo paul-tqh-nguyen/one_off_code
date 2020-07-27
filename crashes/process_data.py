@@ -9,6 +9,7 @@
 ###########
 
 import json
+import datetime
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
@@ -29,9 +30,16 @@ pandarallel.initialize(nb_workers=mp.cpu_count(), progress_bar=False, verbose=0)
 
 MANAGER = mp.Manager()
 
+# https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95 
 CRASH_DATA_CSV_FILE_LOCATION = './data/Motor_Vehicle_Collisions_-_Crashes.csv'
+
+# https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm
 BOROUGH_GEOJSON_FILE_LOCATION = './data/Borough Boundaries.geojson'
+
+# https://github.com/fedhere/PUI2015_EC/blob/master/mam1612_EC/nyc-zip-code-tabulation-areas-polygons.geojson
 NYC_ZIP_CODE_GEOJSON_FILE_LOCATION = './data/nyc-zip-code-tabulation-areas-polygons.geojson'
+
+# https://eric.clst.org/tech/usgeojson/
 US_STATES_JSON_FILE_LOCATION = './data/gz_2010_us_040_00_20m.json'
 
 OUTPUT_JSON_FILE_LOCATION = './docs/processed_data.json'
@@ -121,9 +129,10 @@ def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_c
         nearest_borough = nearest_borough.lower() if nearest_borough_dist < 0.01 else np.nan
         return nearest_borough
     _is_non_numeric_string = lambda zip_code: isinstance(zip_code, str) and not str.isnumeric(zip_code)
-    missing_zip_code_df = df[df['ZIP CODE'].isnull() | df['ZIP CODE'].parallel_map(_is_non_numeric_string)]
-    df.loc[missing_zip_code_df.index, 'ZIP CODE'] = missing_zip_code_df.parallel_apply(_guess_zip_code, axis=1)
-    df.loc[df[df['BOROUGH'].isnull()].index, 'BOROUGH'] = df[df['BOROUGH'].isnull()].parallel_apply(_guess_borough, axis=1)
+    missing_zip_code_indexer = df['ZIP CODE'].isnull() | df['ZIP CODE'].parallel_map(_is_non_numeric_string)
+    df.loc[missing_zip_code_indexer, 'ZIP CODE'] = df[missing_zip_code_indexer].apply(_guess_zip_code, axis=1) # @todo parallel_apply causes problems here for unclear reasons
+    missing_borough_indexer = df['BOROUGH'].isnull()
+    df.loc[missing_borough_indexer, 'BOROUGH'] = df[missing_borough_indexer].apply(_guess_borough, axis=1) # @todo parallel_apply causes problems here for unclear reasons
     return df
 
 def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame:
@@ -134,15 +143,15 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     df.drop(df[df['LONGITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].eq(0.0) & df['LATITUDE'].eq(0.0)].index, inplace=True)
     df['CRASH HOUR'] = df['CRASH TIME'].parallel_map(lambda crash_time_string: int(crash_time_string.split(':')[0]))
-    df = df.sample(200) # @todo remove this
+    import random; random.seed(1234) ; df = df.sample(1000) # @todo remove this
     print('Adding missing borough and zip code data.')
+    zip_code_geojson_zip_codes = {feature['properties']['Zip_Code'] for feature in zip_code_geojson['features']}
+    df[~df['ZIP CODE'].isin(zip_code_geojson_zip_codes)] = np.nan 
     df = _guess_boroughs_and_zip_codes(df, borough_geojson, zip_code_geojson)
-    df.drop(df[df['BOROUGH'].isnull()].index, inplace=True)
     df.drop(df[df['ZIP CODE'].isnull()].index, inplace=True)
-    df[df['ZIP CODE'] == 11249]['ZIP CODE'] = 11211 # our ZIP code geojson glues 11249 and 11211 together
-    df['ZIP CODE'] = df['ZIP CODE'].map(int)
+    df.drop(df[df['BOROUGH'].isnull()].index, inplace=True)
+    df = df.astype({'ZIP CODE': int}, copy=False)
     df['BOROUGH'] = df['BOROUGH'].parallel_map(str.lower)
-    df.astype({'ZIP CODE': int}, copy=False)
     return df
 
 def convert_proxy_data_structures_to_normal_datastructures(proxy: Union[mp.managers.DictProxy, mp.managers.ListProxy]) -> Union[list, dict]:
@@ -194,7 +203,7 @@ def generate_output_dict(df: pd.DataFrame, borough_geojson: dict, zip_code_geojs
         array_for_date = crash_data_dict[date_string]
         group.groupby('CRASH HOUR').apply(lambda hour_group: _note_hour_rows(hour_group, array_for_date))
         return
-    
+
     df.groupby('CRASH DATE').parallel_apply(_note_date_rows)
     crash_data_dict = convert_proxy_data_structures_to_normal_datastructures(crash_data_dict)
     output_dict = {
@@ -230,7 +239,6 @@ def main() -> None:
     output_dict = generate_output_dict(df, borough_geojson, zip_code_geojson, us_states_geojson)
     with open(OUTPUT_JSON_FILE_LOCATION, 'w') as file_handle:
         json.dump(output_dict, file_handle, indent=4, cls=CustomEncoder)
-    breakpoint()
     return
 
 if __name__ == '__main__':
