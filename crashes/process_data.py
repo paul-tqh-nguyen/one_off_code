@@ -179,8 +179,10 @@ def generate_output_dict(df: pd.DataFrame, borough_geojson: dict, zip_code_geojs
     print('Generating output dictionary.')
     crash_data_dict = MANAGER.dict()
     
-    for crash_date, date_group in df.groupby('CRASH DATE'):
-        array_for_date = MANAGER.list([MANAGER.dict() for _ in range(24)])
+    def _note_date_group(date: pd.Timestamp, date_group: pd.DataFrame) -> None:
+        date_string = pd.to_datetime(only_one(group['CRASH DATE'].unique())).isoformat()
+        crash_data_dict[date_string] = MANAGER.list([MANAGER.dict() for _ in range(24)])
+        array_for_date = crash_data_dict[date_string]
         for crash_hour, hour_group in date_group.groupby('CRASH HOUR'):
             dict_for_hour = array_for_date[crash_hour]
             for borough, borough_group in hour_group.groupby('BOROUGH'):
@@ -188,7 +190,9 @@ def generate_output_dict(df: pd.DataFrame, borough_geojson: dict, zip_code_geojs
                 dict_for_borough = dict_for_hour[borough]
                 for zip_code, zip_code_group in borough_group.groupby('ZIP CODE'):
                     dict_for_borough[zip_code] = list(zip_code_group.to_dict(orient='index').values())
-        
+        return
+
+    parallel_map(_note_date_group, df.groupby('CRASH DATE'))
     crash_data_dict = convert_proxy_data_structures_to_normal_datastructures(crash_data_dict)
     output_dict = {
         'crash_data': crash_data_dict,
