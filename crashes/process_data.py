@@ -128,14 +128,17 @@ def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_c
     _is_non_numeric_string = lambda zip_code: isinstance(zip_code, str) and not str.isnumeric(zip_code)
     missing_zip_code_indexer = df['ZIP CODE'].isnull() | df['ZIP CODE'].parallel_map(_is_non_numeric_string)
     df.loc[missing_zip_code_indexer, 'ZIP CODE'] = df[missing_zip_code_indexer].parallel_apply(_guess_zip_code, axis=1)
+    print(f'Numbers of rows with missing ZIP codes: {len(missing_zip_code_indexer)}')
     missing_borough_indexer = df['BOROUGH'].isnull()
     df.loc[missing_borough_indexer, 'BOROUGH'] = df[missing_borough_indexer].parallel_apply(_guess_borough, axis=1)
+    print(f'Numbers of rows with missing boroughs: {len(missing_borough_indexer)}')
     return df
 
 def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame:
     print('Loading crash data.')
     with warnings_suppressed():
         df = pd.read_csv(CRASH_DATA_CSV_FILE_LOCATION, parse_dates=['CRASH DATE'])
+    print(f'Raw data size: {len(df)}')
     df.drop(df[df['LATITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].eq(0.0) & df['LATITUDE'].eq(0.0)].index, inplace=True)
@@ -148,6 +151,7 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     df.drop(df[df['BOROUGH'].isnull()].index, inplace=True)
     df = df.astype({'ZIP CODE': int}, copy=False)
     df['BOROUGH'] = df['BOROUGH'].parallel_map(str.lower)
+    print(f'Final number of crashes: {len(df)}')
     return df
 
 def _note_date_group(date_to_date_group_pair: Tuple[pd.Timestamp, pd.DataFrame]) -> Tuple[str, list]:
