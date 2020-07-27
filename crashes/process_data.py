@@ -13,7 +13,6 @@ import datetime
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-import multiprocessing.managers
 from pandarallel import pandarallel
 from shapely.geometry import Point, Polygon
 from typing import Union
@@ -27,8 +26,6 @@ from misc_utilities import *
 ###########
 
 pandarallel.initialize(nb_workers=mp.cpu_count(), progress_bar=False, verbose=0)
-
-MANAGER = mp.Manager()
 
 # https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95 
 CRASH_DATA_CSV_FILE_LOCATION = './data/Motor_Vehicle_Collisions_-_Crashes.csv'
@@ -83,7 +80,7 @@ def load_us_states_geojson() -> dict:
 
 def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame:
     '''Destructive.'''
-    zip_code_to_polygon = MANAGER.dict()
+    zip_code_to_polygon = {}
     assert {feature['geometry']['type'] for feature in zip_code_geojson['features']} == {'Polygon'}
     for feature in zip_code_geojson['features']:
         zip_code = feature['properties']['Zip_Code']
@@ -106,7 +103,7 @@ def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_c
         assert isinstance(nearest_zip_code, int)
         nearest_zip_code = nearest_zip_code if nearest_zip_code_dist < 0.05 else np.nan
         return nearest_zip_code
-    borough_to_polygons = MANAGER.dict()
+    borough_to_polygons = {}
     assert {feature['geometry']['type'] for feature in borough_geojson['features']} == {'MultiPolygon'}
     for feature in borough_geojson['features']:
         borough_name = feature['properties']['boro_name'].lower()
@@ -130,9 +127,9 @@ def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_c
         return nearest_borough
     _is_non_numeric_string = lambda zip_code: isinstance(zip_code, str) and not str.isnumeric(zip_code)
     missing_zip_code_indexer = df['ZIP CODE'].isnull() | df['ZIP CODE'].parallel_map(_is_non_numeric_string)
-    df.loc[missing_zip_code_indexer, 'ZIP CODE'] = df[missing_zip_code_indexer].apply(_guess_zip_code, axis=1) # @todo parallel_apply causes problems here for unclear reasons
+    df.loc[missing_zip_code_indexer, 'ZIP CODE'] = df[missing_zip_code_indexer].parallel_apply(_guess_zip_code, axis=1) # @todo parallel_apply causes problems here for unclear reasons (we suspect it has to do with the use of MANAGER)
     missing_borough_indexer = df['BOROUGH'].isnull()
-    df.loc[missing_borough_indexer, 'BOROUGH'] = df[missing_borough_indexer].apply(_guess_borough, axis=1) # @todo parallel_apply causes problems here for unclear reasons
+    df.loc[missing_borough_indexer, 'BOROUGH'] = df[missing_borough_indexer].parallel_apply(_guess_borough, axis=1) # @todo parallel_apply causes problems here for unclear reasons (we suspect it has to do with the use of MANAGER)
     return df
 
 def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame:
@@ -154,46 +151,23 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     df['BOROUGH'] = df['BOROUGH'].parallel_map(str.lower)
     return df
 
-def convert_proxy_data_structures_to_normal_datastructures(proxy: Union[mp.managers.DictProxy, mp.managers.ListProxy]) -> Union[list, dict]:
-    if isinstance(proxy, mp.managers.DictProxy):
-        result = dict()
-        for key, value in proxy.items():
-            if isinstance(value, mp.managers.DictProxy) or isinstance(value, mp.managers.ListProxy):
-                result[key] = convert_proxy_data_structures_to_normal_datastructures(value)
-            else:
-                result[key] = value
-    elif isinstance(proxy, mp.managers.ListProxy):
-        result = []
-        for item in proxy:
-            if isinstance(item, mp.managers.DictProxy) or isinstance(item, mp.managers.ListProxy):
-                result.append(convert_proxy_data_structures_to_normal_datastructures(item))
-            else:
-                result.append(item)
-        assert len(result) > 0
-    else:
-        raise ValueError(f"Cannot extract non-proxy type from {proxy}.")
-    return result
-
+def _note_date_group(date_to_date_group_pair: Tuple[pd.Timestamp, pd.DataFrame]) -> Tuple[str, list]:
+    date, date_group = date_to_date_group_pair
+    date_string = pd.to_datetime(only_one(date_group['CRASH DATE'].unique())).isoformat()
+    array_for_date = [{} for _ in range(24)]
+    for crash_hour, hour_group in date_group.groupby('CRASH HOUR'):
+        dict_for_hour = array_for_date[crash_hour]
+        for borough, borough_group in hour_group.groupby('BOROUGH'):
+            dict_for_hour[borough] = {}
+            dict_for_borough = dict_for_hour[borough]
+            for zip_code, zip_code_group in borough_group.groupby('ZIP CODE'):
+                dict_for_borough[zip_code] = list(zip_code_group.to_dict(orient='index').values())
+    return (date_string, array_for_date)
+    
 def generate_output_dict(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson: dict, us_states_geojson: dict) -> dict:
     '''output_dict has indexing of date -> hour -> borough -> zip code'''
     print('Generating output dictionary.')
-    crash_data_dict = MANAGER.dict()
-    
-    def _note_date_group(date: pd.Timestamp, date_group: pd.DataFrame) -> None:
-        date_string = pd.to_datetime(only_one(group['CRASH DATE'].unique())).isoformat()
-        crash_data_dict[date_string] = MANAGER.list([MANAGER.dict() for _ in range(24)])
-        array_for_date = crash_data_dict[date_string]
-        for crash_hour, hour_group in date_group.groupby('CRASH HOUR'):
-            dict_for_hour = array_for_date[crash_hour]
-            for borough, borough_group in hour_group.groupby('BOROUGH'):
-                dict_for_hour[borough] = MANAGER.dict()
-                dict_for_borough = dict_for_hour[borough]
-                for zip_code, zip_code_group in borough_group.groupby('ZIP CODE'):
-                    dict_for_borough[zip_code] = list(zip_code_group.to_dict(orient='index').values())
-        return
-
-    parallel_map(_note_date_group, df.groupby('CRASH DATE'))
-    crash_data_dict = convert_proxy_data_structures_to_normal_datastructures(crash_data_dict)
+    crash_data_dict = dict(parallel_map(_note_date_group, df.groupby('CRASH DATE')))
     output_dict = {
         'crash_data': crash_data_dict,
         'borough_data': borough_geojson,
