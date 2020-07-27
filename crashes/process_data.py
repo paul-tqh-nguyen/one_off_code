@@ -127,9 +127,9 @@ def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_c
         return nearest_borough
     _is_non_numeric_string = lambda zip_code: isinstance(zip_code, str) and not str.isnumeric(zip_code)
     missing_zip_code_indexer = df['ZIP CODE'].isnull() | df['ZIP CODE'].parallel_map(_is_non_numeric_string)
-    df.loc[missing_zip_code_indexer, 'ZIP CODE'] = df[missing_zip_code_indexer].parallel_apply(_guess_zip_code, axis=1) # @todo parallel_apply causes problems here for unclear reasons (we suspect it has to do with the use of MANAGER)
+    df.loc[missing_zip_code_indexer, 'ZIP CODE'] = df[missing_zip_code_indexer].parallel_apply(_guess_zip_code, axis=1)
     missing_borough_indexer = df['BOROUGH'].isnull()
-    df.loc[missing_borough_indexer, 'BOROUGH'] = df[missing_borough_indexer].parallel_apply(_guess_borough, axis=1) # @todo parallel_apply causes problems here for unclear reasons (we suspect it has to do with the use of MANAGER)
+    df.loc[missing_borough_indexer, 'BOROUGH'] = df[missing_borough_indexer].parallel_apply(_guess_borough, axis=1)
     return df
 
 def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame:
@@ -156,7 +156,8 @@ def _note_date_group(date_to_date_group_pair: Tuple[pd.Timestamp, pd.DataFrame])
     date_string = pd.to_datetime(only_one(date_group['CRASH DATE'].unique())).isoformat()
     array_for_date = [{} for _ in range(24)]
     for crash_hour, hour_group in date_group.groupby('CRASH HOUR'):
-        dict_for_hour = array_for_date[crash_hour]
+        assert crash_hour.is_integer()
+        dict_for_hour = array_for_date[int(crash_hour)]
         for borough, borough_group in hour_group.groupby('BOROUGH'):
             dict_for_hour[borough] = {}
             dict_for_borough = dict_for_hour[borough]
