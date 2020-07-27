@@ -179,32 +179,43 @@ def generate_output_dict(df: pd.DataFrame, borough_geojson: dict, zip_code_geojs
     print('Generating output dictionary.')
     crash_data_dict = MANAGER.dict()
     
-    def _note_zip_code_rows(group: pd.DataFrame, dict_for_borough: mp.managers.DictProxy) -> None:
-        zip_code = str(only_one(group['ZIP CODE'].unique()))
-        dict_for_borough[zip_code] = list(group.to_dict(orient='index').values())
-        return
+    # def _note_zip_code_rows(group: pd.DataFrame, dict_for_borough: mp.managers.DictProxy) -> None:
+    #     zip_code = str(only_one(group['ZIP CODE'].unique()))
+    #     dict_for_borough[zip_code] = list(group.to_dict(orient='index').values())
+    #     return
     
-    def _note_borough_rows(group: pd.DataFrame, dict_for_hour: mp.managers.DictProxy) -> None:
-        borough = only_one(group['BOROUGH'].unique())
-        dict_for_hour[borough] = MANAGER.dict()
-        dict_for_borough = dict_for_hour[borough]
-        group.groupby('ZIP CODE').apply(lambda zip_code_group: _note_zip_code_rows(zip_code_group, dict_for_borough))
-        return 
+    # def _note_borough_rows(group: pd.DataFrame, dict_for_hour: mp.managers.DictProxy) -> None:
+    #     borough = only_one(group['BOROUGH'].unique())
+    #     dict_for_hour[borough] = MANAGER.dict()
+    #     dict_for_borough = dict_for_hour[borough]
+    #     group.groupby('ZIP CODE').apply(lambda zip_code_group: _note_zip_code_rows(zip_code_group, dict_for_borough))
+    #     return 
     
-    def _note_hour_rows(group: pd.DataFrame, array_for_date: mp.managers.ListProxy) -> None:
-        hour = only_one(group['CRASH HOUR'].unique())
-        dict_for_hour = array_for_date[hour]
-        group.groupby('BOROUGH').apply(lambda borough_group: _note_borough_rows(borough_group, dict_for_hour))
-        return 
+    # def _note_hour_rows(group: pd.DataFrame, array_for_date: mp.managers.ListProxy) -> None:
+    #     hour = only_one(group['CRASH HOUR'].unique())
+    #     dict_for_hour = array_for_date[hour]
+    #     group.groupby('BOROUGH').apply(lambda borough_group: _note_borough_rows(borough_group, dict_for_hour))
+    #     return 
     
-    def _note_date_rows(group: pd.DataFrame) -> None:
-        date_string = pd.to_datetime(only_one(group['CRASH DATE'].unique())).isoformat()
-        crash_data_dict[date_string] = MANAGER.list([MANAGER.dict() for _ in range(24)])
-        array_for_date = crash_data_dict[date_string]
-        group.groupby('CRASH HOUR').apply(lambda hour_group: _note_hour_rows(hour_group, array_for_date))
-        return
+    # def _note_date_rows(group: pd.DataFrame) -> None:
+    #     date_string = pd.to_datetime(only_one(group['CRASH DATE'].unique())).isoformat()
+    #     crash_data_dict[date_string] = MANAGER.list([MANAGER.dict() for _ in range(24)])
+    #     array_for_date = crash_data_dict[date_string]
+    #     group.groupby('CRASH HOUR').apply(lambda hour_group: _note_hour_rows(hour_group, array_for_date))
+    #     return
 
-    df.groupby('CRASH DATE').parallel_apply(_note_date_rows)
+    # df.groupby('CRASH DATE').parallel_apply(_note_date_rows)
+
+    for crash_date, date_group in df.groupby('CRASH DATE'):
+        array_for_date = [{} for _ in range(24)]
+        for crash_hour, hour_group in date_group.groupby('CRASH HOUR'):
+            dict_for_hour = array_for_date[crash_hour]
+            for borough, borough_group in hour_group.groupby('BOROUGH'):
+                dict_for_hour[borough] = {}
+                dict_for_borough = dict_for_hour[borough]
+                for zip_code, zip_code_group in borough_group.groupby('ZIP CODE'):
+                    dict_for_borough[zip_code] = list(zip_code_group.to_dict(orient='index').values())
+        
     crash_data_dict = convert_proxy_data_structures_to_normal_datastructures(crash_data_dict)
     output_dict = {
         'crash_data': crash_data_dict,
