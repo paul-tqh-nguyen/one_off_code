@@ -222,9 +222,9 @@ class Classifier(ABC):
                               number_of_epochs_choices: Iterable[int] = [15],
                               batch_size_choices: Iterable[int] = [1, 32, 64],
                               learning_rate_choices: Iterable[float] = [
-                                  4e-5, 4e-3,
-                                  2e-5, 2e-3,
-                                  1e-5, 1e-3,
+                                  4e-5,
+                                  2e-5,
+                                  1e-5,
                               ],
                               max_sequence_length_choices: Iterable[int] = [160],
                               dropout_probability_choices: Iterable[float] = [0.5],
@@ -285,7 +285,7 @@ class Classifier(ABC):
 
     @property
     def checkpoint_directory(self) -> str:
-        return f'{self.model_name.replace("-", "_")}_epochs_{self.number_of_epochs}_batch_{self.batch_size}_lr_{self.learning_rate}_seq_len_{self.max_sequence_length}_dropout_{self.dropout_probability}_grad_clip_{self.gradient_clipping_max_threshold}'
+        return f'./results/{self.model_name.replace("-", "_")}_epochs_{self.number_of_epochs}_batch_{self.batch_size}_lr_{self.learning_rate}_seq_len_{self.max_sequence_length}_dropout_{self.dropout_probability}_grad_clip_{self.gradient_clipping_max_threshold}'
     
     @property
     def checkpoint_file(self) -> str:
