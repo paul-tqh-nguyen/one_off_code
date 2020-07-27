@@ -140,8 +140,6 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     df.drop(df[df['LONGITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].eq(0.0) & df['LATITUDE'].eq(0.0)].index, inplace=True)
     df['CRASH HOUR'] = df['CRASH TIME'].parallel_map(lambda crash_time_string: int(crash_time_string.split(':')[0]))
-    breakpoint()
-    import random; random.seed(1234) ; df = df.sample(40_000) # @todo remove this
     print('Adding missing borough and zip code data.')
     zip_code_geojson_zip_codes = {feature['properties']['Zip_Code'] for feature in zip_code_geojson['features']}
     df[~df['ZIP CODE'].isin(zip_code_geojson_zip_codes)] = np.nan 
