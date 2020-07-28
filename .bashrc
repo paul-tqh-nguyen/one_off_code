@@ -49,7 +49,7 @@ function spellcheck {
 # Development
 
 function git-black {
-    black $(git status | grep modified | grep py | cut -d":" -f2)
+    black $(git status | grep modified | grep "\.py$" | cut -d":" -f2)
 }
 
 function git-add-mod {
