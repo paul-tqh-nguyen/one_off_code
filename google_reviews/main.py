@@ -222,13 +222,14 @@ class Classifier(ABC):
                               number_of_epochs_choices: Iterable[int] = [15],
                               batch_size_choices: Iterable[int] = [1, 32, 64],
                               learning_rate_choices: Iterable[float] = [
-                                  4e-5,
-                                  2e-5,
-                                  1e-5,
+                                  8e-6, 8e-5, 8e-4,
+                                  4e-6, 4e-5, 4e-4,
+                                  2e-6, 2e-5, 2e-4,
+                                  1e-6, 1e-5, 1e-4,
                               ],
                               max_sequence_length_choices: Iterable[int] = [160],
-                              dropout_probability_choices: Iterable[float] = [0.5],
-                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 10.0],
+                              dropout_probability_choices: Iterable[float] = [0.0, 0.25, 0.5],
+                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 5.0, 10.0],
     ) -> Generator[Callable[[None], None], None, None]:
         hyparameter_list_choices = list(itertools.product(
             model_name_choices,

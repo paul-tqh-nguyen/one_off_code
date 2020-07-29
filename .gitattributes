@@ -1,0 +1,2 @@
+./crashes/data/*.json filter=lfs diff=lfs merge=lfs -text
+./crashes/docs/*.json filter=lfs diff=lfs merge=lfs -text
