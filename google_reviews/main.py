@@ -298,11 +298,12 @@ class Classifier(ABC):
         for (model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold) in hyparameter_list_choices:
             if cls.model_already_trained(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold):
                 checkpoint_directory = cls.checkpoint_directory_for_model_hyperparameters(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold)
-                print(f'Skipping {checkpoint_directory}.')
+                print(f'Skipping {checkpoint_directory} .')
             else:
                 def training_callback() -> None:
                     with timer():
                         with safe_cuda_memory():
+                            print(f'Starting {checkpoint_directory} .')
                             classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold)
                             classifier.train()
                             return
