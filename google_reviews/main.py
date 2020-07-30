@@ -79,17 +79,6 @@ def _sanity_check_sequence_length(df: pd.DataFrame, tokenizer: transformers.toke
     assert sum(number_of_strings_with_length for length, number_of_strings_with_length in length_historgram.items() if length < max_sequence_length) / len(df) > 0.99
     return 
 
-def _sanity_check_classifier_class_attributes() -> None:
-    assert BertClassifier.transformer_module.transformer_model == transformers.BertForSequenceClassification
-    assert BertClassifier.transformer_model_tokenizer == transformers.BertTokenizer
-    assert RobertaClassifier.transformer_module.transformer_model == transformers.RobertaForSequenceClassification
-    assert RobertaClassifier.transformer_model_tokenizer == transformers.RobertaTokenizer
-    assert DistilbertClassifier.transformer_module.transformer_model == transformers.DistilBertForSequenceClassification
-    assert DistilbertClassifier.transformer_model_tokenizer == transformers.DistilBertTokenizer
-    global_classifier_names = {var_name for var_name, value in globals().items() if Classifier in parent_classes(value) and Classifier != value}
-    assert len(global_classifier_names) == len(TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR)
-    return 
-
 ##################################
 # Application-Specific Utilities #
 ##################################
@@ -161,13 +150,94 @@ class TransformersDataset(data.Dataset):
 # Transformer Metaclass Utilities #
 ###################################
 
-TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR = {
-    'bert': (transformers.BertForSequenceClassification, transformers.BertTokenizer),
-    'roberta': (transformers.RobertaForSequenceClassification, transformers.RobertaTokenizer),
-    'distilbert': (transformers.DistilBertForSequenceClassification, transformers.DistilBertTokenizer),
+TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
+    'albert': {
+        'model': transformers.AlbertForSequenceClassification,
+        'tokenizer': transformers.AlbertTokenizer,
+        'pretrained_model_names': [
+            'albert-base-v1',
+            'albert-xlarge-v1',
+            'albert-xxlarge-v1',
+            'albert-base-v2',
+            'albert-large-v2',
+            'albert-xlarge-v2',
+            'albert-xxlarge-v2',
+        ],
+    },
+    'bart': {
+        'model': transformers.BartForSequenceClassification,
+        'tokenizer': transformers.BartTokenizer,
+        'pretrained_model_names': [
+            'facebook/bart-base',
+        ],
+    },
+    'bert': {
+        'model': transformers.BertForSequenceClassification,
+        'tokenizer': transformers.BertTokenizer,
+        'pretrained_model_names': [
+            'bert-base-cased',
+            'bert-base-uncased',
+            # 'bert-large-cased', # memory issues
+            # 'bert-large-uncased', # memory issues
+            'bert-base-multilingual-uncased',
+            'bert-base-multilingual-cased',
+            'bert-larg-uncased-whole-word-masking',
+            'bert-large-cased-whole-word-masking',
+            'bert-large-uncased-whole-word-masking-finetuned-squad',
+            'bert-large-cased-whole-word-masking-finetuned-squad',
+        ],
+    },
+    'distilbert': {
+        'model': transformers.DistilBertForSequenceClassification,
+        'tokenizer': transformers.DistilBertTokenizer,
+        'pretrained_model_names': [
+            'distilbert-base-uncased',
+            'distilbert-base-uncased-distilled-squad',
+            'distilbert-base-uncased-distilled-squad',
+            'distilbert-base-cased-distilled-squad',
+            'distilbert-base-multilingual-cased',
+        ],
+    },
+    'longformer': {
+        'model': transformers.LongformerForSequenceClassification,
+        'tokenizer': transformers.LongformerTokenizer,
+        'pretrained_model_names': [
+            'allenai/longformer-base-4096',
+        ],
+    },
+    'roberta': {
+        'model': transformers.RobertaForSequenceClassification,
+        'tokenizer': transformers.RobertaTokenizer,
+        'pretrained_model_names': [
+            'roberta-base',
+            'distilroberta-base',
+        ],
+    },
+    'xlnet': {
+        'model': transformers.XLNetForSequenceClassification,
+        'tokenizer': transformers.XLNetTokenizer,
+        'pretrained_model_names': [
+            'xlnet-base-cased',
+            # 'xlnet-large-cased',
+        ],
+    },
+    'xlm': {
+        'model': transformers.XLMForSequenceClassification,
+        'tokenizer': transformers.XLMTokenizer,
+        'pretrained_model_names': [
+            'xlm-mlm-en-2048',
+        ],
+    },
+    'xlmroberta': {
+        'model': transformers.XLMRobertaForSequenceClassification,
+        'tokenizer': transformers.XLMRobertaTokenizer,
+        'pretrained_model_names': [
+            'xlm-roberta-base',
+        ],
+    },
 }
 
-TransformerModelSpec = operator.getitem(Literal, tuple(TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR.keys()))
+TransformerModelSpec = operator.getitem(Literal, tuple(TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS.keys()))
 
 ##################################
 # Transformer Module Metaclasses #
@@ -198,7 +268,7 @@ class TransformersModuleType(type):
 
     def __new__(meta, class_name: str, bases: Tuple[type, ...], attributes: dict, transformer_model_spec: TransformerModelSpec):
         
-        transformer_model, _ = TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR[transformer_model_spec]
+        transformer_model = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['model']
         
         updated_attributes = dict(attributes)
         updated_attributes.update({
@@ -219,14 +289,12 @@ class Classifier(ABC):
                               number_of_epochs_choices: Iterable[int] = [15],
                               batch_size_choices: Iterable[int] = [64],
                               learning_rate_choices: Iterable[float] = [
-                                  # 8e-6, 8e-5, 8e-4,
-                                  # 4e-6, 4e-5, 4e-4,
-                                  # 2e-6, 2e-5, 2e-4,
-                                  # 1e-6, 1e-5, 1e-4,
-                                  2e-5
+                                  4e-5,
+                                  2e-5,
+                                  1e-5,
                               ],
                               max_sequence_length_choices: Iterable[int] = [160],
-                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 10.0],
+                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0],
     ) -> Generator[Callable[[None], None], None, None]:
         hyparameter_list_choices = list(itertools.product(
             model_name_choices,
@@ -393,7 +461,8 @@ class TransformersClassifierType(type):
 
     def __new__(meta, class_name: str, bases: Tuple[type, ...], attributes: dict, transformer_model_spec: TransformerModelSpec):
         
-        transformer_model, transformer_model_tokenizer = TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR[transformer_model_spec]
+        transformer_model = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['model']
+        transformer_model_tokenizer = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['tokenizer']
 
         class TransformerModule(metaclass=TransformersModuleType, transformer_model_spec=transformer_model_spec):
             pass
@@ -410,60 +479,21 @@ class TransformersClassifierType(type):
 # Transformer Classifiers #
 ###########################
 
-class BertClassifier(metaclass=TransformersClassifierType, transformer_model_spec='bert'):
-    pass
-
-class RobertaClassifier(metaclass=TransformersClassifierType, transformer_model_spec='roberta'):    
-    pass
-
-class DistilbertClassifier(metaclass=TransformersClassifierType, transformer_model_spec='distilbert'):    
-    pass
+for transformer_model_spec in TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS.keys():
+    class_name = transformer_model_spec.capitalize()+'Classifier'
+    TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['classifier'] = TransformersClassifierType(class_name, (), {}, transformer_model_spec=transformer_model_spec)
 
 ##########
 # Driver #
 ##########
 
 def perform_hyperparameter_search() -> None:
-    _sanity_check_classifier_class_attributes()
-    # Bert Hyperparameter Search Callbacks
-    bert_hyperparameter_search_callbacks = BertClassifier.hyperparameter_search(
-        model_name_choices = [
-            'bert-base-cased',
-            'bert-base-uncased',
-            # 'bert-large-cased', # memory issues
-            # 'bert-large-uncased', # memory issues
-            'bert-base-multilingual-uncased',
-            'bert-base-multilingual-cased',
-            # 'bert-large-uncased-whole-word-masking',
-            # 'bert-large-cased-whole-word-masking',
-            # 'bert-large-uncased-whole-word-masking-finetuned-squad',
-            # 'bert-large-cased-whole-word-masking-finetuned-squad',
-        ],
-    )
-    # # Roberta Hyperparameter Search Callbacks
-    # roberta_hyperparameter_search_callbacks = RobertaClassifier.hyperparameter_search(
-    #     model_name_choices = [
-    #         'roberta-base',
-    #         # 'roberta-large', # memory issues
-    #         'distilroberta-base',
-    #         # 'roberta-large-mnli', 
-    #     ]
-    # )
-    # # Distilbert Hyperparameter Search Callbacks
-    # distilbert_hyperparameter_search_callbacks = DistilbertClassifier.hyperparameter_search(
-    #     model_name_choices = [
-    #         'distilbert-base-uncased',
-    #         'distilbert-base-uncased-distilled-squad',
-    #         'distilbert-base-uncased-distilled-squad',
-    #         'distilbert-base-cased-distilled-squad',
-    #         'distilbert-base-multilingual-cased',
-    #     ]
-    # )
     # Execute Hyperparameter Search
     callback_generators = [
-        bert_hyperparameter_search_callbacks,
-        # roberta_hyperparameter_search_callbacks,
-        # distilbert_hyperparameter_search_callbacks,
+        TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['classifier'].hyperparameter_search(
+            model_name_choices = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['pretrained_model_names'],
+        )
+        for transformer_model_spec in TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS.keys()
     ]
     random.shuffle(callback_generators)
     all_hyperparameter_search_callbacks = roundrobin(*callback_generators)
