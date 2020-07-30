@@ -506,6 +506,13 @@ def perform_hyperparameter_search() -> None:
         callback_generators.append(
             TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['classifier'].hyperparameter_search(
                 model_name_choices = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['pretrained_model_names'],
+                number_of_epochs_choices = [15],
+                batch_size_choices = [1, 32],
+                learning_rate_choices = [4e-5, 2e-5, 1e-5],
+            ))
+        callback_generators.append(
+            TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['classifier'].hyperparameter_search(
+                model_name_choices = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['pretrained_model_names'],
                 number_of_epochs_choices = [30],
                 learning_rate_choices = [4e-6, 2e-6, 1e-6],
             ))
