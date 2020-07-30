@@ -156,12 +156,9 @@ TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
         'tokenizer': transformers.AlbertTokenizer,
         'pretrained_model_names': [
             'albert-base-v1',
-            'albert-xlarge-v1',
-            'albert-xxlarge-v1',
+            'albert-large-v1',
             'albert-base-v2',
             'albert-large-v2',
-            'albert-xlarge-v2',
-            'albert-xxlarge-v2',
         ],
     },
     'bart': {
@@ -177,14 +174,8 @@ TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
         'pretrained_model_names': [
             'bert-base-cased',
             'bert-base-uncased',
-            # 'bert-large-cased', # memory issues
-            # 'bert-large-uncased', # memory issues
             'bert-base-multilingual-uncased',
             'bert-base-multilingual-cased',
-            'bert-larg-uncased-whole-word-masking',
-            'bert-large-cased-whole-word-masking',
-            'bert-large-uncased-whole-word-masking-finetuned-squad',
-            'bert-large-cased-whole-word-masking-finetuned-squad',
         ],
     },
     'distilbert': {
@@ -218,7 +209,6 @@ TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
         'tokenizer': transformers.XLNetTokenizer,
         'pretrained_model_names': [
             'xlnet-base-cased',
-            # 'xlnet-large-cased',
         ],
     },
     'xlm': {
