@@ -151,16 +151,16 @@ class TransformersDataset(data.Dataset):
 ###################################
 
 TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
-    'albert': {
-        'model': transformers.AlbertForSequenceClassification,
-        'tokenizer': transformers.AlbertTokenizer,
-        'pretrained_model_names': [
-            'albert-base-v1',
-            'albert-large-v1',
-            'albert-base-v2',
-            'albert-large-v2',
-        ],
-    },
+    # 'albert': {
+    #     'model': transformers.AlbertForSequenceClassification,
+    #     'tokenizer': transformers.AlbertTokenizer,
+    #     'pretrained_model_names': [
+    #         'albert-base-v1',
+    #         'albert-large-v1',
+    #         'albert-base-v2',
+    #         'albert-large-v2',
+    #     ],
+    # },
     'bart': {
         'model': transformers.BartForSequenceClassification,
         'tokenizer': transformers.BartTokenizer,
@@ -168,63 +168,63 @@ TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
             'facebook/bart-base',
         ],
     },
-    'bert': {
-        'model': transformers.BertForSequenceClassification,
-        'tokenizer': transformers.BertTokenizer,
-        'pretrained_model_names': [
-            'bert-base-cased',
-            'bert-base-uncased',
-            'bert-base-multilingual-uncased',
-            'bert-base-multilingual-cased',
-        ],
-    },
-    'distilbert': {
-        'model': transformers.DistilBertForSequenceClassification,
-        'tokenizer': transformers.DistilBertTokenizer,
-        'pretrained_model_names': [
-            'distilbert-base-uncased',
-            'distilbert-base-uncased-distilled-squad',
-            'distilbert-base-uncased-distilled-squad',
-            'distilbert-base-cased-distilled-squad',
-            'distilbert-base-multilingual-cased',
-        ],
-    },
-    'longformer': {
-        'model': transformers.LongformerForSequenceClassification,
-        'tokenizer': transformers.LongformerTokenizer,
-        'pretrained_model_names': [
-            'allenai/longformer-base-4096',
-        ],
-    },
-    'roberta': {
-        'model': transformers.RobertaForSequenceClassification,
-        'tokenizer': transformers.RobertaTokenizer,
-        'pretrained_model_names': [
-            'roberta-base',
-            'distilroberta-base',
-        ],
-    },
-    'xlnet': {
-        'model': transformers.XLNetForSequenceClassification,
-        'tokenizer': transformers.XLNetTokenizer,
-        'pretrained_model_names': [
-            'xlnet-base-cased',
-        ],
-    },
-    'xlm': {
-        'model': transformers.XLMForSequenceClassification,
-        'tokenizer': transformers.XLMTokenizer,
-        'pretrained_model_names': [
-            'xlm-mlm-en-2048',
-        ],
-    },
-    'xlmroberta': {
-        'model': transformers.XLMRobertaForSequenceClassification,
-        'tokenizer': transformers.XLMRobertaTokenizer,
-        'pretrained_model_names': [
-            'xlm-roberta-base',
-        ],
-    },
+    # 'bert': {
+    #     'model': transformers.BertForSequenceClassification,
+    #     'tokenizer': transformers.BertTokenizer,
+    #     'pretrained_model_names': [
+    #         'bert-base-cased',
+    #         'bert-base-uncased',
+    #         'bert-base-multilingual-uncased',
+    #         'bert-base-multilingual-cased',
+    #     ],
+    # },
+    # 'distilbert': {
+    #     'model': transformers.DistilBertForSequenceClassification,
+    #     'tokenizer': transformers.DistilBertTokenizer,
+    #     'pretrained_model_names': [
+    #         'distilbert-base-uncased',
+    #         'distilbert-base-uncased-distilled-squad',
+    #         'distilbert-base-uncased-distilled-squad',
+    #         'distilbert-base-cased-distilled-squad',
+    #         'distilbert-base-multilingual-cased',
+    #     ],
+    # },
+    # 'longformer': {
+    #     'model': transformers.LongformerForSequenceClassification,
+    #     'tokenizer': transformers.LongformerTokenizer,
+    #     'pretrained_model_names': [
+    #         'allenai/longformer-base-4096',
+    #     ],
+    # },
+    # 'roberta': {
+    #     'model': transformers.RobertaForSequenceClassification,
+    #     'tokenizer': transformers.RobertaTokenizer,
+    #     'pretrained_model_names': [
+    #         'roberta-base',
+    #         'distilroberta-base',
+    #     ],
+    # },
+    # 'xlnet': {
+    #     'model': transformers.XLNetForSequenceClassification,
+    #     'tokenizer': transformers.XLNetTokenizer,
+    #     'pretrained_model_names': [
+    #         'xlnet-base-cased',
+    #     ],
+    # },
+    # 'xlm': {
+    #     'model': transformers.XLMForSequenceClassification,
+    #     'tokenizer': transformers.XLMTokenizer,
+    #     'pretrained_model_names': [
+    #         'xlm-mlm-en-2048',
+    #     ],
+    # },
+    # 'xlmroberta': {
+    #     'model': transformers.XLMRobertaForSequenceClassification,
+    #     'tokenizer': transformers.XLMRobertaTokenizer,
+    #     'pretrained_model_names': [
+    #         'xlm-roberta-base',
+    #     ],
+    # },
 }
 
 TransformerModelSpec = operator.getitem(Literal, tuple(TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS.keys()))
@@ -250,7 +250,7 @@ class TransformerModule(nn.Module):
         encoding = move_dict_value_tensors_to_device(encoding, self.device)
         input_ids = encoding['input_ids']
         attention_mask = encoding['attention_mask']
-        logits = only_one(self.pretrained_model(input_ids=input_ids, attention_mask=attention_mask))
+        logits = self.pretrained_model(input_ids=input_ids, attention_mask=attention_mask, output_attentions=False, output_hidden_states=False)[0]
         prediction = self.softmax_layer(logits)
         return prediction
 
@@ -377,6 +377,7 @@ class Classifier(ABC):
         total_accuracy = 0
         for encoding in tqdm_with_message(self.training_dataloader, post_yield_message_func = lambda index: f'Training Loss Per Batch      {total_loss/(index+1):.8f}', total=len(self.training_dataloader)):
             prediction_distributions = self.model(encoding)
+            assert tuple(prediction_distributions.shape) == (self.batch_size, NUMBER_OF_SENTIMENTS)
             targets = encoding['sentiment_id'].to(self.model.device)
             loss = self.loss_function(prediction_distributions, targets)
             loss.backward()
