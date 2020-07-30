@@ -25,14 +25,13 @@ from typing_extensions import Literal
 
 from misc_utilities import *
 
-import transformers 
-from transformers import AdamW, get_linear_schedule_with_warmup
-from transformers import BertModel, BertTokenizer
-from transformers import RobertaModel, RobertaTokenizer
 from sklearn.model_selection import train_test_split
 import torch
 from torch import nn
 from torch.utils import data
+
+import transformers 
+from transformers import AdamW, get_linear_schedule_with_warmup
 
 # @todo make sure all of the imports are used
 
@@ -81,12 +80,14 @@ def _sanity_check_sequence_length(df: pd.DataFrame, tokenizer: transformers.toke
     return 
 
 def _sanity_check_classifier_class_attributes() -> None:
-    assert BertClassifier.transformer_module.transformer_model == BertModel
-    assert BertClassifier.transformer_model_tokenizer == BertTokenizer
-    assert RobertaClassifier.transformer_module.transformer_model == RobertaModel
-    assert RobertaClassifier.transformer_model_tokenizer == RobertaTokenizer
+    assert BertClassifier.transformer_module.transformer_model == transformers.BertForSequenceClassification
+    assert BertClassifier.transformer_model_tokenizer == transformers.BertTokenizer
+    assert RobertaClassifier.transformer_module.transformer_model == transformers.RobertaForSequenceClassification
+    assert RobertaClassifier.transformer_model_tokenizer == transformers.RobertaTokenizer
+    assert DistilbertClassifier.transformer_module.transformer_model == transformers.DistilBertForSequenceClassification
+    assert DistilbertClassifier.transformer_model_tokenizer == transformers.DistilBertTokenizer
     global_classifier_names = {var_name for var_name, value in globals().items() if Classifier in parent_classes(value) and Classifier != value}
-    assert len(global_classifier_names) == 2
+    assert len(global_classifier_names) == len(TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR)
     return 
 
 ##################################
@@ -161,8 +162,9 @@ class TransformersDataset(data.Dataset):
 ###################################
 
 TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR = {
-    'bert': (BertModel, BertTokenizer),
-    'roberta': (RobertaModel, RobertaTokenizer),
+    'bert': (transformers.BertForSequenceClassification, transformers.BertTokenizer),
+    'roberta': (transformers.RobertaForSequenceClassification, transformers.RobertaTokenizer),
+    'distilbert': (transformers.DistilBertForSequenceClassification, transformers.DistilBertTokenizer),
 }
 
 TransformerModelSpec = operator.getitem(Literal, tuple(TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR.keys()))
@@ -173,16 +175,12 @@ TransformerModelSpec = operator.getitem(Literal, tuple(TRANSFORMER_MODEL_SPEC_TO
 
 class TransformerModule(nn.Module):
     
-    def __init__(self, model_name: str, dropout_probability: float):
+    def __init__(self, model_name: str):
         super().__init__()
         self.model_name = model_name
-        self.dropout_probability = dropout_probability
-        self.pretrained_model = self.__class__.transformer_model.from_pretrained(self.model_name)
-        self.dropout_layer = nn.Dropout(self.dropout_probability)
-        self.prediction_layers = nn.Sequential(OrderedDict([
-            ('fully_connected_layer', nn.Linear(self.pretrained_model.config.hidden_size, NUMBER_OF_SENTIMENTS)),
-            ('softmax_layer', nn.Softmax(dim=1)),
-        ]))
+        with _transformers_logging_suppressed():
+            self.pretrained_model = self.__class__.transformer_model.from_pretrained(self.model_name, num_labels=NUMBER_OF_SENTIMENTS)
+        self.softmax_layer = nn.Softmax(dim=1)
     
     @property
     def device(self) -> torch.device:
@@ -192,16 +190,15 @@ class TransformerModule(nn.Module):
         encoding = move_dict_value_tensors_to_device(encoding, self.device)
         input_ids = encoding['input_ids']
         attention_mask = encoding['attention_mask']
-        _, pooled_output = self.pretrained_model(input_ids=input_ids, attention_mask=attention_mask)
-        pooled_output = self.dropout_layer(pooled_output)
-        prediction = self.prediction_layers(pooled_output)
+        logits = only_one(self.pretrained_model(input_ids=input_ids, attention_mask=attention_mask))
+        prediction = self.softmax_layer(logits)
         return prediction
 
 class TransformersModuleType(type):
 
     def __new__(meta, class_name: str, bases: Tuple[type, ...], attributes: dict, transformer_model_spec: TransformerModelSpec):
         
-        transformer_model, transformer_model_tokenizer = TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR[transformer_model_spec]
+        transformer_model, _ = TRANSFORMER_MODEL_SPEC_TO_MODEL_TOKENIZER_PAIR[transformer_model_spec]
         
         updated_attributes = dict(attributes)
         updated_attributes.update({
@@ -220,16 +217,16 @@ class Classifier(ABC):
     def hyperparameter_search(cls,
                               model_name_choices: Iterable[str],
                               number_of_epochs_choices: Iterable[int] = [15],
-                              batch_size_choices: Iterable[int] = [1, 32, 64],
+                              batch_size_choices: Iterable[int] = [64],
                               learning_rate_choices: Iterable[float] = [
-                                  8e-6, 8e-5, 8e-4,
-                                  4e-6, 4e-5, 4e-4,
-                                  2e-6, 2e-5, 2e-4,
-                                  1e-6, 1e-5, 1e-4,
+                                  # 8e-6, 8e-5, 8e-4,
+                                  # 4e-6, 4e-5, 4e-4,
+                                  # 2e-6, 2e-5, 2e-4,
+                                  # 1e-6, 1e-5, 1e-4,
+                                  2e-5
                               ],
                               max_sequence_length_choices: Iterable[int] = [160],
-                              dropout_probability_choices: Iterable[float] = [0.0, 0.25, 0.5],
-                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 5.0, 10.0],
+                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 10.0],
     ) -> Generator[Callable[[None], None], None, None]:
         hyparameter_list_choices = list(itertools.product(
             model_name_choices,
@@ -237,26 +234,24 @@ class Classifier(ABC):
             batch_size_choices,
             learning_rate_choices,
             max_sequence_length_choices,
-            dropout_probability_choices,
             gradient_clipping_max_threshold_choices,
         ))
         random.shuffle(hyparameter_list_choices)
-        for (model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold) in hyparameter_list_choices:
+        for (model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold) in hyparameter_list_choices:
             def training_callback() -> None:
                 with timer():
                     with safe_cuda_memory():
-                        classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, dropout_probability, gradient_clipping_max_threshold)
+                        classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold)
                         classifier.train()
                         return
             yield training_callback
     
-    def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, dropout_probability: float, gradient_clipping_max_threshold: float):
+    def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, gradient_clipping_max_threshold: float):
         self.model_name = model_name
         self.number_of_epochs = number_of_epochs
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.max_sequence_length = max_sequence_length
-        self.dropout_probability = dropout_probability
         self.gradient_clipping_max_threshold = gradient_clipping_max_threshold
         
         if not os.path.exists(self.checkpoint_directory):
@@ -265,7 +260,7 @@ class Classifier(ABC):
         self.tokenizer = self.__class__.transformer_model_tokenizer.from_pretrained(self.model_name)
         self._load_data()
         
-        self.model: nn.Module = self.__class__.transformer_module(self.model_name, self.dropout_probability).to(DEVICE)
+        self.model: nn.Module = self.__class__.transformer_module(self.model_name).to(DEVICE)
         self.optimizer: torch.optim.Optimizer = AdamW(self.model.parameters(), lr=self.learning_rate, correct_bias=False)
         self.loss_function: Callable = nn.CrossEntropyLoss().to(DEVICE)
         self.scheduler: torch.optim.lr_scheduler.LambdaLR = get_linear_schedule_with_warmup(self.optimizer, num_warmup_steps=0, num_training_steps=len(self.training_dataloader)*self.number_of_epochs)
@@ -286,7 +281,7 @@ class Classifier(ABC):
 
     @property
     def checkpoint_directory(self) -> str:
-        return f'./results/{self.model_name.replace("-", "_")}_epochs_{self.number_of_epochs}_batch_{self.batch_size}_lr_{self.learning_rate}_seq_len_{self.max_sequence_length}_dropout_{self.dropout_probability}_grad_clip_{self.gradient_clipping_max_threshold}'
+        return f'./results/{self.model_name.replace("-", "_")}_epochs_{self.number_of_epochs}_batch_{self.batch_size}_lr_{self.learning_rate}_seq_len_{self.max_sequence_length}_grad_clip_{self.gradient_clipping_max_threshold}'
     
     @property
     def checkpoint_file(self) -> str:
@@ -309,7 +304,6 @@ class Classifier(ABC):
             'batch_size': self.batch_size,
             'learning_rate': self.learning_rate,
             'max_sequence_length': self.max_sequence_length,
-            'dropout_probability': self.dropout_probability,
             'gradient_clipping_max_threshold': self.gradient_clipping_max_threshold,
             'epoch': epoch_index,
             'loss_per_example': loss_per_example,
@@ -422,6 +416,9 @@ class BertClassifier(metaclass=TransformersClassifierType, transformer_model_spe
 class RobertaClassifier(metaclass=TransformersClassifierType, transformer_model_spec='roberta'):    
     pass
 
+class DistilbertClassifier(metaclass=TransformersClassifierType, transformer_model_spec='distilbert'):    
+    pass
+
 ##########
 # Driver #
 ##########
@@ -443,20 +440,33 @@ def perform_hyperparameter_search() -> None:
             # 'bert-large-cased-whole-word-masking-finetuned-squad',
         ],
     )
-    # Roberta Hyperparameter Search Callbacks
-    roberta_hyperparameter_search_callbacks = RobertaClassifier.hyperparameter_search(
-        model_name_choices = [
-            'roberta-base',
-            # 'roberta-large', # memory issues
-            'distilroberta-base',
-            # 'roberta-large-mnli', 
-        ]
-    )
+    # # Roberta Hyperparameter Search Callbacks
+    # roberta_hyperparameter_search_callbacks = RobertaClassifier.hyperparameter_search(
+    #     model_name_choices = [
+    #         'roberta-base',
+    #         # 'roberta-large', # memory issues
+    #         'distilroberta-base',
+    #         # 'roberta-large-mnli', 
+    #     ]
+    # )
+    # # Distilbert Hyperparameter Search Callbacks
+    # distilbert_hyperparameter_search_callbacks = DistilbertClassifier.hyperparameter_search(
+    #     model_name_choices = [
+    #         'distilbert-base-uncased',
+    #         'distilbert-base-uncased-distilled-squad',
+    #         'distilbert-base-uncased-distilled-squad',
+    #         'distilbert-base-cased-distilled-squad',
+    #         'distilbert-base-multilingual-cased',
+    #     ]
+    # )
     # Execute Hyperparameter Search
-    all_hyperparameter_search_callbacks = roundrobin(
+    callback_generators = [
         bert_hyperparameter_search_callbacks,
-        roberta_hyperparameter_search_callbacks,
-    )
+        # roberta_hyperparameter_search_callbacks,
+        # distilbert_hyperparameter_search_callbacks,
+    ]
+    random.shuffle(callback_generators)
+    all_hyperparameter_search_callbacks = roundrobin(*callback_generators)
     for callback in all_hyperparameter_search_callbacks:
         callback()
     return
