@@ -279,6 +279,7 @@ class Classifier(ABC):
                               number_of_epochs_choices: Iterable[int] = [15],
                               batch_size_choices: Iterable[int] = [64],
                               learning_rate_choices: Iterable[float] = [
+                                  8e-5,
                                   4e-5,
                                   2e-5,
                                   1e-5,
@@ -296,13 +297,24 @@ class Classifier(ABC):
         ))
         random.shuffle(hyparameter_list_choices)
         for (model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold) in hyparameter_list_choices:
-            def training_callback() -> None:
-                with timer():
-                    with safe_cuda_memory():
-                        classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold)
-                        classifier.train()
-                        return
-            yield training_callback
+            if not cls.model_already_trained(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold):
+                def training_callback() -> None:
+                    with timer():
+                        with safe_cuda_memory():
+                            classifier = cls(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold)
+                            classifier.train()
+                            return
+                yield training_callback
+    
+    @classmethod
+    def checkpoint_directory_for_model_hyperparameters(cls, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, gradient_clipping_max_threshold: float):
+        return f'./results/{model_name.replace("-", "_")}_epochs_{number_of_epochs}_batch_{batch_size}_lr_{learning_rate}_seq_len_{max_sequence_length}_grad_clip_{gradient_clipping_max_threshold}'
+    
+    @classmethod
+    def model_already_trained(cls, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, gradient_clipping_max_threshold: float) -> bool:
+        checkpoint_directory = cls.checkpoint_directory_for_model_hyperparameters(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold)
+        testing_result_file = os.path.join(checkpoint_directory, 'testing_results.json')
+        return os.path.exists(testing_result_file)
     
     def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, gradient_clipping_max_threshold: float):
         self.model_name = model_name
@@ -339,7 +351,7 @@ class Classifier(ABC):
 
     @property
     def checkpoint_directory(self) -> str:
-        return f'./results/{self.model_name.replace("-", "_")}_epochs_{self.number_of_epochs}_batch_{self.batch_size}_lr_{self.learning_rate}_seq_len_{self.max_sequence_length}_grad_clip_{self.gradient_clipping_max_threshold}'
+        return self.__class__.checkpoint_directory_for_model_hyperparameters(self.model_name, self.number_of_epochs, self.batch_size, self.learning_rate, self.max_sequence_length, self.gradient_clipping_max_threshold)
     
     @property
     def checkpoint_file(self) -> str:
@@ -377,7 +389,8 @@ class Classifier(ABC):
         total_accuracy = 0
         for encoding in tqdm_with_message(self.training_dataloader, post_yield_message_func = lambda index: f'Training Loss Per Batch      {total_loss/(index+1):.8f}', total=len(self.training_dataloader)):
             prediction_distributions = self.model(encoding)
-            assert tuple(prediction_distributions.shape) == (self.batch_size, NUMBER_OF_SENTIMENTS)
+            assert prediction_distributions.shape[0] <= self.batch_size
+            assert prediction_distributions.shape[1] <= NUMBER_OF_SENTIMENTS
             targets = encoding['sentiment_id'].to(self.model.device)
             loss = self.loss_function(prediction_distributions, targets)
             loss.backward()
@@ -415,8 +428,7 @@ class Classifier(ABC):
         return self._evaluate('testing')
         
     def train(self) -> None:
-        testing_result_file = os.path.join(self.checkpoint_directory, 'testing_results.json')
-        if os.path.exists(testing_result_file):
+        if self.__class__.model_already_trained(self.model_name, self.number_of_epochs, self.batch_size, self.learning_rate, self.max_sequence_length, self.gradient_clipping_max_threshold):
             print(f'Model already trained and tested (results stored in {self.checkpoint_directory}).')
         else:
             best_validation_loss = float('inf')
