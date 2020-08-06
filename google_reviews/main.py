@@ -45,7 +45,7 @@ pandarallel.initialize(nb_workers=mp.cpu_count(), progress_bar=False, verbose=0)
 APPS_CSV_FILE = './data/apps.csv'
 REVIEWS_CSV_FILE = './data/reviews.csv'
 
-NUMBER_OF_WORKERS = mp.cpu_count()
+NUMBER_OF_WORKERS = 0
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 RANDOM_SEED = 1234
 
@@ -151,66 +151,66 @@ class TransformersDataset(data.Dataset):
 ###################################
 
 TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
-    'albert': {
-        'model': transformers.AlbertForSequenceClassification,
-        'tokenizer': transformers.AlbertTokenizer,
-        'pretrained_model_names': [
-            'albert-base-v1',
-            'albert-large-v1',
-            'albert-base-v2',
-            'albert-large-v2',
-        ],
-    },
-    'bart': {
-        'model': transformers.BartForSequenceClassification,
-        'tokenizer': transformers.BartTokenizer,
-        'pretrained_model_names': [
-            'facebook/bart-base',
-        ],
-    },
-    'bert': {
-        'model': transformers.BertForSequenceClassification,
-        'tokenizer': transformers.BertTokenizer,
-        'pretrained_model_names': [
-            'bert-base-cased',
-            'bert-base-uncased',
-            'bert-base-multilingual-uncased',
-            'bert-base-multilingual-cased',
-        ],
-    },
-    'distilbert': {
-        'model': transformers.DistilBertForSequenceClassification,
-        'tokenizer': transformers.DistilBertTokenizer,
-        'pretrained_model_names': [
-            'distilbert-base-uncased',
-            'distilbert-base-uncased-distilled-squad',
-            'distilbert-base-uncased-distilled-squad',
-            'distilbert-base-cased-distilled-squad',
-            'distilbert-base-multilingual-cased',
-        ],
-    },
-    'longformer': {
-        'model': transformers.LongformerForSequenceClassification,
-        'tokenizer': transformers.LongformerTokenizer,
-        'pretrained_model_names': [
-            'allenai/longformer-base-4096',
-        ],
-    },
-    'roberta': {
-        'model': transformers.RobertaForSequenceClassification,
-        'tokenizer': transformers.RobertaTokenizer,
-        'pretrained_model_names': [
-            'roberta-base',
-            'distilroberta-base',
-        ],
-    },
-    'xlnet': {
-        'model': transformers.XLNetForSequenceClassification,
-        'tokenizer': transformers.XLNetTokenizer,
-        'pretrained_model_names': [
-            'xlnet-base-cased',
-        ],
-    },
+    # 'albert': {
+    #     'model': transformers.AlbertForSequenceClassification,
+    #     'tokenizer': transformers.AlbertTokenizer,
+    #     'pretrained_model_names': [
+    #         'albert-base-v1',
+    #         'albert-large-v1',
+    #         'albert-base-v2',
+    #         'albert-large-v2',
+    #     ],
+    # },
+    # 'bart': {
+    #     'model': transformers.BartForSequenceClassification,
+    #     'tokenizer': transformers.BartTokenizer,
+    #     'pretrained_model_names': [
+    #         'facebook/bart-base',
+    #     ],
+    # },
+    # 'bert': {
+    #     'model': transformers.BertForSequenceClassification,
+    #     'tokenizer': transformers.BertTokenizer,
+    #     'pretrained_model_names': [
+    #         'bert-base-cased',
+    #         'bert-base-uncased',
+    #         'bert-base-multilingual-uncased',
+    #         'bert-base-multilingual-cased',
+    #     ],
+    # },
+    # 'distilbert': {
+    #     'model': transformers.DistilBertForSequenceClassification,
+    #     'tokenizer': transformers.DistilBertTokenizer,
+    #     'pretrained_model_names': [
+    #         'distilbert-base-uncased',
+    #         'distilbert-base-uncased-distilled-squad',
+    #         'distilbert-base-uncased-distilled-squad',
+    #         'distilbert-base-cased-distilled-squad',
+    #         'distilbert-base-multilingual-cased',
+    #     ],
+    # },
+    # 'longformer': {
+    #     'model': transformers.LongformerForSequenceClassification,
+    #     'tokenizer': transformers.LongformerTokenizer,
+    #     'pretrained_model_names': [
+    #         'allenai/longformer-base-4096',
+    #     ],
+    # },
+    # 'roberta': {
+    #     'model': transformers.RobertaForSequenceClassification,
+    #     'tokenizer': transformers.RobertaTokenizer,
+    #     'pretrained_model_names': [
+    #         'roberta-base',
+    #         'distilroberta-base',
+    #     ],
+    # },
+    # 'xlnet': {
+    #     'model': transformers.XLNetForSequenceClassification,
+    #     'tokenizer': transformers.XLNetTokenizer,
+    #     'pretrained_model_names': [
+    #         'xlnet-base-cased',
+    #     ],
+    # },
     'xlm': {
         'model': transformers.XLMForSequenceClassification,
         'tokenizer': transformers.XLMTokenizer,
@@ -277,14 +277,14 @@ class Classifier(ABC):
     def hyperparameter_search(cls,
                               model_name_choices: Iterable[str],
                               number_of_epochs_choices: Iterable[int] = [15, 30],
-                              batch_size_choices: Iterable[int] = [64],
+                              batch_size_choices: Iterable[int] = [1, 32, 64],
                               learning_rate_choices: Iterable[float] = [
                                   4e-6, 4e-5,
                                   2e-6, 2e-5,
                                   1e-6, 1e-5,
                               ],
                               max_sequence_length_choices: Iterable[int] = [160],
-                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0],
+                              gradient_clipping_max_threshold_choices: Iterable[float] = [1.0, 10.0],
     ) -> Generator[Callable[[None], None], None, None]:
         hyparameter_list_choices = list(itertools.product(
             model_name_choices,
@@ -431,6 +431,7 @@ class Classifier(ABC):
         return self._evaluate('testing')
         
     def train(self) -> None:
+        print()
         if self.__class__.model_already_trained(self.model_name, self.number_of_epochs, self.batch_size, self.learning_rate, self.max_sequence_length, self.gradient_clipping_max_threshold):
             print(f'Model already trained and tested (results stored in {self.checkpoint_directory}).')
         else:
@@ -438,7 +439,7 @@ class Classifier(ABC):
             best_validation_epoch = None
             print()
             print(f'Saving results to {self.checkpoint_directory} .')
-            print(f'Using CUDA device {torch.cuda.current_device()}.' if torch.device('cuda').type == 'cuda' else 'Using CPU.')
+            print(f'Using CUDA device {torch.cuda.current_device()}.' if DEVICE.type == 'cuda' else 'Using CPU.')
             print(f'Process id: {os.getpid()}')
             for epoch_index in range(self.number_of_epochs):
                 print()
@@ -455,6 +456,7 @@ class Classifier(ABC):
                 print(f'Validation Loss Per Example:     {validation_loss:.8f}')
                 print(f'Training Accuracy Per Example:   {training_accuracy:.8f}')
                 print(f'Validation Accuracy Per Example: {validation_accuracy:.8f}')
+                print(f'Current checkpoint directory: {self.checkpoint_directory}')
                 print()
             self.load_model_parameters()
             testing_loss, testing_accuracy = self.test()
@@ -500,21 +502,6 @@ def perform_hyperparameter_search() -> None:
         callback_generators.append(
             TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['classifier'].hyperparameter_search(
                 model_name_choices = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['pretrained_model_names'],
-                number_of_epochs_choices = [15],
-                learning_rate_choices = [4e-5, 2e-5, 1e-5],
-            ))
-        callback_generators.append(
-            TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['classifier'].hyperparameter_search(
-                model_name_choices = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['pretrained_model_names'],
-                number_of_epochs_choices = [15],
-                batch_size_choices = [1, 32],
-                learning_rate_choices = [4e-5, 2e-5, 1e-5],
-            ))
-        callback_generators.append(
-            TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['classifier'].hyperparameter_search(
-                model_name_choices = TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['pretrained_model_names'],
-                number_of_epochs_choices = [30],
-                learning_rate_choices = [4e-6, 2e-6, 1e-6],
             ))
     random.shuffle(callback_generators)
     all_hyperparameter_search_callbacks = roundrobin(*callback_generators)
@@ -525,9 +512,14 @@ def perform_hyperparameter_search() -> None:
 @debug_on_error
 def main() -> None:
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
-    parser.add_argument('-cuda-device-id', type=int, default=0, help="Perform hyperparameter search on specified CUDA device with the given id.")
+    parser.add_argument('-cuda-device-id', type=int, default=0, help='Perform hyperparameter search on specified CUDA device with the given id.')
+    parser.add_argument('-use-cpu', action='store_true', help='Perform hyperparameter search on the CPU.')
     args = parser.parse_args()
-    set_cuda_device_id(args.cuda_device_id)
+    if args.use_cpu:
+        global DEVICE
+        DEVICE = torch.device('cpu')
+    else:
+        set_cuda_device_id(args.cuda_device_id)
     perform_hyperparameter_search()
     return
 
