@@ -62,7 +62,7 @@ function git-add-mod {
 alias gam="git-add-mod"
 alias update-via-upstream="git pull --rebase upstream master && git fetch upstream && git push"
 
-alias update-notebooks="pushd /home/pnguyen/code/hive-project/2020-Q2 ; for e in $(ls */ | grep \":\" | cut -d\"/\" -f1) ; do tar -czvf $e.tar.gz $e ; done ; popd ; pushd /home/pnguyen/code/metagraph/docs/_downloads/notebooks ; cp /home/pnguyen/code/hive-project/2020-Q2/*.tar.gz . ; popd"
+alias update-notebooks="pushd /home/pnguyen/code/hive-project/2020-Q2 ; for e in \$(ls */ | grep \":\" | cut -d\"/\" -f1) ; do tar -czvf \$e.tar.gz \$e ; done ; popd ; pushd /home/pnguyen/code/metagraph/docs/_downloads/notebooks ; cp /home/pnguyen/code/hive-project/2020-Q2/*.tar.gz . ; popd"
 
 alias ipynb-to-py="jupyter nbconvert --to script"
 export PYTHONSTARTUP=$HOME/code/one_off_code/python_startup.py
