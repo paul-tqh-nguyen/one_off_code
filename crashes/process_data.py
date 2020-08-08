@@ -39,10 +39,10 @@ NYC_ZIP_CODE_GEOJSON_FILE_LOCATION = './data/nyc-zip-code-tabulation-areas-polyg
 # https://eric.clst.org/tech/usgeojson/
 US_STATES_JSON_FILE_LOCATION = './data/gz_2010_us_040_00_20m.json'
 
-OUTPUT_BOROUGH_JSON_FILE_LOCATION = './docs/borough.json'
-OUTPUT_ZIP_CODE_JSON_FILE_LOCATION = './docs/zip_code.json'
-OUTPUT_STATES_JSON_FILE_LOCATION = './docs/states.json'
-OUTPUT_CRASH_JSON_FILE_LOCATION = './docs/crash.json'
+OUTPUT_BOROUGH_JSON_FILE_LOCATION = './docs/processed_data/borough.json'
+OUTPUT_ZIP_CODE_JSON_FILE_LOCATION = './docs/processed_data/zip_code.json'
+OUTPUT_STATES_JSON_FILE_LOCATION = './docs/processed_data/states.json'
+OUTPUT_CRASH_JSON_FILE_LOCATION = './docs/processed_data/crash.json'
 
 STATES_TO_DISPLAY = {'New York', 'New Jersey', 'Massachusetts', 'Connecticut', 'Rhode Island'}
 
