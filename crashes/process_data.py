@@ -14,7 +14,6 @@ import datetime
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-from more_itertools import consume
 from pandarallel import pandarallel
 from shapely.geometry import Point, Polygon
 from typing import Union
