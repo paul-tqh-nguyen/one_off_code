@@ -199,7 +199,10 @@ def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
         process = mp.Process(target=_process_date_group, args=(date, date_group, output_queue))
         process.start()
         processes.append(process)
-    for _ in range(len(date_to_date_group_pairs)):
+    for _ in tqdm_with_message(range(len(date_to_date_group_pairs)),
+                               post_yield_message_func = lambda index: f'Writing data for date group process {index}',
+                               bar_format='{l_bar}{bar:50}{r_bar}',
+                               total=len(date_to_date_group_pairs)):
         date_string, array_for_date = output_queue.get()
         crash_date_file = os.path.join('./processed_data/crash_date_data/', f'{date_string}.json')
         crash_date_files.append(crash_date_file)
