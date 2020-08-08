@@ -1,4 +1,4 @@
-'#!/usr/bin/python3 -OO' # @todo make this the default
+#!/usr/bin/python3 -OO
 
 '''
 '''
@@ -102,13 +102,6 @@ def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_c
                 nearest_zip_code = zip_code
         assert isinstance(nearest_zip_code, int)
         nearest_zip_code = nearest_zip_code if nearest_zip_code_dist < 0.05 else np.nan
-        # if nearest_zip_code is np.nan: # @todo remove this
-        #     print()
-        #     print(f"row {repr(row)}")
-        #     print(f"row['LONGITUDE'] {repr(row['LONGITUDE'])}")
-        #     print(f"row['LATITUDE'] {repr(row['LATITUDE'])}")
-        #     print(f"nearest_zip_code {repr(nearest_zip_code)}")
-        #     print(f"nearest_zip_code_dist {repr(nearest_zip_code_dist)}")
         return nearest_zip_code
     borough_to_polygons = {}
     assert {feature['geometry']['type'] for feature in borough_geojson['features']} == {'MultiPolygon'}
@@ -153,6 +146,7 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     df.drop(df[df['LATITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].eq(0.0) & df['LATITUDE'].eq(0.0)].index, inplace=True)
+    print(f'Data size after dropping NaNs: {len(df):,}')
     assert df['LONGITUDE'].isnull().sum() == df['LATITUDE'].isnull().sum() == 0
     df['CRASH HOUR'] = df['CRASH TIME'].parallel_map(lambda crash_time_string: int(crash_time_string.split(':')[0]))
     print('Adding missing borough and zip code data.')
@@ -163,7 +157,7 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     df.drop(df[df['BOROUGH'].isnull()].index, inplace=True)
     df = df.astype({'ZIP CODE': int}, copy=False)
     df['BOROUGH'] = df['BOROUGH'].parallel_map(str.lower)
-    print(f'Final number of crashes: {len(df)}')
+    print(f'Final number of crashes: {len(df):,}')
     return df
 
 def _note_date_group(date_to_date_group_pair: Tuple[pd.Timestamp, pd.DataFrame]) -> Tuple[str, list]:
