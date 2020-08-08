@@ -14,6 +14,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
+from more_itertools import consume
 from pandarallel import pandarallel
 from shapely.geometry import Point, Polygon
 from typing import Union
@@ -26,7 +27,8 @@ from misc_utilities import *
 # Globals #
 ###########
 
-pandarallel.initialize(nb_workers=mp.cpu_count(), progress_bar=False, verbose=0)
+CPU_COUNT = mp.cpu_count()
+pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
 
 # https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95 
 CRASH_DATA_CSV_FILE_LOCATION = './data/Motor_Vehicle_Collisions_-_Crashes.csv'
@@ -170,7 +172,7 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     print(f'Final number of crashes: {len(df):,}')
     return df
 
-def _note_date_group(date: pd.Timestamp, date_group: pd.DataFrame, output_queue: mp.SimpleQueue) -> None:
+def _process_date_group(date: pd.Timestamp, date_group: pd.DataFrame, output_queue: mp.SimpleQueue) -> None:
     date_string = pd.to_datetime(only_one(date_group['CRASH DATE'].unique())).isoformat()
     array_for_date = [{} for _ in range(24)]
     for crash_hour, hour_group in date_group.groupby('CRASH HOUR'):
@@ -185,16 +187,20 @@ def _note_date_group(date: pd.Timestamp, date_group: pd.DataFrame, output_queue:
     return 
     
 def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
-    '''output dicts have indexing of date -> hour -> borough -> zip code'''
+    '''output JSON files have indexing of date -> hour -> borough -> zip code'''
     print('Generating crash JSON files.')
     crash_date_files: List[str] = []
     processes: List[mp.Process] = []
     output_queue = mp.SimpleQueue()
-    for date, date_group in tqdm_with_message(df.groupby('CRASH DATE'), post_yield_message_func = lambda index: f'Starting date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
-        process = mp.Process(target=_note_date_group, args=(date, date_group, output_queue))
+    date_to_date_group_pairs = [pair for pair in df.groupby('CRASH DATE')]
+    for date, date_group in tqdm_with_message(date_to_date_group_pairs,
+                                              post_yield_message_func = lambda index: f'Starting date group process {index}',
+                                              bar_format='{l_bar}{bar:50}{r_bar}',
+                                              total=len(date_to_date_group_pairs)):
+        process = mp.Process(target=_process_date_group, args=(date, date_group, output_queue))
         process.start()
         processes.append(process)
-    for _ in tqdm_with_message(range(len(processes)), post_yield_message_func = lambda index: f'Gathering and processing results from date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+    for _ in range(len(date_to_date_group_pairs)):
         date_string, array_for_date = output_queue.get()
         crash_date_file = os.path.join('./processed_data/crash_date_data/', f'{date_string}.json')
         crash_date_files.append(crash_date_file)
