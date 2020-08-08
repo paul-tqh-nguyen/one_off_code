@@ -8,6 +8,7 @@
 # Imports #
 ###########
 
+import os
 import json
 import datetime
 import numpy as np
@@ -42,7 +43,8 @@ US_STATES_JSON_FILE_LOCATION = './data/gz_2010_us_040_00_20m.json'
 OUTPUT_BOROUGH_JSON_FILE_LOCATION = './docs/processed_data/borough.json'
 OUTPUT_ZIP_CODE_JSON_FILE_LOCATION = './docs/processed_data/zip_code.json'
 OUTPUT_STATES_JSON_FILE_LOCATION = './docs/processed_data/states.json'
-OUTPUT_CRASH_JSON_FILE_LOCATION = './docs/processed_data/crash.json'
+OUTPUT_CRASH_DATE_DATA_DIRECTORY_LOCATION = './docs/processed_data/crash_date_data/'
+OUTPUT_CRASH_DATE_LIST_JSON_FILE_LOCATION = './docs/processed_data/crash_dates.json'
 
 STATES_TO_DISPLAY = {'New York', 'New Jersey', 'Massachusetts', 'Connecticut', 'Rhode Island'}
 
@@ -62,6 +64,11 @@ class CustomEncoder(json.JSONEncoder):
             return obj.isoformat()
         else:
             return super(CustomEncoder, self).default(obj)
+
+def write_dict_to_json_file(file_location: str, input_dict: dict) -> None:
+    with open(file_location, 'w') as file_handle:
+        json.dump(input_dict, file_handle, indent=4, cls=CustomEncoder)
+    return 
 
 def load_borough_geojson() -> dict:
     with open(BOROUGH_GEOJSON_FILE_LOCATION, 'r') as f_borough:
@@ -145,6 +152,7 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     print('Loading crash data.')
     with warnings_suppressed():
         df = pd.read_csv(CRASH_DATA_CSV_FILE_LOCATION, parse_dates=['CRASH DATE'])
+        df = df.sample(1000) # @todo remove this
     print(f'Raw data size: {len(df):,}')
     df.drop(df[df['LATITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].isnull()].index, inplace=True)
@@ -163,8 +171,7 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     print(f'Final number of crashes: {len(df):,}')
     return df
 
-def _note_date_group(date_to_date_group_pair: Tuple[pd.Timestamp, pd.DataFrame]) -> Tuple[str, list]:
-    date, date_group = date_to_date_group_pair
+def _note_date_group(date: pd.Timestamp, date_group: pd.DataFrame, output_queue: mp.SimpleQueue) -> None:
     date_string = pd.to_datetime(only_one(date_group['CRASH DATE'].unique())).isoformat()
     array_for_date = [{} for _ in range(24)]
     for crash_hour, hour_group in date_group.groupby('CRASH HOUR'):
@@ -175,13 +182,27 @@ def _note_date_group(date_to_date_group_pair: Tuple[pd.Timestamp, pd.DataFrame])
             dict_for_borough = dict_for_hour[borough]
             for zip_code, zip_code_group in borough_group.groupby('ZIP CODE'):
                 dict_for_borough[zip_code] = list(zip_code_group.to_dict(orient='index').values())
-    return (date_string, array_for_date)
+    output_queue.put((date_string, array_for_date))
+    return 
     
-def generate_crash_dict(df: pd.DataFrame) -> dict:
-    '''output_dict has indexing of date -> hour -> borough -> zip code'''
-    print('Generating crash dictionary.')
-    crash_dict = dict(parallel_map(_note_date_group, df.groupby('CRASH DATE')))
-    return crash_dict
+def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
+    '''output dicts have indexing of date -> hour -> borough -> zip code'''
+    print('Generating crash JSON files.')
+    crash_date_strings: List[str] = []
+    processes: List[mp.Process] = []
+    output_queue = mp.SimpleQueue()
+    for date, date_group in tqdm_with_message(df.groupby('CRASH DATE'), post_yield_message_func = lambda index: f'Starting date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+        process = mp.Process(target=_note_date_group, args=(date, date_group, output_queue))
+        process.start()
+        processes.append(process)
+    for _ in tqdm_with_message(range(len(processes)), post_yield_message_func = lambda index: f'Gathering and processing results from date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+        date_string, array_for_date = output_queue.get()
+        crash_date_strings.append(date_string)
+        write_dict_to_json_file(os.path.join(OUTPUT_CRASH_DATE_DATA_DIRECTORY_LOCATION, f'{date_string}.json'), {date_string: array_for_date})
+    for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Closing date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
+        process.join()
+    write_dict_to_json_file(OUTPUT_CRASH_DATE_LIST_JSON_FILE_LOCATION, crash_date_strings)
+    return 
 
 ##########
 # Driver #
@@ -198,11 +219,6 @@ def _sanity_check_data(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson
         assert {feature['properties']['NAME'] for feature in us_states_geojson['features']} == STATES_TO_DISPLAY
     return
 
-def write_dict_to_json_file(file_location: str, input_dict: dict) -> None:
-    with open(file_location, 'w') as file_handle:
-        json.dump(input_dict, file_handle, indent=4, cls=CustomEncoder)
-    return 
-
 @debug_on_error
 def main() -> None:
     borough_geojson = load_borough_geojson()
@@ -210,11 +226,10 @@ def main() -> None:
     us_states_geojson = load_us_states_geojson()
     df = load_crash_df(borough_geojson, zip_code_geojson)
     _sanity_check_data(df, borough_geojson, zip_code_geojson, us_states_geojson)
-    crash_dict = generate_crash_dict(df)
     write_dict_to_json_file(OUTPUT_BOROUGH_JSON_FILE_LOCATION, borough_geojson)
     write_dict_to_json_file(OUTPUT_ZIP_CODE_JSON_FILE_LOCATION, zip_code_geojson)
     write_dict_to_json_file(OUTPUT_STATES_JSON_FILE_LOCATION, us_states_geojson)
-    write_dict_to_json_file(OUTPUT_CRASH_JSON_FILE_LOCATION, crash_dict)
+    write_crash_df_to_json_file(df)
     return
 
 if __name__ == '__main__':
