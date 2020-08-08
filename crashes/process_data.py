@@ -179,15 +179,9 @@ def _note_date_group(date_to_date_group_pair: Tuple[pd.Timestamp, pd.DataFrame])
     
 def generate_crash_dict(df: pd.DataFrame) -> dict:
     '''output_dict has indexing of date -> hour -> borough -> zip code'''
-    print('Generating output dictionary.')
-    crash_data_dict = dict(parallel_map(_note_date_group, df.groupby('CRASH DATE')))
-    output_dict = {
-        'crash_data': crash_data_dict,
-        'borough_data': borough_geojson,
-        'zip_code_data': zip_code_geojson,
-        'states_data': us_states_geojson
-    }
-    return output_dict
+    print('Generating crash dictionary.')
+    crash_dict = dict(parallel_map(_note_date_group, df.groupby('CRASH DATE')))
+    return crash_dict
 
 ##########
 # Driver #
@@ -216,7 +210,7 @@ def main() -> None:
     us_states_geojson = load_us_states_geojson()
     df = load_crash_df(borough_geojson, zip_code_geojson)
     _sanity_check_data(df, borough_geojson, zip_code_geojson, us_states_geojson)
-    crash_dict = generate_crash_dict(df, borough_geojson, zip_code_geojson, us_states_geojson)
+    crash_dict = generate_crash_dict(df)
     write_dict_to_json_file(OUTPUT_BOROUGH_JSON_FILE_LOCATION, borough_geojson)
     write_dict_to_json_file(OUTPUT_ZIP_CODE_JSON_FILE_LOCATION, zip_code_geojson)
     write_dict_to_json_file(OUTPUT_STATES_JSON_FILE_LOCATION, us_states_geojson)
