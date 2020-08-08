@@ -1,0 +1,4 @@
+borough.json filter=lfs diff=lfs merge=lfs -text
+crash.json filter=lfs diff=lfs merge=lfs -text
+states.json filter=lfs diff=lfs merge=lfs -text
+zip_code.json filter=lfs diff=lfs merge=lfs -text
