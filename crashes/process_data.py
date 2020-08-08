@@ -44,7 +44,7 @@ OUTPUT_BOROUGH_JSON_FILE_LOCATION = './docs/processed_data/borough.json'
 OUTPUT_ZIP_CODE_JSON_FILE_LOCATION = './docs/processed_data/zip_code.json'
 OUTPUT_STATES_JSON_FILE_LOCATION = './docs/processed_data/states.json'
 OUTPUT_CRASH_DATE_DATA_DIRECTORY_LOCATION = './docs/processed_data/crash_date_data/'
-OUTPUT_CRASH_DATE_LIST_JSON_FILE_LOCATION = './docs/processed_data/crash_dates.json'
+OUTPUT_CRASH_DATE_FILE_LIST_JSON_FILE_LOCATION = './docs/processed_data/crash_date_files.json'
 
 STATES_TO_DISPLAY = {'New York', 'New Jersey', 'Massachusetts', 'Connecticut', 'Rhode Island'}
 
@@ -152,7 +152,6 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     print('Loading crash data.')
     with warnings_suppressed():
         df = pd.read_csv(CRASH_DATA_CSV_FILE_LOCATION, parse_dates=['CRASH DATE'])
-        df = df.sample(1000) # @todo remove this
     print(f'Raw data size: {len(df):,}')
     df.drop(df[df['LATITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].isnull()].index, inplace=True)
@@ -188,7 +187,7 @@ def _note_date_group(date: pd.Timestamp, date_group: pd.DataFrame, output_queue:
 def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
     '''output dicts have indexing of date -> hour -> borough -> zip code'''
     print('Generating crash JSON files.')
-    crash_date_strings: List[str] = []
+    crash_date_files: List[str] = []
     processes: List[mp.Process] = []
     output_queue = mp.SimpleQueue()
     for date, date_group in tqdm_with_message(df.groupby('CRASH DATE'), post_yield_message_func = lambda index: f'Starting date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
@@ -197,11 +196,12 @@ def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
         processes.append(process)
     for _ in tqdm_with_message(range(len(processes)), post_yield_message_func = lambda index: f'Gathering and processing results from date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
         date_string, array_for_date = output_queue.get()
-        crash_date_strings.append(date_string)
-        write_dict_to_json_file(os.path.join(OUTPUT_CRASH_DATE_DATA_DIRECTORY_LOCATION, f'{date_string}.json'), {date_string: array_for_date})
+        crash_date_file = os.path.join('./processed_data/crash_date_data/', f'{date_string}.json')
+        crash_date_files.append(crash_date_file)
+        write_dict_to_json_file(os.path.join('./docs/', crash_date_file), {date_string: array_for_date})
     for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Closing date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
         process.join()
-    write_dict_to_json_file(OUTPUT_CRASH_DATE_LIST_JSON_FILE_LOCATION, crash_date_strings)
+    write_dict_to_json_file(OUTPUT_CRASH_DATE_FILE_LIST_JSON_FILE_LOCATION, crash_date_files)
     return 
 
 ##########
