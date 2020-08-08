@@ -102,13 +102,13 @@ def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_c
                 nearest_zip_code = zip_code
         assert isinstance(nearest_zip_code, int)
         nearest_zip_code = nearest_zip_code if nearest_zip_code_dist < 0.05 else np.nan
-        if nearest_zip_code is np.nan:
-            print()
-            print(f"row {repr(row)}")
-            print(f"row['LONGITUDE'] {repr(row['LONGITUDE'])}")
-            print(f"row['LATITUDE'] {repr(row['LATITUDE'])}")
-            print(f"nearest_zip_code {repr(nearest_zip_code)}")
-            print(f"nearest_zip_code_dist {repr(nearest_zip_code_dist)}")
+        # if nearest_zip_code is np.nan: # @todo remove this
+        #     print()
+        #     print(f"row {repr(row)}")
+        #     print(f"row['LONGITUDE'] {repr(row['LONGITUDE'])}")
+        #     print(f"row['LATITUDE'] {repr(row['LATITUDE'])}")
+        #     print(f"nearest_zip_code {repr(nearest_zip_code)}")
+        #     print(f"nearest_zip_code_dist {repr(nearest_zip_code_dist)}")
         return nearest_zip_code
     borough_to_polygons = {}
     assert {feature['geometry']['type'] for feature in borough_geojson['features']} == {'MultiPolygon'}
@@ -134,22 +134,22 @@ def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_c
         return nearest_borough
     _is_non_numeric_string = lambda zip_code: isinstance(zip_code, str) and not str.isnumeric(zip_code)
     missing_zip_code_indexer = df['ZIP CODE'].isnull() | df['ZIP CODE'].parallel_map(_is_non_numeric_string)
-    print(f'Numbers of rows with missing ZIP codes before ZIP code estimation: {missing_zip_code_indexer.sum()}')
+    print(f'Numbers of rows with missing ZIP codes before ZIP code estimation: {missing_zip_code_indexer.sum():,} ({round(missing_zip_code_indexer.sum()/len(df)*100, 2)}%)')
     df.loc[missing_zip_code_indexer, 'ZIP CODE'] = df[missing_zip_code_indexer].parallel_apply(_guess_zip_code, axis=1)
     missing_zip_code_indexer = df['ZIP CODE'].isnull() | df['ZIP CODE'].parallel_map(_is_non_numeric_string)
-    print(f'Numbers of rows with missing ZIP codes after ZIP code estimation: {missing_zip_code_indexer.sum()}')
+    print(f'Numbers of rows with missing ZIP codes after ZIP code estimation: {missing_zip_code_indexer.sum():,} ({round(missing_zip_code_indexer.sum()/len(df)*100, 2)}%)')
     missing_borough_indexer = df['BOROUGH'].isnull()
-    print(f'Numbers of rows with missing boroughs before borough estimation: {missing_borough_indexer.sum()}')
+    print(f'Numbers of rows with missing boroughs before borough estimation: {missing_borough_indexer.sum():,} ({round(missing_borough_indexer.sum()/len(df)*100, 2)}%)')
     df.loc[missing_borough_indexer, 'BOROUGH'] = df[missing_borough_indexer].parallel_apply(_guess_borough, axis=1)
     missing_borough_indexer = df['BOROUGH'].isnull()
-    print(f'Numbers of rows with missing boroughs after borough estimation: {missing_borough_indexer.sum()}')
+    print(f'Numbers of rows with missing boroughs after borough estimation: {missing_borough_indexer.sum():,} ({round(missing_borough_indexer.sum()/len(df)*100, 2)}%)')
     return df
 
 def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame:
     print('Loading crash data.')
     with warnings_suppressed():
         df = pd.read_csv(CRASH_DATA_CSV_FILE_LOCATION, parse_dates=['CRASH DATE'])
-    print(f'Raw data size: {len(df)}')
+    print(f'Raw data size: {len(df):,}')
     df.drop(df[df['LATITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].isnull()].index, inplace=True)
     df.drop(df[df['LONGITUDE'].eq(0.0) & df['LATITUDE'].eq(0.0)].index, inplace=True)
@@ -158,7 +158,6 @@ def load_crash_df(borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame
     print('Adding missing borough and zip code data.')
     zip_code_geojson_zip_codes = {feature['properties']['Zip_Code'] for feature in zip_code_geojson['features']}
     df.loc[(~df['ZIP CODE'].isin(zip_code_geojson_zip_codes)).index, 'ZIP CODE'] = np.nan
-    df = df.sample(8_000) # @todo remove this
     df = _guess_boroughs_and_zip_codes(df, borough_geojson, zip_code_geojson)
     df.drop(df[df['ZIP CODE'].isnull()].index, inplace=True)
     df.drop(df[df['BOROUGH'].isnull()].index, inplace=True)
