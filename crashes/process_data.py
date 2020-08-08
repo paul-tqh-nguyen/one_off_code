@@ -39,7 +39,10 @@ NYC_ZIP_CODE_GEOJSON_FILE_LOCATION = './data/nyc-zip-code-tabulation-areas-polyg
 # https://eric.clst.org/tech/usgeojson/
 US_STATES_JSON_FILE_LOCATION = './data/gz_2010_us_040_00_20m.json'
 
-OUTPUT_JSON_FILE_LOCATION = './docs/processed_data.json'
+OUTPUT_BOROUGH_JSON_FILE_LOCATION = './docs/borough.json'
+OUTPUT_ZIP_CODE_JSON_FILE_LOCATION = './docs/zip_code.json'
+OUTPUT_STATES_JSON_FILE_LOCATION = './docs/states.json'
+OUTPUT_CRASH_JSON_FILE_LOCATION = './docs/crash.json'
 
 STATES_TO_DISPLAY = {'New York', 'New Jersey', 'Massachusetts', 'Connecticut', 'Rhode Island'}
 
@@ -174,7 +177,7 @@ def _note_date_group(date_to_date_group_pair: Tuple[pd.Timestamp, pd.DataFrame])
                 dict_for_borough[zip_code] = list(zip_code_group.to_dict(orient='index').values())
     return (date_string, array_for_date)
     
-def generate_output_dict(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson: dict, us_states_geojson: dict) -> dict:
+def generate_crash_dict(df: pd.DataFrame) -> dict:
     '''output_dict has indexing of date -> hour -> borough -> zip code'''
     print('Generating output dictionary.')
     crash_data_dict = dict(parallel_map(_note_date_group, df.groupby('CRASH DATE')))
@@ -201,6 +204,11 @@ def _sanity_check_data(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson
         assert {feature['properties']['NAME'] for feature in us_states_geojson['features']} == STATES_TO_DISPLAY
     return
 
+def write_dict_to_json_file(file_location: str, input_dict: dict) -> None:
+    with open(file_location, 'w') as file_handle:
+        json.dump(input_dict, file_handle, indent=4, cls=CustomEncoder)
+    return 
+
 @debug_on_error
 def main() -> None:
     borough_geojson = load_borough_geojson()
@@ -208,9 +216,11 @@ def main() -> None:
     us_states_geojson = load_us_states_geojson()
     df = load_crash_df(borough_geojson, zip_code_geojson)
     _sanity_check_data(df, borough_geojson, zip_code_geojson, us_states_geojson)
-    output_dict = generate_output_dict(df, borough_geojson, zip_code_geojson, us_states_geojson)
-    with open(OUTPUT_JSON_FILE_LOCATION, 'w') as file_handle:
-        json.dump(output_dict, file_handle, indent=4, cls=CustomEncoder)
+    crash_dict = generate_crash_dict(df, borough_geojson, zip_code_geojson, us_states_geojson)
+    write_dict_to_json_file(OUTPUT_BOROUGH_JSON_FILE_LOCATION, borough_geojson)
+    write_dict_to_json_file(OUTPUT_ZIP_CODE_JSON_FILE_LOCATION, zip_code_geojson)
+    write_dict_to_json_file(OUTPUT_STATES_JSON_FILE_LOCATION, us_states_geojson)
+    write_dict_to_json_file(OUTPUT_CRASH_JSON_FILE_LOCATION, crash_dict)
     return
 
 if __name__ == '__main__':
