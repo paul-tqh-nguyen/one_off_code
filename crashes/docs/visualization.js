@@ -1,8 +1,6 @@
 
-const onlyOne = (iterable) => {
-    console.assert(iterable.length == 1, `Unexpected number of elements in ${iterable}.`);
-    return iterable[0];
-};
+const sum = inputArray => inputArray.reduce((a, b) => a + b, 0);
+const mean = inputArray => sum(inputArray) / inputArray.length;
 
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -23,6 +21,9 @@ const visualizationMain = () => {
     const svg = d3.select('#map-svg');
 
     const zoomableContentGroup = svg.append('g').attr('id', 'zoomable-content-group');
+    const boroughsGroup = zoomableContentGroup.append('g').attr('id', 'boroughs-group');
+    const zipCodesGroup = zoomableContentGroup.append('g').attr('id', 'zip-codes-group');
+    const crashesGroup = zoomableContentGroup.append('g').attr('id', 'crashes-group');
 
     const dateDropdown = document.getElementById('date-dropdown');
 
@@ -61,31 +62,40 @@ const visualizationMain = () => {
             accumulator[dateString] = null;
             return accumulator;
 	}, {});
-        const updateVisualizationWithDateData = () => {
-            const dateString = dateDropdown.value;
-            const crashDateData = crashDateFileData[dateString];
-            console.log(`crashDateData ${JSON.stringify(crashDateData)}`); // @todo finish this
-        };
+        let updateVisualizationWithDateData;
         updateDate = () => {
             const dateString = dateDropdown.value;
-            if (crashDateDataByDateString[dateString] === null) {
+            if (crashDateDataByDateString[dateString] !== null) {
+                updateVisualizationWithDateData();
+            } else {
                 const crashDateFile = crashDateFileData[dateString];
                 d3.json(crashDateFile)
                     .then(data => {
-                        crashDateDataByDateString[dateString] = data;
+                        crashDateDataByDateString[dateString] = data[dateString];
+                        updateVisualizationWithDateData();
                     }).catch((error) => {
                         console.error(`Could not load data at ${crashDateFile} for date ${dateString}`);
                         console.error(error);
                     });
             }
-            updateVisualizationWithDateData();
         };
+        const boroughToMeanLongLat = boroughData.features.reduce((accumulator, feature) => {
+            const [meanLong, meanLat] = feature.geometry.coordinates.map(polygon => polygon[0])
+                  .reduce((a, b) => a.concat(b),[])
+                  .reduce((longLatAccumulator, longLat) => {
+                      longLatAccumulator[0] += longLat[0];
+                      longLatAccumulator[1] += longLat[1];
+                      return longLatAccumulator;
+                  }, [0,0]);
+            accumulator[feature.properties.boro_name] = {meanLong: meanLong, meanLat: meanLat};
+            return accumulator;
+        }, {});
         
         const render = () => {
             
-            zoomableContentGroup.selectAll('*').remove();
-            const boroughsGroup = zoomableContentGroup.append('g').attr('id', 'boroughs-group');
-            const zipCodesGroup = zoomableContentGroup.append('g').attr('id', 'zip-codes-group');
+            boroughsGroup.selectAll('*').remove();
+            zipCodesGroup.selectAll('*').remove();
+            crashesGroup.selectAll('*').remove();
             
             const plotContainer = document.getElementById('visualization-display');
             svg
@@ -186,6 +196,32 @@ const visualizationMain = () => {
                         moveZipCodesGroupToFront();
                     }
                 });
+            
+            updateVisualizationWithDateData = () => {
+                const dateString = dateDropdown.value;
+                const crashDateData = crashDateDataByDateString[dateString];
+                crashesGroup.selectAll('*').remove();
+                if (zoomLevel === zoomLevels.ZIPCODE) {
+                } else if (zoomLevel === zoomLevels.BOROUGH) {
+                } else if (zoomLevel === zoomLevels.CITY) {
+                    const boroughTextData = crashDateDataByDateString.reduce((accumulator,) => {
+                    });
+                    crashesGroup
+                        .selectAll('text')
+                        .data(boroughTextData)
+                        .enter()
+                        .append('text')
+                        .attr('class', 'borough-text')
+                        .text(datum => `${boroughTextData}`);
+                }
+                // crashesGroup
+                //     .selectAll('circle')
+                //     .data(crashDateData)
+                //     .enter()
+                //     .append('path')
+                //     .attr('class', 'crash')
+                //     .attr('fill', 'red'); // @todo change this based on whether or not someone was injured
+            };
             
             updateDate();
         };

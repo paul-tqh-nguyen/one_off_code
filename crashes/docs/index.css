@@ -92,9 +92,25 @@ body {
 }
 
 .zip-code-path {
-    transition: stroke-opacity 1.0s;
+    transition: stroke-opacity 1.0s, fill-opacity 0.5s;
+    fill: #000;
     fill-opacity: 0.0;
     stroke-width: 1px;
     stroke-linejoin: round;
     stroke: #73223b;
+}
+
+.zip-code-path:hover {
+    fill-opacity: 0.5;
+}
+
+.crash {
+    transition: all 0.5s;
+    r: 6;
+    stroke: black;
+    stroke-width: 2px;
+}
+
+.borough-text {
+    font-size: 10px;
 }
