@@ -3,7 +3,6 @@ dependencies:
   - python=3.7
   - pandas
   - conda-forge::shapely
-  - conda-forge::git-lfs
   - pip
   - pip:
     - pandarallel
