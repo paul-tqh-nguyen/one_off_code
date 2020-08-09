@@ -38,16 +38,10 @@ BOROUGH_GEOJSON_FILE_LOCATION = './data/Borough Boundaries.geojson'
 # https://github.com/fedhere/PUI2015_EC/blob/master/mam1612_EC/nyc-zip-code-tabulation-areas-polygons.geojson
 NYC_ZIP_CODE_GEOJSON_FILE_LOCATION = './data/nyc-zip-code-tabulation-areas-polygons.geojson'
 
-# https://eric.clst.org/tech/usgeojson/
-US_STATES_JSON_FILE_LOCATION = './data/gz_2010_us_040_00_20m.json'
-
 OUTPUT_BOROUGH_JSON_FILE_LOCATION = './docs/processed_data/borough.json'
 OUTPUT_ZIP_CODE_JSON_FILE_LOCATION = './docs/processed_data/zip_code.json'
-OUTPUT_STATES_JSON_FILE_LOCATION = './docs/processed_data/states.json'
 OUTPUT_CRASH_DATE_DATA_DIRECTORY_LOCATION = './docs/processed_data/crash_date_data/'
 OUTPUT_CRASH_DATE_FILE_LIST_JSON_FILE_LOCATION = './docs/processed_data/crash_date_files.json'
-
-STATES_TO_DISPLAY = {'New York', 'New Jersey', 'Massachusetts', 'Connecticut', 'Rhode Island'}
 
 ######################
 # Data Preprocessing #
@@ -82,12 +76,6 @@ def load_zip_code_geojson() -> dict:
     for feature in zip_code_geojson['features']:
         feature['properties']['Zip_Code'] = int(feature['properties']['postalCode'])
     return zip_code_geojson
-
-def load_us_states_geojson() -> dict:
-    with open(US_STATES_JSON_FILE_LOCATION, 'r') as f_states:
-        us_states_geojson = json.loads(f_states.read())
-    us_states_geojson['features'] = [feature for feature in us_states_geojson['features'] if feature['properties']['NAME'] in STATES_TO_DISPLAY]
-    return us_states_geojson
 
 def _guess_boroughs_and_zip_codes(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson: dict) -> pd.DataFrame:
     '''Destructive.'''
@@ -216,7 +204,7 @@ def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
 # Driver #
 ##########
 
-def _sanity_check_data(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson: dict, us_states_geojson: dict) -> None:
+def _sanity_check_data(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson: dict) -> None:
     if __debug__:
         df_boroughs = {e for e in df['BOROUGH'].unique() if isinstance(e, str)}
         borough_geojson_boroughs = {feature['properties']['boro_name'].lower() for feature in borough_geojson['features']}
@@ -224,19 +212,16 @@ def _sanity_check_data(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson
         df_zip_codes = set(df['ZIP CODE'].unique().tolist())
         zip_code_geojson_zip_codes = {feature['properties']['Zip_Code'] for feature in zip_code_geojson['features']}
         assert df_zip_codes.issubset(zip_code_geojson_zip_codes)
-        assert {feature['properties']['NAME'] for feature in us_states_geojson['features']} == STATES_TO_DISPLAY
     return
 
 @debug_on_error
 def main() -> None:
     borough_geojson = load_borough_geojson()
     zip_code_geojson = load_zip_code_geojson()
-    us_states_geojson = load_us_states_geojson()
     df = load_crash_df(borough_geojson, zip_code_geojson)
-    _sanity_check_data(df, borough_geojson, zip_code_geojson, us_states_geojson)
+    _sanity_check_data(df, borough_geojson, zip_code_geojson)
     write_dict_to_json_file(OUTPUT_BOROUGH_JSON_FILE_LOCATION, borough_geojson)
     write_dict_to_json_file(OUTPUT_ZIP_CODE_JSON_FILE_LOCATION, zip_code_geojson)
-    write_dict_to_json_file(OUTPUT_STATES_JSON_FILE_LOCATION, us_states_geojson)
     write_crash_df_to_json_file(df)
     return
 
