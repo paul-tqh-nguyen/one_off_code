@@ -169,7 +169,7 @@ def _process_date_group(date: pd.Timestamp, date_group: pd.DataFrame, output_que
             dict_for_hour[borough] = {}
             dict_for_borough = dict_for_hour[borough]
             for zip_code, zip_code_group in borough_group.groupby('ZIP CODE'):
-                dict_for_borough[zip_code] = list(zip_code_group.to_dict(orient='index').values())
+                dict_for_borough[zip_code] = [{key:value for key, value in row_dict.items() if value == value} for row_dict in zip_code_group.to_dict(orient='index').values()]
     output_queue.put((date_string, array_for_date))
     return 
     
@@ -206,7 +206,7 @@ def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
 
 def _sanity_check_data(df: pd.DataFrame, borough_geojson: dict, zip_code_geojson: dict) -> None:
     if __debug__:
-        df_boroughs = {e for e in df['BOROUGH'].unique() if isinstance(e, str)}
+        df_boroughs = {borough_string for borough_string in df['BOROUGH'].unique() if isinstance(borough_string, str)}
         borough_geojson_boroughs = {feature['properties']['boro_name'].lower() for feature in borough_geojson['features']}
         assert df_boroughs == borough_geojson_boroughs
         df_zip_codes = set(df['ZIP CODE'].unique().tolist())

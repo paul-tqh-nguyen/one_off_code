@@ -1,4 +1,17 @@
 
+const onlyOne = (iterable) => {
+    console.assert(iterable.length == 1, `Unexpected number of elements in ${iterable}.`);
+    return iterable[0];
+};
+
+d3.selection.prototype.moveToFront = function() {
+    return this.each(function() {
+        if (this.parentNode !== null) {
+            this.parentNode.appendChild(this);
+        }
+    });
+};
+
 let updateDate;
 
 const visualizationMain = () => {
@@ -7,13 +20,27 @@ const visualizationMain = () => {
     const zipCodesJSONLocation = './processed_data/zip_code.json';
     const crashDateFilesJSONLocation = './processed_data/crash_date_files.json';
 
-    const plotContainer = document.getElementById('visualization-display');
     const svg = d3.select('#map-svg');
 
-    const boroughsGroup = svg.append('g').attr('id', 'boroughs-group');
-    const zipCodesGroup = svg.append('g').attr('id', 'zip-codes-group');
+    const zoomableContentGroup = svg.append('g').attr('id', 'zoomable-content-group');
 
     const dateDropdown = document.getElementById('date-dropdown');
+
+    const zoomLevels = {
+        CITY: 'city',
+        BOROUGH: 'borough',
+        ZIPCODE: 'zip_code',
+    };
+    let zoomLevel = zoomLevels.CITY;
+    const zoomTransitionTime = 500;
+    
+    const boroughToHexColor = {
+        'Bronx': '#8000ff',
+        'Staten Island': '#00b5ec',
+        'Manhattan': '#81ffb4',
+        'Brooklyn': '#ffb360',
+        'Queens': '#de2121'
+    };
     
     Promise.all([
         d3.json(boroughJSONLocation),
@@ -22,39 +49,149 @@ const visualizationMain = () => {
     ]).then(data => {
         
         const [boroughData, zipCodeData, crashDateFileData]  = data;
-        
-        svg
-	    .attr('width', `${plotContainer.clientWidth}px`)
-	    .attr('height', `${plotContainer.clientHeight}px`);
 
-        const svgWidth = parseFloat(svg.attr('width'));
-	const svgHeight = parseFloat(svg.attr('height'));
-
-        crashDateFileData.forEach(dateFileData => {
-            const {} = dateFileData
-            
+        const sortedDateStrings = Object.keys(crashDateFileData).sort((dateA, dateB) =>  new Date(dateB.date) - new Date(dateA.date));
+        sortedDateStrings.forEach(dateString => {
+            const optionElement = document.createElement('option');
+            optionElement.setAttribute('value', dateString);
+            optionElement.innerHTML = dateString.split("T")[0];
+            dateDropdown.append(optionElement);
         });
-        updateDate = () => { // @todo write this
+        const crashDateDataByDateString = sortedDateStrings.reduce((accumulator, dateString) => {
+            accumulator[dateString] = null;
+            return accumulator;
+	}, {});
+        const updateVisualizationWithDateData = () => {
+            const dateString = dateDropdown.value;
+            const crashDateData = crashDateFileData[dateString];
+            console.log(`crashDateData ${JSON.stringify(crashDateData)}`); // @todo finish this
+        };
+        updateDate = () => {
+            const dateString = dateDropdown.value;
+            if (crashDateDataByDateString[dateString] === null) {
+                const crashDateFile = crashDateFileData[dateString];
+                d3.json(crashDateFile)
+                    .then(data => {
+                        crashDateDataByDateString[dateString] = data;
+                    }).catch((error) => {
+                        console.error(`Could not load data at ${crashDateFile} for date ${dateString}`);
+                        console.error(error);
+                    });
+            }
+            updateVisualizationWithDateData();
         };
         
-        const projection = d3.geoMercator().fitExtent([[0, 0], [svgWidth, svgHeight]], boroughData);
-        const projectionFunction = d3.geoPath().projection(projection);
+        const render = () => {
+            
+            zoomableContentGroup.selectAll('*').remove();
+            const boroughsGroup = zoomableContentGroup.append('g').attr('id', 'boroughs-group');
+            const zipCodesGroup = zoomableContentGroup.append('g').attr('id', 'zip-codes-group');
+            
+            const plotContainer = document.getElementById('visualization-display');
+            svg
+	        .attr('width', 0)
+	        .attr('height', 0)
+	        .attr('width', `${plotContainer.clientWidth}px`)
+	        .attr('height', `${plotContainer.clientHeight}px`);
+
+            const svgWidth = parseFloat(svg.attr('width'));
+	    const svgHeight = parseFloat(svg.attr('height'));
+
+            const projection = d3.geoMercator().fitExtent([[0, 0], [svgWidth, svgHeight]], boroughData);
+            const projectionFunction = d3.geoPath().projection(projection);
+
+            const zoom = d3.zoom()
+                  .scaleExtent([1, 8])
+                  .on("zoom", () => zoomableContentGroup.attr("transform", d3.event.transform));
+
+            let zipCodesGroupTransitionOutTimer = null;
+            const moveBoroughGroupToFront = () => {
+                zipCodesGroup
+                    .transition()
+                    .duration(zoomTransitionTime)
+                    .attr('stroke-opacity', 0);
+                if (zipCodesGroupTransitionOutTimer !== null) {
+                    clearTimeout(zipCodesGroupTransitionOutTimer);
+                }
+                zipCodesGroupTransitionOutTimer = setTimeout(() => {
+                    if (zoomLevel === zoomLevels.CITY) {
+                        boroughsGroup.moveToFront();
+                    }
+                }, zoomTransitionTime*4);
+            };
+            const moveZipCodesGroupToFront = () => {
+                zipCodesGroup
+                    .transition()
+                    .duration(zoomTransitionTime)
+                    .attr('stroke-opacity', 1);
+                zipCodesGroup.moveToFront();
+            };
+
+            const zoomToPath = datum => {
+                const X_COORD = 0;
+                const Y_COORD = 1;
+                const bounds = projectionFunction.bounds(datum);
+                const dx = bounds[1][X_COORD] - bounds[0][X_COORD];
+                const dy = bounds[1][Y_COORD] - bounds[0][Y_COORD];
+                const x = (bounds[0][X_COORD] + bounds[1][X_COORD]) / 2;
+                const y = (bounds[0][Y_COORD] + bounds[1][Y_COORD]) / 2;
+                const scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / svgWidth, dy / svgHeight)));
+                const translate = [svgWidth / 2 - scale * x, svgHeight / 2 - scale * y];
+                zoomableContentGroup.transition()
+                    .duration(zoomTransitionTime)
+                    .call( zoom.transform, d3.zoomIdentity.translate(translate[0],translate[1]).scale(scale) );
+            };
+            const zoomReset = () => {
+                zoomableContentGroup.transition()
+                    .duration(zoomTransitionTime)
+                    .call(zoom.transform, d3.zoomIdentity);
+                zoomLevel = zoomLevels.CITY;
+                moveBoroughGroupToFront();
+            };
+            boroughsGroup.moveToFront();
+            zoomReset();
+            
+            zipCodesGroup
+                .selectAll('path')
+                .data(zipCodeData.features)
+                .enter()
+                .append('path')
+                .attr('class', 'zip-code-path')
+                .attr('d', datum => projectionFunction(datum))
+                .on("click", function (datum) {
+                    if (zoomLevel === zoomLevels.ZIPCODE) {
+                        zoomReset();
+                    } else if (zoomLevel === zoomLevels.BOROUGH) {
+                        zoomToPath(datum);
+                        zoomLevel = zoomLevels.ZIPCODE;
+                    } else if (zoomLevel === zoomLevels.CITY) {
+                    }
+                });
+            
+            boroughsGroup
+                .selectAll('path')
+                .data(boroughData.features)
+                .enter()
+                .append('path')
+                .attr('class', 'borough-path')
+                .attr('d', datum => projectionFunction(datum))
+                .attr('fill', datum => boroughToHexColor[datum.properties.boro_name])
+                .on("click", function (datum) {
+                    if (zoomLevel === zoomLevels.ZIPCODE) {
+                        zoomReset();
+                    } else if (zoomLevel === zoomLevels.BOROUGH) {
+                    } else if (zoomLevel === zoomLevels.CITY) {
+                        zoomToPath(datum);
+                        zoomLevel = zoomLevels.BOROUGH;
+                        moveZipCodesGroupToFront();
+                    }
+                });
+            
+            updateDate();
+        };
         
-        boroughsGroup
-              .selectAll('path')
-              .data(boroughData.features)
-              .enter()
-              .append('path')
-              .attr('class', 'borough-path')
-              .attr('d', datum => projectionFunction(datum));
-        
-        zipCodesGroup
-              .selectAll('path')
-              .data(zipCodeData.features)
-              .enter()
-              .append('path')
-              .attr('class', 'zip-code-path')
-              .attr('d', datum => projectionFunction(datum));
+        render();
+        window.addEventListener('resize', render);
         
     }).catch((error) => {
         console.error(error);

@@ -60,18 +60,19 @@ body {
     height: 100%;
     transition: all 0.5s;
     overflow-y: hidden;
-    border: 1px solid #274E74;
+    border: 1px solid #2c80d1;
     border-radius: 3px;
-    background: #343738;
+    background: #3e5063;
 }
 
 #visualization-text-display {
     width: 100%;
     height: 100%;
     transition: all 0.5s;
-    border: 1px solid #274E74;
+    border: 1px solid #2c80d1;
     border-radius: 3px;
-    background: #343738;
+    background: #3e5063;
+    text-align: center;
 }
 
 #visualization-text-display * {
@@ -83,16 +84,17 @@ body {
 
 .borough-path {
     transition: all 0.25s;
-    stroke-width: 1px;
-    stroke-linejoin: round;
+    stroke-width: 0.5px;
+    stroke: black;
+    stroke-opacity: 1.0;
+    fill-opacity: 1.0;
     stroke: #73223b;
-    fill: #24658c;
 }
 
 .zip-code-path {
-    transition: all 0.25s;
+    transition: stroke-opacity 1.0s;
+    fill-opacity: 0.0;
     stroke-width: 1px;
     stroke-linejoin: round;
     stroke: #73223b;
-    fill-opacity: 0;
 }
