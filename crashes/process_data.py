@@ -16,7 +16,7 @@ import pandas as pd
 import multiprocessing as mp
 from pandarallel import pandarallel
 from shapely.geometry import Point, Polygon
-from typing import Union
+from typing import Union, Dict
 
 from misc_utilities import *
 
@@ -176,7 +176,7 @@ def _process_date_group(date: pd.Timestamp, date_group: pd.DataFrame, output_que
 def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
     '''output JSON files have indexing of date -> hour -> borough -> zip code'''
     print('Generating crash JSON files.')
-    crash_date_files: List[str] = []
+    crash_date_to_crash_date_file_dicts: List[Dict[str, str]] = []
     processes: List[mp.Process] = []
     output_queue = mp.SimpleQueue()
     date_to_date_group_pairs = [pair for pair in df.groupby('CRASH DATE')]
@@ -193,11 +193,11 @@ def write_crash_df_to_json_file(df: pd.DataFrame) -> None:
                                total=len(date_to_date_group_pairs)):
         date_string, array_for_date = output_queue.get()
         crash_date_file = os.path.join('./processed_data/crash_date_data/', f'{date_string}.json')
-        crash_date_files.append(crash_date_file)
+        crash_date_to_crash_date_file_dicts.append({date_string: crash_date_file})
         write_dict_to_json_file(os.path.join('./docs/', crash_date_file), {date_string: array_for_date})
     for process in tqdm_with_message(processes, post_yield_message_func = lambda index: f'Closing date group process {index}', bar_format='{l_bar}{bar:50}{r_bar}'):
         process.join()
-    write_dict_to_json_file(OUTPUT_CRASH_DATE_FILE_LIST_JSON_FILE_LOCATION, crash_date_files)
+    write_dict_to_json_file(OUTPUT_CRASH_DATE_FILE_LIST_JSON_FILE_LOCATION, crash_date_to_crash_date_file_dicts)
     return 
 
 ##########

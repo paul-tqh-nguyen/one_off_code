@@ -1,4 +1,6 @@
 
+let updateDate;
+
 const visualizationMain = () => {
     
     const boroughJSONLocation = './processed_data/borough.json';
@@ -10,6 +12,8 @@ const visualizationMain = () => {
 
     const boroughsGroup = svg.append('g').attr('id', 'boroughs-group');
     const zipCodesGroup = svg.append('g').attr('id', 'zip-codes-group');
+
+    const dateDropdown = document.getElementById('date-dropdown');
     
     Promise.all([
         d3.json(boroughJSONLocation),
@@ -26,6 +30,12 @@ const visualizationMain = () => {
         const svgWidth = parseFloat(svg.attr('width'));
 	const svgHeight = parseFloat(svg.attr('height'));
 
+        crashDateFiles.forEach(dateFile => {
+            
+        });
+        updateDate = () => { // @todo write this
+        };
+        
         const projection = d3.geoMercator().fitExtent([[0, 0], [svgWidth, svgHeight]], boroughData);
         const projectionFunction = d3.geoPath().projection(projection);
         

@@ -9,9 +9,22 @@
     <div id="help-display">
       <p>@todo insert help text</p>
     </div>
-    <div id="visualization-display" class="show">
-      <svg id="map-svg"></svg>
-    </div>
+    <table id="visualization-table" class="show">
+      <tr>
+	<td style="width: 50%;">
+	  <div id="visualization-display">
+	    <svg id="map-svg"></svg>
+	  </div>
+	</td>
+	<td style="width: 5%;"></td>
+	<td style="width: 20%;">
+	  <div id="visualization-text-display">
+	    <select id="date-dropdown" onchange="updateDate()"></select>
+	    <p>test</p>
+	  </div>
+	</td>
+      </tr>
+    </table>
     <script src="visualization.js"></script>
   </body>
 </html>
