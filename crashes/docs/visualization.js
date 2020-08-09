@@ -21,7 +21,7 @@ const visualizationMain = () => {
         d3.json(crashDateFilesJSONLocation),
     ]).then(data => {
         
-        const [boroughData, zipCodeData, crashDateFiles]  = data;
+        const [boroughData, zipCodeData, crashDateFileData]  = data;
         
         svg
 	    .attr('width', `${plotContainer.clientWidth}px`)
@@ -30,7 +30,8 @@ const visualizationMain = () => {
         const svgWidth = parseFloat(svg.attr('width'));
 	const svgHeight = parseFloat(svg.attr('height'));
 
-        crashDateFiles.forEach(dateFile => {
+        crashDateFileData.forEach(dateFileData => {
+            const {} = dateFileData
             
         });
         updateDate = () => { // @todo write this
