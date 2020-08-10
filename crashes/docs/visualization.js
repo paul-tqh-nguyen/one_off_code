@@ -27,6 +27,7 @@ const visualizationMain = () => {
     const crashDateFilesJSONLocation = './processed_data/crash_date_files.json';
 
     const svg = d3.select('#map-svg');
+    const plotContainer = document.getElementById('visualization-display');
 
     const zoomableContentGroup = svg.append('g').attr('id', 'zoomable-content-group');
     const boroughsGroup = zoomableContentGroup.append('g').attr('id', 'boroughs-group');
@@ -59,7 +60,7 @@ const visualizationMain = () => {
         
         const [boroughData, zipCodeData, crashDateFileData]  = data;
 
-        const sortedDateStrings = Object.keys(crashDateFileData).sort((dateA, dateB) =>  new Date(dateB) - new Date(dateA));
+        const sortedDateStrings = Object.keys(crashDateFileData).sort((dateA, dateB) =>  new Date(dateA) - new Date(dateB));
         sortedDateStrings.forEach(dateString => {
             const optionElement = document.createElement('option');
             optionElement.setAttribute('value', dateString);
@@ -98,7 +99,6 @@ const visualizationMain = () => {
             zipCodesGroup.selectAll('*').remove();
             crashesGroup.selectAll('*').remove();
             
-            const plotContainer = document.getElementById('visualization-display');
             svg
 	        .attr('width', `${plotContainer.clientWidth}px`)
 	        .attr('height', `${plotContainer.clientHeight}px`);
@@ -114,8 +114,8 @@ const visualizationMain = () => {
                 accumulator[feature.properties.boro_name] = {centerY: centerY, centerX: centerX};
                 return accumulator;
             }, {});
-
-
+            const crashCountByZipCode = {};
+            
             const zoom = d3.zoom()
                   .scaleExtent([1, 8])
                   .on("zoom", () => zoomableContentGroup.attr("transform", d3.event.transform));
@@ -177,16 +177,30 @@ const visualizationMain = () => {
                 .attr('class', 'zip-code-path')
                 .attr('d', datum => projectionFunction(datum))
                 .on('mouseover', datum => {
-                    tooltip
-                        .style('opacity', .9)
-                        .html(`123`)
-                        .style('left', `${d3.event.pageX}px`)
-                        .style('top', `${d3.event.pageY}px`);
+                    if (zoomLevel === zoomLevels.BOROUGH) {
+                        const toolTipX = d3.event.pageX;
+                        const toolTipY = d3.event.pageY;
+                        const zipCode = datum.properties.postalCode;
+                        const crashCount = crashCountByZipCode[zipCode];
+                        tooltip
+                            .style('left', `${toolTipX}px`)
+                            .style('top', `${toolTipY}px`)
+                            .style('opacity', .9);
+                        const tooltipElement = document.getElementById('tooltip');
+                        const zipCodeParagraphElement = document.createElement('p');
+                        zipCodeParagraphElement.innerHTML = `Zip Code: ${zipCode}`;
+                        const collisionCountParagraphElement = document.createElement('p');
+                        collisionCountParagraphElement.innerHTML = `Collision Count: ${crashCount}`;
+                        tooltipElement.querySelectorAll('*').forEach(child => child.remove());
+                        tooltipElement.append(zipCodeParagraphElement);
+                        tooltipElement.append(collisionCountParagraphElement);
+                    }
                 })
                 .on('mouseout', datum => {
                     tooltip.style('opacity', 0);
                 })
                 .on("click", function (datum) {
+                    tooltip.style('opacity', 0);
                     if (zoomLevel === zoomLevels.ZIPCODE) {
                         zoomReset();
                     } else if (zoomLevel === zoomLevels.BOROUGH) {
@@ -222,9 +236,21 @@ const visualizationMain = () => {
                 const crashDateData = crashDateDataByDateString[dateString];
                 crashesGroup.selectAll('*').remove();
                 if (zoomLevel === zoomLevels.ZIPCODE) {
-                    // @todo figure this out
                 } else if (zoomLevel === zoomLevels.BOROUGH) {
-                    // @todo figure this out
+                    Object.keys(crashCountByZipCode).forEach(key => {
+                        delete crashCountByZipCode[key];
+                    });
+                    crashDateData.forEach(hourData => {
+                        Object.values(hourData).forEach(boroughDataForHour => {
+                            Object.entries(boroughDataForHour).forEach(zipCodeToCrashesPair => {
+                                const [zipCode, crashes] = zipCodeToCrashesPair;
+                                if (!crashCountByZipCode.hasOwnProperty(zipCode)) {
+                                    crashCountByZipCode[zipCode] = 0;
+                                }
+                                crashCountByZipCode[zipCode] += crashes.length;
+                            });
+                        });
+                    });
                 } else if (zoomLevel === zoomLevels.CITY) {
                     const boroughTextData = boroughData.features.reduce((accumulator, feature) => {
                         const borough = feature.properties.boro_name;
@@ -239,8 +265,7 @@ const visualizationMain = () => {
                     crashDateData.forEach(hourData => {
                         Object.entries(hourData).forEach(boroughToBoroughDataPair => {
                             const [borough, boroughDataForHour] = boroughToBoroughDataPair;
-                            Object.entries(boroughDataForHour).forEach(zipCodeToCrashesPair => {
-                                const crashes = zipCodeToCrashesPair[1];
+                            Object.values(boroughDataForHour).forEach(crashes => {
                                 boroughTextData[capitalizeString(borough)].collisionCount += crashes.length;
                             });
                         });
@@ -268,7 +293,6 @@ const visualizationMain = () => {
                             datum[1].boundingBoxHeight = d3.select(this).node().getBBox().height + 10;
                             return 'borough-text';
                         });
-                    console.log('\n\n\n\n\n\n\n\n');
                     crashesGroup
                         .selectAll('rect')
                         .data(Object.entries(boroughTextData))
