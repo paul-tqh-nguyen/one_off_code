@@ -1,6 +1,14 @@
 
 const sum = inputArray => inputArray.reduce((a, b) => a + b, 0);
 const mean = inputArray => sum(inputArray) / inputArray.length;
+const capitalizeString  = str => {
+    var splitStr = str.toLowerCase().split(' ');
+    for (var i = 0; i < splitStr.length; i++) {
+        splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1);
+    }
+    return splitStr.join(' '); 
+}
+
 
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -51,13 +59,14 @@ const visualizationMain = () => {
         
         const [boroughData, zipCodeData, crashDateFileData]  = data;
 
-        const sortedDateStrings = Object.keys(crashDateFileData).sort((dateA, dateB) =>  new Date(dateB.date) - new Date(dateA.date));
+        const sortedDateStrings = Object.keys(crashDateFileData).sort((dateA, dateB) =>  new Date(dateB) - new Date(dateA));
         sortedDateStrings.forEach(dateString => {
             const optionElement = document.createElement('option');
             optionElement.setAttribute('value', dateString);
             optionElement.innerHTML = dateString.split("T")[0];
             dateDropdown.append(optionElement);
         });
+        // crashDateDataByDateString has index of date string -> hour -> borough -> zip code
         const crashDateDataByDateString = sortedDateStrings.reduce((accumulator, dateString) => {
             accumulator[dateString] = null;
             return accumulator;
@@ -79,17 +88,9 @@ const visualizationMain = () => {
                     });
             }
         };
-        const boroughToMeanLongLat = boroughData.features.reduce((accumulator, feature) => {
-            const [meanLong, meanLat] = feature.geometry.coordinates.map(polygon => polygon[0])
-                  .reduce((a, b) => a.concat(b),[])
-                  .reduce((longLatAccumulator, longLat) => {
-                      longLatAccumulator[0] += longLat[0];
-                      longLatAccumulator[1] += longLat[1];
-                      return longLatAccumulator;
-                  }, [0,0]);
-            accumulator[feature.properties.boro_name] = {meanLong: meanLong, meanLat: meanLat};
-            return accumulator;
-        }, {});
+
+	const tooltip = d3.select('#tooltip')
+              .style('opacity', 0);
         
         const render = () => {
             
@@ -99,8 +100,6 @@ const visualizationMain = () => {
             
             const plotContainer = document.getElementById('visualization-display');
             svg
-	        .attr('width', 0)
-	        .attr('height', 0)
 	        .attr('width', `${plotContainer.clientWidth}px`)
 	        .attr('height', `${plotContainer.clientHeight}px`);
 
@@ -109,6 +108,13 @@ const visualizationMain = () => {
 
             const projection = d3.geoMercator().fitExtent([[0, 0], [svgWidth, svgHeight]], boroughData);
             const projectionFunction = d3.geoPath().projection(projection);
+
+            const centroidByBorough = boroughData.features.reduce((accumulator, feature) => {
+                const [centerX, centerY] = projection(d3.geoCentroid(feature));
+                accumulator[feature.properties.boro_name] = {centerY: centerY, centerX: centerX};
+                return accumulator;
+            }, {});
+
 
             const zoom = d3.zoom()
                   .scaleExtent([1, 8])
@@ -123,9 +129,11 @@ const visualizationMain = () => {
                 if (zipCodesGroupTransitionOutTimer !== null) {
                     clearTimeout(zipCodesGroupTransitionOutTimer);
                 }
+                crashesGroup.moveToFront();
                 zipCodesGroupTransitionOutTimer = setTimeout(() => {
                     if (zoomLevel === zoomLevels.CITY) {
                         boroughsGroup.moveToFront();
+                        crashesGroup.moveToFront();
                     }
                 }, zoomTransitionTime*4);
             };
@@ -168,6 +176,16 @@ const visualizationMain = () => {
                 .append('path')
                 .attr('class', 'zip-code-path')
                 .attr('d', datum => projectionFunction(datum))
+                .on('mouseover', datum => {
+                    tooltip
+                        .style('opacity', .9)
+                        .html(`123`)
+                        .style('left', `${d3.event.pageX}px`)
+                        .style('top', `${d3.event.pageY}px`);
+                })
+                .on('mouseout', datum => {
+                    tooltip.style('opacity', 0);
+                })
                 .on("click", function (datum) {
                     if (zoomLevel === zoomLevels.ZIPCODE) {
                         zoomReset();
@@ -176,6 +194,7 @@ const visualizationMain = () => {
                         zoomLevel = zoomLevels.ZIPCODE;
                     } else if (zoomLevel === zoomLevels.CITY) {
                     }
+                    updateVisualizationWithDateData();
                 });
             
             boroughsGroup
@@ -195,6 +214,7 @@ const visualizationMain = () => {
                         zoomLevel = zoomLevels.BOROUGH;
                         moveZipCodesGroupToFront();
                     }
+                    updateVisualizationWithDateData();
                 });
             
             updateVisualizationWithDateData = () => {
@@ -202,25 +222,68 @@ const visualizationMain = () => {
                 const crashDateData = crashDateDataByDateString[dateString];
                 crashesGroup.selectAll('*').remove();
                 if (zoomLevel === zoomLevels.ZIPCODE) {
+                    // @todo figure this out
                 } else if (zoomLevel === zoomLevels.BOROUGH) {
+                    // @todo figure this out
                 } else if (zoomLevel === zoomLevels.CITY) {
-                    const boroughTextData = crashDateDataByDateString.reduce((accumulator,) => {
+                    const boroughTextData = boroughData.features.reduce((accumulator, feature) => {
+                        const borough = feature.properties.boro_name;
+                        const {centerX, centerY} = centroidByBorough[borough];
+                        accumulator[borough] = {
+                            centerX: centerX,
+                            centerY: centerY,
+                            collisionCount: 0,
+                        };
+                        return accumulator;
+                    }, {});
+                    crashDateData.forEach(hourData => {
+                        Object.entries(hourData).forEach(boroughToBoroughDataPair => {
+                            const [borough, boroughDataForHour] = boroughToBoroughDataPair;
+                            Object.entries(boroughDataForHour).forEach(zipCodeToCrashesPair => {
+                                const crashes = zipCodeToCrashesPair[1];
+                                boroughTextData[capitalizeString(borough)].collisionCount += crashes.length;
+                            });
+                        });
+                    });
+                    const visualizationTextDisplayDynamicTextElement = document.getElementById('visualization-text-display-dynamic-text');
+                    visualizationTextDisplayDynamicTextElement.innerHTML = '';
+                    Object.entries(boroughTextData).map(boroughToDataPair => {
+                        const [borough, {collisionCount}] = boroughToDataPair;
+                        return `${borough} Collisions: ${collisionCount}`;
+                    }).sort().forEach(string => {
+                        const paragraphElement = document.createElement('p');
+                        paragraphElement.innerHTML = string;
+                        visualizationTextDisplayDynamicTextElement.append(paragraphElement);
                     });
                     crashesGroup
                         .selectAll('text')
-                        .data(boroughTextData)
+                        .data(Object.entries(boroughTextData))
                         .enter()
                         .append('text')
-                        .attr('class', 'borough-text')
-                        .text(datum => `${boroughTextData}`);
+                        .attr('x', datum => datum[1].centerX)
+                        .attr('y', datum => datum[1].centerY)
+                        .html(datum => `${datum[0]}: ${datum[1].collisionCount} Collisions`)
+                        .attr('class', function(datum) {
+                            datum[1].boundingBoxWidth = d3.select(this).node().getBBox().width + 10;
+                            datum[1].boundingBoxHeight = d3.select(this).node().getBBox().height + 10;
+                            return 'borough-text';
+                        });
+                    console.log('\n\n\n\n\n\n\n\n');
+                    crashesGroup
+                        .selectAll('rect')
+                        .data(Object.entries(boroughTextData))
+                        .enter()
+                        .append('rect')
+                        .attr('x', datum => datum[1].centerX - datum[1].boundingBoxWidth / 2)
+                        .attr('y', datum => datum[1].centerY - datum[1].boundingBoxHeight * 0.65)
+                        .attr('width', datum => datum[1].boundingBoxWidth)
+                        .attr('height', datum => datum[1].boundingBoxHeight)
+                        .attr('class', 'borough-text-bounding-box');
+                    crashesGroup
+                        .selectAll('text')
+                        .data(Object.entries(boroughTextData))
+                        .moveToFront();
                 }
-                // crashesGroup
-                //     .selectAll('circle')
-                //     .data(crashDateData)
-                //     .enter()
-                //     .append('path')
-                //     .attr('class', 'crash')
-                //     .attr('fill', 'red'); // @todo change this based on whether or not someone was injured
             };
             
             updateDate();

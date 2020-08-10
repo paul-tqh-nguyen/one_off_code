@@ -112,5 +112,25 @@ body {
 }
 
 .borough-text {
-    font-size: 10px;
+    font-size: 15px;
+    text-anchor: middle;
+}
+
+.borough-text-bounding-box {
+    stroke-width: 1;
+    stroke: black;
+    fill: white;
+}
+
+#tooltip {
+    top: -200vh;
+    left: -200vw;
+    position: absolute;
+    transition: all 0.25s;
+    text-align: center;
+    font-size: 0.875rem;
+    background: #182A39;
+    border-radius: 8px;
+    pointer-events: none;
+    padding: 10px;
 }
