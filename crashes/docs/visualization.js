@@ -143,6 +143,7 @@ const visualizationMain = () => {
                     .duration(zoomTransitionTime)
                     .attr('stroke-opacity', 1);
                 zipCodesGroup.moveToFront();
+                crashesGroup.moveToFront();
             };
 
             const zoomToPath = datum => {
@@ -235,8 +236,54 @@ const visualizationMain = () => {
                 const dateString = dateDropdown.value;
                 const crashDateData = crashDateDataByDateString[dateString];
                 crashesGroup.selectAll('*').remove();
-                if (zoomLevel === zoomLevels.ZIPCODE) {
-                } else if (zoomLevel === zoomLevels.BOROUGH) {
+                if (zoomLevel === zoomLevels.ZIPCODE || zoomLevel === zoomLevels.BOROUGH) {
+                    const allCrashesForDate = [];
+                    crashDateData.forEach(hourData => {
+                        Object.values(hourData).forEach(boroughDataForHour => {
+                            Object.values(boroughDataForHour).forEach(crashes => {
+                                crashes.forEach(crash => {
+                                    [crash.x, crash.y] = projection([crash.LONGITUDE, crash.LATITUDE]);
+                                    allCrashesForDate.push(crash);
+                                });
+                            });
+                        });
+                    });
+                    crashesGroup
+                        .selectAll('circle')
+                        .data(allCrashesForDate)
+                        .enter()
+                        .append('circle')
+                        .attr('cx', datum => datum.x)
+                        .attr('cy', datum => datum.y)
+                        .attr('class', 'crash')
+                        .on('mouseover', datum => {
+                            if (zoomLevel === zoomLevels.ZIPCODE) {
+                                const toolTipX = d3.event.pageX;
+                                const toolTipY = d3.event.pageY;
+                                tooltip
+                                    .style('left', `${toolTipX}px`)
+                                    .style('top', `${toolTipY}px`)
+                                    .style('opacity', .9);
+                                const tooltipElement = document.getElementById('tooltip');
+                                tooltipElement.querySelectorAll('*').forEach(child => child.remove());
+                                Object.entries(datum).forEach(keyValuePair => {
+                                    const [key, value] = keyValuePair;
+                                    if (!['x', 'y', 'LOCATION', 'LONGITUDE', 'LATITUDE', 'CRASH DATE', 'CRASH HOUR', ].includes(key)) {
+                                        if (!['Unspecified', 0].includes(value)) {
+                                            const paragraphElement = document.createElement('p');
+                                            paragraphElement.innerHTML = `${capitalizeString(key.replace('+', ' '))}: ${capitalizeString(String(value))}`;
+                                            tooltipElement.append(paragraphElement);
+                                        }
+                                    }
+                                });
+                            }
+                        })
+                        .on('mouseout', datum => {
+                            tooltip.style('opacity', 0);
+                        })
+                        .moveToFront();
+                }
+                if (zoomLevel === zoomLevels.BOROUGH) {
                     Object.keys(crashCountByZipCode).forEach(key => {
                         delete crashCountByZipCode[key];
                     });
@@ -251,7 +298,8 @@ const visualizationMain = () => {
                             });
                         });
                     });
-                } else if (zoomLevel === zoomLevels.CITY) {
+                }
+                if (zoomLevel === zoomLevels.CITY) {
                     const boroughTextData = boroughData.features.reduce((accumulator, feature) => {
                         const borough = feature.properties.boro_name;
                         const {centerX, centerY} = centroidByBorough[borough];

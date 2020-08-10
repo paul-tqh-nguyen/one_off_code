@@ -97,6 +97,10 @@ table {
     stroke: #73223b;
 }
 
+.borough-path:hover {
+    fill-opacity: 0.5;
+}
+
 .zip-code-path {
     transition: stroke-opacity 1.0s, fill-opacity 0.5s;
     fill: #000;
@@ -112,9 +116,10 @@ table {
 
 .crash {
     transition: all 0.5s;
-    r: 6;
-    stroke: black;
-    stroke-width: 2px;
+    r: 1;
+    fill: #5c649c;
+    stroke: #73223b;
+    stroke-width: 0.3px;
 }
 
 .borough-text {
