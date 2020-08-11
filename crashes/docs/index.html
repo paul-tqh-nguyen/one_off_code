@@ -28,13 +28,15 @@
 	    <svg id="map-svg"></svg>
 	  </div>
 	</td>
-	<td style="width: 5%;"></td>
-	<td style="width: 25%;">
+	<td style="width: 2%;"></td>
+	<td style="width: 28%;">
 	  <div id="visualization-text-display">
 	    <p>
 	      Current Date
 	      <select id="date-dropdown" onchange="updateDate()"></select>
 	    </p>
+	    <div onclick="decrementDate()" class="date-change-button">Previous Date</div>
+	    <div onclick="incrementDate()" class="date-change-button">Next Date</div>
 	    <div id="visualization-text-display-dynamic-text"></div>
 	  </div>
 	</td>

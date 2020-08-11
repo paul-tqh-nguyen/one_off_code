@@ -73,6 +73,20 @@ d3.selection.prototype.moveToFront = function() {
 
 let updateDate;
 
+const decrementDate = () => {
+    if (document.getElementById('date-dropdown').selectedIndex !== 0) {
+        document.getElementById('date-dropdown').selectedIndex--;
+    }
+    updateDate();
+};
+
+const incrementDate = () => {
+    if (document.getElementById('date-dropdown').selectedIndex+1 < document.getElementById('date-dropdown').length) {
+        document.getElementById('date-dropdown').selectedIndex++;
+    }
+    updateDate();
+};
+
 const visualizationMain = () => {
     
     const boroughJSONLocation = './processed_data/borough.json';
@@ -244,7 +258,7 @@ const visualizationMain = () => {
                         const zipCodeParagraphElement = document.createElement('p');
                         zipCodeParagraphElement.innerHTML = `Zip Code: ${zipCode}`;
                         const collisionCountParagraphElement = document.createElement('p');
-                        collisionCountParagraphElement.innerHTML = `Collision Count: ${crashCount}`;
+                        collisionCountParagraphElement.innerHTML = `Collision Count: ${crashCount ? crashCount : 0}`;
                         tooltipElement.querySelectorAll('*').forEach(child => child.remove());
                         tooltipElement.append(zipCodeParagraphElement);
                         tooltipElement.append(collisionCountParagraphElement);
@@ -311,7 +325,7 @@ const visualizationMain = () => {
                         .attr('class', 'crash')
                         .attr('fill', datum => hexCompliment(boroughToHexColor[capitalizeString(datum.BOROUGH)]))
                         .on('mouseover', datum => {
-                            if (zoomLevel === zoomLevels.ZIPCODE) {
+                            if (zoomLevel === zoomLevels.ZIPCODE || zoomLevel === zoomLevels.BOROUGH) {
                                 const toolTipX = d3.event.pageX;
                                 const toolTipY = d3.event.pageY;
                                 tooltip

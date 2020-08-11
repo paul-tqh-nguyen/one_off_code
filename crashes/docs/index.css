@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css?family=Karla');
+
 html {
 }
 
@@ -12,6 +14,7 @@ body {
     background: linear-gradient(-45deg, #07080F, #381020, #0d4766, #5c5238, #6A3847, #32385F);
     background-size: 800% 800%;
     animation: background-shift 120s ease-in-out infinite;
+    font-family: 'Karla', sans-serif;
 }
 
 @keyframes background-shift {
@@ -124,13 +127,14 @@ table {
 .borough-text {
     font-size: 15px;
     text-anchor: middle;
+    fill: #eee;
 }
 
 .borough-text-bounding-box {
     stroke-width: 1;
     stroke-linejoin: round;
-    stroke: black;
-    fill: white;
+    stroke: #fff;
+    fill: #2c80d1;
 }
 
 #tooltip {
@@ -197,4 +201,24 @@ table {
 
 #header-row a li:active {
     color: #222;
+}
+
+.date-change-button {
+    transition: all 0.5s;
+    display: inline-block;
+    transition: all 0.5s;
+    border: 1px solid #2c80d1;
+    border-radius: 3px;
+    background: #3e5063;
+    text-align: center;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.date-change-button:hover {
+    border-color: #fff;
+}
+
+.date-change-button:active {
+    transform: translateY(5px);
 }
