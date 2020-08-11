@@ -38,9 +38,9 @@ table {
     width: 80vw;
     height: 80vh;
     overflow-y: auto;
-    border: 1px solid #274E74;
+    border: 1px solid #2c80d1;
     border-radius: 3px;
-    background: #5c649c;
+    background: #3e5063;
 }
 
 #help-display.show {
@@ -116,7 +116,7 @@ table {
 
 .crash {
     transition: all 0.5s;
-    r: 1;
+    r: 2;
     stroke: #73223b;
     stroke-width: 0.3px;
 }
@@ -144,10 +144,57 @@ table {
     border-radius: 8px;
     pointer-events: none;
     padding: 10px;
-    z-index: 10;
+    z-index: 2;
 }
 
 #tooltip p {
     margin: 0;
     padding: 0;
+}
+
+#header-row {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    left: 0px;
+    list-style-type: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    transition: background-color 0.25s;
+    z-index: 3;
+    box-shadow: 1px 1px 1px #2c80d1;
+    background: #3e5063;
+}
+
+#header-row ul {
+    align-items: center;
+    list-style-type: none;
+    margin: 0;
+    overflow: hidden;
+}
+
+#header-row li {
+    transition: all 0.25s;
+    padding-left: 5vw;
+    padding-right: 5vw;
+    padding-top: 17px;
+    padding-bottom: 17px;
+    float: left;
+    list-style-type: none;
+}
+
+#header-row a li {
+    transition: all 0.25s;
+    text-decoration: none;
+    color: #fff;
+    cursor: pointer;
+}
+
+#header-row li:hover {
+    background: #666;
+}
+
+#header-row a li:active {
+    color: #222;
 }
