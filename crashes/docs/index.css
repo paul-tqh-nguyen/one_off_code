@@ -44,10 +44,25 @@ table {
     border: 1px solid #2c80d1;
     border-radius: 3px;
     background: #3e5063;
+    text-align: center;
 }
 
 #help-display.show {
     top: 10vh;
+}
+
+#help-display h2 {
+    padding-top: 40px;
+}
+
+#help-display p {
+    padding-top: 20px;
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+#help-display a {
+    color: #eee;
 }
 
 #visualization-table {

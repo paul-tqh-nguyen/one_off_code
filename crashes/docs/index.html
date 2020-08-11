@@ -6,14 +6,30 @@
     <script src="https://d3js.org/d3.v5.min.js"></script>
   </head>
   <body>
-    <div id="help-display">
-      <p>@todo insert help text</p>
+    <div id="help-display" class="show">
+      <h2>NYC Motor Vehicle Collisions (2012-2020)</h2>
+      <p>This is a visualization of the motor vehicle collisions in New York City from 2012 to 2020.</p>
+      <p>The source code for data processing, visualization, etc. can be found <a target="_blank" href="">here</a>.</p>
+      <p>Feel free to <a target="_blank" href="mailto:paul.tqh.nguyen@gmail.com">reach out</a> to prodive any feedback or suggestions.</p>
+      <p>We used the following data sources:</p>
+      <p><a target="_blank" href="https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95 ">NYC Motor Vehicle Collisions</a></p>
+      <p><a target="_blank" href="https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm">NYC Boroughs</a></p>
+      <p><a target="_blank" href="https://github.com/fedhere/PUI2015_EC/blob/master/mam1612_EC/nyc-zip-code-tabulation-areas-polygons.geojson">NYC ZIP Codes</a></p>
+      <p>See my <a target="_blank" href="https://github.com/paul-tqh-nguyen/">GitHub</a> or <a target="_blank" href="https://paul-tqh-nguyen.github.io/about/">website</a> for more of my work. </p>
+      <h2>Usage:</h2>
+      <p>Click on "Crash Map" in the navigation bar at the top of this page to view the visualization.</p>
+      <p>The 5 boroughs are shown in different colors. Above them are tooltips showing the number of collisions on the current date.</p>
+      <p>The current date is shown on the right-hand display panel. The current date can be changed via the date dropdown menu or via the "Previous Date" and "Next Date" buttons.</p>
+      <p>Click on a borough to zoom in on the borough. The locations of each collision on the current date will be revealed. Hover over them to view details of the collision.</p>
+      <p>ZIP code boundaries will also be revealed. Hover over the ZIP code regions to view the total number of collisions within the ZIP code. Click on the ZIP code regions to zoom in on them further.</p>
+      <p>When zoomed in on an individual ZIP code region, click anywhere to zoom back out to view all of New York City. </p>
+      <div style="padding-bottom: 60px;"></div>
     </div>
     <div id="header-row">
       <center>
 	<ul>
-	  <a onclick="document.getElementById('visualization-table').classList.toggle('show');document.getElementById('help-display').classList.toggle('show')"><li>Help Menu</li></a>
-	  <a onclick="document.getElementById('visualization-table').classList.toggle('show');document.getElementById('help-display').classList.toggle('show')"><li>Crash Map</li></a>
+	  <a onclick="document.getElementById('visualization-table').classList.remove('show');document.getElementById('help-display').classList.add('show')"><li>Help Menu</li></a>
+	  <a onclick="document.getElementById('visualization-table').classList.add('show');document.getElementById('help-display').classList.remove('show')"><li>Crash Map</li></a>
 	  <a target="_blank" href="https://github.com/paul-tqh-nguyen/"><li>My Work</li></a>
 	  <a target="_blank" href="https://paul-tqh-nguyen.github.io/about/"><li>About Me</li></a>
 	  <a target="_blank" href="mailto:paul.tqh.nguyen@gmail.com"><li>Contact</li></a>
@@ -21,7 +37,7 @@
       </center>
     </div>
     <div id="tooltip"></div>
-    <table id="visualization-table" class="show">
+    <table id="visualization-table">
       <tr>
 	<td style="width: 50%;">
 	  <div id="visualization-display">
