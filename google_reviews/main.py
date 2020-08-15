@@ -151,66 +151,66 @@ class TransformersDataset(data.Dataset):
 ###################################
 
 TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
-    # 'albert': {
-    #     'model': transformers.AlbertForSequenceClassification,
-    #     'tokenizer': transformers.AlbertTokenizer,
-    #     'pretrained_model_names': [
-    #         'albert-base-v1',
-    #         'albert-large-v1',
-    #         'albert-base-v2',
-    #         'albert-large-v2',
-    #     ],
-    # },
-    # 'bart': {
-    #     'model': transformers.BartForSequenceClassification,
-    #     'tokenizer': transformers.BartTokenizer,
-    #     'pretrained_model_names': [
-    #         'facebook/bart-base',
-    #     ],
-    # },
-    # 'bert': {
-    #     'model': transformers.BertForSequenceClassification,
-    #     'tokenizer': transformers.BertTokenizer,
-    #     'pretrained_model_names': [
-    #         'bert-base-cased',
-    #         'bert-base-uncased',
-    #         'bert-base-multilingual-uncased',
-    #         'bert-base-multilingual-cased',
-    #     ],
-    # },
-    # 'distilbert': {
-    #     'model': transformers.DistilBertForSequenceClassification,
-    #     'tokenizer': transformers.DistilBertTokenizer,
-    #     'pretrained_model_names': [
-    #         'distilbert-base-uncased',
-    #         'distilbert-base-uncased-distilled-squad',
-    #         'distilbert-base-uncased-distilled-squad',
-    #         'distilbert-base-cased-distilled-squad',
-    #         'distilbert-base-multilingual-cased',
-    #     ],
-    # },
-    # 'longformer': {
-    #     'model': transformers.LongformerForSequenceClassification,
-    #     'tokenizer': transformers.LongformerTokenizer,
-    #     'pretrained_model_names': [
-    #         'allenai/longformer-base-4096',
-    #     ],
-    # },
-    # 'roberta': {
-    #     'model': transformers.RobertaForSequenceClassification,
-    #     'tokenizer': transformers.RobertaTokenizer,
-    #     'pretrained_model_names': [
-    #         'roberta-base',
-    #         'distilroberta-base',
-    #     ],
-    # },
-    # 'xlnet': {
-    #     'model': transformers.XLNetForSequenceClassification,
-    #     'tokenizer': transformers.XLNetTokenizer,
-    #     'pretrained_model_names': [
-    #         'xlnet-base-cased',
-    #     ],
-    # },
+    'albert': {
+        'model': transformers.AlbertForSequenceClassification,
+        'tokenizer': transformers.AlbertTokenizer,
+        'pretrained_model_names': [
+            'albert-base-v1',
+            'albert-large-v1',
+            'albert-base-v2',
+            'albert-large-v2',
+        ],
+    },
+    'bart': {
+        'model': transformers.BartForSequenceClassification,
+        'tokenizer': transformers.BartTokenizer,
+        'pretrained_model_names': [
+            'facebook/bart-base',
+        ],
+    },
+    'bert': {
+        'model': transformers.BertForSequenceClassification,
+        'tokenizer': transformers.BertTokenizer,
+        'pretrained_model_names': [
+            'bert-base-cased',
+            'bert-base-uncased',
+            'bert-base-multilingual-uncased',
+            'bert-base-multilingual-cased',
+        ],
+    },
+    'distilbert': {
+        'model': transformers.DistilBertForSequenceClassification,
+        'tokenizer': transformers.DistilBertTokenizer,
+        'pretrained_model_names': [
+            'distilbert-base-uncased',
+            'distilbert-base-uncased-distilled-squad',
+            'distilbert-base-uncased-distilled-squad',
+            'distilbert-base-cased-distilled-squad',
+            'distilbert-base-multilingual-cased',
+        ],
+    },
+    'longformer': {
+        'model': transformers.LongformerForSequenceClassification,
+        'tokenizer': transformers.LongformerTokenizer,
+        'pretrained_model_names': [
+            'allenai/longformer-base-4096',
+        ],
+    },
+    'roberta': {
+        'model': transformers.RobertaForSequenceClassification,
+        'tokenizer': transformers.RobertaTokenizer,
+        'pretrained_model_names': [
+            'roberta-base',
+            'distilroberta-base',
+        ],
+    },
+    'xlnet': {
+        'model': transformers.XLNetForSequenceClassification,
+        'tokenizer': transformers.XLNetTokenizer,
+        'pretrained_model_names': [
+            'xlnet-base-cased',
+        ],
+    },
     'xlm': {
         'model': transformers.XLMForSequenceClassification,
         'tokenizer': transformers.XLMTokenizer,
@@ -276,8 +276,10 @@ class Classifier(ABC):
     @classmethod
     def hyperparameter_search(cls,
                               model_name_choices: Iterable[str],
-                              number_of_epochs_choices: Iterable[int] = [15, 30],
-                              batch_size_choices: Iterable[int] = [1, 32, 64],
+                              number_of_epochs_choices: Iterable[int] = [15],
+                              # number_of_epochs_choices: Iterable[int] = [15, 30],
+                              batch_size_choices: Iterable[int] = [64],
+                              # batch_size_choices: Iterable[int] = [1, 32, 64],
                               learning_rate_choices: Iterable[float] = [
                                   4e-6, 4e-5,
                                   2e-6, 2e-5,

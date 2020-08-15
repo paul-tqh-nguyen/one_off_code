@@ -1,0 +1,7 @@
+name: amr
+dependencies:
+  - python=3.7
+  - pandas
+  - pip
+  - pip:
+    - pandarallel
