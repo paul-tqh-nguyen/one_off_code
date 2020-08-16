@@ -8,4 +8,5 @@ dependencies:
   - conda-forge::pytorch-lightning
   - pip
   - pip:
+    - transformers
     - pandarallel

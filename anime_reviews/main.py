@@ -14,12 +14,17 @@ import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from pandarallel import pandarallel
+from collections import OrderedDict
 from typing import Tuple, Callable
+from typing_extensions import Literal
 
 from misc_utilities import *
 
 import torch
 from torch import nn
+import torch.nn.functional as F
+from torch.utils import data
+import transformers AdamW, get_linear_schedule_with_warmup
 import pytorch_lightning as pl
 
 # @todo make sure these are used
@@ -40,6 +45,8 @@ PROCESSED_DATA_CSV_FILE_LOCATION = './data/processed_data.csv'
 RATING_HISTORGRAM_PNG_FILE_LOCATION = './data/rating_histogram.png'
 
 TRAINING_LABEL, VALIDATION_LABEL, TESTING_LABEL = 0, 1, 2
+
+MSE_LOSS = MSELoss()
 
 ###################
 # Hyperparameters #
@@ -145,7 +152,7 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
         user_rating_count_histogram = histogram(user_to_rating_count)
         user_rating_count_histogram_plot = figure.add_subplot(224)
-        user_rating_count_histogram_plot.set_xlabel('Rating Count')
+        user_rating_count_histogram_plot.set_xlabel('Rating Count') 
         user_rating_count_histogram_plot.set_ylabel('Number Of Users')
         user_rating_count_histogram_plot.set_title('User Rating Count Histogram')
         user_rating_count_histogram_plot.set_xlim(0, len(user_rating_count_histogram))
@@ -160,11 +167,155 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     print()
     return rating_df
 
+################
+# Data Modules #
+################
+
+class AnimeRatingDataset(data.Dataset):
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+                
+    # def __getitem__(self, index):
+    #     row = self.df.iloc[index]
+    #     encoding = self.encode_string(row.content)
+    #     item = {
+    #         'review_string': row.content,
+    #         'sentiment_id': torch.tensor(row.sentiment_id, dtype=torch.long),
+    #         'input_ids': encoding['input_ids'].flatten(),
+    #         'attention_mask': encoding['attention_mask'].flatten(),
+    #     }
+    #     assert len(item['input_ids']) == len(item['attention_mask']) <= self.max_sequence_length
+    #     return item
+    
+    def __len__(self):
+        return len(self.df)
+
+class AnimeRatingDataModule(pl.DataModule):
+
+    def __init__(self, rating_df: pd.DataFrame, batch_size: int, num_workers: int):
+        self.batch_size = batch_size
+        self.num_workers = self.num_workers
+        
+        data_splits = {split_label: df for split_label, df in rating_df.groupby('split_label')}
+        more_itertools.consume((df.drop(columns=['split_label'], inplace=True) for df in data_splits.values())) # @todo this is destructive, move data preprocessing to a prepare_data method to obviate this problem
+        
+        training_df = data_splits[TRAINING_LABEL]
+        validation_df = data_splits[VALIDATION_LABEL]
+        testing_df = data_splits[TESTING_LABEL]
+        
+        training_dataset = AnimeRatingDataset(training_df)
+        validation_dataset = AnimeRatingDataset(validation_df)
+        testing_dataset = AnimeRatingDataset(testing_df)
+
+        self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+
+    def train_dataloader(self):
+        return self.training_dataloader
+
+    def val_dataloader(self):
+        return self.validation_dataloader
+
+    def test_dataloader(self):
+        return self.testing_dataloader
+
 ##########
 # Models #
 ##########
 
+class LinearColaborativeFilteringModel(pl.LightningModule):
+    
+    def __init__(
+            self,
+            # Common Hyperparameters
+            learning_rate: float,
+            number_of_epochs: int,
+            # Information Passing
+            number_of_batches: int,
+            # Mode-specific Hyperparameters
+            number_of_animes: int, 
+            number_of_users: int, 
+            embedding_size: int, 
+            regularization_factor: float,
+            dropout_probability: float, 
+    ):
+        super().__init__()
+        
+        self.learning_rate = learning_rate
+        # @todo can we abstract these two away?
+        self.number_of_epochs = number_of_epochs
+        self.number_of_batches = number_of_batches
+        self.number_of_animes = number_of_animes
+        self.embedding_size = embedding_size
+        self.regularization_factor = regularization_factor
+        self.dropout_probability = dropout_probability
+        
+        self.anime_embedding_layers = nn.Sequential(OrderedDict([
+            ("anime_embedding_layer", nn.Embedding(self.number_of_animes, self.embedding_size)),
+            ("dropout_layer", nn.Dropout(self.dropout_probability)),
+        ]))
+        self.user_embedding_layers = nn.Sequential(OrderedDict([
+            ("user_embedding_layer", nn.Embedding(self.number_of_users, self.embedding_size)),
+            ("dropout_layer", nn.Dropout(self.dropout_probability)),
+        ]))
 
+    def forward(self, batch_dict: dict):
+        user_id_indices: torch.Tensor = batch_dict['user_id_indices']
+        batch_size = user_id_indices.shape[0]
+        assert tuple(user_id_indices.shape) == (batch_size,)
+        anime_id_indices: torch.Tensor = batch_dict['anime_id_indices']
+        assert tuple(anime_id_indices.shape) == (batch_size,)
+
+        user_embedding = self.user_embedding_layers(user_embedding)
+        assert tuple(user_embedding.shape) == (batch_size, self.embedding_size)
+        anime_embedding = self.anime_embedding_layers(anime_embedding)
+        assert tuple(anime_embedding.shape) == (batch_size, self.embedding_size)
+
+        scores = user_embedding.mul(anime_embedding).sum(dim=1)
+        assert tuple(scores.shape) == (batch_size,)
+
+        regularization_loss = self.regularization_factor * (F.normalize(user_embedding[:,:-1], p=2, dim=1) + F.normalize(anime_embedding[:,:-1], p=2, dim=1))
+        assert tuple(regularization_loss.shape) == (batch_size,)
+        
+        return scores, regularization_loss
+
+    def configure_optimizers(self) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
+        optimizer: torch.optim.Optimizer = transformers.AdamW(self.parameters(), lr=self.learning_rate, correct_bias=False)
+        scheduler: torch.optim.lr_scheduler.LambdaLR = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=self.number_of_batches*self.number_of_epochs)
+        return optimizer, scheduler
+
+    def training_step(self, batch: torch.Tensor, _: int) -> torch.Tensor:
+        batch_dict, target_scores = batch
+        batch_size = only_one(target_scores.shape)
+        predicted_scores, regularization_loss = self(batch_dict)
+        assert tuple(predicted_scores.shape) == (batch_size,)
+        assert tuple(regularization_loss.shape) == (batch_size,)
+        loss = regularization_loss + MSE_LOSS(predicted_scores, target_scores)
+        assert tuple(loss.shape) == (batch_size,)
+        return loss
+
+    def _eval_step(self, batch: torch.Tensor, eval_type: Literal['validation', 'testing']): # @todo add return type
+        batch_dict, target_scores = batch
+        batch_size = only_one(target_scores.shape)
+        predicted_scores, regularization_loss = self(batch_dict)
+        assert tuple(predicted_scores.shape) == (batch_size,)
+        assert tuple(regularization_loss.shape) == (batch_size,)
+        mse_loss = MSE_LOSS(predicted_scores, target_scores)
+        loss = regularization_loss + mse_loss
+        assert tuple(loss.shape) == (batch_size,)
+        
+        result = pl.EvalResult(checkpoint_on=loss)
+        result.log(f'{eval_type}_loss', loss)
+        result.log(f'{eval_type}_regularization_loss', regularization_loss)
+        result.log(f'{eval_type}_mse_loss', mse_loss)
+        return result
+    
+    def validation_step(self, batch: torch.Tensor, _: int): # @todo add return type
+        return self._eval_step(batch, 'validation')
+
+    def test_step(self, batch: torch.Tensor, _: int): # @todo add return type
+        return self._eval_step(batch, 'testing')
 
 ##########
 # Driver #
@@ -176,11 +327,6 @@ def main() -> None:
         rating_df = pd.read_csv(PROCESSED_DATA_CSV_FILE_LOCATION)
     else:
         rating_df = preprocess_data()
-    data_splits = {split_label: df for split_label, df in rating_df.groupby('split_label')}
-    more_itertools.consume((df.drop(columns=['split_label'], inplace=True) for df in data_splits.values()))
-    training_df = data_splits[TRAINING_LABEL]
-    validation_df = data_splits[VALIDATION_LABEL]
-    testing_df = data_splits[TESTING_LABEL]
     assert set(training_df.user_id.unique()) == set(validation_df.user_id.unique()) == set(testing_df.user_id.unique())
     
     return
