@@ -36,6 +36,8 @@ import pytorch_lightning as pl
 CPU_COUNT = mp.cpu_count()
 pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
 
+NUM_WORKERS = 4
+
 # https://www.kaggle.com/CooperUnion/anime-recommendations-database
 ANIME_CSV_FILE_LOCATION = './data/anime.csv'
 RATING_CSV_FILE_LOCATION = './data/rating.csv'
@@ -59,9 +61,17 @@ TESTING_PORTION = 0.20
 MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
-######################
-# Data Preprocessing #
-######################
+NUMBER_OF_EPOCHS = 15 
+BATCH_SIZE = 64
+
+LEARNING_RATE = 1e-5
+EMBEDDING_SIZE = 100
+REGULARIZATION_FACTOR = 1
+DROPOUT_PROBABILITY = 0.5
+            
+################
+# Data Modules #
+################
 
 def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     print()
@@ -161,63 +171,86 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         user_rating_count_histogram_plot.grid(True)
 
         figure.savefig(RATING_HISTORGRAM_PNG_FILE_LOCATION)
+    print(f'Data distribution visualization saved to {RATING_HISTORGRAM_PNG_FILE_LOCATION} .')
 
     print()
     print(f'Data preprocessing complete.')
     print()
     return rating_df
 
-################
-# Data Modules #
-################
-
 class AnimeRatingDataset(data.Dataset):
-    def __init__(self, df: pd.DataFrame):
+    def __init__(self, df: pd.DataFrame, user_id_to_user_id_index: dict, anime_id_to_anime_id_index: dict):
         self.df = df
-                
-    # def __getitem__(self, index):
-    #     row = self.df.iloc[index]
-    #     encoding = self.encode_string(row.content)
-    #     item = {
-    #         'review_string': row.content,
-    #         'sentiment_id': torch.tensor(row.sentiment_id, dtype=torch.long),
-    #         'input_ids': encoding['input_ids'].flatten(),
-    #         'attention_mask': encoding['attention_mask'].flatten(),
-    #     }
-    #     assert len(item['input_ids']) == len(item['attention_mask']) <= self.max_sequence_length
-    #     return item
+        self.user_id_to_user_id_index = user_id_to_user_id_index
+        self.anime_id_to_anime_id_index = anime_id_to_anime_id_index        
+        
+    def __getitem__(self, index):
+        row = self.df.iloc[index]
+        item = {
+            'user_id_index': self.user_id_to_user_id_index[row.user_id],
+            'anime_id_index': self.anime_id_to_anime_id_index[row.anime_id]
+        }
+        return item
     
     def __len__(self):
         return len(self.df)
 
 class AnimeRatingDataModule(pl.DataModule):
 
-    def __init__(self, rating_df: pd.DataFrame, batch_size: int, num_workers: int):
+    def __init__(self, batch_size: int, num_workers: int):
         self.batch_size = batch_size
         self.num_workers = self.num_workers
-        
-        data_splits = {split_label: df for split_label, df in rating_df.groupby('split_label')}
-        more_itertools.consume((df.drop(columns=['split_label'], inplace=True) for df in data_splits.values())) # @todo this is destructive, move data preprocessing to a prepare_data method to obviate this problem
-        
+
+    def prepare_data(self) -> None:
+        if os.path.isfile(PROCESSED_DATA_CSV_FILE_LOCATION):
+            self.rating_df = pd.read_csv(PROCESSED_DATA_CSV_FILE_LOCATION)
+        else:
+            self.rating_df = preprocess_data()
+        return
+    
+     def setup(self) -> None:
+        data_splits = {split_label: df for split_label, df in self.rating_df.groupby('split_label')}
+        more_itertools.consume((df.drop(columns=['split_label'], inplace=True) for df in data_splits.values()))
+        more_itertools.consume((df.reset_index(drop=True, inplace=True) for df in data_splits.values()))
+
         training_df = data_splits[TRAINING_LABEL]
         validation_df = data_splits[VALIDATION_LABEL]
         testing_df = data_splits[TESTING_LABEL]
+        assert set(training_df.user_id.unique()) == set(validation_df.user_id.unique()) == set(testing_df.user_id.unique()) == set(self.rating_df.user_id.unique())
+
+        self.user_id_index_to_user_id: np.ndarray = self.rating_df.user_id.unique() # @todo use this in printing function for predictions
+        self.anime_id_index_to_anime_id: np.ndarray = self.rating_df.anime_id.unique() # @todo use this in printing function for predictions
+        self.user_id_index_to_user_id.sort()
+        self.anime_id_index_to_anime_id.sort()
         
-        training_dataset = AnimeRatingDataset(training_df)
-        validation_dataset = AnimeRatingDataset(validation_df)
-        testing_dataset = AnimeRatingDataset(testing_df)
+        self.user_id_to_user_id_index: dict = dict(map(reverse, enumerate(self.user_id_index_to_user_id)))
+        self.anime_id_to_anime_id_index: dict = dict(map(reverse, enumerate(self.anime_id_index_to_anime_id)))
+                
+        training_dataset = AnimeRatingDataset(training_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
+        validation_dataset = AnimeRatingDataset(validation_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
+        testing_dataset = AnimeRatingDataset(testing_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
 
         self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
         self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
         self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+        
+        return
 
-    def train_dataloader(self):
+    @property
+    def number_of_users(self) -> int:
+        return len(self.user_id_index_to_user_id)
+    
+    @property
+    def number_of_animes(self) -> int:
+        return len(self.animes_id_index_to_user_id)
+    
+    def train_dataloader(self) -> data.DataLoader:
         return self.training_dataloader
 
-    def val_dataloader(self):
+    def val_dataloader(self) -> data.DataLoader:
         return self.validation_dataloader
 
-    def test_dataloader(self):
+    def test_dataloader(self) -> data.DataLoader:
         return self.testing_dataloader
 
 ##########
@@ -232,7 +265,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
             learning_rate: float,
             number_of_epochs: int,
             # Information Passing
-            number_of_batches: int,
+            number_of_training_batches: int,
             # Mode-specific Hyperparameters
             number_of_animes: int, 
             number_of_users: int, 
@@ -245,7 +278,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         self.learning_rate = learning_rate
         # @todo can we abstract these two away?
         self.number_of_epochs = number_of_epochs
-        self.number_of_batches = number_of_batches
+        self.number_of_training_batches = number_of_training_batches
         self.number_of_animes = number_of_animes
         self.embedding_size = embedding_size
         self.regularization_factor = regularization_factor
@@ -261,10 +294,10 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         ]))
 
     def forward(self, batch_dict: dict):
-        user_id_indices: torch.Tensor = batch_dict['user_id_indices']
+        user_id_indices: torch.Tensor = batch_dict['user_id_index']
         batch_size = user_id_indices.shape[0]
         assert tuple(user_id_indices.shape) == (batch_size,)
-        anime_id_indices: torch.Tensor = batch_dict['anime_id_indices']
+        anime_id_indices: torch.Tensor = batch_dict['anime_id_index']
         assert tuple(anime_id_indices.shape) == (batch_size,)
 
         user_embedding = self.user_embedding_layers(user_embedding)
@@ -282,7 +315,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
 
     def configure_optimizers(self) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
         optimizer: torch.optim.Optimizer = transformers.AdamW(self.parameters(), lr=self.learning_rate, correct_bias=False)
-        scheduler: torch.optim.lr_scheduler.LambdaLR = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=self.number_of_batches*self.number_of_epochs)
+        scheduler: torch.optim.lr_scheduler.LambdaLR = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=self.number_of_training_batches*self.number_of_epochs)
         return optimizer, scheduler
 
     def training_step(self, batch: torch.Tensor, _: int) -> torch.Tensor:
@@ -323,12 +356,24 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
 
 @debug_on_error
 def main() -> None:
-    if os.path.isfile(PROCESSED_DATA_CSV_FILE_LOCATION):
-        rating_df = pd.read_csv(PROCESSED_DATA_CSV_FILE_LOCATION)
-    else:
-        rating_df = preprocess_data()
-    assert set(training_df.user_id.unique()) == set(validation_df.user_id.unique()) == set(testing_df.user_id.unique())
+    trainer = pl.Trainer()
     
+    data_module = AnimeRatingDataModule(BATCH_SIZE, NUM_WORKERS)
+    data_module.prepare_data()
+    data_module.setup()
+    
+    model = LinearColaborativeFilteringModel(
+        learning_rate = LEARNING_RATE,
+        number_of_epochs = NUMBER_OF_EPOCHS,
+        number_of_training_batches = len(data_module.training_dataloader),
+        number_of_animes = data_module.number_of_animes,
+        number_of_users = data_module.number_of_users,
+        embedding_size = EMBEDDING_SIZE,
+        regularization_factor REGULARIZATION_FACTOR,
+        dropout_probability = DROPOUT_PROBABILITY,
+    )
+
+    trainer.fit(model, data_module)
     return
 
 if __name__ == '__main__':
