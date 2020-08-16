@@ -151,44 +151,44 @@ class TransformersDataset(data.Dataset):
 ###################################
 
 TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
-    'albert': {
-        'model': transformers.AlbertForSequenceClassification,
-        'tokenizer': transformers.AlbertTokenizer,
-        'pretrained_model_names': [
-            'albert-base-v1',
-            'albert-large-v1',
-            'albert-base-v2',
-            'albert-large-v2',
-        ],
-    },
-    'bart': {
-        'model': transformers.BartForSequenceClassification,
-        'tokenizer': transformers.BartTokenizer,
-        'pretrained_model_names': [
-            'facebook/bart-base',
-        ],
-    },
-    'bert': {
-        'model': transformers.BertForSequenceClassification,
-        'tokenizer': transformers.BertTokenizer,
-        'pretrained_model_names': [
-            'bert-base-cased',
-            'bert-base-uncased',
-            'bert-base-multilingual-uncased',
-            'bert-base-multilingual-cased',
-        ],
-    },
-    'distilbert': {
-        'model': transformers.DistilBertForSequenceClassification,
-        'tokenizer': transformers.DistilBertTokenizer,
-        'pretrained_model_names': [
-            'distilbert-base-uncased',
-            'distilbert-base-uncased-distilled-squad',
-            'distilbert-base-uncased-distilled-squad',
-            'distilbert-base-cased-distilled-squad',
-            'distilbert-base-multilingual-cased',
-        ],
-    },
+    # 'albert': {
+    #     'model': transformers.AlbertForSequenceClassification,
+    #     'tokenizer': transformers.AlbertTokenizer,
+    #     'pretrained_model_names': [
+    #         'albert-base-v1',
+    #         'albert-large-v1',
+    #         'albert-base-v2',
+    #         'albert-large-v2',
+    #     ],
+    # },
+    # 'bart': {
+    #     'model': transformers.BartForSequenceClassification,
+    #     'tokenizer': transformers.BartTokenizer,
+    #     'pretrained_model_names': [
+    #         'facebook/bart-base',
+    #     ],
+    # },
+    # 'bert': {
+    #     'model': transformers.BertForSequenceClassification,
+    #     'tokenizer': transformers.BertTokenizer,
+    #     'pretrained_model_names': [
+    #         'bert-base-cased',
+    #         'bert-base-uncased',
+    #         'bert-base-multilingual-uncased',
+    #         'bert-base-multilingual-cased',
+    #     ],
+    # },
+    # 'distilbert': {
+    #     'model': transformers.DistilBertForSequenceClassification,
+    #     'tokenizer': transformers.DistilBertTokenizer,
+    #     'pretrained_model_names': [
+    #         'distilbert-base-uncased',
+    #         'distilbert-base-uncased-distilled-squad',
+    #         'distilbert-base-uncased-distilled-squad',
+    #         'distilbert-base-cased-distilled-squad',
+    #         'distilbert-base-multilingual-cased',
+    #     ],
+    # },
     'longformer': {
         'model': transformers.LongformerForSequenceClassification,
         'tokenizer': transformers.LongformerTokenizer,
@@ -196,14 +196,14 @@ TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
             'allenai/longformer-base-4096',
         ],
     },
-    'roberta': {
-        'model': transformers.RobertaForSequenceClassification,
-        'tokenizer': transformers.RobertaTokenizer,
-        'pretrained_model_names': [
-            'roberta-base',
-            'distilroberta-base',
-        ],
-    },
+    # 'roberta': {
+    #     'model': transformers.RobertaForSequenceClassification,
+    #     'tokenizer': transformers.RobertaTokenizer,
+    #     'pretrained_model_names': [
+    #         'roberta-base',
+    #         'distilroberta-base',
+    #     ],
+    # },
     'xlnet': {
         'model': transformers.XLNetForSequenceClassification,
         'tokenizer': transformers.XLNetTokenizer,
@@ -218,13 +218,13 @@ TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS = {
             'xlm-mlm-en-2048',
         ],
     },
-    'xlmroberta': {
-        'model': transformers.XLMRobertaForSequenceClassification,
-        'tokenizer': transformers.XLMRobertaTokenizer,
-        'pretrained_model_names': [
-            'xlm-roberta-base',
-        ],
-    },
+    # 'xlmroberta': {
+    #     'model': transformers.XLMRobertaForSequenceClassification,
+    #     'tokenizer': transformers.XLMRobertaTokenizer,
+    #     'pretrained_model_names': [
+    #         'xlm-roberta-base',
+    #     ],
+    # },
 }
 
 TransformerModelSpec = operator.getitem(Literal, tuple(TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS.keys()))
@@ -278,7 +278,7 @@ class Classifier(ABC):
                               model_name_choices: Iterable[str],
                               number_of_epochs_choices: Iterable[int] = [15],
                               # number_of_epochs_choices: Iterable[int] = [15, 30],
-                              batch_size_choices: Iterable[int] = [64],
+                              batch_size_choices: Iterable[int] = [1],
                               # batch_size_choices: Iterable[int] = [1, 32, 64],
                               learning_rate_choices: Iterable[float] = [
                                   4e-6, 4e-5,

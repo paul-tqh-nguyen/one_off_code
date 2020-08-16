@@ -1,7 +1,11 @@
 name: anime
 dependencies:
   - python=3.7
+  - more-itertools
   - pandas
+  - matplotlib
+  - pytorch==1.4.0
+  - conda-forge::pytorch-lightning
   - pip
   - pip:
     - pandarallel
