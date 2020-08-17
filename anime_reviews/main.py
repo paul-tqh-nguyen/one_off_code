@@ -24,7 +24,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.utils import data
-import transformers AdamW, get_linear_schedule_with_warmup
+import transformers
 import pytorch_lightning as pl
 
 # @todo make sure these are used
@@ -48,7 +48,7 @@ RATING_HISTORGRAM_PNG_FILE_LOCATION = './data/rating_histogram.png'
 
 TRAINING_LABEL, VALIDATION_LABEL, TESTING_LABEL = 0, 1, 2
 
-MSE_LOSS = MSELoss()
+MSE_LOSS = nn.MSELoss(reduction='none')
 
 ###################
 # Hyperparameters #
@@ -62,7 +62,7 @@ MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
 NUMBER_OF_EPOCHS = 15 
-BATCH_SIZE = 64
+BATCH_SIZE = 256
 
 LEARNING_RATE = 1e-5
 EMBEDDING_SIZE = 100
@@ -188,18 +188,19 @@ class AnimeRatingDataset(data.Dataset):
         row = self.df.iloc[index]
         item = {
             'user_id_index': self.user_id_to_user_id_index[row.user_id],
-            'anime_id_index': self.anime_id_to_anime_id_index[row.anime_id]
+            'anime_id_index': self.anime_id_to_anime_id_index[row.anime_id],
+            'rating': torch.tensor(row.rating, dtype=torch.float32),
         }
         return item
     
     def __len__(self):
         return len(self.df)
 
-class AnimeRatingDataModule(pl.DataModule):
+class AnimeRatingDataModule(pl.LightningDataModule):
 
     def __init__(self, batch_size: int, num_workers: int):
         self.batch_size = batch_size
-        self.num_workers = self.num_workers
+        self.num_workers = num_workers
 
     def prepare_data(self) -> None:
         if os.path.isfile(PROCESSED_DATA_CSV_FILE_LOCATION):
@@ -208,31 +209,32 @@ class AnimeRatingDataModule(pl.DataModule):
             self.rating_df = preprocess_data()
         return
     
-     def setup(self) -> None:
+    def setup(self) -> None:
         data_splits = {split_label: df for split_label, df in self.rating_df.groupby('split_label')}
         more_itertools.consume((df.drop(columns=['split_label'], inplace=True) for df in data_splits.values()))
         more_itertools.consume((df.reset_index(drop=True, inplace=True) for df in data_splits.values()))
-
+        
         training_df = data_splits[TRAINING_LABEL]
         validation_df = data_splits[VALIDATION_LABEL]
         testing_df = data_splits[TESTING_LABEL]
         assert set(training_df.user_id.unique()) == set(validation_df.user_id.unique()) == set(testing_df.user_id.unique()) == set(self.rating_df.user_id.unique())
-
+        
         self.user_id_index_to_user_id: np.ndarray = self.rating_df.user_id.unique() # @todo use this in printing function for predictions
         self.anime_id_index_to_anime_id: np.ndarray = self.rating_df.anime_id.unique() # @todo use this in printing function for predictions
         self.user_id_index_to_user_id.sort()
         self.anime_id_index_to_anime_id.sort()
         
-        self.user_id_to_user_id_index: dict = dict(map(reverse, enumerate(self.user_id_index_to_user_id)))
-        self.anime_id_to_anime_id_index: dict = dict(map(reverse, enumerate(self.anime_id_index_to_anime_id)))
-                
+        self.user_id_to_user_id_index: dict = dict(map(reversed, enumerate(self.user_id_index_to_user_id)))
+        self.anime_id_to_anime_id_index: dict = dict(map(reversed, enumerate(self.anime_id_index_to_anime_id)))
+        
         training_dataset = AnimeRatingDataset(training_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
         validation_dataset = AnimeRatingDataset(validation_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
         testing_dataset = AnimeRatingDataset(testing_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
 
-        self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
-        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
-        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+        dataloader_kwargs = dict()
+        self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
+        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
         
         return
 
@@ -242,7 +244,7 @@ class AnimeRatingDataModule(pl.DataModule):
     
     @property
     def number_of_animes(self) -> int:
-        return len(self.animes_id_index_to_user_id)
+        return len(self.anime_id_index_to_anime_id)
     
     def train_dataloader(self) -> data.DataLoader:
         return self.training_dataloader
@@ -280,6 +282,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         self.number_of_epochs = number_of_epochs
         self.number_of_training_batches = number_of_training_batches
         self.number_of_animes = number_of_animes
+        self.number_of_users = number_of_users
         self.embedding_size = embedding_size
         self.regularization_factor = regularization_factor
         self.dropout_probability = dropout_probability
@@ -300,63 +303,94 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         anime_id_indices: torch.Tensor = batch_dict['anime_id_index']
         assert tuple(anime_id_indices.shape) == (batch_size,)
 
-        user_embedding = self.user_embedding_layers(user_embedding)
+        user_embedding = self.user_embedding_layers(user_id_indices)
         assert tuple(user_embedding.shape) == (batch_size, self.embedding_size)
-        anime_embedding = self.anime_embedding_layers(anime_embedding)
+        anime_embedding = self.anime_embedding_layers(anime_id_indices)
         assert tuple(anime_embedding.shape) == (batch_size, self.embedding_size)
-
+        
         scores = user_embedding.mul(anime_embedding).sum(dim=1)
         assert tuple(scores.shape) == (batch_size,)
 
-        regularization_loss = self.regularization_factor * (F.normalize(user_embedding[:,:-1], p=2, dim=1) + F.normalize(anime_embedding[:,:-1], p=2, dim=1))
+        regularization_loss = torch.sum(self.regularization_factor * (F.normalize(user_embedding[:,:-1], p=2, dim=1) + F.normalize(anime_embedding[:,:-1], p=2, dim=1)), dim=1)
         assert tuple(regularization_loss.shape) == (batch_size,)
-        
         return scores, regularization_loss
 
+    def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
+        del _trainer, _optimizer, _optimizer_idx
+        loss.mean().backward()
+        return
+    
     def configure_optimizers(self) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
         optimizer: torch.optim.Optimizer = transformers.AdamW(self.parameters(), lr=self.learning_rate, correct_bias=False)
         scheduler: torch.optim.lr_scheduler.LambdaLR = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=self.number_of_training_batches*self.number_of_epochs)
-        return optimizer, scheduler
-
-    def training_step(self, batch: torch.Tensor, _: int) -> torch.Tensor:
-        batch_dict, target_scores = batch
-        batch_size = only_one(target_scores.shape)
-        predicted_scores, regularization_loss = self(batch_dict)
-        assert tuple(predicted_scores.shape) == (batch_size,)
-        assert tuple(regularization_loss.shape) == (batch_size,)
-        loss = regularization_loss + MSE_LOSS(predicted_scores, target_scores)
-        assert tuple(loss.shape) == (batch_size,)
-        return loss
-
-    def _eval_step(self, batch: torch.Tensor, eval_type: Literal['validation', 'testing']): # @todo add return type
-        batch_dict, target_scores = batch
+        return {'optimizer': optimizer, 'lr_scheduler': scheduler}
+    
+    def _get_batch_loss(self, batch_dict: dict) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        target_scores = batch_dict['rating']
         batch_size = only_one(target_scores.shape)
         predicted_scores, regularization_loss = self(batch_dict)
         assert tuple(predicted_scores.shape) == (batch_size,)
         assert tuple(regularization_loss.shape) == (batch_size,)
         mse_loss = MSE_LOSS(predicted_scores, target_scores)
+        assert tuple(mse_loss.shape) == (batch_size,)
         loss = regularization_loss + mse_loss
         assert tuple(loss.shape) == (batch_size,)
-        
-        result = pl.EvalResult(checkpoint_on=loss)
-        result.log(f'{eval_type}_loss', loss)
-        result.log(f'{eval_type}_regularization_loss', regularization_loss)
-        result.log(f'{eval_type}_mse_loss', mse_loss)
-        return result
-    
-    def validation_step(self, batch: torch.Tensor, _: int): # @todo add return type
-        return self._eval_step(batch, 'validation')
+        assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size, )
+        return loss, mse_loss, regularization_loss
 
-    def test_step(self, batch: torch.Tensor, _: int): # @todo add return type
-        return self._eval_step(batch, 'testing')
+    def training_step(self, batch_dict: dict, _: int) -> pl.TrainResult:
+        loss, _, _ = self._get_batch_loss(batch_dict)
+        result = pl.TrainResult(minimize=loss)
+        return result
+
+    def training_step_end(self, training_step_result: pl.TrainResult) -> pl.TrainResult:
+        assert len(training_step_result.minimize.shape) == 1
+        mean_loss = training_step_result.minimize.mean()
+        result = pl.TrainResult(minimize=mean_loss)
+        result.log('training_loss', mean_loss, prog_bar=True)
+        return result
+
+    def _eval_step(self, batch_dict: dict) -> pl.EvalResult:
+        loss, mse_loss, regularization_loss = self._get_batch_loss(batch_dict)
+        assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape)
+        result = pl.EvalResult()
+        result.log('loss', loss)
+        result.log('regularization_loss', regularization_loss)
+        result.log('mse_loss', mse_loss)
+        return result
+        
+    def _eval_epoch_end(self, step_result: pl.EvalResult, eval_type: Literal['validation', 'testing']) -> pl.EvalResult:
+        loss = step_result.loss
+        mse_loss = step_result.mse_loss
+        regularization_loss = step_result.regularization_loss
+        assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape)
+        assert len(loss.shape) == 1
+        result = pl.EvalResult()
+        result.log(f'{eval_type}_loss', loss.mean())
+        result.log(f'{eval_type}_regularization_loss', regularization_loss.mean())
+        result.log(f'{eval_type}_mse_loss', mse_loss.mean())
+        return result
+        
+    def validation_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
+        return self._eval_step(batch_dict)
+
+    def validation_epoch_end(self, validation_step_results: pl.EvalResult) -> pl.EvalResult:
+        return _eval_epoch_end(validation_step_results, 'validation')
+
+    def test_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
+        return self._eval_step(batch_dict)
+
+    def test_epoch_end(self, ) -> pl.EvalResult:
+        return _eval_epoch_end(validation_step_results, 'testing')
 
 ##########
 # Driver #
 ##########
 
 @debug_on_error
+@raise_on_warn
 def main() -> None:
-    trainer = pl.Trainer()
+    trainer = pl.Trainer(gpus=[0,1,2,3], distributed_backend='dp')
     
     data_module = AnimeRatingDataModule(BATCH_SIZE, NUM_WORKERS)
     data_module.prepare_data()
@@ -369,13 +403,13 @@ def main() -> None:
         number_of_animes = data_module.number_of_animes,
         number_of_users = data_module.number_of_users,
         embedding_size = EMBEDDING_SIZE,
-        regularization_factor REGULARIZATION_FACTOR,
+        regularization_factor = REGULARIZATION_FACTOR,
         dropout_probability = DROPOUT_PROBABILITY,
     )
-
+    
     trainer.fit(model, data_module)
     return
 
 if __name__ == '__main__':
     main()
-    
+        

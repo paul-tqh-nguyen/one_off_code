@@ -222,6 +222,16 @@ def debug_on_error(func: Callable) -> Callable:
             pdb.post_mortem(tb)
     return decorating_function
 
+from typing import Callable
+def raise_on_warn(func: Callable) -> Callable:
+    import warnings
+    def decorating_function(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            result = func(*args, **kwargs)
+        return result
+    return decorating_function
+
 TRACE_INDENT_LEVEL = 0
 TRACE_INDENTATION = '    '
 TRACE_VALUE_SIZE_LIMIT = 200
