@@ -62,9 +62,9 @@ MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
 NUMBER_OF_EPOCHS = 15 
-BATCH_SIZE = 256
+BATCH_SIZE = 1024
 
-LEARNING_RATE = 1e-5
+LEARNING_RATE = 1e-3
 EMBEDDING_SIZE = 100
 REGULARIZATION_FACTOR = 1
 DROPOUT_PROBABILITY = 0.5
@@ -353,10 +353,14 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
     def _eval_step(self, batch_dict: dict) -> pl.EvalResult:
         loss, mse_loss, regularization_loss = self._get_batch_loss(batch_dict)
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape)
+        assert len(loss.shape) == 1 # batch_size
         result = pl.EvalResult()
         result.log('loss', loss)
         result.log('regularization_loss', regularization_loss)
         result.log('mse_loss', mse_loss)
+        # result.loss = loss
+        # result.regularization_loss = regularization_loss
+        # result.mse_loss = mse_loss
         return result
         
     def _eval_epoch_end(self, step_result: pl.EvalResult, eval_type: Literal['validation', 'testing']) -> pl.EvalResult:
@@ -364,7 +368,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         mse_loss = step_result.mse_loss
         regularization_loss = step_result.regularization_loss
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape)
-        assert len(loss.shape) == 1
+        assert len(loss.shape) == 2 # batch_count x batch_size
         result = pl.EvalResult()
         result.log(f'{eval_type}_loss', loss.mean())
         result.log(f'{eval_type}_regularization_loss', regularization_loss.mean())
@@ -372,16 +376,17 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         return result
         
     def validation_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
-        return self._eval_step(batch_dict)
+        result = self._eval_step(batch_dict)
+        return result
 
     def validation_epoch_end(self, validation_step_results: pl.EvalResult) -> pl.EvalResult:
-        return _eval_epoch_end(validation_step_results, 'validation')
+        return self._eval_epoch_end(validation_step_results, 'validation')
 
     def test_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
         return self._eval_step(batch_dict)
 
     def test_epoch_end(self, ) -> pl.EvalResult:
-        return _eval_epoch_end(validation_step_results, 'testing')
+        return self._eval_epoch_end(validation_step_results, 'testing')
 
 ##########
 # Driver #
