@@ -62,7 +62,7 @@ MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
 NUMBER_OF_EPOCHS = 15 
-BATCH_SIZE = 1024
+BATCH_SIZE = 2**12
 
 LEARNING_RATE = 1e-3
 EMBEDDING_SIZE = 100
@@ -231,10 +231,10 @@ class AnimeRatingDataModule(pl.LightningDataModule):
         validation_dataset = AnimeRatingDataset(validation_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
         testing_dataset = AnimeRatingDataset(testing_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
 
-        dataloader_kwargs = dict()
-        self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True)
-        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
-        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+        # https://github.com/PyTorchLightning/pytorch-lightning/issues/408 forces us to drop_last and shuffle
+        self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, drop_last=True)
+        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=True)
+        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=True)
         
         return
 
@@ -349,7 +349,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         result = pl.TrainResult(minimize=mean_loss)
         result.log('training_loss', mean_loss, prog_bar=True)
         return result
-
+    
     def _eval_step(self, batch_dict: dict) -> pl.EvalResult:
         loss, mse_loss, regularization_loss = self._get_batch_loss(batch_dict)
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape)
@@ -358,26 +358,20 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         result.log('loss', loss)
         result.log('regularization_loss', regularization_loss)
         result.log('mse_loss', mse_loss)
-        # result.loss = loss
-        # result.regularization_loss = regularization_loss
-        # result.mse_loss = mse_loss
         return result
-        
+    
     def _eval_epoch_end(self, step_result: pl.EvalResult, eval_type: Literal['validation', 'testing']) -> pl.EvalResult:
-        loss = step_result.loss
-        mse_loss = step_result.mse_loss
-        regularization_loss = step_result.regularization_loss
-        assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape)
-        assert len(loss.shape) == 2 # batch_count x batch_size
-        result = pl.EvalResult()
-        result.log(f'{eval_type}_loss', loss.mean())
-        result.log(f'{eval_type}_regularization_loss', regularization_loss.mean())
-        result.log(f'{eval_type}_mse_loss', mse_loss.mean())
+        loss = step_result.loss.mean()
+        mse_loss = step_result.mse_loss.mean()
+        regularization_loss = step_result.regularization_loss.mean()
+        result = pl.EvalResult(checkpoint_on=loss)
+        result.log(f'{eval_type}_loss', loss)
+        result.log(f'{eval_type}_regularization_loss', regularization_loss)
+        result.log(f'{eval_type}_mse_loss', mse_loss)
         return result
         
     def validation_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
-        result = self._eval_step(batch_dict)
-        return result
+        return self._eval_step(batch_dict)
 
     def validation_epoch_end(self, validation_step_results: pl.EvalResult) -> pl.EvalResult:
         return self._eval_epoch_end(validation_step_results, 'validation')
@@ -385,7 +379,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
     def test_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
         return self._eval_step(batch_dict)
 
-    def test_epoch_end(self, ) -> pl.EvalResult:
+    def test_epoch_end(self) -> pl.EvalResult:
         return self._eval_epoch_end(validation_step_results, 'testing')
 
 ##########
