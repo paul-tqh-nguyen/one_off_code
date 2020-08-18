@@ -50,6 +50,8 @@ TRAINING_LABEL, VALIDATION_LABEL, TESTING_LABEL = 0, 1, 2
 
 MSE_LOSS = nn.MSELoss(reduction='none')
 
+EVALUATION_BATCH_SIZE = 2**12
+
 ###################
 # Hyperparameters #
 ###################
@@ -62,7 +64,8 @@ MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
 NUMBER_OF_EPOCHS = 15 
-BATCH_SIZE = 2**12
+BATCH_SIZE = 2**10
+GRADIENT_CLIP_VAL = 1.0
 
 LEARNING_RATE = 1e-3
 EMBEDDING_SIZE = 100
@@ -230,11 +233,11 @@ class AnimeRatingDataModule(pl.LightningDataModule):
         training_dataset = AnimeRatingDataset(training_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
         validation_dataset = AnimeRatingDataset(validation_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
         testing_dataset = AnimeRatingDataset(testing_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
-
-        # https://github.com/PyTorchLightning/pytorch-lightning/issues/408 forces us to drop_last and shuffle
+        
+        # https://github.com/PyTorchLightning/pytorch-lightning/issues/408 forces us to drop_last and shuffle in training
         self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, drop_last=True)
-        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=True)
-        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, drop_last=True)
+        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=len(validation_dataset)//4, num_workers=self.num_workers, shuffle=False, drop_last=False)
+        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=len(testing_dataset)//4, num_workers=self.num_workers, shuffle=False, drop_last=False)
         
         return
 
@@ -386,11 +389,35 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
 # Driver #
 ##########
 
+class PrintingCallback(pl.Callback):
+
+    def on_init_start(self, trainer: pl.Trainer) -> None:
+        print()
+        print('Initializing trainer.')
+        return
+    
+    def on_fit_start(trainer: pl.Trainer, pl_module: pl.LightningDataModule) -> None:
+        print('Starting training.')
+        return
+    
+    def on_fit_end(trainer: pl.Trainer, pl_module: pl.LightningDataModule) -> None:
+        print('Training complete.')
+        return
+
 @debug_on_error
 @raise_on_warn
 def main() -> None:
-    trainer = pl.Trainer(gpus=[0,1,2,3], distributed_backend='dp')
-    
+
+    trainer = pl.Trainer(
+        callbacks=[PrintingCallback()],
+        max_epochs=NUMBER_OF_EPOCHS,
+        min_epochs=NUMBER_OF_EPOCHS,
+        gradient_clip_val=GRADIENT_CLIP_VAL,
+        terminate_on_nan=True,
+        gpus=[0,1,2,3],
+        distributed_backend='dp',
+    )
+        
     data_module = AnimeRatingDataModule(BATCH_SIZE, NUM_WORKERS)
     data_module.prepare_data()
     data_module.setup()
