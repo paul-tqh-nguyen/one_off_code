@@ -25,6 +25,13 @@
        (emacs-files-directory (format "%s%s" absolute-file-name-directory "emacs_files/")))
   (add-to-list 'load-path emacs-files-directory))
 
+;; TRAMP Term
+
+(load "tramp-term.el")
+(defun cuda-tramp-term () 
+  (interactive) 
+  (tramp-term '("pnguyen" "colo-dgx-01.corp.continuum.io")))
+
 ;; Undo Tree
 
 (load "undo-tree.el")
