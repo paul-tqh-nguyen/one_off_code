@@ -397,10 +397,12 @@ class PrintingCallback(pl.Callback):
         return
     
     def on_fit_start(trainer: pl.Trainer, pl_module: pl.LightningDataModule) -> None:
+        print()
         print('Starting training.')
         return
     
     def on_fit_end(trainer: pl.Trainer, pl_module: pl.LightningDataModule) -> None:
+        print()
         print('Training complete.')
         return
 
