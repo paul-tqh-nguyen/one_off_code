@@ -50,8 +50,6 @@ TRAINING_LABEL, VALIDATION_LABEL, TESTING_LABEL = 0, 1, 2
 
 MSE_LOSS = nn.MSELoss(reduction='none')
 
-EVALUATION_BATCH_SIZE = 2**12
-
 ###################
 # Hyperparameters #
 ###################
@@ -291,12 +289,12 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         self.dropout_probability = dropout_probability
         
         self.anime_embedding_layers = nn.Sequential(OrderedDict([
-            ("anime_embedding_layer", nn.Embedding(self.number_of_animes, self.embedding_size)),
-            ("dropout_layer", nn.Dropout(self.dropout_probability)),
+            ('anime_embedding_layer', nn.Embedding(self.number_of_animes, self.embedding_size)),
+            ('dropout_layer', nn.Dropout(self.dropout_probability)),
         ]))
         self.user_embedding_layers = nn.Sequential(OrderedDict([
-            ("user_embedding_layer", nn.Embedding(self.number_of_users, self.embedding_size)),
-            ("dropout_layer", nn.Dropout(self.dropout_probability)),
+            ('user_embedding_layer', nn.Embedding(self.number_of_users, self.embedding_size)),
+            ('dropout_layer', nn.Dropout(self.dropout_probability)),
         ]))
 
     def forward(self, batch_dict: dict):
@@ -382,8 +380,8 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
     def test_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
         return self._eval_step(batch_dict)
 
-    def test_epoch_end(self) -> pl.EvalResult:
-        return self._eval_epoch_end(validation_step_results, 'testing')
+    def test_epoch_end(self, test_step_results: pl.EvalResult) -> pl.EvalResult:
+        return self._eval_epoch_end(test_step_results, 'testing')
 
 ##########
 # Driver #
@@ -391,36 +389,59 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
 
 class PrintingCallback(pl.Callback):
 
+    def __init__(self, module: pl.LightningModule, data_module: pl.LightningDataModule):
+        self.module = module
+        self.data_module = data_module
+        super().__init__()
+    
     def on_init_start(self, trainer: pl.Trainer) -> None:
         print()
         print('Initializing trainer.')
+        print()
         return
     
-    def on_fit_start(trainer: pl.Trainer, pl_module: pl.LightningDataModule) -> None:
+    def on_train_start(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
+        print()
+        print('Model: ')
+        print(self.module)
+        print()
+        print(f'Learning Rate: {self.module.learning_rate:,}')
+        print(f'Number of Animes: {self.module.number_of_animes:,}')
+        print(f'Number of Users: {self.module.number_of_users:,}')
+        print(f'Embedding Size: {self.module.embedding_size:,}')
+        print(f'Regularization Factor: {self.module.regularization_factor:,}')
+        print(f'Dropout Probability: {self.module.dropout_probability:,}')
+        print()
+        print('Data:')
+        print()
+        print(f'Training Batch Count: {len(self.data_module.training_dataloader):,}')
+        print(f'Validation Batch Count: {len(self.data_module.validation_dataloader):,}')
+        print(f'Testing Batch Count: {len(self.data_module.testing_dataloader):,}')
+        print()
+        print(f'Training Example Count: {len(self.data_module.training_dataloader)*self.data_module.training_dataloader.batch_size:,}')
+        print(f'Validation Example Count: {len(self.data_module.validation_dataloader)*self.data_module.validation_dataloader.batch_size:,}')
+        print(f'Testing Example Count: {len(self.data_module.testing_dataloader)*self.data_module.testing_dataloader.batch_size:,}')
         print()
         print('Starting training.')
+        print()
         return
     
-    def on_fit_end(trainer: pl.Trainer, pl_module: pl.LightningDataModule) -> None:
+    def on_train_end(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
         print()
         print('Training complete.')
+        print()
+        return
+
+    def on_test_start(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
+        print()
+        print('Starting testing.')
+        print()
         return
 
 @debug_on_error
 @raise_on_warn
 def main() -> None:
-
-    trainer = pl.Trainer(
-        callbacks=[PrintingCallback()],
-        max_epochs=NUMBER_OF_EPOCHS,
-        min_epochs=NUMBER_OF_EPOCHS,
-        gradient_clip_val=GRADIENT_CLIP_VAL,
-        terminate_on_nan=True,
-        gpus=[0,1,2,3],
-        distributed_backend='dp',
-        logger=pl.loggers.TensorBoardLogger("lightning_logs", name="linear_cf_model"),
-    )
-        
+    
     data_module = AnimeRatingDataModule(BATCH_SIZE, NUM_WORKERS)
     data_module.prepare_data()
     data_module.setup()
@@ -435,8 +456,20 @@ def main() -> None:
         regularization_factor = REGULARIZATION_FACTOR,
         dropout_probability = DROPOUT_PROBABILITY,
     )
-    
+
+
+    trainer = pl.Trainer(
+        callbacks=[PrintingCallback(model, data_module)],
+        max_epochs=NUMBER_OF_EPOCHS,
+        min_epochs=NUMBER_OF_EPOCHS,
+        gradient_clip_val=GRADIENT_CLIP_VAL,
+        terminate_on_nan=True,
+        gpus=[0,1,2,3],
+        distributed_backend='dp',
+        logger=pl.loggers.TensorBoardLogger('lightning_logs', name='linear_cf_model'),
+    )    
     trainer.fit(model, data_module)
+    trainer.test(model, datamodule=data_module, verbose=False)
     return
 
 if __name__ == '__main__':

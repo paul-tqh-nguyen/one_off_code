@@ -1,6 +1,11 @@
-name: test-metagraph
+name: test-cugraph
+
+channels:
+- rapidsai
+- nvidia
+- conda-forge
+
 dependencies:
-# dev environment
   - python=3.7
   - coverage
   - pytest
@@ -9,10 +14,17 @@ dependencies:
   - conda-forge::pre-commit
   - setuptools
 
-# other dependencies
   - importlib_metadata
   - numpy
   - networkx
+  - pandas
+  - conda-forge::python-louvain
   - scipy
+  - conda-forge::donfig
   - conda-forge::grblas
-  - numba==0.48.0 
+
+  - numba
+  - cupy
+  - cudf
+  - cugraph=0.15.*
+  - cudatoolkit=10.1
