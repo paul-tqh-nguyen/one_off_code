@@ -181,7 +181,7 @@
 	      (host "colo-dgx-01.corp.continuum.io")
 	      (buffer-name ,buffer-name)
 	      (default-directory (format "/ssh:%s@%s:" username host)))
-	 (start-remote-ssh-shell-buffer-with-name username host buffer-name "cd /home/pnguyen/code/metagraph ; conda activate mg")))))
+	 (start-remote-ssh-shell-buffer-with-name username host buffer-name "cd /home/pnguyen/code/metagraph-cuda ; conda activate mgc")))))
 
 (defmacro create-named-cuda-shell-functions (&rest function-names)
   (let (commands)
