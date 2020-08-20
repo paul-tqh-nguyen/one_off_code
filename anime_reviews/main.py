@@ -264,12 +264,9 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
     
     def __init__(
             self,
-            # Common Hyperparameters
             learning_rate: float,
             number_of_epochs: int,
-            # Information Passing
             number_of_training_batches: int,
-            # Mode-specific Hyperparameters
             number_of_animes: int, 
             number_of_users: int, 
             embedding_size: int, 
@@ -277,24 +274,24 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
             dropout_probability: float, 
     ):
         super().__init__()
-        
-        self.learning_rate = learning_rate
-        # @todo can we abstract these two away?
-        self.number_of_epochs = number_of_epochs
-        self.number_of_training_batches = number_of_training_batches
-        self.number_of_animes = number_of_animes
-        self.number_of_users = number_of_users
-        self.embedding_size = embedding_size
-        self.regularization_factor = regularization_factor
-        self.dropout_probability = dropout_probability
+        self.save_hyperparameters(
+            'learning_rate',
+            'number_of_epochs',
+            'number_of_training_batches',
+            'number_of_animes',
+            'number_of_users',
+            'embedding_size',
+            'regularization_factor',
+            'dropout_probability',
+        )
         
         self.anime_embedding_layers = nn.Sequential(OrderedDict([
-            ('anime_embedding_layer', nn.Embedding(self.number_of_animes, self.embedding_size)),
-            ('dropout_layer', nn.Dropout(self.dropout_probability)),
+            ('anime_embedding_layer', nn.Embedding(self.hparams.number_of_animes, self.hparams.embedding_size)),
+            ('dropout_layer', nn.Dropout(self.hparams.dropout_probability)),
         ]))
         self.user_embedding_layers = nn.Sequential(OrderedDict([
-            ('user_embedding_layer', nn.Embedding(self.number_of_users, self.embedding_size)),
-            ('dropout_layer', nn.Dropout(self.dropout_probability)),
+            ('user_embedding_layer', nn.Embedding(self.hparams.number_of_users, self.hparams.embedding_size)),
+            ('dropout_layer', nn.Dropout(self.hparams.dropout_probability)),
         ]))
 
     def forward(self, batch_dict: dict):
@@ -305,14 +302,14 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(anime_id_indices.shape) == (batch_size,)
 
         user_embedding = self.user_embedding_layers(user_id_indices)
-        assert tuple(user_embedding.shape) == (batch_size, self.embedding_size)
+        assert tuple(user_embedding.shape) == (batch_size, self.hparams.embedding_size)
         anime_embedding = self.anime_embedding_layers(anime_id_indices)
-        assert tuple(anime_embedding.shape) == (batch_size, self.embedding_size)
+        assert tuple(anime_embedding.shape) == (batch_size, self.hparams.embedding_size)
         
         scores = user_embedding.mul(anime_embedding).sum(dim=1)
         assert tuple(scores.shape) == (batch_size,)
 
-        regularization_loss = torch.sum(self.regularization_factor * (F.normalize(user_embedding[:,:-1], p=2, dim=1) + F.normalize(anime_embedding[:,:-1], p=2, dim=1)), dim=1)
+        regularization_loss = torch.sum(self.hparams.regularization_factor * (F.normalize(user_embedding[:,:-1], p=2, dim=1) + F.normalize(anime_embedding[:,:-1], p=2, dim=1)), dim=1)
         assert tuple(regularization_loss.shape) == (batch_size,)
         return scores, regularization_loss
 
@@ -322,8 +319,8 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         return
     
     def configure_optimizers(self) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
-        optimizer: torch.optim.Optimizer = transformers.AdamW(self.parameters(), lr=self.learning_rate, correct_bias=False)
-        scheduler: torch.optim.lr_scheduler.LambdaLR = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=self.number_of_training_batches*self.number_of_epochs)
+        optimizer: torch.optim.Optimizer = transformers.AdamW(self.parameters(), lr=self.hparams.learning_rate, correct_bias=False)
+        scheduler: torch.optim.lr_scheduler.LambdaLR = transformers.get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=self.hparams.number_of_training_batches*self.hparams.number_of_epochs)
         return {'optimizer': optimizer, 'lr_scheduler': scheduler}
     
     def _get_batch_loss(self, batch_dict: dict) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -338,7 +335,20 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(loss.shape) == (batch_size,)
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size, )
         return loss, mse_loss, regularization_loss
+    
+    def on_train_start(self) -> None:
+        # breakpoint()
+        # self.logger.log_hyperparams(self.hparams)
+        # breakpoint()
+        # import argparse
+        # self.logger.log_hyperparams(argparse.Namespace(**self.hparams))
+        # breakpoint()
+        return
 
+    def on_train_end(self) -> None:
+        breakpoint()
+        return
+    
     def training_step(self, batch_dict: dict, _: int) -> pl.TrainResult:
         loss, _, _ = self._get_batch_loss(batch_dict)
         result = pl.TrainResult(minimize=loss)
@@ -389,9 +399,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
 
 class PrintingCallback(pl.Callback):
 
-    def __init__(self, module: pl.LightningModule, data_module: pl.LightningDataModule):
-        self.module = module
-        self.data_module = data_module
+    def __init__(self):
         super().__init__()
     
     def on_init_start(self, trainer: pl.Trainer) -> None:
@@ -403,24 +411,26 @@ class PrintingCallback(pl.Callback):
     def on_train_start(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
         print()
         print('Model: ')
-        print(self.module)
+        print(model)
         print()
-        print(f'Learning Rate: {self.module.learning_rate:,}')
-        print(f'Number of Animes: {self.module.number_of_animes:,}')
-        print(f'Number of Users: {self.module.number_of_users:,}')
-        print(f'Embedding Size: {self.module.embedding_size:,}')
-        print(f'Regularization Factor: {self.module.regularization_factor:,}')
-        print(f'Dropout Probability: {self.module.dropout_probability:,}')
+        print(f'Number of Epochs: {model.hparams.number_of_epochs:,}')
+        print(f'Learning Rate: {model.hparams.learning_rate:,}')
+        print(f'Number of Animes: {model.hparams.number_of_animes:,}')
+        print(f'Number of Users: {model.hparams.number_of_users:,}')
+        print(f'Embedding Size: {model.hparams.embedding_size:,}')
+        print(f'Regularization Factor: {model.hparams.regularization_factor:,}')
+        print(f'Dropout Probability: {model.hparams.dropout_probability:,}')
         print()
         print('Data:')
         print()
-        print(f'Training Batch Count: {len(self.data_module.training_dataloader):,}')
-        print(f'Validation Batch Count: {len(self.data_module.validation_dataloader):,}')
-        print(f'Testing Batch Count: {len(self.data_module.testing_dataloader):,}')
+        print(f'Training Batch Size: {trainer.train_dataloader.batch_size:,}')
+        print(f'Validation Batch Size: {only_one(trainer.val_dataloaders).batch_size:,}')
         print()
-        print(f'Training Example Count: {len(self.data_module.training_dataloader)*self.data_module.training_dataloader.batch_size:,}')
-        print(f'Validation Example Count: {len(self.data_module.validation_dataloader)*self.data_module.validation_dataloader.batch_size:,}')
-        print(f'Testing Example Count: {len(self.data_module.testing_dataloader)*self.data_module.testing_dataloader.batch_size:,}')
+        print(f'Training Batch Count: {len(trainer.train_dataloader):,}')
+        print(f'Validation Batch Count: {len(only_one(trainer.val_dataloaders)):,}')
+        print()
+        print(f'Training Example Count: {len(trainer.train_dataloader)*trainer.train_dataloader.batch_size:,}')
+        print(f'Validation Example Count: {len(only_one(trainer.val_dataloaders))*only_one(trainer.val_dataloaders).batch_size:,}')
         print()
         print('Starting training.')
         print()
@@ -436,11 +446,32 @@ class PrintingCallback(pl.Callback):
         print()
         print('Starting testing.')
         print()
+        print(f'Testing Batch Size: {only_one(trainer.test_dataloaders).batch_size:,}')
+        print(f'Testing Example Count: {len(only_one(trainer.test_dataloaders))*only_one(trainer.test_dataloaders).batch_size:,}')
+        print(f'Testing Batch Count: {len(only_one(trainer.test_dataloaders)):,}')
+        print()
+        return
+    
+    def on_test_end(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
+        print()
+        print('Testing complete.')
+        print()
         return
 
 @debug_on_error
 @raise_on_warn
 def main() -> None:
+    
+    trainer = pl.Trainer(
+        callbacks=[PrintingCallback()],
+        max_epochs=NUMBER_OF_EPOCHS,
+        min_epochs=NUMBER_OF_EPOCHS,
+        gradient_clip_val=GRADIENT_CLIP_VAL,
+        terminate_on_nan=True,
+        gpus=[0,1,2,3],
+        distributed_backend='dp',
+        logger=pl.loggers.TensorBoardLogger('lightning_logs', name='linear_cf_model'),
+    )
     
     data_module = AnimeRatingDataModule(BATCH_SIZE, NUM_WORKERS)
     data_module.prepare_data()
@@ -457,17 +488,6 @@ def main() -> None:
         dropout_probability = DROPOUT_PROBABILITY,
     )
 
-
-    trainer = pl.Trainer(
-        callbacks=[PrintingCallback(model, data_module)],
-        max_epochs=NUMBER_OF_EPOCHS,
-        min_epochs=NUMBER_OF_EPOCHS,
-        gradient_clip_val=GRADIENT_CLIP_VAL,
-        terminate_on_nan=True,
-        gpus=[0,1,2,3],
-        distributed_backend='dp',
-        logger=pl.loggers.TensorBoardLogger('lightning_logs', name='linear_cf_model'),
-    )    
     trainer.fit(model, data_module)
     trainer.test(model, datamodule=data_module, verbose=False)
     return
