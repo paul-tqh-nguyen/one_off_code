@@ -336,18 +336,22 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size, )
         return loss, mse_loss, regularization_loss
     
-    def on_train_start(self) -> None:
-        # breakpoint()
-        # self.logger.log_hyperparams(self.hparams)
-        # breakpoint()
-        # import argparse
-        # self.logger.log_hyperparams(argparse.Namespace(**self.hparams))
-        # breakpoint()
-        return
+    # def on_fit_start(self) -> None:
+    #     breakpoint()
+    #     self.logger.experiment.add_hparams(
+    #         hparam_dict = dict(self.hparams),
+    #         metric_dict = {}
+    #     )
+    #     self.logger.log_hyperparams(self.hparams)
+    #     breakpoint()
+    #     import argparse
+    #     self.logger.log_hyperparams(argparse.Namespace(**self.hparams))
+    #     breakpoint()
+    #     return
 
-    def on_train_end(self) -> None:
-        breakpoint()
-        return
+    # def on_fit_end(self) -> None:
+    #     # breakpoint()
+    #     return
     
     def training_step(self, batch_dict: dict, _: int) -> pl.TrainResult:
         loss, _, _ = self._get_batch_loss(batch_dict)
