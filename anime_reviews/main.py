@@ -456,7 +456,8 @@ class PrintingCallback(pl.Callback):
         print(f'Best validation model checkpoint saved to {self.checkpoint_callback.best_model_path} .')
         print()
         return
-
+    
+@trace
 def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float, gpus: List[int]) -> float:
 
     checkpoint_dir = f'./checkpoints/' \
@@ -549,7 +550,7 @@ def hyperparameter_search_objective(trial: optuna.Trial) -> dict:
     number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
     batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(12)])
     gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-    embedding_size = trial.suggest_uniform('embedding_size', 100, 500)
+    embedding_size = trial.suggest_int('embedding_size', 100, 500)
     regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
     dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
     
