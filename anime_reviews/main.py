@@ -318,7 +318,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         get_norm = lambda batch_matrix: batch_matrix.mul(batch_matrix).sum(dim=1)
         regularization_loss = get_norm(user_embedding[:,:-1]) + get_norm(anime_embedding[:,:-1])
         assert tuple(regularization_loss.shape) == (batch_size,)
-        assert all(regularization_loss > 0)
+        assert regularization_loss.ge(0).all() # @todo strengthen this to use .gt(0)
         return scores, regularization_loss
 
     def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
@@ -457,7 +457,6 @@ class PrintingCallback(pl.Callback):
         print()
         return
     
-@trace
 def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float, gpus: List[int]) -> float:
 
     checkpoint_dir = f'./checkpoints/' \
@@ -548,7 +547,7 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
 def hyperparameter_search_objective(trial: optuna.Trial) -> dict:
     learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
     number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
-    batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(12)])
+    batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(5)])
     gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
     embedding_size = trial.suggest_int('embedding_size', 100, 500)
     regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
@@ -567,7 +566,7 @@ def hyperparameter_search_objective(trial: optuna.Trial) -> dict:
     return best_validation_loss
 
 def hyperparameter_search() -> None:
-    study = optuna.create_study()
+    study = optuna.create_study(sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner())
     study.optimize(hyperparameter_search_objective, n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS)
     best_params = study.best_params
     print('Best Parameters:\n'+''.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
@@ -586,7 +585,7 @@ def train_default_mode() -> None:
         embedding_size=EMBEDDING_SIZE,
         regularization_factor=REGULARIZATION_FACTOR,
         dropout_probability=DROPOUT_PROBABILITY,
-        gpus=[0],
+        gpus=[0,1,2,3],
     )
     return
 
