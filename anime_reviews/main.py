@@ -9,13 +9,14 @@
 ###########
 
 import os
+import json
 import more_itertools
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from pandarallel import pandarallel
 from collections import OrderedDict
-from typing import Tuple, Callable
+from typing import Tuple, List, Callable
 from typing_extensions import Literal
 
 from misc_utilities import *
@@ -25,6 +26,7 @@ from torch import nn
 from torch.utils import data
 import transformers
 import pytorch_lightning as pl
+import optuna
 
 # @todo make sure these are used
 
@@ -37,6 +39,9 @@ pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
 
 NUM_WORKERS = 4
 
+if not os.path.isdir('./checkpoints'):
+    os.makedirs('./checkpoints')
+
 # https://www.kaggle.com/CooperUnion/anime-recommendations-database
 ANIME_CSV_FILE_LOCATION = './data/anime.csv'
 RATING_CSV_FILE_LOCATION = './data/rating.csv'
@@ -45,17 +50,9 @@ PROCESSED_DATA_CSV_FILE_LOCATION = './data/processed_data.csv'
 
 RATING_HISTORGRAM_PNG_FILE_LOCATION = './data/rating_histogram.png'
 
-CHECKPOINT_DIR = './checkpoints/checkpoint-{epoch:03d}-{val_checkpoint_on}'
-if not os.path.isdir('./checkpoints'):
-    os.makedirs('./checkpoints')
-
 TRAINING_LABEL, VALIDATION_LABEL, TESTING_LABEL = 0, 1, 2
 
 MSE_LOSS = nn.MSELoss(reduction='none')
-
-###################
-# Hyperparameters #
-###################
 
 TRAINING_PORTION = 0.65
 VALIDATION_PORTION = 0.15
@@ -63,6 +60,12 @@ TESTING_PORTION = 0.20
 
 MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
+
+NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
+
+###########################
+# Default Hyperparameters #
+###########################
 
 NUMBER_OF_EPOCHS = 15
 BATCH_SIZE = 256
@@ -72,7 +75,7 @@ LEARNING_RATE = 1e-3
 EMBEDDING_SIZE = 100
 REGULARIZATION_FACTOR = 1
 DROPOUT_PROBABILITY = 0.5
-            
+
 ################
 # Data Modules #
 ################
@@ -184,7 +187,7 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
 class AnimeRatingDataset(data.Dataset):
     def __init__(self, df: pd.DataFrame, user_id_to_user_id_index: dict, anime_id_to_anime_id_index: dict):
-        self.df = df
+        self.df = df.copy().iloc[:3000] # @todo remove this
         self.user_id_to_user_id_index = user_id_to_user_id_index
         self.anime_id_to_anime_id_index = anime_id_to_anime_id_index        
         
@@ -386,9 +389,9 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
     def test_epoch_end(self, test_step_results: pl.EvalResult) -> pl.EvalResult:
         return self._eval_epoch_end(test_step_results, 'testing')
 
-##########
-# Driver #
-##########
+############
+# Training #
+############
 
 class PrintingCallback(pl.Callback):
 
@@ -454,12 +457,20 @@ class PrintingCallback(pl.Callback):
         print()
         return
 
-@debug_on_error
-@raise_on_warn
-def main() -> None:
+def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float, gpus: List[int]) -> float:
 
+    checkpoint_dir = f'./checkpoints/' \
+        f'linear_cf_lr_{learning_rate}_' \
+        f'epochs_{number_of_epochs}_' \
+        f'batch_{batch_size}_' \
+        f'gradient_clip_{gradient_clip_val}_' \
+        f'embed_{embedding_size}_' \
+        f'regularization_{regularization_factor}_' \
+        f'dropout_{dropout_probability}'
+    if not os.path.isdir(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
-            filepath=CHECKPOINT_DIR,
+            filepath=os.path.join(checkpoint_dir, 'checkpoint_{epoch:03d}_{val_checkpoint_on}'),
             save_top_k=1,
             verbose=True,
             save_last=True,
@@ -469,37 +480,120 @@ def main() -> None:
     
     trainer = pl.Trainer(
         callbacks=[PrintingCallback(checkpoint_callback)],
-        max_epochs=NUMBER_OF_EPOCHS,
-        min_epochs=NUMBER_OF_EPOCHS,
-        gradient_clip_val=GRADIENT_CLIP_VAL,
+        max_epochs=number_of_epochs,
+        min_epochs=number_of_epochs,
+        gradient_clip_val=gradient_clip_val,
         terminate_on_nan=True,
-        # gpus=[0,1,2,3],
-        gpus=[0],
+        gpus=gpus,
         distributed_backend='dp',
         deterministic=False,
         # precision=16, # not supported for data parallel (e.g. multiple GPUs) https://github.com/NVIDIA/apex/issues/227
-        logger=pl.loggers.TensorBoardLogger('lightning_logs', name='linear_cf_model'),
+        logger=pl.loggers.TensorBoardLogger(checkpoint_dir, name='linear_cf_model'),
         checkpoint_callback=checkpoint_callback,
     )
     
-    data_module = AnimeRatingDataModule(BATCH_SIZE, NUM_WORKERS)
+    data_module = AnimeRatingDataModule(batch_size, NUM_WORKERS)
     data_module.prepare_data()
     data_module.setup()
     
     model = LinearColaborativeFilteringModel(
-        learning_rate = LEARNING_RATE,
-        number_of_epochs = NUMBER_OF_EPOCHS,
+        learning_rate = learning_rate,
+        number_of_epochs = number_of_epochs,
         number_of_training_batches = len(data_module.training_dataloader),
         number_of_animes = data_module.number_of_animes,
         number_of_users = data_module.number_of_users,
-        embedding_size = EMBEDDING_SIZE,
-        regularization_factor = REGULARIZATION_FACTOR,
-        dropout_probability = DROPOUT_PROBABILITY,
+        embedding_size = embedding_size,
+        regularization_factor = regularization_factor,
+        dropout_probability = dropout_probability,
     )
 
     trainer.fit(model, data_module)
-    trainer.test(model, datamodule=data_module, verbose=False)
+    test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
+    best_validation_loss = checkpoint_callback.best_model_score.item()
     
+    output_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
+    with open(output_json_file_location, 'w') as file_handle:
+        json.dump({
+            'testing_loss': test_results['testing_loss'],
+            'testing_regularization_loss': test_results['testing_regularization_loss'],
+            'testing_mse_loss': test_results['testing_mse_loss'],
+            
+            'best_validation_loss': best_validation_loss,
+            'best_validation_model_path': checkpoint_callback.best_model_path,
+            
+            'learning_rate': learning_rate,
+            'number_of_epochs': number_of_epochs,
+            'batch_size': batch_size,
+            'number_of_animes': data_module.number_of_animes,
+            'number_of_users': data_module.number_of_users,
+            'embedding_size': embedding_size,
+            'regularization_factor': regularization_factor,
+            'dropout_probability': dropout_probability,
+
+            'training_set_batch_size': data_module.training_dataloader.batch_size,
+            'training_set_batch_count': len(data_module.training_dataloader),
+            'validation_set_batch_size': data_module.validation_dataloader.batch_size,
+            'validation_set_batch_count': len(data_module.validation_dataloader),
+            'testing_set_batch_size': data_module.test_dataloader().batch_size,
+            'testing_set_batch_count': len(data_module.test_dataloader()),
+        }, file_handle, indent=4)
+
+    return best_validation_loss
+
+#########################
+# Hyperparameter Search #
+#########################
+
+def hyperparameter_search_objective(trial: optuna.Trial) -> dict:
+    learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
+    number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
+    batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(12)])
+    gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
+    embedding_size = trial.suggest_uniform('embedding_size', 100, 500)
+    regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
+    dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
+    
+    best_validation_loss = train_model(
+        learning_rate=learning_rate,
+        number_of_epochs=number_of_epochs,
+        batch_size=batch_size,
+        gradient_clip_val=gradient_clip_val,
+        embedding_size=embedding_size,
+        regularization_factor=regularization_factor,
+        dropout_probability=dropout_probability,
+        gpus=[0],
+    )
+    return best_validation_loss
+
+def hyperparameter_search() -> None:
+    study = optuna.create_study()
+    study.optimize(hyperparameter_search_objective, n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS)
+    best_params = study.best_params
+    print('Best Parameters:\n'+''.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
+    return
+
+##########
+# Driver #
+##########
+
+def train_default_mode() -> None:
+    train_model(
+        learning_rate=LEARNING_RATE,
+        number_of_epochs=NUMBER_OF_EPOCHS,
+        batch_size=BATCH_SIZE,
+        gradient_clip_val=GRADIENT_CLIP_VAL,
+        embedding_size=EMBEDDING_SIZE,
+        regularization_factor=REGULARIZATION_FACTOR,
+        dropout_probability=DROPOUT_PROBABILITY,
+        gpus=[0],
+    )
+    return
+
+@debug_on_error
+@raise_on_warn
+def main() -> None:
+    # train_default_mode()
+    hyperparameter_search()
     return
 
 if __name__ == '__main__':
