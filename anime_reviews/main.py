@@ -46,6 +46,10 @@ PROCESSED_DATA_CSV_FILE_LOCATION = './data/processed_data.csv'
 
 RATING_HISTORGRAM_PNG_FILE_LOCATION = './data/rating_histogram.png'
 
+CHECKPOINT_DIR = './checkpoints/checkpoint-{epoch:03d}-{val_checkpoint_on}'
+if not os.path.isdir('./checkpoints'):
+    os.makedirs('./checkpoints')
+
 TRAINING_LABEL, VALIDATION_LABEL, TESTING_LABEL = 0, 1, 2
 
 MSE_LOSS = nn.MSELoss(reduction='none')
@@ -61,7 +65,8 @@ TESTING_PORTION = 0.20
 MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
-NUMBER_OF_EPOCHS = 15 
+# NUMBER_OF_EPOCHS = 15
+NUMBER_OF_EPOCHS = 2
 BATCH_SIZE = 2**10
 GRADIENT_CLIP_VAL = 1.0
 
@@ -403,8 +408,9 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
 
 class PrintingCallback(pl.Callback):
 
-    def __init__(self):
+    def __init__(self, checkpoint_callback: pl.callbacks.ModelCheckpoint):
         super().__init__()
+        self.checkpoint_callback = checkpoint_callback
     
     def on_init_start(self, trainer: pl.Trainer) -> None:
         print()
@@ -460,21 +466,34 @@ class PrintingCallback(pl.Callback):
         print()
         print('Testing complete.')
         print()
+        print(f'Best validation model checkpoint saved to {self.checkpoint_callback.best_model_path} .')
+        print()
         return
 
 @debug_on_error
 @raise_on_warn
 def main() -> None:
+
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(
+            filepath=CHECKPOINT_DIR,
+            save_top_k=True,
+            verbose=True,
+            save_last=True,
+            monitor='val_checkpoint_on',
+            mode='min',
+        )
     
     trainer = pl.Trainer(
-        callbacks=[PrintingCallback()],
+        callbacks=[PrintingCallback(checkpoint_callback)],
         max_epochs=NUMBER_OF_EPOCHS,
         min_epochs=NUMBER_OF_EPOCHS,
         gradient_clip_val=GRADIENT_CLIP_VAL,
         terminate_on_nan=True,
         gpus=[0,1,2,3],
         distributed_backend='dp',
+        deterministic=False,
         logger=pl.loggers.TensorBoardLogger('lightning_logs', name='linear_cf_model'),
+        checkpoint_callback = checkpoint_callback,
     )
     
     data_module = AnimeRatingDataModule(BATCH_SIZE, NUM_WORKERS)
@@ -494,6 +513,7 @@ def main() -> None:
 
     trainer.fit(model, data_module)
     trainer.test(model, datamodule=data_module, verbose=False)
+    
     return
 
 if __name__ == '__main__':
