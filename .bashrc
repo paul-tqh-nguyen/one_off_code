@@ -10,7 +10,7 @@ alias update-settings="pushd ~/code/one_off_code/ ; git pull; git add python_sta
 alias store-git-credentials="git config --global credential.helper store"
 
 function hgrep {
-    history | grep -i $@
+    history | grep -i $@ | awk '{ $1="" ; print}'
 }
 
 function filesize {
