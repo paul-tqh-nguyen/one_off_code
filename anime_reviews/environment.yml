@@ -6,6 +6,7 @@ dependencies:
   - pandas
   - matplotlib
   - pytorch==1.4.0
+  - conda-forge::nvidia-apex
   - pip
   - pip:
     - transformers

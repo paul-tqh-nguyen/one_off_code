@@ -22,7 +22,6 @@ from misc_utilities import *
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 from torch.utils import data
 import transformers
 import pytorch_lightning as pl
@@ -65,9 +64,8 @@ TESTING_PORTION = 0.20
 MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
-# NUMBER_OF_EPOCHS = 15
-NUMBER_OF_EPOCHS = 2
-BATCH_SIZE = 2**10
+NUMBER_OF_EPOCHS = 15
+BATCH_SIZE = 256
 GRADIENT_CLIP_VAL = 1.0
 
 LEARNING_RATE = 1e-3
@@ -186,7 +184,7 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
 class AnimeRatingDataset(data.Dataset):
     def __init__(self, df: pd.DataFrame, user_id_to_user_id_index: dict, anime_id_to_anime_id_index: dict):
-        self.df = df.copy().iloc[:3000] # @todo remove this
+        self.df = df
         self.user_id_to_user_id_index = user_id_to_user_id_index
         self.anime_id_to_anime_id_index = anime_id_to_anime_id_index        
         
@@ -314,8 +312,10 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         scores = user_embedding.mul(anime_embedding).sum(dim=1)
         assert tuple(scores.shape) == (batch_size,)
 
-        regularization_loss = torch.sum(self.hparams.regularization_factor * (F.normalize(user_embedding[:,:-1], p=2, dim=1) + F.normalize(anime_embedding[:,:-1], p=2, dim=1)), dim=1)
+        get_norm = lambda batch_matrix: batch_matrix.mul(batch_matrix).sum(dim=1)
+        regularization_loss = get_norm(user_embedding[:,:-1]) + get_norm(anime_embedding[:,:-1])
         assert tuple(regularization_loss.shape) == (batch_size,)
+        assert all(regularization_loss > 0)
         return scores, regularization_loss
 
     def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
@@ -336,27 +336,11 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(regularization_loss.shape) == (batch_size,)
         mse_loss = MSE_LOSS(predicted_scores, target_scores)
         assert tuple(mse_loss.shape) == (batch_size,)
+        assert all(mse_loss > 0)
         loss = regularization_loss + mse_loss
         assert tuple(loss.shape) == (batch_size,)
-        assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size, )
+        assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size,)
         return loss, mse_loss, regularization_loss
-    
-    # def on_fit_start(self) -> None:
-    #     breakpoint()
-    #     self.logger.experiment.add_hparams(
-    #         hparam_dict = dict(self.hparams),
-    #         metric_dict = {}
-    #     )
-    #     self.logger.log_hyperparams(self.hparams)
-    #     breakpoint()
-    #     import argparse
-    #     self.logger.log_hyperparams(argparse.Namespace(**self.hparams))
-    #     breakpoint()
-    #     return
-
-    # def on_fit_end(self) -> None:
-    #     # breakpoint()
-    #     return
     
     def training_step(self, batch_dict: dict, _: int) -> pl.TrainResult:
         loss, _, _ = self._get_batch_loss(batch_dict)
@@ -476,7 +460,7 @@ def main() -> None:
 
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
             filepath=CHECKPOINT_DIR,
-            save_top_k=True,
+            save_top_k=1,
             verbose=True,
             save_last=True,
             monitor='val_checkpoint_on',
@@ -489,11 +473,13 @@ def main() -> None:
         min_epochs=NUMBER_OF_EPOCHS,
         gradient_clip_val=GRADIENT_CLIP_VAL,
         terminate_on_nan=True,
-        gpus=[0,1,2,3],
+        # gpus=[0,1,2,3],
+        gpus=[0],
         distributed_backend='dp',
         deterministic=False,
+        # precision=16, # not supported for data parallel (e.g. multiple GPUs) https://github.com/NVIDIA/apex/issues/227
         logger=pl.loggers.TensorBoardLogger('lightning_logs', name='linear_cf_model'),
-        checkpoint_callback = checkpoint_callback,
+        checkpoint_callback=checkpoint_callback,
     )
     
     data_module = AnimeRatingDataModule(BATCH_SIZE, NUM_WORKERS)
