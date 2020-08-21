@@ -27,6 +27,8 @@ from torch.utils import data
 import transformers
 import pytorch_lightning as pl
 import optuna
+import nvgpu
+import joblib
 
 # @todo make sure these are used
 
@@ -36,6 +38,8 @@ import optuna
 
 CPU_COUNT = mp.cpu_count()
 pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
+
+GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
 NUM_WORKERS = 4
 
@@ -544,7 +548,8 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
 # Hyperparameter Search #
 #########################
 
-def hyperparameter_search_objective(trial: optuna.Trial) -> dict:
+def hyperparameter_search_objective(trial: optuna.Trial, gpu_id_queue: mp.managers.BaseProxy) -> dict:
+    gpu_id = gpu_id_queue.get()
     learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
     number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
     batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(5)])
@@ -561,13 +566,18 @@ def hyperparameter_search_objective(trial: optuna.Trial) -> dict:
         embedding_size=embedding_size,
         regularization_factor=regularization_factor,
         dropout_probability=dropout_probability,
-        gpus=[0],
+        gpus=[gpu_id],
     )
     return best_validation_loss
 
 def hyperparameter_search() -> None:
     study = optuna.create_study(sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner())
-    study.optimize(hyperparameter_search_objective, n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS)
+    with Manager() as manager:
+        gpu_id_queue = manager.Queue()
+        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDs))
+        with joblib.parallel_backend("multiprocessing", n_jobs=len(GPU_IDS)):
+            objective = lambda trial: hyperparameter_search_objective(trial, gpu_id_queue)
+            study.optimize(objective, n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS, n_jobs=len(GPU_IDS))
     best_params = study.best_params
     print('Best Parameters:\n'+''.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
     return
@@ -585,7 +595,7 @@ def train_default_mode() -> None:
         embedding_size=EMBEDDING_SIZE,
         regularization_factor=REGULARIZATION_FACTOR,
         dropout_probability=DROPOUT_PROBABILITY,
-        gpus=[0,1,2,3],
+        gpus=GPU_IDS,
     )
     return
 

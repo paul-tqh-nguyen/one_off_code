@@ -10,6 +10,7 @@ dependencies:
   - conda-forge::optuna
   - pip
   - pip:
+    - nvgpu
     - transformers
     - pandarallel
     - pytorch-lightning==0.9.0rc2
