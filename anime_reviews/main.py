@@ -10,12 +10,14 @@
 
 import os
 import json
+import logging
 import more_itertools
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from pandarallel import pandarallel
 from collections import OrderedDict
+from contextlib import contextmanager
 from typing import Tuple, List, Callable, Generator, Optional
 from typing_extensions import Literal
 
@@ -38,7 +40,7 @@ import joblib
 
 DB_URL = 'sqlite:///collaborative_filtering.db'
 
-HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = False # True
+HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = True
 
 CPU_COUNT = mp.cpu_count()
 if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
@@ -86,44 +88,63 @@ EMBEDDING_SIZE = 100
 REGULARIZATION_FACTOR = 1
 DROPOUT_PROBABILITY = 0.5
 
+###########
+# Logging #
+###########
+
+LOGGER_NAME = 'anime_collaborative_filtering_logger'
+LOGGER = logging.getLogger(LOGGER_NAME)
+LOGGER_OUTPUT_FILE = './tuning_logs.txt'
+
+def _initialize_logger() -> None:
+    LOGGER.setLevel(logging.INFO)
+    logging_formatter = logging.Formatter('{asctime} - pid: {process} - threadid: {thread} - func: {funcName} - {levelname}: {message}', style='{')
+    logging_file_handler = logging.FileHandler(LOGGER_OUTPUT_FILE)
+    logging_file_handler.setFormatter(logging_formatter)
+    LOGGER.addHandler(logging_file_handler)
+    LOGGER.addHandler(logging.StreamHandler())
+    return
+
+_initialize_logger()
+
 ################
 # Data Modules #
 ################
 
 def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    print()
-    print(f'Preprocessing data.')
-    print()
+    LOGGER.info('')
+    LOGGER.info(f'Preprocessing data.')
+    LOGGER.info('')
     rating_df = pd.read_csv(RATING_CSV_FILE_LOCATION)
     assert all(rating_df[rating_df.isnull()].count() == 0)
     rating_df.drop(rating_df[rating_df.rating == -1].index, inplace=True)
     original_anime_count = len(rating_df.anime_id.unique())
     original_user_count = len(rating_df.user_id.unique())
-    print(f'Original Number of Animes: {original_anime_count:,}')
-    print(f'Original Number of Users: {original_user_count:,}')
+    LOGGER.info(f'Original Number of Animes: {original_anime_count:,}')
+    LOGGER.info(f'Original Number of Users: {original_user_count:,}')
     
-    print()
-    print(f'Anime Rating Count Threshold: {MINIMUM_NUMBER_OF_RATINGS_PER_ANIME:,}')
+    LOGGER.info('')
+    LOGGER.info(f'Anime Rating Count Threshold: {MINIMUM_NUMBER_OF_RATINGS_PER_ANIME:,}')
     anime_to_rating_count = rating_df[['anime_id', 'rating']].groupby('anime_id').count().rating
     anime_to_rating_count.drop(anime_to_rating_count[anime_to_rating_count < MINIMUM_NUMBER_OF_RATINGS_PER_ANIME].index, inplace=True)
     assert not anime_to_rating_count.isnull().any().any()
-    print(f'Number Animes Kept: {len(anime_to_rating_count):,}')
-    print(f'Number Animes Dropped: {original_anime_count - len(anime_to_rating_count):,}')
-    print(f'Min Number Of Ratings Per Anime: {int(anime_to_rating_count.min()):,}')
-    print(f'Max Number Of Ratings Per Anime: {int(anime_to_rating_count.max()):,}')
-    print(f'Mean Number Of Ratings Per Anime: {anime_to_rating_count.mean():,}')
+    LOGGER.info(f'Number Animes Kept: {len(anime_to_rating_count):,}')
+    LOGGER.info(f'Number Animes Dropped: {original_anime_count - len(anime_to_rating_count):,}')
+    LOGGER.info(f'Min Number Of Ratings Per Anime: {int(anime_to_rating_count.min()):,}')
+    LOGGER.info(f'Max Number Of Ratings Per Anime: {int(anime_to_rating_count.max()):,}')
+    LOGGER.info(f'Mean Number Of Ratings Per Anime: {anime_to_rating_count.mean():,}')
     rating_df.drop(rating_df[~rating_df.anime_id.isin(anime_to_rating_count.index)].index, inplace=True)
     
-    print()
-    print(f'User Rating Count Threshold: {MINIMUM_NUMBER_OF_RATINGS_PER_USER:,}')
+    LOGGER.info('')
+    LOGGER.info(f'User Rating Count Threshold: {MINIMUM_NUMBER_OF_RATINGS_PER_USER:,}')
     user_to_rating_count = rating_df[['user_id', 'rating']].groupby('user_id').count().rating
     user_to_rating_count.drop(user_to_rating_count[user_to_rating_count < MINIMUM_NUMBER_OF_RATINGS_PER_USER].index, inplace=True)
     assert not user_to_rating_count.isnull().any().any()
-    print(f'Number Users Kept: {len(user_to_rating_count):,}')
-    print(f'Number Users Dropped: {original_user_count - len(user_to_rating_count):,}')
-    print(f'Min Number Of Ratings Per User: {int(user_to_rating_count.min()):,}')
-    print(f'Max Number Of Ratings Per User: {int(user_to_rating_count.max()):,}')
-    print(f'Mean Number Of Ratings Per User: {user_to_rating_count.mean():,}')
+    LOGGER.info(f'Number Users Kept: {len(user_to_rating_count):,}')
+    LOGGER.info(f'Number Users Dropped: {original_user_count - len(user_to_rating_count):,}')
+    LOGGER.info(f'Min Number Of Ratings Per User: {int(user_to_rating_count.min()):,}')
+    LOGGER.info(f'Max Number Of Ratings Per User: {int(user_to_rating_count.max()):,}')
+    LOGGER.info(f'Mean Number Of Ratings Per User: {user_to_rating_count.mean():,}')
     rating_df.drop(rating_df[~rating_df.user_id.isin(user_to_rating_count.index)].index, inplace=True)
 
     def _split_group(group: pd.DataFrame) -> pd.DataFrame:
@@ -144,7 +165,7 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     
     rating_df = rating_df.groupby('user_id').parallel_apply(_split_group)
     rating_df.to_csv(PROCESSED_DATA_CSV_FILE_LOCATION, index=False)
-    print(f'Preprocessed data saved to {PROCESSED_DATA_CSV_FILE_LOCATION} .')
+    LOGGER.info(f'Preprocessed data saved to {PROCESSED_DATA_CSV_FILE_LOCATION} .')
 
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
         anime_to_rating_count.sort_values(inplace=True, ascending=False)
@@ -188,16 +209,16 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         user_rating_count_histogram_plot.grid(True)
 
         figure.savefig(RATING_HISTORGRAM_PNG_FILE_LOCATION)
-    print(f'Data distribution visualization saved to {RATING_HISTORGRAM_PNG_FILE_LOCATION} .')
+    LOGGER.info(f'Data distribution visualization saved to {RATING_HISTORGRAM_PNG_FILE_LOCATION} .')
 
-    print()
-    print(f'Data preprocessing complete.')
-    print()
+    LOGGER.info('')
+    LOGGER.info(f'Data preprocessing complete.')
+    LOGGER.info('')
     return rating_df
 
 class AnimeRatingDataset(data.Dataset):
     def __init__(self, df: pd.DataFrame, user_id_to_user_id_index: dict, anime_id_to_anime_id_index: dict):
-        self.df = df
+        self.df = df.iloc[:3000].copy()
         self.user_id_to_user_id_index = user_id_to_user_id_index
         self.anime_id_to_anime_id_index = anime_id_to_anime_id_index        
         
@@ -252,7 +273,7 @@ class AnimeRatingDataModule(pl.LightningDataModule):
         self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, drop_last=True)
         self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=len(validation_dataset)//4, num_workers=self.num_workers, shuffle=False, drop_last=True)
         self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=len(testing_dataset)//4, num_workers=self.num_workers, shuffle=False, drop_last=True)
-        assert iff(self.num_workers > 0, HYPERPARAMETER_SEARCH_IS_DISTRIBUTED)
+        assert iff(self.num_workers == 0, HYPERPARAMETER_SEARCH_IS_DISTRIBUTED)
         
         return
 
@@ -411,62 +432,62 @@ class PrintingCallback(pl.Callback):
         self.checkpoint_callback = checkpoint_callback
     
     def on_init_start(self, trainer: pl.Trainer) -> None:
-        print()
-        print('Initializing trainer.')
-        print()
+        LOGGER.info('')
+        LOGGER.info('Initializing trainer.')
+        LOGGER.info('')
         return
     
     def on_train_start(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
-        print()
-        print('Model: ')
-        print(model)
-        print()
-        print(f'Training GPUs: {trainer.gpus}')
-        print(f'Number of Epochs: {model.hparams.number_of_epochs:,}')
-        print(f'Learning Rate: {model.hparams.learning_rate:,}')
-        print(f'Number of Animes: {model.hparams.number_of_animes:,}')
-        print(f'Number of Users: {model.hparams.number_of_users:,}')
-        print(f'Embedding Size: {model.hparams.embedding_size:,}')
-        print(f'Regularization Factor: {model.hparams.regularization_factor:,}')
-        print(f'Dropout Probability: {model.hparams.dropout_probability:,}')
-        print()
-        print('Data:')
-        print()
-        print(f'Training Batch Size: {trainer.train_dataloader.batch_size:,}')
-        print(f'Validation Batch Size: {only_one(trainer.val_dataloaders).batch_size:,}')
-        print()
-        print(f'Training Batch Count: {len(trainer.train_dataloader):,}')
-        print(f'Validation Batch Count: {len(only_one(trainer.val_dataloaders)):,}')
-        print()
-        print(f'Training Example Count: {len(trainer.train_dataloader)*trainer.train_dataloader.batch_size:,}')
-        print(f'Validation Example Count: {len(only_one(trainer.val_dataloaders))*only_one(trainer.val_dataloaders).batch_size:,}')
-        print()
-        print('Starting training.')
-        print()
+        LOGGER.info('')
+        LOGGER.info('Model: ')
+        LOGGER.info(model)
+        LOGGER.info('')
+        LOGGER.info(f'Training GPUs: {trainer.gpus}')
+        LOGGER.info(f'Number of Epochs: {model.hparams.number_of_epochs:,}')
+        LOGGER.info(f'Learning Rate: {model.hparams.learning_rate:,}')
+        LOGGER.info(f'Number of Animes: {model.hparams.number_of_animes:,}')
+        LOGGER.info(f'Number of Users: {model.hparams.number_of_users:,}')
+        LOGGER.info(f'Embedding Size: {model.hparams.embedding_size:,}')
+        LOGGER.info(f'Regularization Factor: {model.hparams.regularization_factor:,}')
+        LOGGER.info(f'Dropout Probability: {model.hparams.dropout_probability:,}')
+        LOGGER.info('')
+        LOGGER.info('Data:')
+        LOGGER.info('')
+        LOGGER.info(f'Training Batch Size: {trainer.train_dataloader.batch_size:,}')
+        LOGGER.info(f'Validation Batch Size: {only_one(trainer.val_dataloaders).batch_size:,}')
+        LOGGER.info('')
+        LOGGER.info(f'Training Batch Count: {len(trainer.train_dataloader):,}')
+        LOGGER.info(f'Validation Batch Count: {len(only_one(trainer.val_dataloaders)):,}')
+        LOGGER.info('')
+        LOGGER.info(f'Training Example Count: {len(trainer.train_dataloader)*trainer.train_dataloader.batch_size:,}')
+        LOGGER.info(f'Validation Example Count: {len(only_one(trainer.val_dataloaders))*only_one(trainer.val_dataloaders).batch_size:,}')
+        LOGGER.info('')
+        LOGGER.info('Starting training.')
+        LOGGER.info('')
         return
     
     def on_train_end(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
-        print()
-        print('Training complete.')
-        print()
+        LOGGER.info('')
+        LOGGER.info('Training complete.')
+        LOGGER.info('')
         return
 
     def on_test_start(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
-        print()
-        print('Starting testing.')
-        print()
-        print(f'Testing Batch Size: {only_one(trainer.test_dataloaders).batch_size:,}')
-        print(f'Testing Example Count: {len(only_one(trainer.test_dataloaders))*only_one(trainer.test_dataloaders).batch_size:,}')
-        print(f'Testing Batch Count: {len(only_one(trainer.test_dataloaders)):,}')
-        print()
+        LOGGER.info('')
+        LOGGER.info('Starting testing.')
+        LOGGER.info('')
+        LOGGER.info(f'Testing Batch Size: {only_one(trainer.test_dataloaders).batch_size:,}')
+        LOGGER.info(f'Testing Example Count: {len(only_one(trainer.test_dataloaders))*only_one(trainer.test_dataloaders).batch_size:,}')
+        LOGGER.info(f'Testing Batch Count: {len(only_one(trainer.test_dataloaders)):,}')
+        LOGGER.info('')
         return
     
     def on_test_end(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
-        print()
-        print('Testing complete.')
-        print()
-        print(f'Best validation model checkpoint saved to {self.checkpoint_callback.best_model_path} .')
-        print()
+        LOGGER.info('')
+        LOGGER.info('Testing complete.')
+        LOGGER.info('')
+        LOGGER.info(f'Best validation model checkpoint saved to {self.checkpoint_callback.best_model_path} .')
+        LOGGER.info('')
         return
     
 def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float, gpus: List[int]) -> float:
@@ -556,9 +577,21 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
 # Hyperparameter Search #
 #########################
 
+@contextmanager
+def _training_logging_suppressed() -> Generator:
+    logger_to_original_disability = {}
+    for name, logger in logging.root.manager.loggerDict.items():
+        if isinstance(logger, logging.Logger) and name in ('lightning', LOGGER_NAME):
+            logger_to_original_disability[logger] = logger.disabled
+            logger.disabled = True
+    yield
+    for logger, original_disability in logger_to_original_disability.items():
+        logger.disabled = original_disability
+    return
+
 class HyperParameterSearchObjective:
     def __init__(self, gpu_id_queue: Optional[object]):
-        # gpu_id_queue is an mp.managers.AutoProxy[Queue] and mp.managers.BaseProxy ; cannot declare it statically since the class is generated dyanmically
+        # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classs are generated dyanmically
         self.gpu_id_queue = gpu_id_queue
 
     def __call__(self, trial: optuna.Trial) -> float:
@@ -578,19 +611,21 @@ class HyperParameterSearchObjective:
         embedding_size = trial.suggest_int('embedding_size', 100, 500)
         regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
         dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
-    
-        best_validation_loss = train_model(
-            learning_rate=learning_rate,
-            number_of_epochs=number_of_epochs,
-            batch_size=batch_size,
-            gradient_clip_val=gradient_clip_val,
-            embedding_size=embedding_size,
-            regularization_factor=regularization_factor,
-            dropout_probability=dropout_probability,
-            gpus=[gpu_id],
-        )
+        
+        with _training_logging_suppressed():
+            with warnings_suppressed(): 
+                best_validation_loss = train_model(
+                    learning_rate=learning_rate,
+                    number_of_epochs=number_of_epochs,
+                    batch_size=batch_size,
+                    gradient_clip_val=gradient_clip_val,
+                    embedding_size=embedding_size,
+                    regularization_factor=regularization_factor,
+                    dropout_probability=dropout_probability,
+                    gpus=[gpu_id],
+                )
         return best_validation_loss
-    
+
 def hyperparameter_search() -> None:
     study = optuna.create_study(study_name='collaborative-filtering', sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=DB_URL, load_if_exists=True)
     optimize_kawrgs = dict(
@@ -610,7 +645,7 @@ def hyperparameter_search() -> None:
             with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
                 study.optimize(**optimize_kawrgs)
     best_params = study.best_params
-    print('Best Parameters:\n'+''.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
+    LOGGER.info('Best Parameters:\n'+''.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
     return
 
 ##########
@@ -631,13 +666,12 @@ def train_default_mode() -> None:
     return
 
 @debug_on_error
-#@raise_on_warn
 def main() -> None:
-    # train_default_mode()
-    hyperparameter_search()
+    train_default_mode()
+    # hyperparameter_search()
     breakpoint()
     return
 
 if __name__ == '__main__':
     main()
-        
+

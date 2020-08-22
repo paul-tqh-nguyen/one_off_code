@@ -417,7 +417,7 @@ def implies(antecedent: bool, consequent: bool) -> bool:
     return not antecedent or consequent
 
 def iff(antecedent: bool, consequent: bool) -> bool:
-    return (not antecedent or consequent) and (not consequent or antecedent)
+    return bool(antecedent) == bool(consequent)
 
 UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
