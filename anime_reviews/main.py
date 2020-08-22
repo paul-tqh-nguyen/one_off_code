@@ -39,8 +39,11 @@ import joblib
 ###########
 
 DB_URL = 'sqlite:///collaborative_filtering.db'
+STUDY_NAME = 'collaborative-filtering'
 
 HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = True
+NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 1 # 200
+NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 5
 
 CPU_COUNT = mp.cpu_count()
 if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
@@ -72,8 +75,6 @@ TESTING_PORTION = 0.20
 
 MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
-
-NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
 
 ###########################
 # Default Hyperparameters #
@@ -218,7 +219,7 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
 class AnimeRatingDataset(data.Dataset):
     def __init__(self, df: pd.DataFrame, user_id_to_user_id_index: dict, anime_id_to_anime_id_index: dict):
-        self.df = df.iloc[:3000].copy()
+        self.df = df.iloc[:3000].copy() # @todo remove this
         self.user_id_to_user_id_index = user_id_to_user_id_index
         self.anime_id_to_anime_id_index = anime_id_to_anime_id_index        
         
@@ -489,17 +490,21 @@ class PrintingCallback(pl.Callback):
         LOGGER.info(f'Best validation model checkpoint saved to {self.checkpoint_callback.best_model_path} .')
         LOGGER.info('')
         return
+
+def checkpoint_directory_from_hyperparameters(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float) -> str:
+    checkpoint_dir = f'./checkpoints/' \
+        f'linear_cf_lr_{learning_rate:.5g}_' \
+        f'epochs_{number_of_epochs}_' \
+        f'batch_{batch_size}_' \
+        f'gradient_clip_{gradient_clip_val:.3g}_' \
+        f'embed_{embedding_size}_' \
+        f'regularization_{regularization_factor:.5g}_' \
+        f'dropout_{dropout_probability:.5g}'
+    return checkpoint_dir
     
 def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float, gpus: List[int]) -> float:
 
-    checkpoint_dir = f'./checkpoints/' \
-        f'linear_cf_lr_{learning_rate}_' \
-        f'epochs_{number_of_epochs}_' \
-        f'batch_{batch_size}_' \
-        f'gradient_clip_{gradient_clip_val}_' \
-        f'embed_{embedding_size}_' \
-        f'regularization_{regularization_factor}_' \
-        f'dropout_{dropout_probability}'
+    checkpoint_dir = checkpoint_directory_from_hyperparameters(learning_rate, number_of_epochs, batch_size, gradient_clip_val, embedding_size, regularization_factor, dropout_probability)
     if not os.path.isdir(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
@@ -604,30 +609,31 @@ class HyperParameterSearchObjective:
         # embedding_size = trial.suggest_int('embedding_size', 100, 500)
         # regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
         # dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
-        learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        number_of_epochs = trial.suggest_int('number_of_epochs', 3, 6)
+        learning_rate = trial.suggest_uniform('learning_rate', 1e-3, 1e-3)
+        number_of_epochs = trial.suggest_int('number_of_epochs', 3, 3)
         batch_size = trial.suggest_categorical('batch_size', [1024])
         gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-        embedding_size = trial.suggest_int('embedding_size', 100, 500)
+        embedding_size = trial.suggest_int('embedding_size', 100, 100)
         regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
         dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
         
         with _training_logging_suppressed():
-            with warnings_suppressed(): 
-                best_validation_loss = train_model(
-                    learning_rate=learning_rate,
-                    number_of_epochs=number_of_epochs,
-                    batch_size=batch_size,
-                    gradient_clip_val=gradient_clip_val,
-                    embedding_size=embedding_size,
-                    regularization_factor=regularization_factor,
-                    dropout_probability=dropout_probability,
-                    gpus=[gpu_id],
-                )
+            with suppressed_output():
+                with warnings_suppressed():
+                    best_validation_loss = train_model(
+                        learning_rate=learning_rate,
+                        number_of_epochs=number_of_epochs,
+                        batch_size=batch_size,
+                        gradient_clip_val=gradient_clip_val,
+                        embedding_size=embedding_size,
+                        regularization_factor=regularization_factor,
+                        dropout_probability=dropout_probability,
+                        gpus=[gpu_id],
+                    )
         return best_validation_loss
 
 def hyperparameter_search() -> None:
-    study = optuna.create_study(study_name='collaborative-filtering', sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=DB_URL, load_if_exists=True)
+    study = optuna.create_study(study_name=STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=DB_URL, direction='minimize', load_if_exists=True)
     optimize_kawrgs = dict(
         n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS,
         gc_after_trial=True,
@@ -645,7 +651,33 @@ def hyperparameter_search() -> None:
             with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
                 study.optimize(**optimize_kawrgs)
     best_params = study.best_params
-    LOGGER.info('Best Parameters:\n'+''.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
+    LOGGER.info('Best Validation Parameters:\n'+'\n'.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
+    trials_df = study.trials_dataframe()
+    best_trials_df = trials_df.nsmallest(4, 'value')
+    for row in best_trials_df.itertuples():
+        hyperparameters = {attr_name[6:]: getattr(row, attr_name) for attr_name in dir(row) if attr_name.startswith('param_')}
+        checkpoint_dir = checkpoint_directory_from_hyperparameters(**hyperparameters)
+        result_summary_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
+        with open(result_summary_json_file_location, 'r') as file_handle:
+            result_summary_dict = json.loads(file_handle.read())
+        LOGGER.info('')
+        LOGGER.info('best_validation_loss': {result_summary_dict['best_validation_loss']})
+        LOGGER.info('best_validation_model_path': {result_summary_dict['best_validation_model_path']})
+        LOGGER.info('')
+        LOGGER.info('testing_loss': {result_summary_dict['testing_loss']})
+        LOGGER.info('testing_regularization_loss': {result_summary_dict['testing_regularization_loss']})
+        LOGGER.info('testing_mse_loss': {result_summary_dict['testing_mse_loss']})
+        LOGGER.info('')
+        LOGGER.info('learning_rate': {result_summary_dict['learning_rate']})
+        LOGGER.info('number_of_epochs': {result_summary_dict['number_of_epochs']})
+        LOGGER.info('batch_size': {result_summary_dict['batch_size']})
+        LOGGER.info('number_of_animes': {result_summary_dict['number_of_animes']})
+        LOGGER.info('number_of_users': {result_summary_dict['number_of_users']})
+        LOGGER.info('embedding_size': {result_summary_dict['embedding_size']})
+        LOGGER.info('regularization_factor': {result_summary_dict['regularization_factor']})
+        LOGGER.info('dropout_probability': {result_summary_dict['dropout_probability']})
+        LOGGER.info('')
+    breakpoint()
     return
 
 ##########
@@ -667,9 +699,8 @@ def train_default_mode() -> None:
 
 @debug_on_error
 def main() -> None:
-    train_default_mode()
-    # hyperparameter_search()
-    breakpoint()
+    # train_default_mode()
+    hyperparameter_search()
     return
 
 if __name__ == '__main__':
