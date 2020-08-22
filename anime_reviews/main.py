@@ -10,14 +10,12 @@
 
 import os
 import json
-import logging
 import more_itertools
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from pandarallel import pandarallel
 from collections import OrderedDict
-from contextlib import contextmanager
 from typing import Tuple, List, Callable, Generator
 from typing_extensions import Literal
 
@@ -70,19 +68,6 @@ MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
 NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
-
-##################################
-# Application-Specific Utilities #
-##################################
-
-@contextmanager
-def _pytorch_lightning_logging_suppressed() -> Generator:
-    lightning_logger = logging.root.manager.loggerDict['lightning']
-    original_disable_value = lightning_logger.disabled
-    lightning_logger.disabled = True
-    yield
-    lightning_logger.disabled = original_disable_value
-    return
 
 ###########################
 # Default Hyperparameters #
