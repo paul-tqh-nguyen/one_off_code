@@ -603,17 +603,17 @@ class HyperParameterSearchObjective:
         gpu_id = self.gpu_id_queue.get() if self.gpu_id_queue else DEFAULT_GPU
         # @todo turn these back on
         # learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        # number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
-        # batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(5)])
+        # number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
+        # batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(5)]))
         # gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-        # embedding_size = trial.suggest_int('embedding_size', 100, 500)
+        # embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
         # regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
         # dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
         learning_rate = trial.suggest_uniform('learning_rate', 1e-3, 1e-3)
-        number_of_epochs = trial.suggest_int('number_of_epochs', 3, 3)
-        batch_size = trial.suggest_categorical('batch_size', [1024])
+        number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 3))
+        batch_size = int(trial.suggest_categorical('batch_size', [1024]))
         gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-        embedding_size = trial.suggest_int('embedding_size', 100, 100)
+        embedding_size = int(trial.suggest_int('embedding_size', 100, 100))
         regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
         dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
         
@@ -653,9 +653,10 @@ def hyperparameter_search() -> None:
     best_params = study.best_params
     LOGGER.info('Best Validation Parameters:\n'+'\n'.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
     trials_df = study.trials_dataframe()
-    best_trials_df = trials_df.nsmallest(4, 'value')
+    best_trials_df = trials_df.nsmallest(NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY, 'value')
+    parameter_name_prefix = 'params_'
     for rank, row in enumerate(best_trials_df.itertuples()):
-        hyperparameters = {attr_name[6:]: getattr(row, attr_name) for attr_name in dir(row) if attr_name.startswith('param_')}
+        hyperparameters = {attr_name[len(parameter_name_prefix):]: getattr(row, attr_name) for attr_name in dir(row) if attr_name.startswith(parameter_name_prefix)}
         checkpoint_dir = checkpoint_directory_from_hyperparameters(**hyperparameters)
         result_summary_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
         with open(result_summary_json_file_location, 'r') as file_handle:
@@ -672,7 +673,7 @@ def hyperparameter_search() -> None:
         LOGGER.info(f'Testing MSE Loss: {result_summary_dict["testing_mse_loss"]}')
         LOGGER.info('')
         LOGGER.info(f'Learning Rate: {result_summary_dict["learning_rate"]}')
-        Logger.info(f'Number of Epochs: {result_summary_dict["number_of_epochs"]}')
+        LOGGER.info(f'Number of Epochs: {result_summary_dict["number_of_epochs"]}')
         LOGGER.info(f'Batch Size: {result_summary_dict["batch_size"]}')
         LOGGER.info(f'number of Animes: {result_summary_dict["number_of_animes"]}')
         LOGGER.info(f'Number of Users: {result_summary_dict["number_of_users"]}')
