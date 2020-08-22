@@ -563,6 +563,7 @@ class HyperParameterSearchObjective:
 
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get() if self.gpu_id_queue else DEFAULT_GPU
+        # @todo turn these back on
         # learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
         # number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
         # batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(5)])
@@ -595,6 +596,7 @@ def hyperparameter_search() -> None:
     optimize_kawrgs = dict(
         n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS,
         gc_after_trial=True,
+        catch=(Exception,),
     )
     if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
         optimize_kawrgs['func'] = HyperParameterSearchObjective(None)
