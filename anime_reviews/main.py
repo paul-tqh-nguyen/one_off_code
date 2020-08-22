@@ -585,7 +585,7 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
 
 @contextmanager
 def _training_logging_suppressed() -> Generator:
-    logger = logging.root.manager.loggerDict['lightning']:
+    logger = logging.root.manager.loggerDict['lightning']
     lightning_original_disability = logger.disabled
     logger.disabled = True
     logger_stream_handler_original_stream = LOGGER_STREAM_HANDLER.stream
