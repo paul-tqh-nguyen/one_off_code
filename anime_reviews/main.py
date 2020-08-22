@@ -10,13 +10,15 @@
 
 import os
 import json
+import logging
 import more_itertools
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
 from pandarallel import pandarallel
 from collections import OrderedDict
-from typing import Tuple, List, Callable
+from contextlib import contextmanager
+from typing import Tuple, List, Callable, Generator
 from typing_extensions import Literal
 
 from misc_utilities import *
@@ -68,6 +70,19 @@ MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
 MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 
 NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
+
+##################################
+# Application-Specific Utilities #
+##################################
+
+@contextmanager
+def _pytorch_lightning_logging_suppressed() -> Generator:
+    lightning_logger = logging.root.manager.loggerDict['lightning']
+    original_disable_value = lightning_logger.disabled
+    lightning_logger.disabled = True
+    yield
+    lightning_logger.disabled = original_disable_value
+    return
 
 ###########################
 # Default Hyperparameters #
@@ -243,7 +258,7 @@ class AnimeRatingDataModule(pl.LightningDataModule):
         training_dataset = AnimeRatingDataset(training_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
         validation_dataset = AnimeRatingDataset(validation_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
         testing_dataset = AnimeRatingDataset(testing_df, self.user_id_to_user_id_index, self.anime_id_to_anime_id_index)
-        
+
         # https://github.com/PyTorchLightning/pytorch-lightning/issues/408 forces us to use shuffle in training and drop_last pervasively
         self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, drop_last=True)
         self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=len(validation_dataset)//4, num_workers=self.num_workers, shuffle=False, drop_last=True)
