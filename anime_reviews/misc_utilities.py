@@ -358,6 +358,9 @@ def xor(disjunct_a: bool, disjunct_b: bool) -> bool:
 def implies(antecedent: bool, consequent: bool) -> bool:
     return not antecedent or consequent
 
+def iff(antecedent: bool, consequent: bool) -> bool:
+    return (not antecedent or consequent) and (not consequent or antecedent)
+
 UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
 
 from typing import Generator

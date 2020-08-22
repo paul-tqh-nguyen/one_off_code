@@ -16,7 +16,7 @@ import pandas as pd
 import multiprocessing as mp
 from pandarallel import pandarallel
 from collections import OrderedDict
-from typing import Tuple, List, Callable, Generator
+from typing import Tuple, List, Callable, Generator, Optional
 from typing_extensions import Literal
 
 from misc_utilities import *
@@ -36,14 +36,18 @@ import joblib
 # Globals #
 ###########
 
-CPU_COUNT = mp.cpu_count()
-pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
-
-GPU_IDS = eager_map(int, nvgpu.available_gpus())
-
 DB_URL = 'sqlite:///collaborative_filtering.db'
 
-NUM_WORKERS = 0
+HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = False # True
+
+CPU_COUNT = mp.cpu_count()
+if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
+    pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
+
+GPU_IDS = eager_map(int, nvgpu.available_gpus())
+DEFAULT_GPU = GPU_IDS[0]
+
+NUM_WORKERS = 0 if HYPERPARAMETER_SEARCH_IS_DISTRIBUTED else 2
 
 if not os.path.isdir('./checkpoints'):
     os.makedirs('./checkpoints')
@@ -248,6 +252,7 @@ class AnimeRatingDataModule(pl.LightningDataModule):
         self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=True, drop_last=True)
         self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=len(validation_dataset)//4, num_workers=self.num_workers, shuffle=False, drop_last=True)
         self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=len(testing_dataset)//4, num_workers=self.num_workers, shuffle=False, drop_last=True)
+        assert iff(self.num_workers > 0, HYPERPARAMETER_SEARCH_IS_DISTRIBUTED)
         
         return
 
@@ -345,7 +350,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(regularization_loss.shape) == (batch_size,)
         mse_loss = MSE_LOSS(predicted_scores, target_scores)
         assert tuple(mse_loss.shape) == (batch_size,)
-        assert all(mse_loss > 0)
+        assert mse_loss.gt(0).all()
         loss = regularization_loss + mse_loss
         assert tuple(loss.shape) == (batch_size,)
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size,)
@@ -416,6 +421,7 @@ class PrintingCallback(pl.Callback):
         print('Model: ')
         print(model)
         print()
+        print(f'Training GPUs: {trainer.gpus}')
         print(f'Number of Epochs: {model.hparams.number_of_epochs:,}')
         print(f'Learning Rate: {model.hparams.learning_rate:,}')
         print(f'Number of Animes: {model.hparams.number_of_animes:,}')
@@ -551,15 +557,22 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
 #########################
 
 class HyperParameterSearchObjective:
-    def __init__(self, gpu_id_queue: object):
+    def __init__(self, gpu_id_queue: Optional[object]):
         # gpu_id_queue is an mp.managers.AutoProxy[Queue] and mp.managers.BaseProxy ; cannot declare it statically since the class is generated dyanmically
         self.gpu_id_queue = gpu_id_queue
 
     def __call__(self, trial: optuna.Trial) -> float:
-        gpu_id = self.gpu_id_queue.get()
+        gpu_id = self.gpu_id_queue.get() if self.gpu_id_queue else DEFAULT_GPU
+        # learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
+        # number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
+        # batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(5)])
+        # gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
+        # embedding_size = trial.suggest_int('embedding_size', 100, 500)
+        # regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
+        # dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
         learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
-        batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(5)])
+        number_of_epochs = trial.suggest_int('number_of_epochs', 3, 6)
+        batch_size = trial.suggest_categorical('batch_size', [1024])
         gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
         embedding_size = trial.suggest_int('embedding_size', 100, 500)
         regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
@@ -578,12 +591,22 @@ class HyperParameterSearchObjective:
         return best_validation_loss
     
 def hyperparameter_search() -> None:
-    study = optuna.create_study(sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=DB_URL, load_if_exists=True)
-    with mp.Manager() as manager:
-        gpu_id_queue = manager.Queue()
-        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
-        with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
-            study.optimize(HyperParameterSearchObjective(gpu_id_queue), n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS, n_jobs=len(GPU_IDS))
+    study = optuna.create_study(study_name='collaborative-filtering', sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=DB_URL, load_if_exists=True)
+    optimize_kawrgs = dict(
+        n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS,
+        gc_after_trial=True,
+    )
+    if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
+        optimize_kawrgs['func'] = HyperParameterSearchObjective(None)
+        study.optimize(**optimize_kawrgs)
+    else:
+        with mp.Manager() as manager:
+            gpu_id_queue = manager.Queue()
+            more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
+            optimize_kawrgs['func'] = HyperParameterSearchObjective(gpu_id_queue)
+            optimize_kawrgs['n_jobs'] = len(GPU_IDS)
+            with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
+                study.optimize(**optimize_kawrgs)
     best_params = study.best_params
     print('Best Parameters:\n'+''.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
     return
