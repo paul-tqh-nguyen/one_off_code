@@ -219,7 +219,7 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
 class AnimeRatingDataset(data.Dataset):
     def __init__(self, df: pd.DataFrame, user_id_to_user_id_index: dict, anime_id_to_anime_id_index: dict):
-        self.df = df.iloc[:3000].copy() # @todo remove this
+        self.df = df
         self.user_id_to_user_id_index = user_id_to_user_id_index
         self.anime_id_to_anime_id_index = anime_id_to_anime_id_index        
         
@@ -601,22 +601,25 @@ class HyperParameterSearchObjective:
 
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get() if self.gpu_id_queue else DEFAULT_GPU
-        # @todo turn these back on
-        # learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        # number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
-        # batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(5)]))
-        # gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-        # embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
-        # regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
-        # dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
-        learning_rate = trial.suggest_uniform('learning_rate', 1e-3, 1e-3)
-        number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 3))
-        batch_size = int(trial.suggest_categorical('batch_size', [1024]))
+        learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
+        number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
+        batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(5)]))
         gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-        embedding_size = int(trial.suggest_int('embedding_size', 100, 100))
+        embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
         regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
         dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
-
+        # @todo remove these debugging lines
+        # learning_rate = trial.suggest_uniform('learning_rate', 1e-3, 1e-3)
+        # number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 3))
+        # batch_size = int(trial.suggest_categorical('batch_size', [1024]))
+        # gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
+        # embedding_size = int(trial.suggest_int('embedding_size', 100, 100))
+        # regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
+        # dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
+        
+        checkpoint_dir = checkpoint_directory_from_hyperparameters(learning_rate, number_of_epochs, batch_size, gradient_clip_val, embedding_size, regularization_factor, dropout_probability)
+        LOGGER.info(f'Starting raining for {checkpoint_dir} on GPU {gpu_id}.')
+        
         try:
             with _training_logging_suppressed():
                 with suppressed_output():
