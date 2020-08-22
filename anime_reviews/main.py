@@ -42,7 +42,7 @@ DB_URL = 'sqlite:///collaborative_filtering.db'
 STUDY_NAME = 'collaborative-filtering'
 
 HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = True
-NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 1 # 200
+NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
 NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 5
 
 CPU_COUNT = mp.cpu_count()
@@ -501,7 +501,7 @@ def checkpoint_directory_from_hyperparameters(learning_rate: float, number_of_ep
         f'regularization_{regularization_factor:.5g}_' \
         f'dropout_{dropout_probability:.5g}'
     return checkpoint_dir
-    
+
 def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float, gpus: List[int]) -> float:
 
     checkpoint_dir = checkpoint_directory_from_hyperparameters(learning_rate, number_of_epochs, batch_size, gradient_clip_val, embedding_size, regularization_factor, dropout_probability)
@@ -515,7 +515,7 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
             monitor='val_checkpoint_on',
             mode='min',
         )
-    
+
     trainer = pl.Trainer(
         callbacks=[PrintingCallback(checkpoint_callback)],
         max_epochs=number_of_epochs,
@@ -529,11 +529,11 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
         logger=pl.loggers.TensorBoardLogger(checkpoint_dir, name='linear_cf_model'),
         checkpoint_callback=checkpoint_callback,
     )
-    
+
     data_module = AnimeRatingDataModule(batch_size, NUM_WORKERS)
     data_module.prepare_data()
     data_module.setup()
-    
+
     model = LinearColaborativeFilteringModel(
         learning_rate = learning_rate,
         number_of_epochs = number_of_epochs,
@@ -616,20 +616,25 @@ class HyperParameterSearchObjective:
         embedding_size = int(trial.suggest_int('embedding_size', 100, 100))
         regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
         dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
-        
-        with _training_logging_suppressed():
-            with suppressed_output():
-                with warnings_suppressed():
-                    best_validation_loss = train_model(
-                        learning_rate=learning_rate,
-                        number_of_epochs=number_of_epochs,
-                        batch_size=batch_size,
-                        gradient_clip_val=gradient_clip_val,
-                        embedding_size=embedding_size,
-                        regularization_factor=regularization_factor,
-                        dropout_probability=dropout_probability,
-                        gpus=[gpu_id],
-                    )
+
+        try:
+            with _training_logging_suppressed():
+                with suppressed_output():
+                    with warnings_suppressed():
+                        best_validation_loss = train_model(
+                            learning_rate=learning_rate,
+                            number_of_epochs=number_of_epochs,
+                            batch_size=batch_size,
+                            gradient_clip_val=gradient_clip_val,
+                            embedding_size=embedding_size,
+                            regularization_factor=regularization_factor,
+                            dropout_probability=dropout_probability,
+                            gpus=[gpu_id],
+                        )
+        except Exception as e:
+            self.gpu_id_queue.put(gpu_id)
+            raise e
+        self.gpu_id_queue.put(gpu_id)
         return best_validation_loss
 
 def hyperparameter_search() -> None:
@@ -681,7 +686,6 @@ def hyperparameter_search() -> None:
         LOGGER.info(f'Regularization Factor: {result_summary_dict["regularization_factor"]}')
         LOGGER.info(f'Dropout Probability: {result_summary_dict["dropout_probability"]}')
         LOGGER.info('')
-    breakpoint()
     return
 
 ##########
