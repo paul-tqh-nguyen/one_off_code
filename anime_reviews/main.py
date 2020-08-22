@@ -610,14 +610,6 @@ class HyperParameterSearchObjective:
         embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
         regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
         dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
-        # @todo remove these debugging lines
-        # learning_rate = trial.suggest_uniform('learning_rate', 1e-3, 1e-3)
-        # number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 3))
-        # batch_size = int(trial.suggest_categorical('batch_size', [1024]))
-        # gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-        # embedding_size = int(trial.suggest_int('embedding_size', 100, 100))
-        # regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
-        # dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
         
         checkpoint_dir = checkpoint_directory_from_hyperparameters(learning_rate, number_of_epochs, batch_size, gradient_clip_val, embedding_size, regularization_factor, dropout_probability)
         LOGGER.info(f'Starting training for {checkpoint_dir} on GPU {gpu_id}.')
