@@ -96,6 +96,7 @@ DROPOUT_PROBABILITY = 0.5
 LOGGER_NAME = 'anime_collaborative_filtering_logger'
 LOGGER = logging.getLogger(LOGGER_NAME)
 LOGGER_OUTPUT_FILE = './tuning_logs.txt'
+LOGGER_STREAM_HANDLER = logging.StreamHandler()
 
 def _initialize_logger() -> None:
     LOGGER.setLevel(logging.INFO)
@@ -103,7 +104,7 @@ def _initialize_logger() -> None:
     logging_file_handler = logging.FileHandler(LOGGER_OUTPUT_FILE)
     logging_file_handler.setFormatter(logging_formatter)
     LOGGER.addHandler(logging_file_handler)
-    LOGGER.addHandler(logging.StreamHandler())
+    LOGGER.addHandler(LOGGER_STREAM_HANDLER)
     return
 
 _initialize_logger()
@@ -584,14 +585,15 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
 
 @contextmanager
 def _training_logging_suppressed() -> Generator:
-    logger_to_original_disability = {}
-    for name, logger in logging.root.manager.loggerDict.items():
-        if isinstance(logger, logging.Logger) and name in ('lightning', LOGGER_NAME):
-            logger_to_original_disability[logger] = logger.disabled
-            logger.disabled = True
-    yield
-    for logger, original_disability in logger_to_original_disability.items():
-        logger.disabled = original_disability
+    logger = logging.root.manager.loggerDict['lightning']:
+    lightning_original_disability = logger.disabled
+    logger.disabled = True
+    logger_stream_handler_original_stream = LOGGER_STREAM_HANDLER.stream
+    with open(os.devnull, 'w') as dev_null:
+        LOGGER_STREAM_HANDLER.setStream(devnull)
+        yield
+    logger.disabled = lightning_original_disability
+    LOGGER_STREAM_HANDLER.setStream(logger_stream_handler_original_stream)
     return
 
 class HyperParameterSearchObjective:
@@ -618,7 +620,7 @@ class HyperParameterSearchObjective:
         # dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
         
         checkpoint_dir = checkpoint_directory_from_hyperparameters(learning_rate, number_of_epochs, batch_size, gradient_clip_val, embedding_size, regularization_factor, dropout_probability)
-        LOGGER.info(f'Starting raining for {checkpoint_dir} on GPU {gpu_id}.')
+        LOGGER.info(f'Starting training for {checkpoint_dir} on GPU {gpu_id}.')
         
         try:
             with _training_logging_suppressed():
