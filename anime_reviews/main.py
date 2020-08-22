@@ -590,7 +590,7 @@ def _training_logging_suppressed() -> Generator:
     logger.disabled = True
     logger_stream_handler_original_stream = LOGGER_STREAM_HANDLER.stream
     with open(os.devnull, 'w') as dev_null:
-        LOGGER_STREAM_HANDLER.setStream(devnull)
+        LOGGER_STREAM_HANDLER.setStream(dev_null)
         yield
     logger.disabled = lightning_original_disability
     LOGGER_STREAM_HANDLER.setStream(logger_stream_handler_original_stream)
