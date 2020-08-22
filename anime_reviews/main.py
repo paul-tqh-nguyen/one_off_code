@@ -41,7 +41,9 @@ pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
 
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
-NUM_WORKERS = 4
+DB_URL = 'sqlite:///collaborative_filtering.db'
+
+NUM_WORKERS = 0
 
 if not os.path.isdir('./checkpoints'):
     os.makedirs('./checkpoints')
@@ -191,7 +193,7 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
 class AnimeRatingDataset(data.Dataset):
     def __init__(self, df: pd.DataFrame, user_id_to_user_id_index: dict, anime_id_to_anime_id_index: dict):
-        self.df = df.copy().iloc[:3000] # @todo remove this
+        self.df = df
         self.user_id_to_user_id_index = user_id_to_user_id_index
         self.anime_id_to_anime_id_index = anime_id_to_anime_id_index        
         
@@ -322,7 +324,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         get_norm = lambda batch_matrix: batch_matrix.mul(batch_matrix).sum(dim=1)
         regularization_loss = get_norm(user_embedding[:,:-1]) + get_norm(anime_embedding[:,:-1])
         assert tuple(regularization_loss.shape) == (batch_size,)
-        assert regularization_loss.ge(0).all() # @todo strengthen this to use .gt(0)
+        assert regularization_loss.gt(0).all()
         return scores, regularization_loss
 
     def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
@@ -548,36 +550,40 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
 # Hyperparameter Search #
 #########################
 
-def hyperparameter_search_objective(trial: optuna.Trial, gpu_id_queue: mp.managers.BaseProxy) -> dict:
-    gpu_id = gpu_id_queue.get()
-    learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-    number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
-    batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(5)])
-    gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-    embedding_size = trial.suggest_int('embedding_size', 100, 500)
-    regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
-    dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
-    
-    best_validation_loss = train_model(
-        learning_rate=learning_rate,
-        number_of_epochs=number_of_epochs,
-        batch_size=batch_size,
-        gradient_clip_val=gradient_clip_val,
-        embedding_size=embedding_size,
-        regularization_factor=regularization_factor,
-        dropout_probability=dropout_probability,
-        gpus=[gpu_id],
-    )
-    return best_validation_loss
+class HyperParameterSearchObjective:
+    def __init__(self, gpu_id_queue: object):
+        # gpu_id_queue is an mp.managers.AutoProxy[Queue] and mp.managers.BaseProxy ; cannot declare it statically since the class is generated dyanmically
+        self.gpu_id_queue = gpu_id_queue
 
+    def __call__(self, trial: optuna.Trial) -> float:
+        gpu_id = self.gpu_id_queue.get()
+        learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
+        number_of_epochs = trial.suggest_int('number_of_epochs', 3, 15)
+        batch_size = trial.suggest_categorical('batch_size', [2**power for power in range(5)])
+        gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
+        embedding_size = trial.suggest_int('embedding_size', 100, 500)
+        regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
+        dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
+    
+        best_validation_loss = train_model(
+            learning_rate=learning_rate,
+            number_of_epochs=number_of_epochs,
+            batch_size=batch_size,
+            gradient_clip_val=gradient_clip_val,
+            embedding_size=embedding_size,
+            regularization_factor=regularization_factor,
+            dropout_probability=dropout_probability,
+            gpus=[gpu_id],
+        )
+        return best_validation_loss
+    
 def hyperparameter_search() -> None:
-    study = optuna.create_study(sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner())
-    with Manager() as manager:
+    study = optuna.create_study(sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=DB_URL, load_if_exists=True)
+    with mp.Manager() as manager:
         gpu_id_queue = manager.Queue()
-        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDs))
-        with joblib.parallel_backend("multiprocessing", n_jobs=len(GPU_IDS)):
-            objective = lambda trial: hyperparameter_search_objective(trial, gpu_id_queue)
-            study.optimize(objective, n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS, n_jobs=len(GPU_IDS))
+        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
+        with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
+            study.optimize(HyperParameterSearchObjective(gpu_id_queue), n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS, n_jobs=len(GPU_IDS))
     best_params = study.best_params
     print('Best Parameters:\n'+''.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
     return
@@ -600,10 +606,11 @@ def train_default_mode() -> None:
     return
 
 @debug_on_error
-@raise_on_warn
+#@raise_on_warn
 def main() -> None:
     # train_default_mode()
     hyperparameter_search()
+    breakpoint()
     return
 
 if __name__ == '__main__':
