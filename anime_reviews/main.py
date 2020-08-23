@@ -109,8 +109,6 @@ def _initialize_logger() -> None:
 
 _initialize_logger()
 
-breakpoint()
-
 ################
 # Data Modules #
 ################
