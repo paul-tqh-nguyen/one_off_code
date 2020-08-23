@@ -4,6 +4,7 @@ dependencies:
   - pytorch
   - pandas
   - tqdm
+  - beautifulsoup4
   - psutil
   - pip
   - pip:
