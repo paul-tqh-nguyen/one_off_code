@@ -1,0 +1,10 @@
+name: nyc_food
+dependencies:
+  - python=3.7
+  - pytorch
+  - pandas
+  - tqdm
+  - psutil
+  - pip
+  - pip:
+    - pyppeteer
