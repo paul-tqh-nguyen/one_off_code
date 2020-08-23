@@ -109,6 +109,8 @@ def _initialize_logger() -> None:
 
 _initialize_logger()
 
+breakpoint()
+
 ################
 # Data Modules #
 ################
@@ -612,22 +614,21 @@ class HyperParameterSearchObjective:
         dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
         
         checkpoint_dir = checkpoint_directory_from_hyperparameters(learning_rate, number_of_epochs, batch_size, gradient_clip_val, embedding_size, regularization_factor, dropout_probability)
-        LOGGER.info(f'Starting training for {checkpoint_dir} on GPU {gpu_id}.')
+        print(f'Starting training for {checkpoint_dir} on GPU {gpu_id}.')
         
         try:
-            with _training_logging_suppressed():
-                with suppressed_output():
-                    with warnings_suppressed():
-                        best_validation_loss = train_model(
-                            learning_rate=learning_rate,
-                            number_of_epochs=number_of_epochs,
-                            batch_size=batch_size,
-                            gradient_clip_val=gradient_clip_val,
-                            embedding_size=embedding_size,
-                            regularization_factor=regularization_factor,
-                            dropout_probability=dropout_probability,
-                            gpus=[gpu_id],
-                        )
+            with suppressed_output():
+                with warnings_suppressed():
+                    best_validation_loss = train_model(
+                        learning_rate=learning_rate,
+                        number_of_epochs=number_of_epochs,
+                        batch_size=batch_size,
+                        gradient_clip_val=gradient_clip_val,
+                        embedding_size=embedding_size,
+                        regularization_factor=regularization_factor,
+                        dropout_probability=dropout_probability,
+                        gpus=[gpu_id],
+                    )
         except Exception as e:
             self.gpu_id_queue.put(gpu_id)
             raise e
@@ -641,17 +642,18 @@ def hyperparameter_search() -> None:
         gc_after_trial=True,
         catch=(Exception,),
     )
-    if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
-        optimize_kawrgs['func'] = HyperParameterSearchObjective(None)
-        study.optimize(**optimize_kawrgs)
-    else:
-        with mp.Manager() as manager:
-            gpu_id_queue = manager.Queue()
-            more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
-            optimize_kawrgs['func'] = HyperParameterSearchObjective(gpu_id_queue)
-            optimize_kawrgs['n_jobs'] = len(GPU_IDS)
-            with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
-                study.optimize(**optimize_kawrgs)
+    with _training_logging_suppressed():
+        if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
+            optimize_kawrgs['func'] = HyperParameterSearchObjective(None)
+            study.optimize(**optimize_kawrgs)
+        else:
+            with mp.Manager() as manager:
+                gpu_id_queue = manager.Queue()
+                more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
+                optimize_kawrgs['func'] = HyperParameterSearchObjective(gpu_id_queue)
+                optimize_kawrgs['n_jobs'] = len(GPU_IDS)
+                with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
+                    study.optimize(**optimize_kawrgs)
     best_params = study.best_params
     LOGGER.info('Best Validation Parameters:\n'+'\n'.join((f'    {param}: {repr(param_value)}' for param, param_value in best_params.items())))
     trials_df = study.trials_dataframe()
