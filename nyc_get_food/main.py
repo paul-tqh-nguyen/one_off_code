@@ -139,30 +139,10 @@ async def _gather_location_display_df(*, page: pyppeteer.page.Page) -> pd.DataFr
     await page.hide_sole_element('div#_5_panel')
     await page.hide_sole_element('div.esriPopupWrapper')
     initial_zooming_circles = await page.get_elements('g#DOE_active_hub_2222_layer circle')
-    new_zooming_circles_x_y_pairs = {tuple(await page.evaluate('(element) => [element.getAttribute("cx"), element.getAttribute("cy")]', zooming_circle)) for zooming_circle in initial_zooming_circles}
     await initial_zooming_circles[0].click()
     await page.hide_sole_element('div.outerPointer')
     display_div = await page.get_sole_element('.esriPopupWrapper')
-    seen_addresses = set()
-    for _ in range(len(new_zooming_circles_x_y_pairs)): # @todo inefficient O(n^3) & redundant to avoid clicking issues via obfuscated circles
-        print(f"_ {repr(_)}")
-        await home_button.click()
-        zooming_circles = await page.get_elements('g#DOE_active_hub_2222_layer circle')
-        for zooming_circle in zooming_circles:
-            x_y_pair = tuple(await page.evaluate('(element) => [element.getAttribute("cx"), element.getAttribute("cy")]', zooming_circle))
-            if x_y_pair not in new_zooming_circles_x_y_pairs:
-                break
-            await zoom_to_circle(page, zooming_circle, display_div)
-            circles = await page.get_elements('g#DOE_active_hub_2222_layer circle')
-            for circle in circles:
-                await circle.click()
-                display_div_html = await page.evaluate('(element) => element.innerHTML', display_div)
-                row_dict = process_location_html_string(display_div_html)
-                location_address = row_dict['location_address']
-                if location_address not in seen_addresses:
-                    row_dicts.append(row_dict)
-                    seen_addresses.add(location_address)
-            new_zooming_circles_x_y_pairs.remove(x_y_pair)
+    
     assert len(row_dicts) == len(initial_zooming_circles)
     df = pd.DataFrame(row_dicts)
     return df
