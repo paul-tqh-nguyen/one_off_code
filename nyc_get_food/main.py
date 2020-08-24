@@ -34,11 +34,11 @@ from misc_utilities import *
 # Globals #
 ###########
 
-BROWSER_IS_HEADLESS = False # @hack clicking has problems when headless
+BROWSER_IS_HEADLESS = False # location-based clicking in pyppeteer currently buggy
 
 TARGET_URL = 'https://dsny.maps.arcgis.com/apps/webappviewer/index.html?id=35901167a9d84fb0a2e0672d344f176f'
 
-OUTPUT_CSV_FILE = './raw_data.csv'
+OUTPUT_JSON_FILE = './raw_data.json'
 
 ##########################
 # Web Scraping Utilities #
@@ -47,7 +47,7 @@ OUTPUT_CSV_FILE = './raw_data.csv'
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
-async def _launch_browser() -> pyppeteer.browser.Browser:
+async def launch_browser() -> pyppeteer.browser.Browser:
     browser: pyppeteer.browser.Browser = await pyppeteer.launch(
         {
             'headless': BROWSER_IS_HEADLESS,
@@ -55,19 +55,6 @@ async def _launch_browser() -> pyppeteer.browser.Browser:
         },
         args=['--start-fullscreen'])
     return browser
-
-BROWSER = EVENT_LOOP.run_until_complete(_launch_browser())
-
-def scrape_function(func: Awaitable) -> Awaitable:
-    async def decorating_function(*args, **kwargs):
-        global BROWSER
-        updated_kwargs = kwargs.copy()
-        pages = await BROWSER.pages()
-        page = pages[-1]
-        updated_kwargs['page'] = page
-        result = await func(*args, **updated_kwargs)
-        return result
-    return decorating_function
 
 ########################
 # Pyppeteer Extensions #
@@ -101,18 +88,12 @@ def simplify_newlines(input_string: str) -> str:
 def process_location_html_string(raw_html_string: str) -> dict:
     html_string = raw_html_string.replace('<b>', '').replace('</b>', '')
     soup = bs4.BeautifulSoup(html_string, 'html.parser')
-    result = dict(location_type=only_one(soup.findAll('div', {'dojoattachpoint' : '_title'})).text, )#raw_html_string=raw_html_string)
+    location_dict = dict(location_type=only_one(soup.findAll('div', {'dojoattachpoint' : '_title'})).text, raw_html_string=raw_html_string)
     description_div = only_one(soup.findAll('div', {'dojoattachpoint' : '_description'}))
     lines = simplify_newlines(description_div.get_text(separator='\n')).split('\n')
     current_tag_into_type: Literal[None, 'name', 'address', 'available_programs', 'operating_hours', 'halal_meal_availability', 'accessibility'] = 'name'
-    print()
-    # print(f"html_string {repr(html_string)}")
-    print()
-    p1(lines)
-    print()
     for line in lines:
         line = line.replace('\xa0', ' ').strip()
-        print(f"line {repr(line)}")
         if line == 'is located at':
             current_tag_into_type = 'address'
         elif line == 'Operating hours are':
@@ -121,79 +102,94 @@ def process_location_html_string(raw_html_string: str) -> dict:
             current_tag_into_type = 'halal_meal_availability'
         elif line == 'This site is':
             current_tag_into_type = 'accessibility'
-        elif line in ('.', '',) \
-             or line == 'To ensure every New York City resident can access nutritious meals, the Department of Education meal hub sites provide three meals a day, Monday through Friday, to both youth and adults in need. There is no registration or identification required.':
-            # @todo do we need these?
-            # or re.fullmatch(r'^(New York|Queens|Bronx|Manhattan|Staten Island|Brooklyn),? NY [0-9][0-9][0-9][0-9][0-9]$', line) is not None \
-            # or (any(line.startswith(area) for area in {'Arverne', 'New York', 'Queens', 'Bronx', 'Manhattan', 'Staten Island', 'Brooklyn'}) and list(result.keys())[-1] == 'location_address') \
+        elif line in ('.', '', 'To ensure every New York City resident can access nutritious meals, the Department of Education meal hub sites provide three meals a day, Monday through Friday, to both youth and adults in need. There is no registration or identification required.'):
             pass
         elif line.startswith('which has '):
             assert line.endswith(' programs.')
-            progams_string = line.replace('which has ', '').replace(' programs.', '')
-            result['location_available_programs'] = progams_string
+            programs_string = line.replace('which has ', '').replace(' programs.', '').replace(' and ', ', ')
+            assert len(programs_string) > 0, f'{repr(programs_string)} not correctly parsed.'
+            programs = programs_string.split(', ')
+            location_dict['location_available_programs'] = programs
             current_tag_into_type = None
         elif current_tag_into_type == 'name':
-            result['location_name'] = line
+            location_dict['location_name'] = line
             current_tag_into_type = None
         elif current_tag_into_type == 'address':
-            address = result.get('location_address', [])
+            address = location_dict.get('location_address', [])
             address.append(line)
-            result['location_address'] = address
+            location_dict['location_address'] = address
         elif current_tag_into_type == 'operating_hours':
-            operating_hours_string = result.get('location_operating_hours', [])
-            result['location_operating_hours'] = operating_hours_string
-            result['location_operating_hours'].append(line)
+            operating_hours_string = location_dict.get('location_operating_hours', [])
+            location_dict['location_operating_hours'] = operating_hours_string
+            location_dict['location_operating_hours'].append(line)
         elif current_tag_into_type == 'halal_meal_availability':
             assert line == 'meals available at this location.'
-            result['location_halal_meal_availability'] = True
+            location_dict['location_halal_meal_availability'] = True
             current_tag_into_type = None
         elif current_tag_into_type == 'accessibility':
-            result['location_accessibility'] = line
+            location_dict['location_accessibility'] = line
             current_tag_into_type = None
         else:
-            print(f"current_tag_into_type {repr(current_tag_into_type)}")
             raise ValueError(f'Unhandled html string (at {repr(line)}):\n{html_string}')
-    print(f"result  {repr(result)}")
-    return result
+    ebt_string = ''.join(location_dict.get('location_operating_hours', []))
+    if 'accepts EBT' in ebt_string:
+        location_dict['location_accepts_ebt'] = True
+    elif 'does not accept EBT' in ebt_string:
+        location_dict['location_accepts_ebt'] = False
+    else:
+        assert 'ebt' not in ebt_string.lower(), ebt_string
+    return location_dict
 
-@scrape_function
-async def _gather_location_display_df(*, page: pyppeteer.page.Page) -> pd.DataFrame:
-    row_dicts: List[str] = []
-    time.sleep(10)
+async def _scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
+    location_dicts: List[str] = []
     await page.goto(TARGET_URL)
     home_button = await page.get_sole_element('div.home')
-    await home_button.click()
+    await home_button.click() # ensure consistent zoom level
     circles = await page.get_elements('div#map_gc circle')
-    random.seed(4) # @todo remove this
-    random.shuffle(circles)
-    await circles[-1].click()
-    window_width = await page.evaluate('() => window.innerWidth')
-    window_height = await page.evaluate('() => window.innerHeight')
+    await circles[-1].click() # activate ERSI popup
+    window_width, window_height = await page.evaluate('() => [window.innerWidth, window.innerHeight]')
     big_radius = window_width + window_height
     display_div = await page.get_sole_element('.esriPopupWrapper')
     for circle_index, circle in enumerate(circles):
-        await page.evaluate(f'(element) => {{element.setAttribute("r", "{big_radius}px")}}', circle)
+        await page.evaluate(f'(element) => {{element.setAttribute("r", "{big_radius}px")}}', circle) # avoid obfuscated and overlapping circles by expanding the desired circle
         await home_button.click()
-        await page.mouse.click(2 if bool(circle_index%2) else window_width - 5, window_height//2)
+        await page.mouse.click(2 if bool(circle_index%2) else window_width - 5, window_height//2) # avoid double clicking while pinging at sub-double-click speed
         display_div_html_string = await page.evaluate('(element) => element.innerHTML', display_div)
-        row_dicts.append(process_location_html_string(display_div_html_string))
-        await page.evaluate('(element) => {{element.setAttribute("r", "0px")}}',  circle)
-    assert len(row_dicts) == len(circles)
-    df = pd.DataFrame(row_dicts)
-    return df
+        location_dicts.append(process_location_html_string(display_div_html_string))
+        await page.evaluate('(element) => {{element.setAttribute("r", "0px")}}',  circle) # hide processedd circle to avoid obfuscation and overlap
+    assert len(location_dicts) == len(circles)
+    return location_dicts
 
-def gather_location_display_df() -> pd.DataFrame:
-    df = EVENT_LOOP.run_until_complete(_gather_location_display_df())
+async def _gather_location_dicts() -> List[dict]:
+    browser = await launch_browser()
+    page = only_one(await browser.pages())
+    location_dicts = await _scrape_location_dicts(page)
     # @todo add lat longs
     # @todo add boroughs
-    return df
+    browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
+    for child_process in browser_process.children(recursive=True):
+        child_process.kill()
+    browser_process.kill() # @hack this line doesn't actually kill the process (or maybe it just doesn't free the PID?)
+    return location_dicts
 
 ###################
 # Sanity Checking #
 ###################
 
-def sanity_check_output_csv_file() -> None:
-    pass # @todo fill this in
+def sanity_check_location_dicts(location_dicts: List[dict]) -> None:
+    for location_dict in location_dicts:
+        assert len(location_dict) >= 4
+        assert isinstance(location_dict['raw_html_string'], str) and len(location_dict['raw_html_string']) > 0
+        assert isinstance(location_dict['location_type'], str) and len(location_dict['location_type']) > 0
+        assert isinstance(location_dict['location_name'], str) and len(location_dict['location_name']) > 0
+        assert isinstance(location_dict['location_address'], list) and len(location_dict['location_address']) > 0 and all(isinstance(address_line, str) for address_line in location_dict['location_address'])
+        assert implies('location_operating_hours' in location_dict, isinstance(location_dict['location_operating_hours'], str) and len(location_dict['location_operating_hours']) > 0)
+        assert implies('location_accepts_ebt' in location_dict, isinstance(location_dict['location_accepts_ebt'], bool))
+        assert implies('location_halal_meal_availability' in location_dict, isinstance(location_dict['location_halal_meal_availability'], bool))
+        assert implies('location_available_programs' in location_dict, isinstance(location_dict['location_available_programs'], list) and len(location_dict['location_available_programs']) > 0and \
+                       all(isinstance(program, str) and len(program) > 0 for program in location_dict['location_available_programs']))
+        assert implies('location_accessibility' in location_dict, isinstance(location_dict['location_accessibility'], str) and len(location_dict['location_accessibility']) > 0)
+    breakpoint()
     return 
 
 ##########
@@ -202,7 +198,10 @@ def sanity_check_output_csv_file() -> None:
 
 def gather_data() -> None:
     with timer('Data gathering'):
-        df = gather_location_display_df()
+        location_dicts = EVENT_LOOP.run_until_complete(_gather_location_dicts())
+    sanity_check_location_dicts(location_dicts)
+    with open(OUTPUT_JSON_FILE, 'w') as json_file_handle:
+        json.dump(location_dicts, json_file_handle, indent=4)
     return
 
 if __name__ == '__main__':
