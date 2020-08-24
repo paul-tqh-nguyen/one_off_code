@@ -5,6 +5,7 @@ dependencies:
   - pandas
   - tqdm
   - beautifulsoup4
+  - conda-forge::typing_extensions
   - psutil
   - pip
   - pip:

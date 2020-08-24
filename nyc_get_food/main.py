@@ -10,6 +10,7 @@
 ###########
 
 import os
+import re
 import psutil
 import asyncio
 import pyppeteer
@@ -22,6 +23,7 @@ import random
 import pandas as pd
 import multiprocessing as mp
 from statistics import mean
+from typing_extensions import Literal
 from typing import Union, List, Tuple, Iterable, Callable, Awaitable
 
 from misc_utilities import *
@@ -84,51 +86,73 @@ async def _get_sole_element(self: Union[pyppeteer.page.Page, pyppeteer.element_h
 setattr(pyppeteer.page.Page, 'get_sole_element', _get_sole_element)
 setattr(pyppeteer.element_handle.ElementHandle, 'get_sole_element', _get_sole_element)
 
-async def _hide_sole_element(self: Union[pyppeteer.page.Page, pyppeteer.element_handle.ElementHandle], selector: str) -> None:
-    element = await self.get_sole_element(selector)
-    await self.evaluate('(element) => {element.style.display = "none";}', element)
-    return 
-setattr(pyppeteer.page.Page, 'hide_sole_element', _hide_sole_element)
-setattr(pyppeteer.element_handle.ElementHandle, 'hide_sole_element', _hide_sole_element)
-
-async def _remove_display_style_on_sole_element(self: Union[pyppeteer.page.Page, pyppeteer.element_handle.ElementHandle], selector: str) -> None:
-    element = await self.get_sole_element(selector)
-    await self.evaluate('(element) => {element.style.display = null;}', element)
-    return 
-setattr(pyppeteer.page.Page, 'remove_display_style_on_sole_element', _remove_display_style_on_sole_element)
-setattr(pyppeteer.element_handle.ElementHandle, 'remove_display_style_on_sole_element', _remove_display_style_on_sole_element)
-
 ########################
 # Get Food NYC Scraper #
 ########################
 
-@trace
+def simplify_newlines(input_string: str) -> str:
+    output_string = input_string
+    for _ in range(len(input_string)):
+        if '\n\n' not in output_string:
+            break
+        output_string = output_string.replace('\n\n', '\n')
+    return output_string
+
 def process_location_html_string(html_string: str) -> dict:
-    soup = bs4.BeautifulSoup(html_string,'html.parser')
+    html_string = html_string.replace('<b>', '').replace('</b>', '')
+    soup = bs4.BeautifulSoup(html_string, 'html.parser')
     result = dict(location_type=only_one(soup.findAll('div', {'dojoattachpoint' : '_title'})).text)
     description_div = only_one(soup.findAll('div', {'dojoattachpoint' : '_description'}))
-    for tag_index, tag in enumerate(description_div.findChildren('font' , recursive=False)):
-        line = tag.text.replace('\xa0', ' ')
-        if ' is located at ' in line:
-            location_name, location_address = [child.text for child in tag.findChildren('font')]
-            result['location_name'] = location_name
-            result['location_address'] = location_address
-            # @todo handle other cases of location_address where it might talk about programs included with the location.
-        else:
+    lines = simplify_newlines(description_div.get_text(separator='\n')).split('\n')
+    current_tag_into_type: Literal[None, 'name', 'address', 'available_programs', 'operating_hours', 'halal_meal_availability', 'accessibility'] = 'name'
+    print()
+    print(f"html_string {repr(html_string)}")
+    print()
+    p1(lines)
+    print()
+    for line in lines:
+        line = line.replace('\xa0', ' ').strip()
+        print(f"line {repr(line)}")
+        if line == 'is located at':
+            current_tag_into_type = 'address'
+        elif line == 'Operating hours are':
+            current_tag_into_type = 'operating_hours'
+        elif line == 'Halal':
+            current_tag_into_type = 'halal_meal_availability'
+        elif line == 'This site is':
+            current_tag_into_type = 'accessibility'
+        elif line in ('.', '') or re.fullmatch(r'^(New York|Queens|Bronx),? NY [0-9][0-9][0-9][0-9][0-9]$', line) is not None:
             pass
-            # raise ValueError(f'Unhandled html string:\n{html_string}')
+        elif line.startswith('which has '):
+            assert line.endswith(' programs.')
+            progams_string = line.replace('which has ', '').replace(' programs.', '')
+            result['location_available_programs'] = progams_string
+            current_tag_into_type = None
+        elif current_tag_into_type == 'name':
+            result[f'location_name'] = line
+            current_tag_into_type = None
+        elif current_tag_into_type == 'address':
+            result[f'location_address'] = line
+            current_tag_into_type = None
+        elif current_tag_into_type == 'operating_hours':
+            operating_hours_string = result.get('location_operating_hours', [])
+            result['location_operating_hours'] = operating_hours_string
+            result['location_operating_hours'].append(line)
+        elif current_tag_into_type == 'halal_meal_availability':
+            assert line == 'meals available at this location.'
+            result[f'location_halal_meal_availability'] = True
+            current_tag_into_type = None
+        elif current_tag_into_type == 'accessibility':
+            result[f'location_accessibility'] = line
+            current_tag_into_type = None
+        elif line in {'121-12 Liberty Ave (Office)', }:
+            pass # @todo get rid of this section
+        else:
+            print(f"current_tag_into_type {repr(current_tag_into_type)}")
+            time.sleep(1000)
+            raise ValueError(f'Unhandled html string (at {repr(line)}):\n{html_string}')
+    print(f"result  {repr(result )}")
     return result
-
-async def zoom_to_circle(page: pyppeteer.page.Page, circle: pyppeteer.element_handle.ElementHandle, display_div: pyppeteer.element_handle.ElementHandle) -> None:
-    await circle.click()
-    await page.remove_display_style_on_sole_element('div.esriPopupWrapper')
-    await page.remove_display_style_on_sole_element('div.outerPointer')
-    await circle.click()
-    zoom_to_link = await page.get_sole_element('a.action.zoomTo')
-    await zoom_to_link.click()
-    await page.hide_sole_element('div.esriPopupWrapper')
-    await page.hide_sole_element('div.outerPointer')
-    return
 
 @scrape_function
 async def _gather_location_display_df(*, page: pyppeteer.page.Page) -> pd.DataFrame:
@@ -136,14 +160,22 @@ async def _gather_location_display_df(*, page: pyppeteer.page.Page) -> pd.DataFr
     await page.goto(TARGET_URL)
     home_button = await page.get_sole_element('div.home')
     await home_button.click()
-    await page.hide_sole_element('div#_5_panel')
-    await page.hide_sole_element('div.esriPopupWrapper')
-    initial_zooming_circles = await page.get_elements('g#DOE_active_hub_2222_layer circle')
-    await initial_zooming_circles[0].click()
-    await page.hide_sole_element('div.outerPointer')
+    circles = await page.get_elements('div#map_gc circle')
+    random.seed(1) # @todo remove this
+    random.shuffle(circles)
+    await circles[-1].click()
+    window_width = await page.evaluate('() => window.innerWidth')
+    window_height = await page.evaluate('() => window.innerHeight')
+    big_radius = window_width + window_height
     display_div = await page.get_sole_element('.esriPopupWrapper')
-    
-    assert len(row_dicts) == len(initial_zooming_circles)
+    for circle_index, circle in enumerate(circles):
+        await page.evaluate(f'(element) => {{element.setAttribute("r", "{big_radius}px")}}', circle)
+        await home_button.click()
+        await page.mouse.click(2 if bool(circle_index%2) else window_width - 5, window_height//2)
+        display_div_html_string = await page.evaluate('(element) => element.innerHTML', display_div)
+        row_dicts.append(process_location_html_string(display_div_html_string))
+        await page.evaluate('(element) => {{element.setAttribute("r", "0px")}}',  circle)
+    assert len(row_dicts) == len(circles)
     df = pd.DataFrame(row_dicts)
     return df
 
