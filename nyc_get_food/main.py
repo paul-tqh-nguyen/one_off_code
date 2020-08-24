@@ -101,12 +101,12 @@ def simplify_newlines(input_string: str) -> str:
 def process_location_html_string(raw_html_string: str) -> dict:
     html_string = raw_html_string.replace('<b>', '').replace('</b>', '')
     soup = bs4.BeautifulSoup(html_string, 'html.parser')
-    result = dict(location_type=only_one(soup.findAll('div', {'dojoattachpoint' : '_title'})).text, raw_html_string=raw_html_string)
+    result = dict(location_type=only_one(soup.findAll('div', {'dojoattachpoint' : '_title'})).text, )#raw_html_string=raw_html_string)
     description_div = only_one(soup.findAll('div', {'dojoattachpoint' : '_description'}))
     lines = simplify_newlines(description_div.get_text(separator='\n')).split('\n')
     current_tag_into_type: Literal[None, 'name', 'address', 'available_programs', 'operating_hours', 'halal_meal_availability', 'accessibility'] = 'name'
     print()
-    print(f"html_string {repr(html_string)}")
+    # print(f"html_string {repr(html_string)}")
     print()
     p1(lines)
     print()
@@ -153,12 +153,13 @@ def process_location_html_string(raw_html_string: str) -> dict:
         else:
             print(f"current_tag_into_type {repr(current_tag_into_type)}")
             raise ValueError(f'Unhandled html string (at {repr(line)}):\n{html_string}')
-    print(f"result  {repr(result )}")
+    print(f"result  {repr(result)}")
     return result
 
 @scrape_function
 async def _gather_location_display_df(*, page: pyppeteer.page.Page) -> pd.DataFrame:
     row_dicts: List[str] = []
+    time.sleep(10)
     await page.goto(TARGET_URL)
     home_button = await page.get_sole_element('div.home')
     await home_button.click()
