@@ -98,10 +98,10 @@ def simplify_newlines(input_string: str) -> str:
         output_string = output_string.replace('\n\n', '\n')
     return output_string
 
-def process_location_html_string(html_string: str) -> dict:
-    html_string = html_string.replace('<b>', '').replace('</b>', '')
+def process_location_html_string(raw_html_string: str) -> dict:
+    html_string = raw_html_string.replace('<b>', '').replace('</b>', '')
     soup = bs4.BeautifulSoup(html_string, 'html.parser')
-    result = dict(location_type=only_one(soup.findAll('div', {'dojoattachpoint' : '_title'})).text)
+    result = dict(location_type=only_one(soup.findAll('div', {'dojoattachpoint' : '_title'})).text, raw_html_string=raw_html_string)
     description_div = only_one(soup.findAll('div', {'dojoattachpoint' : '_description'}))
     lines = simplify_newlines(description_div.get_text(separator='\n')).split('\n')
     current_tag_into_type: Literal[None, 'name', 'address', 'available_programs', 'operating_hours', 'halal_meal_availability', 'accessibility'] = 'name'
@@ -122,9 +122,10 @@ def process_location_html_string(html_string: str) -> dict:
         elif line == 'This site is':
             current_tag_into_type = 'accessibility'
         elif line in ('.', '',) \
-             or re.fullmatch(r'^(New York|Queens|Bronx|Manhattan|Staten Island|Brooklyn),? NY [0-9][0-9][0-9][0-9][0-9]$', line) is not None \
-             or (any(line.startswith(area) for area in {'New York', 'Queens', 'Bronx', 'Manhattan', 'Staten Island', 'Arverne', 'Brooklyn'}) and list(result.keys())[-1] == 'location_address') \
              or line == 'To ensure every New York City resident can access nutritious meals, the Department of Education meal hub sites provide three meals a day, Monday through Friday, to both youth and adults in need. There is no registration or identification required.':
+            # @todo do we need these?
+            # or re.fullmatch(r'^(New York|Queens|Bronx|Manhattan|Staten Island|Brooklyn),? NY [0-9][0-9][0-9][0-9][0-9]$', line) is not None \
+            # or (any(line.startswith(area) for area in {'Arverne', 'New York', 'Queens', 'Bronx', 'Manhattan', 'Staten Island', 'Brooklyn'}) and list(result.keys())[-1] == 'location_address') \
             pass
         elif line.startswith('which has '):
             assert line.endswith(' programs.')
@@ -132,27 +133,25 @@ def process_location_html_string(html_string: str) -> dict:
             result['location_available_programs'] = progams_string
             current_tag_into_type = None
         elif current_tag_into_type == 'name':
-            result[f'location_name'] = line
+            result['location_name'] = line
             current_tag_into_type = None
         elif current_tag_into_type == 'address':
-            result[f'location_address'] = line
-            current_tag_into_type = None
+            address = result.get('location_address', [])
+            address.append(line)
+            result['location_address'] = address
         elif current_tag_into_type == 'operating_hours':
             operating_hours_string = result.get('location_operating_hours', [])
             result['location_operating_hours'] = operating_hours_string
             result['location_operating_hours'].append(line)
         elif current_tag_into_type == 'halal_meal_availability':
             assert line == 'meals available at this location.'
-            result[f'location_halal_meal_availability'] = True
+            result['location_halal_meal_availability'] = True
             current_tag_into_type = None
         elif current_tag_into_type == 'accessibility':
-            result[f'location_accessibility'] = line
+            result['location_accessibility'] = line
             current_tag_into_type = None
-        elif line in {'121-12 Liberty Ave (Office)', }:
-            pass # @todo get rid of this section
         else:
             print(f"current_tag_into_type {repr(current_tag_into_type)}")
-            time.sleep(7200)
             raise ValueError(f'Unhandled html string (at {repr(line)}):\n{html_string}')
     print(f"result  {repr(result )}")
     return result
@@ -164,7 +163,7 @@ async def _gather_location_display_df(*, page: pyppeteer.page.Page) -> pd.DataFr
     home_button = await page.get_sole_element('div.home')
     await home_button.click()
     circles = await page.get_elements('div#map_gc circle')
-    random.seed(2) # @todo remove this
+    random.seed(4) # @todo remove this
     random.shuffle(circles)
     await circles[-1].click()
     window_width = await page.evaluate('() => window.innerWidth')
