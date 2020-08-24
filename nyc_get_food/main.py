@@ -121,7 +121,10 @@ def process_location_html_string(html_string: str) -> dict:
             current_tag_into_type = 'halal_meal_availability'
         elif line == 'This site is':
             current_tag_into_type = 'accessibility'
-        elif line in ('.', '') or re.fullmatch(r'^(New York|Queens|Bronx),? NY [0-9][0-9][0-9][0-9][0-9]$', line) is not None:
+        elif line in ('.', '',) \
+             or re.fullmatch(r'^(New York|Queens|Bronx|Manhattan|Staten Island),? NY [0-9][0-9][0-9][0-9][0-9]$', line) is not None \
+             or (any(line.startswith(city) for city in {'New York', 'Queens', 'Bronx', 'Manhattan', 'Staten Island', 'Arverne'}) and list(result.keys())[-1] == 'location_address') \
+             or line == 'To ensure every New York City resident can access nutritious meals, the Department of Education meal hub sites provide three meals a day, Monday through Friday, to both youth and adults in need. There is no registration or identification required.':
             pass
         elif line.startswith('which has '):
             assert line.endswith(' programs.')
@@ -161,7 +164,7 @@ async def _gather_location_display_df(*, page: pyppeteer.page.Page) -> pd.DataFr
     home_button = await page.get_sole_element('div.home')
     await home_button.click()
     circles = await page.get_elements('div#map_gc circle')
-    random.seed(1) # @todo remove this
+    random.seed(2) # @todo remove this
     random.shuffle(circles)
     await circles[-1].click()
     window_width = await page.evaluate('() => window.innerWidth')
