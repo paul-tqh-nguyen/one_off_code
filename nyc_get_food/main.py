@@ -122,8 +122,8 @@ def process_location_html_string(html_string: str) -> dict:
         elif line == 'This site is':
             current_tag_into_type = 'accessibility'
         elif line in ('.', '',) \
-             or re.fullmatch(r'^(New York|Queens|Bronx|Manhattan|Staten Island),? NY [0-9][0-9][0-9][0-9][0-9]$', line) is not None \
-             or (any(line.startswith(city) for city in {'New York', 'Queens', 'Bronx', 'Manhattan', 'Staten Island', 'Arverne'}) and list(result.keys())[-1] == 'location_address') \
+             or re.fullmatch(r'^(New York|Queens|Bronx|Manhattan|Staten Island|Brooklyn),? NY [0-9][0-9][0-9][0-9][0-9]$', line) is not None \
+             or (any(line.startswith(area) for area in {'New York', 'Queens', 'Bronx', 'Manhattan', 'Staten Island', 'Arverne', 'Brooklyn'}) and list(result.keys())[-1] == 'location_address') \
              or line == 'To ensure every New York City resident can access nutritious meals, the Department of Education meal hub sites provide three meals a day, Monday through Friday, to both youth and adults in need. There is no registration or identification required.':
             pass
         elif line.startswith('which has '):
@@ -152,7 +152,7 @@ def process_location_html_string(html_string: str) -> dict:
             pass # @todo get rid of this section
         else:
             print(f"current_tag_into_type {repr(current_tag_into_type)}")
-            time.sleep(1000)
+            time.sleep(7200)
             raise ValueError(f'Unhandled html string (at {repr(line)}):\n{html_string}')
     print(f"result  {repr(result )}")
     return result
