@@ -37,7 +37,8 @@ from misc_utilities import *
 
 BROWSER_IS_HEADLESS = False # location-based clicking in pyppeteer currently buggy
 
-TARGET_URL = 'https://dsny.maps.arcgis.com/apps/webappviewer/index.html?id=35901167a9d84fb0a2e0672d344f176f'
+GET_FOOD_URL = 'https://dsny.maps.arcgis.com/apps/webappviewer/index.html?id=35901167a9d84fb0a2e0672d344f176f'
+LAT_LONG_URL = 'https://www.latlong.net/convert-address-to-lat-long.html'
 
 RAW_SCRAPED_DATA_JSON_FILE = './raw_scraped_data.json'
 OUTPUT_JSON_FILE = './scraped_data.json'
@@ -74,6 +75,24 @@ async def _get_sole_element(self: Union[pyppeteer.page.Page, pyppeteer.element_h
     return only_one(await self.get_elements(selector))
 setattr(pyppeteer.page.Page, 'get_sole_element', _get_sole_element)
 setattr(pyppeteer.element_handle.ElementHandle, 'get_sole_element', _get_sole_element)
+
+###################
+# Sanity Checking #
+###################
+
+def sanity_check_raw_scraped_location_dict(location_dict: dict) -> None:
+    assert len(location_dict) >= 4
+    assert isinstance(location_dict['raw_html_string'], str) and len(location_dict['raw_html_string']) > 0
+    assert isinstance(location_dict['location_type'], str) and len(location_dict['location_type']) > 0
+    assert isinstance(location_dict['location_name'], str) and len(location_dict['location_name']) > 0
+    assert isinstance(location_dict['location_address'], list) and len(location_dict['location_address']) > 0 and all(isinstance(address_line, str) for address_line in location_dict['location_address'])
+    assert implies('location_operating_hours' in location_dict, isinstance(location_dict.get('location_operating_hours'), list) and len(location_dict.get('location_operating_hours')) > 0)
+    assert implies('location_accepts_ebt' in location_dict, isinstance(location_dict.get('location_accepts_ebt'), bool))
+    assert implies('location_halal_meal_availability' in location_dict, isinstance(location_dict.get('location_halal_meal_availability'), bool))
+    assert implies('location_available_programs' in location_dict, isinstance(location_dict.get('location_available_programs'), list) and len(location_dict.get('location_available_programs')) > 0 and \
+                   all(isinstance(program, str) and len(program) > 0 for program in location_dict.get('location_available_programs')))
+    assert implies('location_accessibility' in location_dict, isinstance(location_dict.get('location_accessibility'), str) and len(location_dict.get('location_accessibility')) > 0)
+    return 
 
 ########################
 # Get Food NYC Scraper #
@@ -144,10 +163,11 @@ def process_location_html_string(raw_html_string: str) -> dict:
 
 async def _scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
     location_dicts: List[str] = []
-    await page.goto(TARGET_URL)
+    await page.goto(GET_FOOD_URL)
     home_button = await page.get_sole_element('div.home')
     await home_button.click() # ensure consistent zoom level
     circles = await page.get_elements('div#map_gc circle')
+    circles = circles[:10] # @todo remove this
     await circles[-1].click() # activate ERSI popup
     window_width, window_height = await page.evaluate('() => [window.innerWidth, window.innerHeight]')
     big_radius = window_width + window_height
@@ -158,47 +178,50 @@ async def _scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
         await page.mouse.click(2 if bool(circle_index%2) else window_width - 5, window_height//2) # avoid double clicking while pinging at sub-double-click speed
         display_div_html_string = await page.evaluate('(element) => element.innerHTML', display_div)
         location_dict = process_location_html_string(display_div_html_string)
-        sanity_check_location_dict(location_dict)
+        sanity_check_raw_scraped_location_dict(location_dict)
         location_dicts.append(location_dict)
-        await page.evaluate('(element) => {{element.setAttribute("r", "0px")}}',  circle) # hide processedd circle to avoid obfuscation and overlap
+        await page.evaluate('(element) => {{element.setAttribute("r", "0px")}}',  circle) # hide processed circle to avoid obfuscation and overlap
     assert len(location_dicts) == len(circles)
+    return location_dicts
+
+async def _scrape_lat_longs(location_dicts: List[dict], page: pyppeteer.page.Page) -> List[dict]:
+    await page.goto(LAT_LONG_URL)
+    await page.waitForSelector('div.col-7.graybox')
+    input_element_id = await page.evaluate('() => document.querySelector("div.col-7.graybox").querySelector("input").id')
+    button_element = await page.get_sole_element('#btnfind')
+    for location_dict in location_dicts:
+        await page.type(f'input[id={input_element_id}]', location_dict['location_address'])
+        await button_element.click()
+        await page.waitForSelector('div.leaflet-popup-content')
+        await page.waitForFunction('document.querySelector("div.leaflet-popup-content").innerText.length > 0')
+        coordinate_string = await page.evaluate('document.querySelector("div.leaflet-popup-content").innerText')
+        latitude, longitude = coordinate_string.split(', ')
+        await page.evaluate('() => {document.querySelector("div.leaflet-popup-content").innerText = ''}')
+        location_dict['latitude'] = latitude
+        location_dict['longitude'] = longitude
+        print()
+        print(f"location_dict['location_address'] {repr(location_dict['location_address'])}")
+        print(f"latitude {repr(latitude)}")
+        print(f"longitude {repr(longitude)}")
     return location_dicts
 
 async def _gather_location_dicts() -> List[dict]:
     browser = await launch_browser()
     page = only_one(await browser.pages())
     if os.path.isfile(RAW_SCRAPED_DATA_JSON_FILE):
-        with open(RAW_SCRAPED_DATA_JSON_FILE, 'w') as json_file_handle:
+        with open(RAW_SCRAPED_DATA_JSON_FILE, 'r') as json_file_handle:
             location_dicts = json.load(json_file_handle)
     else:
         location_dicts = await _scrape_location_dicts(page)
         with open(RAW_SCRAPED_DATA_JSON_FILE, 'w') as json_file_handle:
             json.dump(location_dicts, json_file_handle, indent=4)
-    # @todo add lat longs
+    location_dicts = await _scrape_lat_longs(location_dicts, page)
     # @todo add boroughs
     browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
     for child_process in browser_process.children(recursive=True):
         child_process.kill()
     browser_process.kill() # @hack this line doesn't actually kill the process (or maybe it just doesn't free the PID?)
     return location_dicts
-
-###################
-# Sanity Checking #
-###################
-
-def sanity_check_location_dict(location_dict: dict) -> None:
-    assert len(location_dict) >= 4
-    assert isinstance(location_dict['raw_html_string'], str) and len(location_dict['raw_html_string']) > 0
-    assert isinstance(location_dict['location_type'], str) and len(location_dict['location_type']) > 0
-    assert isinstance(location_dict['location_name'], str) and len(location_dict['location_name']) > 0
-    assert isinstance(location_dict['location_address'], list) and len(location_dict['location_address']) > 0 and all(isinstance(address_line, str) for address_line in location_dict['location_address'])
-    assert implies('location_operating_hours' in location_dict, isinstance(location_dict.get('location_operating_hours'), list) and len(location_dict.get('location_operating_hours')) > 0)
-    assert implies('location_accepts_ebt' in location_dict, isinstance(location_dict.get('location_accepts_ebt'), bool))
-    assert implies('location_halal_meal_availability' in location_dict, isinstance(location_dict.get('location_halal_meal_availability'), bool))
-    assert implies('location_available_programs' in location_dict, isinstance(location_dict.get('location_available_programs'), list) and len(location_dict.get('location_available_programs')) > 0 and \
-                   all(isinstance(program, str) and len(program) > 0 for program in location_dict.get('location_available_programs')))
-    assert implies('location_accessibility' in location_dict, isinstance(location_dict.get('location_accessibility'), str) and len(location_dict.get('location_accessibility')) > 0)
-    return 
 
 ##########
 # Driver #
