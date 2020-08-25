@@ -40,6 +40,8 @@ BROWSER_IS_HEADLESS = False # location-based clicking in pyppeteer currently bug
 GET_FOOD_URL = 'https://dsny.maps.arcgis.com/apps/webappviewer/index.html?id=35901167a9d84fb0a2e0672d344f176f'
 LAT_LONG_URL = 'https://www.google.com/maps'
 
+
+
 RAW_SCRAPED_DATA_JSON_FILE = './raw_scraped_data.json'
 OUTPUT_JSON_FILE = './scraped_data.json'
 
@@ -167,7 +169,7 @@ async def _scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
     home_button = await page.get_sole_element('div.home')
     await home_button.click() # ensure consistent zoom level
     circles = await page.get_elements('div#map_gc circle')
-    circles = circles[:10] # @todo remove this
+    circles = circles
     await circles[-1].click() # activate ERSI popup
     window_width, window_height = await page.evaluate('() => [window.innerWidth, window.innerHeight]')
     big_radius = window_width + window_height
@@ -191,7 +193,8 @@ async def _scrape_lat_longs(location_dicts: List[dict], page: pyppeteer.page.Pag
         await page.type(f'input[id=searchboxinput]', location_dict['location_address'])
         await page.keyboard.press('Enter')
         zoom_in_button = await page.waitForSelector('button#widget-zoom-in')
-        time.sleep(1) # @hack zooming is only ready when the map is fully rendered, which happens in a canvas element, so we can't cleanly wait for a DOM element to change. 
+        await asyncio.sleep(5) # zooming is only ready when the map is fully rendered, which happens in a canvas element (uninspectable), so we can't cleanly wait for a DOM element to change.
+        (await page.evaluate('() => document.querySelectorAll("div.section-result").length > 0')) and time.sleep(1234567) # @todo remove this
         for _ in range(10):
             await zoom_in_button.click()
         x, y = await page.evaluate('() => [window.innerWidth/2, window.innerHeight/2]')
@@ -203,7 +206,6 @@ async def _scrape_lat_longs(location_dicts: List[dict], page: pyppeteer.page.Pag
         latitude, longitude = tuple(map(float, coordinates_string.split(', ')))
         location_dict['latitude'] = latitude
         location_dict['longitude'] = longitude
-        time.sleep(10)
     return location_dicts
 
 async def _gather_location_dicts() -> List[dict]:
@@ -221,7 +223,7 @@ async def _gather_location_dicts() -> List[dict]:
     browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
     for child_process in browser_process.children(recursive=True):
         child_process.kill()
-    browser_process.kill() # @hack this line doesn't actually kill the process (or maybe it just doesn't free the PID?)
+    browser_process.kill() # @todo this line doesn't actually kill the process (or maybe it just doesn't free the PID?)
     return location_dicts
 
 ##########
