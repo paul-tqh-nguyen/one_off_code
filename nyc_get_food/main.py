@@ -38,7 +38,7 @@ from misc_utilities import *
 BROWSER_IS_HEADLESS = False # location-based clicking in pyppeteer currently buggy
 
 GET_FOOD_URL = 'https://dsny.maps.arcgis.com/apps/webappviewer/index.html?id=35901167a9d84fb0a2e0672d344f176f'
-LAT_LONG_URL = 'https://www.latlong.net/convert-address-to-lat-long.html'
+LAT_LONG_URL = 'https://www.google.com/maps'
 
 RAW_SCRAPED_DATA_JSON_FILE = './raw_scraped_data.json'
 OUTPUT_JSON_FILE = './scraped_data.json'
@@ -185,24 +185,25 @@ async def _scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
     return location_dicts
 
 async def _scrape_lat_longs(location_dicts: List[dict], page: pyppeteer.page.Page) -> List[dict]:
-    await page.goto(LAT_LONG_URL)
-    await page.waitForSelector('div.col-7.graybox')
-    input_element_id = await page.evaluate('() => document.querySelector("div.col-7.graybox").querySelector("input").id')
-    button_element = await page.get_sole_element('#btnfind')
     for location_dict in location_dicts:
-        await page.type(f'input[id={input_element_id}]', location_dict['location_address'])
-        await button_element.click()
-        await page.waitForSelector('div.leaflet-popup-content')
-        await page.waitForFunction('document.querySelector("div.leaflet-popup-content").innerText.length > 0')
-        coordinate_string = await page.evaluate('document.querySelector("div.leaflet-popup-content").innerText')
-        latitude, longitude = coordinate_string.split(', ')
-        await page.evaluate('() => {document.querySelector("div.leaflet-popup-content").innerText = ''}')
+        await page.goto(LAT_LONG_URL)
+        await page.waitForSelector('#searchboxinput')
+        await page.type(f'input[id=searchboxinput]', location_dict['location_address'])
+        await page.keyboard.press('Enter')
+        zoom_in_button = await page.waitForSelector('button#widget-zoom-in')
+        time.sleep(1) # @hack zooming is only ready when the map is fully rendered, which happens in a canvas element, so we can't cleanly wait for a DOM element to change. 
+        for _ in range(10):
+            await zoom_in_button.click()
+        x, y = await page.evaluate('() => [window.innerWidth/2, window.innerHeight/2]')
+        await page.mouse.click(x, y, {'button': 'right'})
+        await page.waitForSelector('div#action-menu')
+        await page.evaluate('() => document.querySelector("div#action-menu").querySelectorAll("li.action-menu-entry")[2].click()')
+        await page.waitForSelector('button.link-like.widget-reveal-card-lat-lng')
+        coordinates_string = await page.evaluate('() => document.querySelector("button.link-like.widget-reveal-card-lat-lng").innerText')
+        latitude, longitude = tuple(map(float, coordinates_string.split(', ')))
         location_dict['latitude'] = latitude
         location_dict['longitude'] = longitude
-        print()
-        print(f"location_dict['location_address'] {repr(location_dict['location_address'])}")
-        print(f"latitude {repr(latitude)}")
-        print(f"longitude {repr(longitude)}")
+        time.sleep(10)
     return location_dicts
 
 async def _gather_location_dicts() -> List[dict]:

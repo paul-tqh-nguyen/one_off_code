@@ -6,6 +6,7 @@ dependencies:
   - tqdm
   - beautifulsoup4
   - conda-forge::typing_extensions
+  - more-itertools
   - psutil
   - pip
   - pip:
