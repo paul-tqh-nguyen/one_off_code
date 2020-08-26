@@ -21,9 +21,12 @@ import time
 import warnings
 import bs4
 import random
+import queue
 import pandas as pd
 import multiprocessing as mp
+from functools import lru_cache
 from statistics import mean
+from shapely.geometry import Point, Polygon
 from typing_extensions import Literal
 from typing import Union, List, Tuple, Iterable, Callable, Awaitable
 
@@ -40,10 +43,10 @@ BROWSER_IS_HEADLESS = False # location-based clicking in pyppeteer currently bug
 GET_FOOD_URL = 'https://dsny.maps.arcgis.com/apps/webappviewer/index.html?id=35901167a9d84fb0a2e0672d344f176f'
 LAT_LONG_URL = 'https://www.google.com/maps'
 
-
+BOROUGH_GEOJSON_FILE = './borough_data/Borough Boundaries.geojson'
 
 RAW_SCRAPED_DATA_JSON_FILE = './raw_scraped_data.json'
-OUTPUT_JSON_FILE = './scraped_data.json'
+OUTPUT_JSON_FILE = './complete_scraped_data.json'
 
 ##########################
 # Web Scraping Utilities #
@@ -163,7 +166,7 @@ def process_location_html_string(raw_html_string: str) -> dict:
         assert 'ebt' not in ebt_string.lower(), ebt_string
     return location_dict
 
-async def _scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
+async def scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
     location_dicts: List[str] = []
     await page.goto(GET_FOOD_URL)
     home_button = await page.get_sole_element('div.home')
@@ -186,40 +189,84 @@ async def _scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
     assert len(location_dicts) == len(circles)
     return location_dicts
 
-async def _scrape_lat_longs(location_dicts: List[dict], page: pyppeteer.page.Page) -> List[dict]:
+@lru_cache(maxsize=1)
+def get_borough_to_polygons() -> dict:
+    with open(BOROUGH_GEOJSON_FILE, 'r') as f_borough:
+        borough_geojson = json.loads(f_borough.read())
+    borough_to_polygons = {}
+    for feature in borough_geojson['features']:
+        borough_name = feature['properties']['boro_name'].lower()
+        polygon_coordinate_lists = map(lambda coordinate_list: coordinate_list[0], feature['geometry']['coordinates'])
+        polygons = eager_map(Polygon, polygon_coordinate_lists)
+        borough_to_polygons[borough_name] = polygons
+    return borough_to_polygons
+
+def nearest_borough_to_coordinates(latitude: float, longitude: float) -> str:
+    point = Point(longitude, latitude)
+    nearest_borough = None
+    nearest_borough_dist = float('inf')
+    borough_to_polygons = get_borough_to_polygons()
+    for borough, polygons in borough_to_polygons.items():
+        for polygon in polygons:
+            if point.within(polygon):
+                return borough
+            borough_dist = polygon.exterior.distance(point)
+            if borough_dist < nearest_borough_dist:
+                nearest_borough_dist = borough_dist
+                nearest_borough = borough
+    assert isinstance(nearest_borough, str)
+    nearest_borough = nearest_borough.lower() if nearest_borough_dist < 0.01 else np.nan
+    return nearest_borough
+
+def add_borough_data(location_dict: dict) -> None:
+    location_dict['borough'] = nearest_borough_to_coordinates(location_dict['latitude'], location_dict['longitude'])
+    return
+
+async def scrape_geospatial_data(location_dicts: List[dict], page: pyppeteer.page.Page) -> List[dict]:
+    dicts_to_add_borough_data = queue.Queue()
     for location_dict in location_dicts:
         await page.goto(LAT_LONG_URL)
         await page.waitForSelector('#searchboxinput')
         await page.type(f'input[id=searchboxinput]', location_dict['location_address'])
         await page.keyboard.press('Enter')
         zoom_in_button = await page.waitForSelector('button#widget-zoom-in')
-        await asyncio.sleep(5) # zooming is only ready when the map is fully rendered, which happens in a canvas element (uninspectable), so we can't cleanly wait for a DOM element to change.
-        (await page.evaluate('() => document.querySelectorAll("div.section-result").length > 0')) and time.sleep(1234567) # @todo remove this
-        for _ in range(10):
-            await zoom_in_button.click()
-        x, y = await page.evaluate('() => [window.innerWidth/2, window.innerHeight/2]')
-        await page.mouse.click(x, y, {'button': 'right'})
-        await page.waitForSelector('div#action-menu')
-        await page.evaluate('() => document.querySelector("div#action-menu").querySelectorAll("li.action-menu-entry")[2].click()')
-        await page.waitForSelector('button.link-like.widget-reveal-card-lat-lng')
-        coordinates_string = await page.evaluate('() => document.querySelector("button.link-like.widget-reveal-card-lat-lng").innerText')
-        latitude, longitude = tuple(map(float, coordinates_string.split(', ')))
-        location_dict['latitude'] = latitude
-        location_dict['longitude'] = longitude
+        sleep_time_container = {'sleep_time': 5}
+        @trace
+        def update_sleep_time(used_time: float) -> None:
+            sleep_time_container['sleep_time'] -= used_time
+            return 
+        with timer(exitCallback=update_sleep_time):
+            if not dicts_to_add_borough_data.empty():
+                add_borough_data(dicts_to_add_borough_data.get())
+                x, y = await page.evaluate('() => [window.innerWidth/2, window.innerHeight/2]')
+        await asyncio.sleep(sleep_time_container['sleep_time']) # zooming not ready until the map is fully rendered, which happens in a canvas element (uninspectable), so we can't cleanly wait for a DOM element change.
+        if (await page.evaluate('() => document.querySelector("div.section-hero-header-title-top-container") !== null')):
+            for _ in range(10):
+                await zoom_in_button.click()
+            await page.mouse.click(x, y, {'button': 'right'})
+            await page.waitForSelector('div#action-menu')
+            await page.evaluate('() => document.querySelector("div#action-menu").querySelectorAll("li.action-menu-entry")[2].click()')
+            await page.waitForSelector('button.link-like.widget-reveal-card-lat-lng')
+            coordinates_string = await page.evaluate('() => document.querySelector("button.link-like.widget-reveal-card-lat-lng").innerText')
+            latitude, longitude = tuple(map(float, coordinates_string.split(', ')))
+            location_dict['latitude'] = latitude
+            location_dict['longitude'] = longitude
+            dicts_to_add_borough_data.put(location_dict)
+    while not dicts_to_add_borough_data.empty():
+        add_borough_data(dicts_to_add_borough_data.get())
     return location_dicts
 
-async def _gather_location_dicts() -> List[dict]:
+async def gather_location_dicts() -> List[dict]:
     browser = await launch_browser()
     page = only_one(await browser.pages())
     if os.path.isfile(RAW_SCRAPED_DATA_JSON_FILE):
         with open(RAW_SCRAPED_DATA_JSON_FILE, 'r') as json_file_handle:
             location_dicts = json.load(json_file_handle)
     else:
-        location_dicts = await _scrape_location_dicts(page)
+        location_dicts = await scrape_location_dicts(page)
         with open(RAW_SCRAPED_DATA_JSON_FILE, 'w') as json_file_handle:
             json.dump(location_dicts, json_file_handle, indent=4)
-    location_dicts = await _scrape_lat_longs(location_dicts, page)
-    # @todo add boroughs
+    location_dicts = await scrape_geospatial_data(location_dicts, page)
     browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
     for child_process in browser_process.children(recursive=True):
         child_process.kill()
@@ -232,7 +279,7 @@ async def _gather_location_dicts() -> List[dict]:
 
 def gather_data() -> None:
     with timer('Data gathering'):
-        location_dicts = EVENT_LOOP.run_until_complete(_gather_location_dicts())
+        location_dicts = EVENT_LOOP.run_until_complete(gather_location_dicts())
     with open(OUTPUT_JSON_FILE, 'w') as json_file_handle:
         json.dump(location_dicts, json_file_handle, indent=4)
     breakpoint()
