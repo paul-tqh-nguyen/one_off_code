@@ -24,6 +24,7 @@ import random
 import queue
 import pandas as pd
 import multiprocessing as mp
+import numpy as np
 from functools import lru_cache
 from statistics import mean
 from shapely.geometry import Point, Polygon
@@ -215,11 +216,16 @@ def nearest_borough_to_coordinates(latitude: float, longitude: float) -> str:
                 nearest_borough_dist = borough_dist
                 nearest_borough = borough
     assert isinstance(nearest_borough, str)
-    nearest_borough = nearest_borough.lower() if nearest_borough_dist < 0.01 else np.nan
+    nearest_borough = nearest_borough.lower() if nearest_borough_dist < 0.01 else None
     return nearest_borough
 
 def add_borough_data(location_dict: dict) -> None:
-    location_dict['borough'] = nearest_borough_to_coordinates(location_dict['latitude'], location_dict['longitude'])
+    nearest_borough = nearest_borough_to_coordinates(location_dict['latitude'], location_dict['longitude'])
+    if nearest_borough is not None:
+        location_dict['borough'] = nearest_borough
+    else:
+        del location_dict['latitude']
+        del location_dict['longitude']
     return
 
 async def scrape_geospatial_data(location_dicts: List[dict], page: pyppeteer.page.Page) -> List[dict]:
@@ -238,7 +244,7 @@ async def scrape_geospatial_data(location_dicts: List[dict], page: pyppeteer.pag
         with timer(exitCallback=update_sleep_time):
             if not dicts_to_add_borough_data.empty():
                 add_borough_data(dicts_to_add_borough_data.get())
-                x, y = await page.evaluate('() => [window.innerWidth/2, window.innerHeight/2]')
+            x, y = await page.evaluate('() => [window.innerWidth/2, window.innerHeight/2]')
         await asyncio.sleep(sleep_time_container['sleep_time']) # zooming not ready until the map is fully rendered, which happens in a canvas element (uninspectable), so we can't cleanly wait for a DOM element change.
         if (await page.evaluate('() => document.querySelector("div.section-hero-header-title-top-container") !== null')):
             for _ in range(10):
@@ -266,6 +272,7 @@ async def gather_location_dicts() -> List[dict]:
         location_dicts = await scrape_location_dicts(page)
         with open(RAW_SCRAPED_DATA_JSON_FILE, 'w') as json_file_handle:
             json.dump(location_dicts, json_file_handle, indent=4)
+    random.shuffle(location_dicts) # @todo remove this
     location_dicts = await scrape_geospatial_data(location_dicts, page)
     browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
     for child_process in browser_process.children(recursive=True):
