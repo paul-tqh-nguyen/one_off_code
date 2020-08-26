@@ -237,7 +237,6 @@ async def scrape_geospatial_data(location_dicts: List[dict], page: pyppeteer.pag
         await page.keyboard.press('Enter')
         zoom_in_button = await page.waitForSelector('button#widget-zoom-in')
         sleep_time_container = {'sleep_time': 5}
-        @trace
         def update_sleep_time(used_time: float) -> None:
             sleep_time_container['sleep_time'] -= used_time
             return 
@@ -260,6 +259,7 @@ async def scrape_geospatial_data(location_dicts: List[dict], page: pyppeteer.pag
             dicts_to_add_borough_data.put(location_dict)
     while not dicts_to_add_borough_data.empty():
         add_borough_data(dicts_to_add_borough_data.get())
+    assert all(iff('borough' in location_dict, 'latitude' in location_dict and 'longitude' in location_dict)for location_dict in location_dicts)
     return location_dicts
 
 async def gather_location_dicts() -> List[dict]:
@@ -272,7 +272,6 @@ async def gather_location_dicts() -> List[dict]:
         location_dicts = await scrape_location_dicts(page)
         with open(RAW_SCRAPED_DATA_JSON_FILE, 'w') as json_file_handle:
             json.dump(location_dicts, json_file_handle, indent=4)
-    random.shuffle(location_dicts) # @todo remove this
     location_dicts = await scrape_geospatial_data(location_dicts, page)
     browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
     for child_process in browser_process.children(recursive=True):
@@ -289,7 +288,6 @@ def gather_data() -> None:
         location_dicts = EVENT_LOOP.run_until_complete(gather_location_dicts())
     with open(OUTPUT_JSON_FILE, 'w') as json_file_handle:
         json.dump(location_dicts, json_file_handle, indent=4)
-    breakpoint()
     return
 
 if __name__ == '__main__':
