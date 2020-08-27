@@ -22,6 +22,8 @@ import warnings
 import bs4
 import random
 import queue
+import urllib.parse
+
 import pandas as pd
 import multiprocessing as mp
 import numpy as np
@@ -81,6 +83,15 @@ async def _get_sole_element(self: Union[pyppeteer.page.Page, pyppeteer.element_h
     return only_one(await self.get_elements(selector))
 setattr(pyppeteer.page.Page, 'get_sole_element', _get_sole_element)
 setattr(pyppeteer.element_handle.ElementHandle, 'get_sole_element', _get_sole_element)
+
+async def _safelyWaitForSelector(self: pyppeteer.page.Page, *args, **kwargs) -> bool:
+    try:
+        await self.waitForSelector(*args, **kwargs)
+        success = True
+    except pyppeteer.errors.TimeoutError:
+        success = False
+    return success
+setattr(pyppeteer.page.Page, 'safelyWaitForSelector', _safelyWaitForSelector)
 
 ###################
 # Sanity Checking #
@@ -229,36 +240,24 @@ def add_borough_data(location_dict: dict) -> None:
     return
 
 async def scrape_geospatial_data(location_dicts: List[dict], page: pyppeteer.page.Page) -> List[dict]:
-    dicts_to_add_borough_data = queue.Queue()
     for location_dict in location_dicts:
         await page.goto(LAT_LONG_URL)
         await page.waitForSelector('#searchboxinput')
         await page.type(f'input[id=searchboxinput]', location_dict['location_address'])
         await page.keyboard.press('Enter')
-        zoom_in_button = await page.waitForSelector('button#widget-zoom-in')
-        sleep_time_container = {'sleep_time': 5}
-        def update_sleep_time(used_time: float) -> None:
-            sleep_time_container['sleep_time'] -= used_time
-            return 
-        with timer(exitCallback=update_sleep_time):
-            if not dicts_to_add_borough_data.empty():
-                add_borough_data(dicts_to_add_borough_data.get())
-            x, y = await page.evaluate('() => [window.innerWidth/2, window.innerHeight/2]')
-        await asyncio.sleep(sleep_time_container['sleep_time']) # zooming not ready until the map is fully rendered, which happens in a canvas element (uninspectable), so we can't cleanly wait for a DOM element change.
-        if (await page.evaluate('() => document.querySelector("div.section-hero-header-title-top-container") !== null')):
-            for _ in range(10):
-                await zoom_in_button.click()
-            await page.mouse.click(x, y, {'button': 'right'})
-            await page.waitForSelector('div#action-menu')
-            await page.evaluate('() => document.querySelector("div#action-menu").querySelectorAll("li.action-menu-entry")[2].click()')
-            await page.waitForSelector('button.link-like.widget-reveal-card-lat-lng')
-            coordinates_string = await page.evaluate('() => document.querySelector("button.link-like.widget-reveal-card-lat-lng").innerText')
-            latitude, longitude = tuple(map(float, coordinates_string.split(', ')))
-            location_dict['latitude'] = latitude
-            location_dict['longitude'] = longitude
-            dicts_to_add_borough_data.put(location_dict)
-    while not dicts_to_add_borough_data.empty():
-        add_borough_data(dicts_to_add_borough_data.get())
+        await page.waitForNavigation()
+        url = page.url
+        result_found = '!3d' in url and '!4d-' in url and await page.safelyWaitForSelector('div.section-hero-header-title-top-container', {'timeout': 1000})
+        if result_found:
+            data_string = url.split('/')[-1]
+            assert data_string.startswith('data=!')
+            data_segments = data_string.split('!')[1:]
+            assert all(data_segment[0].isnumeric() and data_segment[1].isalpha() for data_segment in data_segments)
+            coordinate_dict = {data_segment[:2]: float(data_segment[2:]) for data_segment in data_segments if data_segment[:2] in ('3d', '4d')}
+            location_dict['latitude'] = coordinate_dict['3d']
+            location_dict['longitude'] = coordinate_dict['4d']
+            assert 'borough' not in location_dict
+            add_borough_data(location_dict)
     assert all(iff('borough' in location_dict, 'latitude' in location_dict and 'longitude' in location_dict)for location_dict in location_dicts)
     return location_dicts
 

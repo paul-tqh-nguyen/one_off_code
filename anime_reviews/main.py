@@ -373,7 +373,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(regularization_loss.shape) == (batch_size,)
         mse_loss = MSE_LOSS(predicted_scores, target_scores)
         assert tuple(mse_loss.shape) == (batch_size,)
-        assert mse_loss.gt(0).all()
+        assert mse_loss.gt(0).any()
         loss = regularization_loss + mse_loss
         assert tuple(loss.shape) == (batch_size,)
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size,)
