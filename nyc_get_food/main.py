@@ -50,7 +50,7 @@ BOROUGH_GEOJSON_FILE = './borough_data/Borough Boundaries.geojson'
 RAW_SCRAPED_DATA_JSON_FILE = './raw_scraped_data.json'
 OUTPUT_JSON_FILE = './complete_scraped_data.json'
 
-MAX_NUMBER_OF_CONCURRENT_LAT_LONG_GATHERING_BROWSERS = 4
+MAX_NUMBER_OF_CONCURRENT_LAT_LONG_GATHERING_BROWSERS = 10
 
 ##########################
 # Web Scraping Utilities #
@@ -246,6 +246,16 @@ def add_borough_data(location_dict: dict) -> None:
         del location_dict['location_longitude']
     return
 
+def coordinates_from_url(url: str) -> Tuple[float, float]:
+    data_string = url.split('/')[-1]
+    assert data_string.startswith('data=!')
+    data_segments = data_string.split('!')[1:]
+    assert all(data_segment[0].isnumeric() and data_segment[1].isalpha() for data_segment in data_segments)
+    coordinate_dict = {data_segment[:2]: float(data_segment[2:]) for data_segment in data_segments if data_segment[:2] in ('3d', '4d')}
+    latitute = coordinate_dict['3d']
+    longitude = coordinate_dict['4d']
+    return latitute, longitude
+
 async def scrape_geospatial_data(location_dict: dict) -> dict:
     async with new_browser(headless=True) as browser:
         page = only_one(await browser.pages())
@@ -254,18 +264,19 @@ async def scrape_geospatial_data(location_dict: dict) -> dict:
         await page.type(f'input[id=searchboxinput]', location_dict['location_address'])
         await page.keyboard.press('Enter')
         await page.waitForNavigation()
+        result_found = await page.safelyWaitForSelector('div.section-hero-header-title-top-container', {'timeout': 120_000})
         url = page.url
-        result_found = '!3d' in url and '!4d-' in url and await page.safelyWaitForSelector('div.section-hero-header-title-top-container', {'timeout': 1000})
-        if result_found:
-            data_string = url.split('/')[-1]
-            assert data_string.startswith('data=!')
-            data_segments = data_string.split('!')[1:]
-            assert all(data_segment[0].isnumeric() and data_segment[1].isalpha() for data_segment in data_segments)
-            coordinate_dict = {data_segment[:2]: float(data_segment[2:]) for data_segment in data_segments if data_segment[:2] in ('3d', '4d')}
-            location_dict['location_latitude'] = coordinate_dict['3d']
-            location_dict['location_longitude'] = coordinate_dict['4d']
-            assert 'location_borough' not in location_dict
-            add_borough_data(location_dict)
+        if result_found and not url.split('/')[-1].startswith('data=!'):
+            await page.waitForNavigation()
+            url = page.url
+    print()
+    print(f"url {repr(url)}")
+    print(f"result_found {repr(result_found)}")
+    print()
+    if result_found:
+        location_dict['location_latitude'], location_dict['location_longitude'] = coordinates_from_url(url)
+        assert 'location_borough' not in location_dict
+        add_borough_data(location_dict)
     assert iff('location_borough' in location_dict, 'location_latitude' in location_dict and 'location_longitude' in location_dict)
     return location_dict
 
