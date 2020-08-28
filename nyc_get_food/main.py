@@ -64,11 +64,9 @@ async def new_browser(*args, **kwargs) -> Generator:
     browser: pyppeteer.browser.Browser = await pyppeteer.launch(kwargs, args=args)
     try:
         yield browser
+        await browser.close()
     except Exception as error:
-        browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
-        for child_process in browser_process.children(recursive=True):
-            child_process.kill()
-        browser_process.kill() # @todo this line doesn't actually kill the process (or maybe it just doesn't free the PID?)
+        await browser.close()
         raise error
     return
 
@@ -264,15 +262,21 @@ async def scrape_geospatial_data(location_dict: dict) -> dict:
         await page.type(f'input[id=searchboxinput]', location_dict['location_address'])
         await page.keyboard.press('Enter')
         await page.waitForNavigation()
-        result_found = await page.safelyWaitForSelector('div.section-hero-header-title-top-container', {'timeout': 120_000})
-        url = page.url
-        if result_found and not url.split('/')[-1].startswith('data=!'):
-            await page.waitForNavigation()
+        result_found = await page.safelyWaitForSelector('div.section-hero-header-title-top-container', {'timeout': 5_000})
+        if result_found:
             url = page.url
-    print()
-    print(f"url {repr(url)}")
-    print(f"result_found {repr(result_found)}")
-    print()
+            if not url.split('/')[-1].startswith('data=!'):
+                print(f"\n 1 url {repr(url)}")
+                await page.waitForNavigation()
+                url = page.url
+            if '!3d' not in url.split('/')[-1]:
+                print(f"\n 2 url {repr(url)}")
+                await page.waitForNavigation()
+                url = page.url
+            if '!4d' not in url.split('/')[-1]:
+                print(f"\n 3 url {repr(url)}")
+                await page.waitForNavigation()
+                url = page.url
     if result_found:
         location_dict['location_latitude'], location_dict['location_longitude'] = coordinates_from_url(url)
         assert 'location_borough' not in location_dict
