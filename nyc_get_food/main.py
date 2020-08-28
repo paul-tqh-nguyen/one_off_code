@@ -23,15 +23,16 @@ import bs4
 import random
 import queue
 import urllib.parse
-
+import tqdm
 import pandas as pd
 import multiprocessing as mp
 import numpy as np
+from contextlib import asynccontextmanager
 from functools import lru_cache
 from statistics import mean
 from shapely.geometry import Point, Polygon
 from typing_extensions import Literal
-from typing import Union, List, Tuple, Iterable, Callable, Awaitable
+from typing import Union, List, Tuple, Iterable, Callable, Awaitable, Coroutine
 
 from misc_utilities import *
 
@@ -41,8 +42,6 @@ from misc_utilities import *
 # Globals #
 ###########
 
-BROWSER_IS_HEADLESS = False # location-based clicking in pyppeteer currently buggy
-
 GET_FOOD_URL = 'https://dsny.maps.arcgis.com/apps/webappviewer/index.html?id=35901167a9d84fb0a2e0672d344f176f'
 LAT_LONG_URL = 'https://www.google.com/maps'
 
@@ -51,6 +50,8 @@ BOROUGH_GEOJSON_FILE = './borough_data/Borough Boundaries.geojson'
 RAW_SCRAPED_DATA_JSON_FILE = './raw_scraped_data.json'
 OUTPUT_JSON_FILE = './complete_scraped_data.json'
 
+MAX_NUMBER_OF_CONCURRENT_LAT_LONG_GATHERING_BROWSERS = 4
+
 ##########################
 # Web Scraping Utilities #
 ##########################
@@ -58,14 +59,18 @@ OUTPUT_JSON_FILE = './complete_scraped_data.json'
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
-async def launch_browser() -> pyppeteer.browser.Browser:
-    browser: pyppeteer.browser.Browser = await pyppeteer.launch(
-        {
-            'headless': BROWSER_IS_HEADLESS,
-            'defaultViewport': None,
-        },
-        args=['--start-fullscreen'])
-    return browser
+@asynccontextmanager
+async def new_browser(*args, **kwargs) -> Generator:
+    browser: pyppeteer.browser.Browser = await pyppeteer.launch(kwargs, args=args)
+    try:
+        yield browser
+    except Exception as error:
+        browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
+        for child_process in browser_process.children(recursive=True):
+            child_process.kill()
+        browser_process.kill() # @todo this line doesn't actually kill the process (or maybe it just doesn't free the PID?)
+        raise error
+    return
 
 ########################
 # Pyppeteer Extensions #
@@ -178,27 +183,29 @@ def process_location_html_string(raw_html_string: str) -> dict:
         assert 'ebt' not in ebt_string.lower(), ebt_string
     return location_dict
 
-async def scrape_location_dicts(page: pyppeteer.page.Page) -> List[dict]:
-    location_dicts: List[str] = []
-    await page.goto(GET_FOOD_URL)
-    home_button = await page.get_sole_element('div.home')
-    await home_button.click() # ensure consistent zoom level
-    circles = await page.get_elements('div#map_gc circle')
-    circles = circles
-    await circles[-1].click() # activate ERSI popup
-    window_width, window_height = await page.evaluate('() => [window.innerWidth, window.innerHeight]')
-    big_radius = window_width + window_height
-    display_div = await page.get_sole_element('.esriPopupWrapper')
-    for circle_index, circle in enumerate(circles):
-        await page.evaluate(f'(element) => {{element.setAttribute("r", "{big_radius}px")}}', circle) # avoid obfuscated and overlapping circles by expanding the desired circle
-        await home_button.click()
-        await page.mouse.click(2 if bool(circle_index%2) else window_width - 5, window_height//2) # avoid double clicking while pinging at sub-double-click speed
-        display_div_html_string = await page.evaluate('(element) => element.innerHTML', display_div)
-        location_dict = process_location_html_string(display_div_html_string)
-        sanity_check_raw_scraped_location_dict(location_dict)
-        location_dicts.append(location_dict)
-        await page.evaluate('(element) => {{element.setAttribute("r", "0px")}}',  circle) # hide processed circle to avoid obfuscation and overlap
-    assert len(location_dicts) == len(circles)
+async def scrape_location_dicts() -> List[dict]:
+    async with new_browser('--start-fullscreen', headless=False, defaultViewport=None) as browser:
+        page = only_one(await browser.pages())
+        location_dicts: List[str] = []
+        await page.goto(GET_FOOD_URL)
+        home_button = await page.get_sole_element('div.home')
+        await home_button.click() # ensure consistent zoom level
+        circles = await page.get_elements('div#map_gc circle')
+        circles = circles
+        await circles[-1].click() # activate ERSI popup
+        window_width, window_height = await page.evaluate('() => [window.innerWidth, window.innerHeight]')
+        big_radius = window_width + window_height
+        display_div = await page.get_sole_element('.esriPopupWrapper')
+        for circle_index, circle in enumerate(circles):
+            await page.evaluate(f'(element) => {{element.setAttribute("r", "{big_radius}px")}}', circle) # avoid obfuscated and overlapping circles by expanding the desired circle
+            await home_button.click()
+            await page.mouse.click(2 if bool(circle_index%2) else window_width - 5, window_height//2) # avoid double clicking while pinging at sub-double-click speed
+            display_div_html_string = await page.evaluate('(element) => element.innerHTML', display_div)
+            location_dict = process_location_html_string(display_div_html_string)
+            sanity_check_raw_scraped_location_dict(location_dict)
+            location_dicts.append(location_dict)
+            await page.evaluate('(element) => {{element.setAttribute("r", "0px")}}',  circle) # hide processed circle to avoid obfuscation and overlap
+        assert len(location_dicts) == len(circles)
     return location_dicts
 
 @lru_cache(maxsize=1)
@@ -231,16 +238,17 @@ def nearest_borough_to_coordinates(latitude: float, longitude: float) -> str:
     return nearest_borough
 
 def add_borough_data(location_dict: dict) -> None:
-    nearest_borough = nearest_borough_to_coordinates(location_dict['latitude'], location_dict['longitude'])
+    nearest_borough = nearest_borough_to_coordinates(location_dict['location_latitude'], location_dict['location_longitude'])
     if nearest_borough is not None:
-        location_dict['borough'] = nearest_borough
+        location_dict['location_borough'] = nearest_borough
     else:
-        del location_dict['latitude']
-        del location_dict['longitude']
+        del location_dict['location_latitude']
+        del location_dict['location_longitude']
     return
 
-async def scrape_geospatial_data(location_dicts: List[dict], page: pyppeteer.page.Page) -> List[dict]:
-    for location_dict in location_dicts:
+async def scrape_geospatial_data(location_dict: dict) -> dict:
+    async with new_browser(headless=True) as browser:
+        page = only_one(await browser.pages())
         await page.goto(LAT_LONG_URL)
         await page.waitForSelector('#searchboxinput')
         await page.type(f'input[id=searchboxinput]', location_dict['location_address'])
@@ -254,28 +262,26 @@ async def scrape_geospatial_data(location_dicts: List[dict], page: pyppeteer.pag
             data_segments = data_string.split('!')[1:]
             assert all(data_segment[0].isnumeric() and data_segment[1].isalpha() for data_segment in data_segments)
             coordinate_dict = {data_segment[:2]: float(data_segment[2:]) for data_segment in data_segments if data_segment[:2] in ('3d', '4d')}
-            location_dict['latitude'] = coordinate_dict['3d']
-            location_dict['longitude'] = coordinate_dict['4d']
-            assert 'borough' not in location_dict
+            location_dict['location_latitude'] = coordinate_dict['3d']
+            location_dict['location_longitude'] = coordinate_dict['4d']
+            assert 'location_borough' not in location_dict
             add_borough_data(location_dict)
-    assert all(iff('borough' in location_dict, 'latitude' in location_dict and 'longitude' in location_dict)for location_dict in location_dicts)
-    return location_dicts
+    assert iff('location_borough' in location_dict, 'location_latitude' in location_dict and 'location_longitude' in location_dict)
+    return location_dict
 
 async def gather_location_dicts() -> List[dict]:
-    browser = await launch_browser()
-    page = only_one(await browser.pages())
     if os.path.isfile(RAW_SCRAPED_DATA_JSON_FILE):
         with open(RAW_SCRAPED_DATA_JSON_FILE, 'r') as json_file_handle:
             location_dicts = json.load(json_file_handle)
     else:
-        location_dicts = await scrape_location_dicts(page)
+        location_dicts = await scrape_location_dicts()
         with open(RAW_SCRAPED_DATA_JSON_FILE, 'w') as json_file_handle:
             json.dump(location_dicts, json_file_handle, indent=4)
-    location_dicts = await scrape_geospatial_data(location_dicts, page)
-    browser_process = only_one([process for process in psutil.process_iter() if process.pid==browser.process.pid])
-    for child_process in browser_process.children(recursive=True):
-        child_process.kill()
-    browser_process.kill() # @todo this line doesn't actually kill the process (or maybe it just doesn't free the PID?)
+    semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_LAT_LONG_GATHERING_BROWSERS)
+    async def semaphore_task(task: Awaitable):
+        async with semaphore:
+            return await task
+    location_dicts = [await coroutine for coroutine in tqdm.tqdm(asyncio.as_completed(eager_map(semaphore_task, map(scrape_geospatial_data, location_dicts))), total=len(location_dicts), bar_format='{l_bar}{bar:50}{r_bar}')]
     return location_dicts
 
 ##########
