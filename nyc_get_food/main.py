@@ -47,10 +47,10 @@ LAT_LONG_URL = 'https://www.google.com/maps'
 
 BOROUGH_GEOJSON_FILE = './borough_data/Borough Boundaries.geojson'
 
-RAW_SCRAPED_DATA_JSON_FILE = './raw_scraped_data.json'
-OUTPUT_JSON_FILE = './complete_scraped_data.json'
+RAW_SCRAPED_DATA_JSON_FILE = './raw_scraped_html_data.json'
+OUTPUT_JSON_FILE = './scraped_data_with_geo_spatial.json'
 
-MAX_NUMBER_OF_CONCURRENT_LAT_LONG_GATHERING_BROWSERS = 1
+MAX_NUMBER_OF_CONCURRENT_LAT_LONG_GATHERING_BROWSERS = 10
 
 ##########################
 # Web Scraping Utilities #
