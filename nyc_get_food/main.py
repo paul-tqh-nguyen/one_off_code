@@ -66,24 +66,14 @@ async def new_browser(*args, **kwargs) -> Generator:
     while browser is sentinel:
         try:
             browser: pyppeteer.browser.Browser = await pyppeteer.launch(kwargs, args=args)
-            print(f"new_browser os.getpid() {repr(os.getpid())} browser id {id(browser)}")
-            print(f"\n browser {repr(browser)}")
         except Exception as browser_launch_error:
-            print(f"browser_launch_error {repr(browser_launch_error)} browser id {id(browser)}")
             pass
     try:
-        print(f'\n 0 browser id {id(browser)}')
         yield browser
-        print(f'\n 1 browser id {id(browser)}')
         await browser.close()
-        print(f'\n 2 browser id {id(browser)}')
     except Exception as error:
-        print(f'\n 3 browser id {id(browser)}')
         await browser.close()
-        print(f'\n 4 browser id {id(browser)}')
-        print(f"error {repr(error)}")
         raise error
-    print(f'\n 5 browser id {id(browser)}')
     return
 
 ########################
@@ -282,43 +272,27 @@ def coordinates_from_url(url: str) -> Tuple[float, float]:
 async def scrape_geospatial_data(location_dict: dict) -> dict:
     result_found = False
     async with new_browser(headless=True) as browser: # @todo make this headless
-        print(f"location_dict['location_name'] {repr(location_dict['location_name'])} browser id {id(browser)}")
-        print(f"location_dict['location_address'] {repr(location_dict['location_address'])} browser id {id(browser)}")
-        print(f"scrape_geospatial_data os.getpid() {repr(os.getpid())} browser id {id(browser)}")
         page = only_one(await browser.pages())
         await page.goto(LAT_LONG_URL)
         await page.waitForSelector('#searchboxinput')
         await page.type(f'input[id=searchboxinput]', location_dict['location_address'])
         await page.keyboard.press('Enter')
-        print(f"0 page.url {repr(page.url)}")
-        assert await page.safelyWaitForNavigation({'timeout': 30_000}), f'Unhandled url {page.url}'
+        await page.safelyWaitForNavigation({'timeout': 30_000}), f'Unhandled url {page.url}'
         result_found = await page.safelyWaitForSelector('div.section-hero-header-title-top-container', {'timeout': 30_000})
-        print(f"result_found {repr(result_found)}")
         if result_found:
             url = page.url
             if not url.split('/')[-1].startswith('data=!'):
-                print(f"\n    1 url {repr(url)} browser id {id(browser)}")
-                assert await page.safelyWaitForNavigation({'timeout': 30_000})
+                await page.safelyWaitForNavigation({'timeout': 30_000})
                 url = page.url
                 assert url.split('/')[-1].startswith('data=!'), f'Unhandled url {url}'
-                print(f"\n    1.1 url {repr(url)} browser id {id(browser)}")
             if '!3d' not in url.split('/')[-1]:
-                print(f"\n    2 url {repr(url)} browser id {id(browser)}")
                 await page.safelyWaitForNavigation({'timeout': 30_000})
                 url = page.url
                 assert '!3d' in url.split('/')[-1], f'Unhandled url {url}'
-                print(f"\n 2.1 url {repr(url)} browser id {id(browser)}")
             if '!4d' not in url.split('/')[-1]:
-                print(f"\n    3 url {repr(url)} browser id {id(browser)}")
                 await page.safelyWaitForNavigation({'timeout': 30_000})
                 url = page.url
                 assert '!4d' in url.split('/')[-1], f'Unhandled url {url}'
-                print(f"\n    3.1 url {repr(url)} browser id {id(browser)}")
-        else:
-            print()
-            print(f"result_found {repr(result_found)}")
-            print(f"page.url {repr(page.url)}")
-            print()
     if result_found:
         location_dict['location_latitude'], location_dict['location_longitude'] = coordinates_from_url(url)
         assert 'location_borough' not in location_dict
