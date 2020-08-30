@@ -2,6 +2,7 @@
 
 '''
 '''
+
 # @todo update doc string
 
 ###########
@@ -12,6 +13,7 @@ import os
 import json
 import logging
 import more_itertools
+import math
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
@@ -49,7 +51,8 @@ CPU_COUNT = mp.cpu_count()
 if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
     pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
 
-GPU_IDS = eager_map(int, nvgpu.available_gpus())
+# GPU_IDS = eager_map(int, nvgpu.available_gpus()) # @todo enable this
+GPU_IDS = [2, 3] # @todo remove this
 DEFAULT_GPU = GPU_IDS[0]
 
 NUM_WORKERS = 0 if HYPERPARAMETER_SEARCH_IS_DISTRIBUTED else 2
@@ -352,6 +355,16 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         get_norm = lambda batch_matrix: batch_matrix.mul(batch_matrix).sum(dim=1)
         regularization_loss = get_norm(user_embedding[:,:-1]) + get_norm(anime_embedding[:,:-1])
         assert tuple(regularization_loss.shape) == (batch_size,)
+        if not regularization_loss.gt(0).all(): # @todo remove this
+            print(f"batch_size {repr(batch_size)}")
+            print(f"batch_dict {repr(batch_dict)}")
+            print(f"anime_id_indices {repr(anime_id_indices)}")
+            print(f"user_embedding {repr(user_embedding)}")
+            print(f"anime_embedding {repr(anime_embedding)}")
+            print(f"scores {repr(scores)}")
+            print(f"regularization_loss {repr(regularization_loss)}")
+            print(f"attempting to hit breakpoint now.")
+            breakpoint()
         assert regularization_loss.gt(0).all()
         return scores, regularization_loss
 
@@ -373,7 +386,14 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(regularization_loss.shape) == (batch_size,)
         mse_loss = MSE_LOSS(predicted_scores, target_scores)
         assert tuple(mse_loss.shape) == (batch_size,)
-        assert mse_loss.gt(0).any()
+        if not mse_loss.gt(0).all():
+            print(f"batch_dict {repr(batch_dict)}")
+            print(f"batch_size {repr(batch_size)}")
+            print(f"target_scores {repr(target_scores)}")
+            print(f"predicted_scores {repr(predicted_scores)}")
+            print(f"regularization_loss {repr(regularization_loss)}")
+            print(f"mse_loss {repr(mse_loss)}")
+        assert mse_loss.gt(0).sum() > math.floor(batch_size * 0.9)
         loss = regularization_loss + mse_loss
         assert tuple(loss.shape) == (batch_size,)
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size,)
@@ -604,7 +624,8 @@ class HyperParameterSearchObjective:
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get() if self.gpu_id_queue else DEFAULT_GPU
         learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
+        # number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15)) # @todo enable this
+        number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 5)) # @todo remove this
         batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6,12)]))
         gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
         embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
