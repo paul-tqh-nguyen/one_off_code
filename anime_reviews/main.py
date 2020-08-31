@@ -43,7 +43,7 @@ import joblib
 DB_URL = 'sqlite:///collaborative_filtering.db'
 STUDY_NAME = 'collaborative-filtering'
 
-HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = True
+HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = False # @todo enable this
 NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
 NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 5
 
@@ -393,7 +393,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
             print(f"predicted_scores {repr(predicted_scores)}")
             print(f"regularization_loss {repr(regularization_loss)}")
             print(f"mse_loss {repr(mse_loss)}")
-        assert mse_loss.gt(0).sum() > math.floor(batch_size * 0.9)
+        assert mse_loss.gt(0).all()
         loss = regularization_loss + mse_loss
         assert tuple(loss.shape) == (batch_size,)
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size,)
@@ -649,9 +649,11 @@ class HyperParameterSearchObjective:
                         gpus=[gpu_id],
                     )
         except Exception as e:
-            self.gpu_id_queue.put(gpu_id)
+            if self.gpu_id_queue is not None:
+                self.gpu_id_queue.put(gpu_id)
             raise e
-        self.gpu_id_queue.put(gpu_id)
+        if self.gpu_id_queue is not None:
+            self.gpu_id_queue.put(gpu_id)
         return best_validation_loss
 
 def hyperparameter_search() -> None:
@@ -659,7 +661,7 @@ def hyperparameter_search() -> None:
     optimize_kawrgs = dict(
         n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS,
         gc_after_trial=True,
-        catch=(Exception,),
+        # catch=(Exception,), # @todo enable this
     )
     with _training_logging_suppressed():
         if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
