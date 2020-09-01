@@ -356,15 +356,13 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         regularization_loss = get_norm(user_embedding[:,:-1]) + get_norm(anime_embedding[:,:-1])
         assert tuple(regularization_loss.shape) == (batch_size,)
         if not regularization_loss.gt(0).all(): # @todo remove this
-            print(f"batch_size {repr(batch_size)}")
-            print(f"batch_dict {repr(batch_dict)}")
-            print(f"anime_id_indices {repr(anime_id_indices)}")
-            print(f"user_embedding {repr(user_embedding)}")
-            print(f"anime_embedding {repr(anime_embedding)}")
-            print(f"scores {repr(scores)}")
-            print(f"regularization_loss {repr(regularization_loss)}")
-            print(f"attempting to hit breakpoint now.")
-            breakpoint()
+            LOGGER.info(f"batch_size {repr(batch_size)}")
+            LOGGER.info(f"batch_dict {repr(batch_dict)}")
+            LOGGER.info(f"anime_id_indices {repr(anime_id_indices)}")
+            LOGGER.info(f"user_embedding {repr(user_embedding)}")
+            LOGGER.info(f"anime_embedding {repr(anime_embedding)}")
+            LOGGER.info(f"scores {repr(scores)}")
+            LOGGER.info(f"regularization_loss {repr(regularization_loss)}")
         assert regularization_loss.gt(0).all()
         return scores, regularization_loss
 
@@ -386,13 +384,13 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(regularization_loss.shape) == (batch_size,)
         mse_loss = MSE_LOSS(predicted_scores, target_scores)
         assert tuple(mse_loss.shape) == (batch_size,)
-        if not mse_loss.gt(0).all():
-            print(f"batch_dict {repr(batch_dict)}")
-            print(f"batch_size {repr(batch_size)}")
-            print(f"target_scores {repr(target_scores)}")
-            print(f"predicted_scores {repr(predicted_scores)}")
-            print(f"regularization_loss {repr(regularization_loss)}")
-            print(f"mse_loss {repr(mse_loss)}")
+        if not mse_loss.gt(0).all(): # @todo remove this
+            LOGGER.info(f"batch_dict {repr(batch_dict)}")
+            LOGGER.info(f"batch_size {repr(batch_size)}")
+            LOGGER.info(f"target_scores {repr(target_scores)}")
+            LOGGER.info(f"predicted_scores {repr(predicted_scores)}")
+            LOGGER.info(f"regularization_loss {repr(regularization_loss)}")
+            LOGGER.info(f"mse_loss {repr(mse_loss)}")
         assert mse_loss.gt(0).all()
         loss = regularization_loss + mse_loss
         assert tuple(loss.shape) == (batch_size,)
