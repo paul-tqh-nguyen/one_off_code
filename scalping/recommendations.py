@@ -14,14 +14,12 @@ import requests
 import datetime
 import json
 import pandas as pd
+import numpy as np
+
+from misc_utilities import *
 
 import bokeh.plotting
 import bokeh.models
-# from bokeh.plotting import figure, show, output_file, output_notebook
-# from bokeh.palettes import Spectral11, colorblind, Inferno, BuGn, brewer
-# from bokeh.models import HoverTool, value, LabelSet, Legend, ColumnDataSource,LinearColorMapper,BasicTicker, PrintfTickFormatter, ColorBar
-
-from misc_utilities import *
  
 # @todo make sure these are used
 
@@ -76,22 +74,39 @@ def main() -> None:
         df = pd.DataFrame(response.json())
         df['date'] = pd.to_datetime(df['date'])
         df['truncated_date'] = df['date'].map(datetime.datetime.date)
+        df['time_of_day_string'] = df['date'].map(lambda date: date.strftime('%H:%M'))
         for current_date, group in df.groupby('truncated_date'):
-            p = bokeh.plotting.figure(title=f'{ticker_symbol} Stock Prices for {current_date}', y_axis_type='linear', plot_height=400, plot_width=800, tools='hover')
+            p = bokeh.plotting.figure(
+                title=f'{ticker_symbol} Stock Prices for {current_date}',
+                x_axis_type='datetime',
+                y_axis_type='linear',
+                plot_height=400,
+                plot_width=800,
+                x_range=(group.date.min(), group.date.max()),
+                tools='hover',
+            )
             p.toolbar.logo = None
             p.toolbar_location = None
             p.xaxis.axis_label = 'Time'
             p.yaxis.axis_label = 'Stock Price'
+            p.xaxis.ticker = bokeh.models.tickers.DatetimeTicker(desired_num_ticks=16)
             source = bokeh.models.ColumnDataSource(data=group)
             p.line(x='date', y='open', source=source, line_width=3)
-            p.select_one(bokeh.models.HoverTool).tooltips = [
-                ('Date', '@date'),
-                ('Stock Price', '@open'),
+            hovertool = p.select_one(bokeh.models.HoverTool)
+            hovertool.tooltips = [
+                ('Ticker Symbol', ticker_symbol),
+                ('Date', '@time_of_day_string'),
+                ('Stock Price', '@open{$0,0.00}'),
             ]
+            p.xaxis.formatter = bokeh.models.DatetimeTickFormatter(
+                hours=['%H:%M'],
+            )
+            hovertool.mode = 'vline'
             output_file_location = os.path.join(OUTPUT_DIR, f'{ticker_symbol}_{current_date}_plot.html')
             bokeh.plotting.output_file(output_file_location, title='{ticker_symbol} Stock Prices {current_date}', mode='inline')
-            bokeh.plotting.save(p, title='{ticker_symbol} Stock Prices {current_date}')
+            bokeh.plotting.save(p, title='{current_date} {ticker_symbol} Stock Prices')
             break # @todo remove this
+        break # @todo remove this
     return
 
 if __name__ == '__main__':
