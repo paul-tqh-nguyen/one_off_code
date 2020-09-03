@@ -48,7 +48,7 @@ DOCS_DIR = './docs'
 
 OUTPUT_DIR = './docs/output'
 if not os.path.isdir(OUTPUT_DIR):
-    os.mkdirs(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR)
 
 #############################
 # Domain-Specific Utilities #
@@ -92,7 +92,7 @@ def main() -> None:
             p.toolbar.logo = None
             p.toolbar_location = None
             source = bokeh.models.ColumnDataSource(data=group)
-            p.line(x='date', y='open', source=source, line_width=3)
+            p.line(x='date', y='open', source=source, line_width=1)
             hovertool = p.select_one(bokeh.models.HoverTool)
             hovertool.tooltips = [
                 ('Stock Price', '@open{$0,0.00}'),
