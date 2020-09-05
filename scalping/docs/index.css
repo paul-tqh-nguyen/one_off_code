@@ -1,0 +1,79 @@
+
+@import url('https://fonts.googleapis.com/css?family=Questrial');
+
+body {
+    font-family: "Questrial", sans-serif;
+}
+
+/***********/
+/* General */
+/***********/
+
+#all-ticker-symbol-data-container {
+}
+
+/***************/
+/* Expandables */
+/***************/
+
+.expandable-container {
+}
+
+.expandable-button {
+}
+
+.expandable-button.active {
+}
+
+.expandable-content {
+}
+
+.expandable-content.active {
+}
+
+/*****************/
+/* Ticker Symbol */
+/*****************/
+
+.ticker-symbol-label {
+}
+
+/*************/
+/* All Dates */
+/*************/
+
+.all-dates-label {
+}
+
+.all-dates-container {
+}
+
+/********************/
+/* Individual Dates */
+/********************/
+
+.date-container {
+    display: inline-block;
+}
+
+.date-stats-table {
+    padding-right: 30px;
+}
+
+.date-stats-table p {
+    padding: 3px 3px 3px 3px;
+    margin: 0px;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+}
+
+.date-stats-and-chart-table {
+}
+
+.date-chart-iframe {
+    width: 800px;
+    height: 400px;
+    padding: 10px 10px 10px 10px;
+}
