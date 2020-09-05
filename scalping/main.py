@@ -28,13 +28,13 @@ import bokeh.models
 ###########
 
 RELEVANT_TICKER_SYMBOLS = [
-    'FB',
-    'AMZN',
     'AAPL',
-    'NFLX',
-    'GOOGL',
-    'TSLA',
+    'AMZN',
     'CMG',
+    'FB',
+    'GOOGL',
+    'NFLX',
+    'TSLA',
 ]
 
 NUMBER_OF_DAYS = 5
@@ -124,8 +124,8 @@ def main() -> None:
                 'html_file': os.path.relpath(output_file_location, DOCS_DIR),
                 'opening_price': group[group.date == group.date.min()].open.values.item(),
                 'closing_price': group[group.date == group.date.min()].close.values.item(),
-                'min_price': df.open.min(),
-                'max_price': df.open.max()
+                'min_price': group.open.min(),
+                'max_price': group.open.max()
             }
     with open(OUTPUT_JSON_FILE_LOCATION, 'w') as file_handle:
         json.dump(ticker_data, file_handle, indent=4)

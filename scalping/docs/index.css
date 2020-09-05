@@ -3,13 +3,8 @@
 
 body {
     font-family: "Questrial", sans-serif;
-}
-
-/***********/
-/* General */
-/***********/
-
-#all-ticker-symbol-data-container {
+    margin: 0px;
+    padding: 0px;
 }
 
 /***************/
@@ -26,26 +21,58 @@ body {
 }
 
 .expandable-content {
+    transform: scaleY(0);
 }
 
 .expandable-content.active {
+    transform: scaleY(1);
 }
 
-/*****************/
-/* Ticker Symbol */
-/*****************/
+/***********/
+/* General */
+/***********/
 
-.ticker-symbol-label {
+#all-ticker-symbol-data-container {
 }
 
 /*************/
 /* All Dates */
 /*************/
 
-.all-dates-label {
+.ticker-symbol-expandable {
+    background: #f0f0f0;
+    margin: 0px;
+}
+
+.ticker-symbol-label {
+    background: #636363;
+    color: #fff;
+    font-size: 2em;
+    margin: 0px;
+    padding: 10px;
+}
+
+.ticker-symbol-label:before {
+    transition: all 0.5s;
+    content: "\25B7";
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.ticker-symbol-label.active:before {
+    transform: rotate(90deg);
 }
 
 .all-dates-container {
+    transition: all 0.5s;
+    max-height: 0px;
+    padding: 0px 25px 0px 25px;
+    margin: auto;
+    width: 50%;
+}
+
+.all-dates-container.active {
+    padding: 25px;
 }
 
 /********************/
@@ -53,16 +80,15 @@ body {
 /********************/
 
 .date-container {
-    width: fit-content; 
-    height: fit-content;
     border: 2px solid #555;
     padding: 30px;
     margin: 10px;
-    background: #fff
+    background: #fff;
+    width: fit-content;
 }
 
 .date-stats-table {
-    padding-right: 30px;
+    min-width: 250px;
 }
 
 .date-stats-table p {
@@ -72,13 +98,14 @@ body {
     margin-block-end: 0px;
     margin-inline-start: 0px;
     margin-inline-end: 0px;
+    text-align: right;
 }
 
 .date-stats-and-chart-table {
 }
 
 .date-chart-iframe {
-    width: 400px;
-    height: 250px;
+    width: 410px;
+    height: 260px;
     padding: 10px 10px 10px 10px;
 }
