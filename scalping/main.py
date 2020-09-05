@@ -75,23 +75,26 @@ def create_day_chart(current_date: pd.Timestamp, ticker_symbol: str, group: pd.D
         y_axis_type='linear',
         x_axis_label = 'Time',
         y_axis_label = 'Stock Price',
-        plot_height=400,
-        plot_width=800,
+        plot_height=250,
+        plot_width=400,
         x_range=(group.date.min(), group.date.max()),
-        tools='hover, crosshair',
+        tools='',
     )
     p.toolbar.logo = None
     p.toolbar_location = None
     source = bokeh.models.ColumnDataSource(data=group)
     p.line(x='date', y='open', source=source, line_width=1)
-    hovertool = p.select_one(bokeh.models.HoverTool)
+    hovertool = bokeh.models.HoverTool(mode='vline')
     hovertool.tooltips = [
         ('Stock Price', '@open{$0,0.00}'),
         ('Time of Day', '@time_of_day_string'),
         ('Ticker Symbol', ticker_symbol),
     ]
-    p.xaxis.formatter = bokeh.models.DatetimeTickFormatter(hours=['%I:%M %p'])
     hovertool.mode = 'vline'
+    p.add_tools(hovertool)
+    crosshairtool = bokeh.models.CrosshairTool(dimensions='height')
+    p.add_tools(crosshairtool)
+    p.xaxis.formatter = bokeh.models.DatetimeTickFormatter(hours=['%I:%M %p'])
     bokeh.plotting.output_file(output_file_location, title='{ticker_symbol} Stock Prices {current_date}', mode='inline')
     bokeh.plotting.save(p, title='{current_date} {ticker_symbol} Stock Prices')
     return
