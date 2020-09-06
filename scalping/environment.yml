@@ -4,3 +4,4 @@ dependencies:
   - pandas
   - requests
   - bokeh
+  - matplotlib

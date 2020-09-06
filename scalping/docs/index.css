@@ -2,9 +2,10 @@
 @import url('https://fonts.googleapis.com/css?family=Questrial');
 
 body {
-    font-family: "Questrial", sans-serif;
+    font-family: 'Questrial', sans-serif;
     margin: 0px;
     padding: 0px;
+    background: #f0f0f0;
 }
 
 /***************/
@@ -15,12 +16,14 @@ body {
 }
 
 .expandable-button {
+    cursor: pointer;
 }
 
 .expandable-button.active {
 }
 
 .expandable-content {
+    display: block;
     transform: scaleY(0);
 }
 
@@ -28,20 +31,31 @@ body {
     transform: scaleY(1);
 }
 
-/***********/
-/* General */
-/***********/
+/*********************/
+/* Overall Container */
+/*********************/
 
 #all-ticker-symbol-data-container {
 }
 
-/*************/
-/* All Dates */
-/*************/
+#all-ticker-symbol-data-container table tr td {
+  vertical-align: top;
+}
+
+/****************************/
+/* Ticker Symbol Expandable */
+/****************************/
 
 .ticker-symbol-expandable {
-    background: #f0f0f0;
     margin: 0px;
+
+}
+
+.ticker-symbol-content {
+}
+
+table.ticker-symbol-content td {
+    width: 50vw;
 }
 
 .ticker-symbol-label {
@@ -54,7 +68,7 @@ body {
 
 .ticker-symbol-label:before {
     transition: all 0.5s;
-    content: "\25B7";
+    content: '\25B7';
     display: inline-block;
     margin-right: 6px;
 }
@@ -63,23 +77,25 @@ body {
     transform: rotate(90deg);
 }
 
-.all-dates-container {
+.ticker-symbol-content {
     transition: all 0.5s;
     max-height: 0px;
     padding: 0px 25px 0px 25px;
-    margin: auto;
-    width: 50%;
+    overflow: auto;
 }
 
-.all-dates-container.active {
+.ticker-symbol-content.active {
     padding: 25px;
 }
 
-/********************/
-/* Individual Dates */
-/********************/
+/*************/
+/* Date Data */
+/*************/
 
-.date-container {
+.all-dates-container {
+}
+
+.stats-and-chart-container {
     border: 2px solid #555;
     padding: 30px;
     margin: 10px;
@@ -87,11 +103,11 @@ body {
     width: fit-content;
 }
 
-.date-stats-table {
+.stats-table {
     min-width: 250px;
 }
 
-.date-stats-table p {
+.stats-table p {
     padding: 3px 3px 3px 3px;
     margin: 0px;
     margin-block-start: 0px;
@@ -99,12 +115,13 @@ body {
     margin-inline-start: 0px;
     margin-inline-end: 0px;
     text-align: right;
+    width: max-content
 }
 
-.date-stats-and-chart-table {
+.stats-and-chart-table {
 }
 
-.date-chart-iframe {
+.chart-iframe {
     width: 410px;
     height: 260px;
     padding: 10px 10px 10px 10px;
