@@ -24,11 +24,9 @@ body {
 
 .expandable-content {
     display: block;
-    transform: scaleY(0);
 }
 
 .expandable-content.active {
-    transform: scaleY(1);
 }
 
 /*********************/

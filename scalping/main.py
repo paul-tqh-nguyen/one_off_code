@@ -28,7 +28,7 @@ import bokeh.models
 # Globals #
 ###########
 
-RELEVANT_TICKER_SYMBOLS = sorted([
+RELEVANT_TICKER_SYMBOLS = [
     'FB',
     'AAPL',
     'AMZN',
@@ -36,7 +36,13 @@ RELEVANT_TICKER_SYMBOLS = sorted([
     'GOOGL',
     'TSLA',
     'CMG',
-])
+    'ULTA',
+    'PG',
+    'SPOT',
+    'NKE',
+    'SBUX',
+    'TGT',
+]
 
 NUMBER_OF_DAYS = 5
 
