@@ -1,7 +1,0 @@
-name: scalp
-dependencies:
-  - python=3.7
-  - pandas
-  - requests
-  - bokeh
-  - matplotlib
