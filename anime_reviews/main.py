@@ -344,9 +344,9 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(anime_embedding.shape) == (batch_size, self.hparams.embedding_size)
         
         get_norm = lambda batch_matrix: batch_matrix.mul(batch_matrix).sum(dim=1)
-        regularization_loss = get_norm([:,:-1]) + get_norm(anime_embedding[:,:-1]
+        regularization_loss = get_norm(user_embedding[:,:-1]) + get_norm(anime_embedding[:,:-1])
         assert tuple(regularization_loss.shape) == (batch_size,)
-        assert regularization_loss.gt(0).all())
+        assert regularization_loss.gt(0).all()
         
         user_embedding = self.dropout_layer(user_embedding)
         assert tuple(user_embedding.shape) == (batch_size, self.hparams.embedding_size)
