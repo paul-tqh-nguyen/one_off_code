@@ -43,7 +43,7 @@ import joblib
 DB_URL = 'sqlite:///collaborative_filtering.db'
 STUDY_NAME = 'collaborative-filtering'
 
-HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = False # @todo enable this
+HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = True
 NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
 NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 5
 
@@ -51,8 +51,7 @@ CPU_COUNT = mp.cpu_count()
 if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
     pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
 
-# GPU_IDS = eager_map(int, nvgpu.available_gpus()) # @todo enable this
-GPU_IDS = [2, 3] # @todo remove this
+GPU_IDS = eager_map(int, nvgpu.available_gpus())
 DEFAULT_GPU = GPU_IDS[0]
 
 NUM_WORKERS = 0 if HYPERPARAMETER_SEARCH_IS_DISTRIBUTED else 2
@@ -328,14 +327,9 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
             'dropout_probability',
         )
         
-        self.anime_embedding_layers = nn.Sequential(OrderedDict([
-            ('anime_embedding_layer', nn.Embedding(self.hparams.number_of_animes, self.hparams.embedding_size)),
-            ('dropout_layer', nn.Dropout(self.hparams.dropout_probability)),
-        ]))
-        self.user_embedding_layers = nn.Sequential(OrderedDict([
-            ('user_embedding_layer', nn.Embedding(self.hparams.number_of_users, self.hparams.embedding_size)),
-            ('dropout_layer', nn.Dropout(self.hparams.dropout_probability)),
-        ]))
+        self.anime_embedding_layer = nn.Embedding(self.hparams.number_of_animes, self.hparams.embedding_size)
+        self.user_embedding_layer = nn.Embedding(self.hparams.number_of_users, self.hparams.embedding_size)
+        self.dropout_layer = nn.Dropout(self.hparams.dropout_probability)
 
     def forward(self, batch_dict: dict):
         user_id_indices: torch.Tensor = batch_dict['user_id_index']
@@ -344,26 +338,24 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         anime_id_indices: torch.Tensor = batch_dict['anime_id_index']
         assert tuple(anime_id_indices.shape) == (batch_size,)
 
-        user_embedding = self.user_embedding_layers(user_id_indices)
+        user_embedding = self.user_embedding_layer(user_id_indices)
         assert tuple(user_embedding.shape) == (batch_size, self.hparams.embedding_size)
-        anime_embedding = self.anime_embedding_layers(anime_id_indices)
+        anime_embedding = self.anime_embedding_layer(anime_id_indices)
+        assert tuple(anime_embedding.shape) == (batch_size, self.hparams.embedding_size)
+        
+        get_norm = lambda batch_matrix: batch_matrix.mul(batch_matrix).sum(dim=1)
+        regularization_loss = get_norm([:,:-1]) + get_norm(anime_embedding[:,:-1]
+        assert tuple(regularization_loss.shape) == (batch_size,)
+        assert regularization_loss.gt(0).all())
+        
+        user_embedding = self.dropout_layer(user_embedding)
+        assert tuple(user_embedding.shape) == (batch_size, self.hparams.embedding_size)
+        anime_embedding = self.dropout_layer(anime_embedding)
         assert tuple(anime_embedding.shape) == (batch_size, self.hparams.embedding_size)
         
         scores = user_embedding.mul(anime_embedding).sum(dim=1)
         assert tuple(scores.shape) == (batch_size,)
-
-        get_norm = lambda batch_matrix: batch_matrix.mul(batch_matrix).sum(dim=1)
-        regularization_loss = get_norm(user_embedding[:,:-1]) + get_norm(anime_embedding[:,:-1])
-        assert tuple(regularization_loss.shape) == (batch_size,)
-        if not regularization_loss.gt(0).all(): # @todo remove this
-            LOGGER.info(f"batch_size {repr(batch_size)}")
-            LOGGER.info(f"batch_dict {repr(batch_dict)}")
-            LOGGER.info(f"anime_id_indices {repr(anime_id_indices)}")
-            LOGGER.info(f"user_embedding {repr(user_embedding)}")
-            LOGGER.info(f"anime_embedding {repr(anime_embedding)}")
-            LOGGER.info(f"scores {repr(scores)}")
-            LOGGER.info(f"regularization_loss {repr(regularization_loss)}")
-        assert regularization_loss.gt(0).all()
+        
         return scores, regularization_loss
 
     def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
@@ -384,14 +376,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         assert tuple(regularization_loss.shape) == (batch_size,)
         mse_loss = MSE_LOSS(predicted_scores, target_scores)
         assert tuple(mse_loss.shape) == (batch_size,)
-        if not mse_loss.gt(0).all(): # @todo remove this
-            LOGGER.info(f"batch_dict {repr(batch_dict)}")
-            LOGGER.info(f"batch_size {repr(batch_size)}")
-            LOGGER.info(f"target_scores {repr(target_scores)}")
-            LOGGER.info(f"predicted_scores {repr(predicted_scores)}")
-            LOGGER.info(f"regularization_loss {repr(regularization_loss)}")
-            LOGGER.info(f"mse_loss {repr(mse_loss)}")
-        assert mse_loss.gt(0).all()
+        assert mse_loss.ge(0).all()
         loss = regularization_loss + mse_loss
         assert tuple(loss.shape) == (batch_size,)
         assert tuple(loss.shape) == tuple(mse_loss.shape) == tuple(regularization_loss.shape) == (batch_size,)
@@ -622,8 +607,7 @@ class HyperParameterSearchObjective:
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get() if self.gpu_id_queue else DEFAULT_GPU
         learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        # number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15)) # @todo enable this
-        number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 5)) # @todo remove this
+        number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
         batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6,12)]))
         gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
         embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
@@ -659,7 +643,7 @@ def hyperparameter_search() -> None:
     optimize_kawrgs = dict(
         n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS,
         gc_after_trial=True,
-        # catch=(Exception,), # @todo enable this
+        catch=(Exception,),
     )
     with _training_logging_suppressed():
         if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
