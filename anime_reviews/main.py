@@ -14,7 +14,7 @@ import argparse
 from misc_utilities import *
 from global_values import *
 from trainer import train_model
-from hyperparameter_search import NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS, hyperparameter_search
+from hyperparameter_search import NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS, hyperparameter_search, analyze_hyperparameter_search_results
 
 # @todo make sure these imports are used
 
@@ -52,7 +52,8 @@ def train_default_model() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
     parser.add_argument('-train-default-model', action='store_true', help="Train the default model.")
-    parser.add_argument('-hyperparameter-search', action='store_true', help=f"Perform {NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS} trails of hyperparameter search.")
+    parser.add_argument('-hyperparameter-search', action='store_true', help=f"Perform {NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS} trials of hyperparameter search.")
+    parser.add_argument('-analyze-hyperparameter-search-results', action='store_true', help=f"Analyze completed hyperparameter search trials so far.")
     args = parser.parse_args()
     number_of_args_specified = sum(map(int,map(bool,vars(args).values())))
     if number_of_args_specified == 0:
@@ -63,6 +64,8 @@ def main() -> None:
         train_default_model()
     elif args.hyperparameter_search:
         hyperparameter_search()
+    elif args.analyze_hyperparameter_search_results:
+        analyze_hyperparameter_search_results()
     else:
         raise ValueError("Unexpected args received.")
     return

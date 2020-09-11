@@ -10,6 +10,8 @@
 ###########
 
 import json
+import numpy as np
+import pandas as pd
 from contextlib import contextmanager
 from typing import Generator, Optional
 
@@ -18,7 +20,9 @@ import joblib
 
 from misc_utilities import *
 from global_values import *
-from trainer import train_model
+from data_modules import AnimeRatingDataModule
+from models import LinearColaborativeFilteringModel
+from trainer import train_model, checkpoint_directory_from_hyperparameters
 
 # @todo make sure these imports are used
 
@@ -29,8 +33,10 @@ from trainer import train_model
 DB_URL = 'sqlite:///collaborative_filtering.db'
 STUDY_NAME = 'collaborative-filtering'
 
+ANALYSIS_OUTPUT_DIR = './result_analysis'
+
 NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
-NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 5
+NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 10
 
 #########################
 # Hyperparameter Search #
@@ -138,4 +144,65 @@ def hyperparameter_search() -> None:
         LOGGER.info(f'Regularization Factor: {result_summary_dict["regularization_factor"]}')
         LOGGER.info(f'Dropout Probability: {result_summary_dict["dropout_probability"]}')
         LOGGER.info('')
+    return
+
+###################
+# Result Analysis #
+###################
+
+def analyze_hyperparameter_search_results() -> None:
+    study = optuna.create_study(study_name=STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=DB_URL, direction='minimize', load_if_exists=True)
+    trials_df = study.trials_dataframe()
+    best_trials_df = trials_df.nsmallest(NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY, 'value')
+    
+    parameter_name_prefix = 'params_'
+    for rank, row in enumerate(best_trials_df.itertuples()):
+        hyperparameters = {attr_name[len(parameter_name_prefix):]: getattr(row, attr_name) for attr_name in dir(row) if attr_name.startswith(parameter_name_prefix)}
+        checkpoint_dir = checkpoint_directory_from_hyperparameters(**hyperparameters)
+        result_summary_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
+        with open(result_summary_json_file_location, 'r') as file_handle:
+            result_summary_dict = json.loads(file_handle.read())
+        
+        model = LinearColaborativeFilteringModel.load_from_checkpoint(result_summary_dict['best_validation_model_path'])
+        model.eval()
+
+        data_module = AnimeRatingDataModule(1, NUM_WORKERS)
+        data_module.prepare_data()
+        data_module.setup()
+
+        anime_df = pd.DataFrame(index=pd.Index(data_module.anime_id_index_to_anime_id, name='anime_id'))
+        anime_df['total_mse_loss'] = 0
+        anime_df['example_count'] = 0
+        
+        user_df = pd.DataFrame(index=pd.Index(data_module.user_id_index_to_user_id, name='user_id'))
+        user_df['total_mse_loss'] = 0
+        user_df['example_count'] = 0
+
+        for batch_dict in data_module.test_dataloader():
+            user_id_indices: torch.Tensor = batch_dict['user_id_index']
+            anime_id_indices: torch.Tensor = batch_dict['anime_id_index']
+            user_ids: np.ndarray = data_module.user_id_index_to_user_id[user_id_indices]
+            anime_ids: np.ndarray = data_module.anime_id_index_to_anime_id[anime_id_indices]
+            target_scores, _ = model(batch_dict)
+            target_scores = target_scores.detach()
+            
+            batch_df = pd.DataFrame({'user_id': user_ids, 'anime_id': anime_ids, 'target_score': target_scores})
+            batch_anime_df = batch_df.groupby('anime_id').agg({'target_score': ['sum', 'count']})
+            batch_user_df = batch_df.groupby('user_id').agg({'target_score': ['sum', 'count']})
+
+            anime_df['total_mse_loss'][batch_anime_df.index] += batch_anime_df['target_score']['sum']
+            anime_df['example_count'][batch_anime_df.index] += batch_anime_df['target_score']['count']
+            
+            user_df['total_mse_loss'][batch_user_df.index] += batch_user_df['target_score']['sum']
+            user_df['example_count'][batch_user_df.index] += batch_user_df['target_score']['count']
+
+        anime_df['mean_mse_loss'] = anime_df['total_mse_loss'] / anime_df['example_count']
+        user_df['mean_mse_loss'] = user_df['total_mse_loss'] / user_df['example_count']
+        
+        result_summary_dict['anime_data'] = anime_df.to_dict(orient='index')
+        result_summary_dict['user_data'] = user_df.to_dict(orient='index')
+
+        with open(os.path.join(ANALYSIS_OUTPUT_DIR, f'rank_{rank}_summary.json'), 'w') as file_handle:
+            json.dump(result_summary_dict, file_handle, indent=4)
+    
     return
