@@ -23,6 +23,27 @@ from global_values import *
 
 # @todo make sure these imports are used
 
+###########
+# Globals #
+###########
+
+# https://www.kaggle.com/CooperUnion/anime-recommendations-database
+# ANIME_CSV_FILE_LOCATION = './data/anime.csv' # @todo use this
+RATING_CSV_FILE_LOCATION = './data/rating.csv'
+
+PROCESSED_DATA_CSV_FILE_LOCATION = './data/processed_data.csv'
+
+RATING_HISTORGRAM_PNG_FILE_LOCATION = './data/rating_histogram.png'
+
+TRAINING_LABEL, VALIDATION_LABEL, TESTING_LABEL = 0, 1, 2
+
+TRAINING_PORTION = 0.65
+VALIDATION_PORTION = 0.15
+TESTING_PORTION = 0.20
+
+MINIMUM_NUMBER_OF_RATINGS_PER_ANIME = 100
+MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
+
 ################
 # Data Modules #
 ################

@@ -9,6 +9,8 @@
 # Imports #
 ###########
 
+import json
+from contextlib import contextmanager
 from typing import Generator, Optional
 
 import optuna
@@ -19,6 +21,16 @@ from global_values import *
 from trainer import train_model
 
 # @todo make sure these imports are used
+
+###########
+# Globals #
+###########
+
+DB_URL = 'sqlite:///collaborative_filtering.db'
+STUDY_NAME = 'collaborative-filtering'
+
+NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
+NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 5
 
 #########################
 # Hyperparameter Search #
