@@ -1,4 +1,4 @@
-#!/usr/bin/python3 -OO
+'#!/usr/bin/python3 -OO' # @todo use this
 
 '''
 '''
@@ -11,7 +11,6 @@
 
 import os
 import json
-import logging
 import more_itertools
 import math
 import numpy as np
@@ -23,8 +22,6 @@ from contextlib import contextmanager
 from typing import Tuple, List, Callable, Generator, Optional
 from typing_extensions import Literal
 
-from misc_utilities import *
-
 import torch
 from torch import nn
 from torch.utils import data
@@ -33,6 +30,9 @@ import pytorch_lightning as pl
 import optuna
 import nvgpu
 import joblib
+
+from misc_utilities import *
+from logger import LOGGER
 
 # @todo make sure these are used
 
@@ -90,26 +90,6 @@ LEARNING_RATE = 1e-3
 EMBEDDING_SIZE = 100
 REGULARIZATION_FACTOR = 1
 DROPOUT_PROBABILITY = 0.5
-
-###########
-# Logging #
-###########
-
-LOGGER_NAME = 'anime_collaborative_filtering_logger'
-LOGGER = logging.getLogger(LOGGER_NAME)
-LOGGER_OUTPUT_FILE = './tuning_logs.txt'
-LOGGER_STREAM_HANDLER = logging.StreamHandler()
-
-def _initialize_logger() -> None:
-    LOGGER.setLevel(logging.INFO)
-    logging_formatter = logging.Formatter('{asctime} - pid: {process} - threadid: {thread} - func: {funcName} - {levelname}: {message}', style='{')
-    logging_file_handler = logging.FileHandler(LOGGER_OUTPUT_FILE)
-    logging_file_handler.setFormatter(logging_formatter)
-    LOGGER.addHandler(logging_file_handler)
-    LOGGER.addHandler(LOGGER_STREAM_HANDLER)
-    return
-
-_initialize_logger()
 
 ################
 # Data Modules #
@@ -694,7 +674,7 @@ def hyperparameter_search() -> None:
 # Driver #
 ##########
 
-def train_default_mode() -> None:
+def train_default_model() -> None:
     train_model(
         learning_rate=LEARNING_RATE,
         number_of_epochs=NUMBER_OF_EPOCHS,
@@ -709,8 +689,8 @@ def train_default_mode() -> None:
 
 @debug_on_error
 def main() -> None:
-    # train_default_mode()
-    hyperparameter_search()
+    train_default_model()
+    # hyperparameter_search()
     return
 
 if __name__ == '__main__':
