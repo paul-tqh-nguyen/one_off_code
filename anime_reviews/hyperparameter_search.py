@@ -21,7 +21,7 @@ import joblib
 from misc_utilities import *
 from global_values import *
 from data_modules import AnimeRatingDataModule
-from models import LinearColaborativeFilteringModel
+from models import LinearColaborativeFilteringModel, MSE_LOSS
 from trainer import train_model, checkpoint_directory_from_hyperparameters
 
 # @todo make sure these imports are used
@@ -158,7 +158,7 @@ def analyze_hyperparameter_search_results() -> None:
     best_trials_df = trials_df.nsmallest(NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY, 'value')
     
     parameter_name_prefix = 'params_'
-    for rank, row in tqdm_with_message(enumerate(best_trials_df.itertuples()), post_yield_message_func = lambda index: f'Working on trial {index}', total=len(best_trials_df), bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
+    for rank, row in tqdm_with_message(enumerate(best_trials_df.itertuples()), pre_yield_message_func = lambda index: f'Working on trial {index}', total=len(best_trials_df), bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
         hyperparameters = {attr_name[len(parameter_name_prefix):]: getattr(row, attr_name) for attr_name in dir(row) if attr_name.startswith(parameter_name_prefix)}
         checkpoint_dir = checkpoint_directory_from_hyperparameters(**hyperparameters)
         result_summary_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
@@ -185,19 +185,20 @@ def analyze_hyperparameter_search_results() -> None:
             anime_id_indices: torch.Tensor = batch_dict['anime_id_index']
             user_ids: np.ndarray = data_module.user_id_index_to_user_id[user_id_indices]
             anime_ids: np.ndarray = data_module.anime_id_index_to_anime_id[anime_id_indices]
-            target_scores, _ = model(batch_dict)
-            target_scores = target_scores.detach()
+            predicted_scores, _ = model(batch_dict)
+            predicted_scores = predicted_scores.detach()
+            target_scores = batch_dict['rating']
             
-            batch_df = pd.DataFrame({'user_id': user_ids, 'anime_id': anime_ids, 'target_score': target_scores})
-            batch_anime_df = batch_df.groupby('anime_id').agg({'target_score': ['sum', 'count']})
-            batch_user_df = batch_df.groupby('user_id').agg({'target_score': ['sum', 'count']})
+            batch_df = pd.DataFrame({'user_id': user_ids, 'anime_id': anime_ids, 'mse_loss': mse_loss = MSE_LOSS(predicted_scores, target_scores)})
+            batch_anime_df = batch_df.groupby('anime_id').agg({'mse_loss': ['sum', 'count']})
+            batch_user_df = batch_df.groupby('user_id').agg({'mse_loss': ['sum', 'count']})
             
-            anime_df.loc[batch_anime_df.index, 'total_mse_loss'] += batch_anime_df['target_score']['sum']
-            anime_df.loc[batch_anime_df.index, 'example_count'] += batch_anime_df['target_score']['count']
+            anime_df.loc[batch_anime_df.index, 'total_mse_loss'] += batch_anime_df['mse_loss']['sum']
+            anime_df.loc[batch_anime_df.index, 'example_count'] += batch_anime_df['mse_loss']['count']
             assert (anime_df.loc[batch_anime_df.index, 'example_count'] > 0).all()
             
-            user_df.loc[batch_user_df.index, 'total_mse_loss'] += batch_user_df['target_score']['sum']
-            user_df.loc[batch_user_df.index, 'example_count'] += batch_user_df['target_score']['count']
+            user_df.loc[batch_user_df.index, 'total_mse_loss'] += batch_user_df['mse_loss']['sum']
+            user_df.loc[batch_user_df.index, 'example_count'] += batch_user_df['mse_loss']['count']
             assert (user_df.loc[batch_user_df.index, 'example_count'] > 0).all()
             
         anime_df['mean_mse_loss'] = anime_df['total_mse_loss'] / anime_df['example_count']
