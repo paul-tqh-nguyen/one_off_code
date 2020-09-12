@@ -174,7 +174,7 @@ d3.json('') // @todo add a JSON fille
     .then(data => {
         const render = addScatterPlot();
         const redraw = () => {
-            render(toolTip);
+            render();
         };
         redraw();
         window.addEventListener('resize', redraw);
