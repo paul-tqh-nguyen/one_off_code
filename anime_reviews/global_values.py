@@ -1,9 +1,15 @@
-'#!/usr/bin/python3 -OO' # @todo use this
+#!/usr/bin/python3 -OO
 
 '''
-'''
 
-# @todo update doc string
+This module contains global initializations and global values.
+
+Sections:
+* Imports
+* Logging
+* Globals
+
+'''
 
 ###########
 # Imports #
@@ -16,8 +22,6 @@ import multiprocessing as mp
 from pandarallel import pandarallel
 
 from misc_utilities import *
-
-# @todo make sure these imports are used
 
 ###########
 # Logging #
@@ -57,4 +61,5 @@ NUM_WORKERS = 0 if HYPERPARAMETER_SEARCH_IS_DISTRIBUTED else 2
 if not os.path.isdir('./checkpoints'):
     os.makedirs('./checkpoints')
 
-# @todo make sure these globals are used
+if __name__ == '__main__':
+    print('This module contains global initializations and global values.')

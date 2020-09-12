@@ -1,9 +1,15 @@
-'#!/usr/bin/python3 -OO' # @todo use this
+#!/usr/bin/python3 -OO
 
 '''
-'''
 
-# @todo update doc string
+This is a module for data processing and data loading utilities.
+
+Sections: 
+* Imports
+* Globals
+* Data Modules
+
+'''
 
 ###########
 # Imports #
@@ -20,8 +26,6 @@ import pytorch_lightning as pl
 
 from misc_utilities import *
 from global_values import *
-
-# @todo make sure these imports are used
 
 ###########
 # Globals #
@@ -194,8 +198,8 @@ class AnimeRatingDataModule(pl.LightningDataModule):
         testing_df = data_splits[TESTING_LABEL]
         assert set(training_df.user_id.unique()) == set(validation_df.user_id.unique()) == set(testing_df.user_id.unique()) == set(self.rating_df.user_id.unique())
         
-        self.user_id_index_to_user_id: np.ndarray = self.rating_df.user_id.unique() # @todo use this in printing function for predictions
-        self.anime_id_index_to_anime_id: np.ndarray = self.rating_df.anime_id.unique() # @todo use this in printing function for predictions
+        self.user_id_index_to_user_id: np.ndarray = self.rating_df.user_id.unique()
+        self.anime_id_index_to_anime_id: np.ndarray = self.rating_df.anime_id.unique()
         self.user_id_index_to_user_id.sort()
         self.anime_id_index_to_anime_id.sort()
         
@@ -230,3 +234,7 @@ class AnimeRatingDataModule(pl.LightningDataModule):
 
     def test_dataloader(self) -> data.DataLoader:
         return self.testing_dataloader
+
+if __name__ == '__main__':
+    print('This is a module for data processing and data loading utilities.')
+

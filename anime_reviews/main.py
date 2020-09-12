@@ -1,9 +1,15 @@
-'#!/usr/bin/python3 -OO' # @todo use this
+#!/usr/bin/python3 -OO
 
 '''
-'''
 
-# @todo update doc string
+This module is the main interface towards our collaborative filtering model. 
+
+Sections:
+* Imports
+* Default Model
+* Driver
+
+'''
 
 ###########
 # Imports #
@@ -12,8 +18,6 @@
 import argparse
 
 from misc_utilities import *
-
-# @todo make sure these imports are used
 
 #################
 # Default Model #

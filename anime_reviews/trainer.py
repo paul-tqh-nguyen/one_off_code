@@ -1,9 +1,14 @@
-'#!/usr/bin/python3 -OO' # @todo use this
+#!/usr/bin/python3 -OO
 
 '''
-'''
 
-# @todo update doc string
+This module contains utilities for training our linear collaborative filtering model.
+
+Sections: 
+* Imports
+* Training
+
+'''
 
 ###########
 # Imports #
@@ -171,3 +176,6 @@ def train_model(learning_rate: float, number_of_epochs: int, batch_size: int, gr
         }, file_handle, indent=4)
 
     return best_validation_loss
+
+if __name__ == '__main__':
+    print('This module contains utilities for training our linear collaborative filtering model.')

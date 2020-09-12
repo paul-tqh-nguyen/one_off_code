@@ -1,9 +1,14 @@
-'#!/usr/bin/python3 -OO' # @todo use this
+#!/usr/bin/python3 -OO
 
 '''
-'''
 
-# @todo update doc string
+This module contains a linear collaborative filteringg model to learn representations of users and animes.
+
+Sections:
+* Imports
+* Models
+
+'''
 
 ###########
 # Imports #
@@ -19,9 +24,6 @@ import pytorch_lightning as pl
 
 from misc_utilities import *
 from global_values import *
-
-# @todo make sure these imports are used
-
 
 ##########
 # Models #
@@ -152,3 +154,6 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
 
     def test_epoch_end(self, test_step_results: pl.EvalResult) -> pl.EvalResult:
         return self._eval_epoch_end(test_step_results, 'testing')
+
+if __name__ == '__main__':
+    print('This module contains a linear collaborative filtering model to learn representations of users and animes.')

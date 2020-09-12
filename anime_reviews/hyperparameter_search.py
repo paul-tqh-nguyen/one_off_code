@@ -1,9 +1,16 @@
-'#!/usr/bin/python3 -OO' # @todo use this
+#!/usr/bin/python3 -OO
 
 '''
-'''
 
-# @todo update doc string
+This module contains hyperparameter search and analysis utilities.
+
+Sections: 
+* Imports
+* Globals
+* Hyperparameter Search
+* Hyperparameter Search Result Analysis
+
+'''
 
 ###########
 # Imports #
@@ -23,8 +30,6 @@ from global_values import *
 from data_modules import AnimeRatingDataModule
 from models import LinearColaborativeFilteringModel, MSE_LOSS
 from trainer import train_model, checkpoint_directory_from_hyperparameters
-
-# @todo make sure these imports are used
 
 ###########
 # Globals #
@@ -148,9 +153,9 @@ def hyperparameter_search() -> None:
         LOGGER.info('')
     return
 
-###################
-# Result Analysis #
-###################
+#########################################
+# Hyperparameter Search Result Analysis #
+#########################################
 
 def analyze_hyperparameter_search_results() -> None:
     study = optuna.create_study(study_name=STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=DB_URL, direction='minimize', load_if_exists=True)
@@ -219,3 +224,6 @@ def analyze_hyperparameter_search_results() -> None:
             json.dump(result_summary_dict, file_handle, indent=4)
     
     return
+
+if __name__ == '__main__':
+    print('This module contains hyperparameter search and analysis utilities.')
