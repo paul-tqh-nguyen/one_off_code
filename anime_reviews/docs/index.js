@@ -53,6 +53,7 @@ scatterPlotData looks like this:
             'ps2': 'ps2-point',
         }[pointSetName];
     },
+    'title': 'Chart of X vs Y',
     'cssFile': 'custom.css',
     'xMinValue': 0,
     'xMaxValue': 100,
@@ -60,6 +61,8 @@ scatterPlotData looks like this:
     'yMaxValue': 250,
     'xAxisTitle': 'Rank',
     'yAxisTitle': 'Scores',
+    'xScale': 'log',
+    'yScale': 'linear',
 }
 
 This returns a re-render function, but does not actually call the re-render function initially.
@@ -75,8 +78,6 @@ This returns a re-render function, but does not actually call the re-render func
         left: 100,
         right: 30,
     };
-
-    const innerLineOpacity = 0.1; // @todo move this to css
 
     /* Visualization Initialization */
 
@@ -102,6 +103,44 @@ This returns a re-render function, but does not actually call the re-render func
   margin: 0px;
 }
 
+.x-axis-group .tick line, .y-axis-group .tick line {
+  opacity: 0.1;
+}
+
+.x-axis-group .tick text {
+  transform: translate(0.0px, 5.0px);
+}
+
+.y-axis-group .tick text {
+  transform: translate(-3.0px, 0.0px);
+}
+
+.y-axis-group .axis-label {
+  transform: rotate(-90deg);
+}
+
+.axis-label {
+  fill: black;
+  font-size: 1.25em;
+}
+
+#tooltip {
+  position: fixed;
+  transition: all 0.5s;
+  text-align: center;
+  font-size: 0.75em;
+  background: #182A39;
+  border-radius: 8px;
+  pointer-events: none;
+  color: #fff;
+  opacity: 0.9;
+}
+
+#tooltip.hidden{
+  left: 0px;
+  top: 0px;
+  opacity: 0.0;
+}
 `});
     
     shadow.append(shadowStyleElement);
@@ -122,15 +161,20 @@ This returns a re-render function, but does not actually call the re-render func
     const xAxisGroup = scatterPlotGroup
           .append('g')
           .attr('class', 'x-axis-group', true);
-    const xAxisLabel = xAxisGroup.append('text');
+    const xAxisLabel = xAxisGroup
+          .append('text')
+          .classed('axis-label', true);
     const yAxisGroup = scatterPlotGroup
           .append('g')
           .classed('y-axis-group', true);
-    const yAxisLabel = yAxisGroup.append('text');
+    const yAxisLabel = yAxisGroup
+          .append('text')
+          .classed('axis-label', true);
     // @todo add legend
 
-    const tooltipDivDomElement = createNewElement('div');
-    const tooltipDiv = d3.select(tooltipDivDomElement); // @todo add tooltip display functionality
+    const tooltipDivDomElement = createNewElement('div', {classes: ['hidden'], attributes: {'id': 'tooltip'}});
+    scatterPlotContainer.append(tooltipDivDomElement);
+    const tooltipDiv = d3.select(tooltipDivDomElement);
     
     const render = () => {
         
@@ -146,50 +190,40 @@ This returns a re-render function, but does not actually call the re-render func
 
         const allPoints = [].concat(...Object.values(scatterPlotData.pointSetLookup));
         
-        const xScale = d3.scaleLinear()
+        const xScale = scatterPlotData.xScale === 'log' ? d3.scaleLog() : d3.scaleLinear();
+        xScale
               .domain([scatterPlotData.xMinValue, scatterPlotData.xMaxValue])
               .range([0, innerWidth]);
         
-        const yScale = d3.scaleLinear()
-              .domain([scatterPlotData.xMaxValue, scatterPlotData.xMinValue])
+        const yScale = scatterPlotData.yScale === 'log' ? d3.scaleLog() : d3.scaleLinear();
+        yScale
+              .domain([scatterPlotData.yMaxValue, scatterPlotData.yMinValue])
               .range([0, innerHeight]);
         
-        scatterPlotGroup.attr('transform', `translate(${margin.left}, ${margin.top})`); // @todo move this to css
+        scatterPlotGroup.attr('transform', `translate(${margin.left}, ${margin.top})`);
         
-        scatterPlotTitle // @todo handlle css
-            .text('Test Loss vs Model Parameter Count')
+        scatterPlotTitle
+            .text(scatterPlotData.title)
             .attr('x', innerWidth * 0.325)
             .attr('y', -10);
         
         const yAxisTickFormat = number => d3.format('.3f')(number);
         yAxisGroup.call(d3.axisLeft(yScale).tickFormat(yAxisTickFormat).tickSize(-innerWidth));
-        yAxisGroup.selectAll('.tick line')
-            .style('opacity', innerLineOpacity);
-        yAxisGroup.selectAll('.tick text')
-            .attr('transform', 'translate(-3.0, 0.0)');
-        yAxisLabel // @todo move some of this to CSS
-            .attr('fill', 'black')
-            .attr('transform', 'rotate(-90)')
-            .attr('y', -60) // @todo move this to a parameter
-            .attr('x', -innerHeight/3) // @todo this seems questionable
+        yAxisLabel
+            .attr('y', -60)
+            .attr('x', -innerHeight/3)
             .text(scatterPlotData.yAxisTitle);
         
         const xAxisTickFormat = number => d3.format('.3s')(number).replace(/G/,'B');
         xAxisGroup.call(d3.axisBottom(xScale).tickFormat(xAxisTickFormat).tickSize(-innerHeight))
             .attr('transform', `translate(0, ${innerHeight})`);
-        xAxisGroup.selectAll('.tick line')
-            .style('opacity', innerLineOpacity);
-        xAxisGroup.selectAll('.tick text') // @todo move this to css
-            .attr('transform', 'translate(0.0, 5.0)');
-        xAxisLabel // @todo add css
-            .attr('fill', 'black')
-            .attr('y', margin.bottom * 0.75) // @todo this seems questionable
-            .attr('x', innerWidth / 2) // @todo this seems questionable
+        xAxisLabel
+            .attr('y', margin.bottom * 0.75)
+            .attr('x', xAxisGroup.node().getBoundingClientRect().width / 2)
             .text(scatterPlotData.xAxisTitle);
 
         Object.entries(scatterPlotData.pointSetLookup).forEach(([pointSetName, points]) => {
             const pointCSSClass = scatterPlotData.pointCSSClassAccessor(pointSetName);
-            console.log(`pointCSSClass ${JSON.stringify(pointCSSClass)}`);
             const pointSetGroup = scatterPlotGroup
                   .append('g')
                   .classed(`point-set-group-${pointSetName}`, true);
@@ -197,11 +231,20 @@ This returns a re-render function, but does not actually call the re-render func
                 .data(points)
                 .enter()
                 .append('circle')
-                .on('mouseover', datum => {
-                    // @todo add tooltip functionality
-                })
+                .on('mouseover', function(datum) {
+                    const boundingBox = d3.select(this).node().getBoundingClientRect();
+                    const x = boundingBox.left;
+                    const y = boundingBox.top;
+                    const htmlString = scatterPlotData.toolTipHTMLGenerator(datum);
+		    tooltipDiv
+		        .classed('hidden', false)
+		        .html(htmlString)
+		        .style('left', x + 10 + 'px')
+		        .style('top', y + 10 + 'px');
+	        })
                 .on('mouseout', datum => {
-                    // @todo add tooltip functionality
+		    tooltipDiv
+		        .classed('hidden', true);
                 })
                 .classed(pointCSSClass, true)
                 .attr('cx', datum => xScale(scatterPlotData.xAccessor(datum)))
@@ -230,8 +273,11 @@ This returns a re-render function, but does not actually call the re-render func
 ].forEach(jsonFile => {
     d3.json(jsonFile)
         .then(summaryData => {
+
             const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
             document.querySelector('body').append(userScatterPlotContainer);
+            const userExampleCounts = Object.values(summaryData.user_data).map(datum => datum.example_count);
+            const userMSELossValues = Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss);
             const userScatterPlotData = {
                 'pointSetLookup': {
                     'users': Object.entries(summaryData.user_data).map(([userId, userData]) => Object.assign(userData, {'id': userId})),
@@ -245,19 +291,24 @@ This returns a re-render function, but does not actually call the re-render func
 <p>Example Count: ${datum.example_count}</p>
 `,
                 'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
+                'title': 'User Mean MSE Loss vs User Example Count',
                 'cssFile': 'index.css',
                 'xMinValue': 0,
-                'xMaxValue': Math.max(...Object.values(summaryData.user_data).map(datum => datum.example_count)) + 10,
+                'xMaxValue': Math.max(...userExampleCounts) + 1,
                 'yMinValue': 0,
-                'yMaxValue': Math.max(...Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss)) + 10,
+                'yMaxValue': Math.max(...userMSELossValues) + 1,
                 'xAxisTitle': 'Example count',
                 'yAxisTitle': 'Mean MSE Loss',
+                'xScale': 'linear',
+                'yScale': 'linear',
             };
             const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
             redrawUserScatterPlot();
             
             const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
             document.querySelector('body').append(animeScatterPlotContainer);
+            const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
+            const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
             const animeScatterPlotData = {
                 'pointSetLookup': {
                     'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
@@ -271,13 +322,16 @@ This returns a re-render function, but does not actually call the re-render func
 <p>Example Count: ${datum.example_count}</p>
 `,
                 'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
+                'title': 'Anime Mean MSE Loss vs Anime Example Count',
                 'cssFile': 'index.css',
-                'xMinValue': 0,
-                'xMaxValue': Math.max(...Object.values(summaryData.anime_data).map(datum => datum.example_count)) + 10,
+                'xMinValue': Math.min(...animeExampleCounts) + 1,
+                'xMaxValue': Math.max(...animeExampleCounts) + 1,
                 'yMinValue': 0,
-                'yMaxValue': Math.max(...Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss)) + 10,
+                'yMaxValue': Math.max(...animeMSELossValues) + 1,
                 'xAxisTitle': 'Example count',
                 'yAxisTitle': 'Mean MSE Loss',
+                'xScale': 'linear',
+                'yScale': 'linear',
             };
             const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
             redrawAnimeScatterPlot();
