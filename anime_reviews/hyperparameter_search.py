@@ -38,7 +38,7 @@ if not os.path.isdir(ANALYSIS_OUTPUT_DIR):
     os.makedirs(ANALYSIS_OUTPUT_DIR)
 
 NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
-NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 10
+NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 1 # 10 # @todo change this
 
 #########################
 # Hyperparameter Search #
@@ -158,7 +158,7 @@ def analyze_hyperparameter_search_results() -> None:
     best_trials_df = trials_df.nsmallest(NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY, 'value')
     
     parameter_name_prefix = 'params_'
-    for rank, row in tqdm_with_message(enumerate(best_trials_df.itertuples()), post_yield_message_func = lambda index: f'Working on trial {index}'):
+    for rank, row in tqdm_with_message(enumerate(best_trials_df.itertuples()), post_yield_message_func = lambda index: f'Working on trial {index}', total=len(best_trials_df), bar_format='{l_bar}{bar:50}{r_bar}{bar:-10b}'):
         hyperparameters = {attr_name[len(parameter_name_prefix):]: getattr(row, attr_name) for attr_name in dir(row) if attr_name.startswith(parameter_name_prefix)}
         checkpoint_dir = checkpoint_directory_from_hyperparameters(**hyperparameters)
         result_summary_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
@@ -197,9 +197,16 @@ def analyze_hyperparameter_search_results() -> None:
             
             user_df.loc[batch_user_df.index]['total_mse_loss'] += batch_user_df['target_score']['sum']
             user_df.loc[batch_user_df.index]['example_count'] += batch_user_df['target_score']['count']
-
+        
         anime_df['mean_mse_loss'] = anime_df['total_mse_loss'] / anime_df['example_count']
         user_df['mean_mse_loss'] = user_df['total_mse_loss'] / user_df['example_count']
+        
+        assert anime_df['total_mse_loss'] > 0
+        assert anime_df['example_count'] > 0
+        assert anime_df['mean_mse_loss'] > 0 
+        assert user_df['total_mse_loss'] > 0
+        assert user_df['example_count'] > 0
+        assert user_df['mean_mse_loss'] > 0
         
         result_summary_dict['anime_data'] = anime_df.to_dict(orient='index')
         result_summary_dict['user_data'] = user_df.to_dict(orient='index')
