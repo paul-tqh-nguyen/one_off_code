@@ -71,7 +71,7 @@ This returns a re-render function, but does not actually call the re-render func
     const margin = {
         top: 80,
         bottom: 80,
-        left: 220,
+        left: 100,
         right: 30,
     };
 
@@ -83,8 +83,29 @@ This returns a re-render function, but does not actually call the re-render func
     const shadowContainer = createNewElement('div');
     container.append(shadowContainer);
     const shadow = shadowContainer.attachShadow({mode: 'open'});
+
+    const shadowStyleElement = createNewElement('style', {innerHTML: `
+
+:host {
+  position: relative;
+  width: inherit;
+  height: inherit;
+}
+
+.scatter-plot-container {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  margin: 0px;
+}
+
+`});
     
-    const scatterPlotContainer = createNewElement('div');
+    shadow.append(shadowStyleElement);
+    
+    const scatterPlotContainer = createNewElement('div', {classes: ['scatter-plot-container']});
     shadow.append(scatterPlotContainer);
     
     const svg = d3.select(scatterPlotContainer).append('svg');
@@ -201,7 +222,7 @@ This returns a re-render function, but does not actually call the re-render func
 ].forEach(jsonFile => {
     d3.json(jsonFile)
         .then(summaryData => {
-            const userScatterPlotContainer = createNewElement('div', {classes: ['scatter-plot-container']});
+            const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
             document.querySelector('body').append(userScatterPlotContainer);
             const userScatterPlotData = {
                 'pointSetLookup': {
@@ -226,7 +247,7 @@ This returns a re-render function, but does not actually call the re-render func
             const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
             redrawUserScatterPlot();
             
-            const animeScatterPlotContainer = createNewElement('div', {classes: ['scatter-plot-container']});
+            const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
             document.querySelector('body').append(animeScatterPlotContainer);
             const animeScatterPlotData = {
                 'pointSetLookup': {
@@ -252,7 +273,7 @@ This returns a re-render function, but does not actually call the re-render func
             redrawAnimeScatterPlot();
             
             window.addEventListener('resize', () => {
-                userScatterPlotData();
+                redrawUserScatterPlot();
                 redrawAnimeScatterPlot();
             });
         }).catch(err => {
