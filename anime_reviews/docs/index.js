@@ -16,7 +16,7 @@ const removeAllChildNodes = (parent) => {
 };
 
 const createNewElement = (childTag, {classes, attributes, innerHTML}={}) => {
-    const newElement = document.createElement(childTag);
+    const newElement = childTag === 'svg' ? document.createElementNS('http://www.w3.org/2000/svg', childTag) : document.createElement(childTag);
     if (!isUndefined(classes)) {
         classes.forEach(childClass => newElement.classList.add(childClass));
     }
@@ -36,7 +36,9 @@ const createNewElement = (childTag, {classes, attributes, innerHTML}={}) => {
 /***************************/
 
 const addScatterPlot = (container, scatterPlotData) => {
-    /* scatterPlotData looks like this:
+    /* 
+
+scatterPlotData looks like this:
 {
     'pointSetLookup': {
         'ps1': [{'x': 12, 'y': 31, 'name': 'Ingrid'}, {'x': 42, 'y': 25, 'name': 'Jure'}], 
@@ -52,8 +54,15 @@ const addScatterPlot = (container, scatterPlotData) => {
         }[pointSetName];
     },
     'xMinValue': 0,
-    'xMaxValue': 100.
+    'xMaxValue': 100,
+    'yMinValue': 0,
+    'yMaxValue': 250,
+    'xAxisTitle': 'Rank',
+    'yAxisTitle': 'Scores',
 }
+
+This returns a re-render function, but does not actually call the re-render function initially.
+
 */
     // @todo make sure all the attributes of scatterPlotData are used
     
@@ -71,15 +80,17 @@ const addScatterPlot = (container, scatterPlotData) => {
     /* Visualization Initialization */
 
     removeAllChildNodes(container);
+    const shadowContainer = createNewElement('div');
+    container.append(shadowContainer);
+    const shadow = shadowContainer.attachShadow({mode: 'open'});
+    
     const scatterPlotContainer = createNewElement('div');
-    container.append(scatterPlotContainer);
+    shadow.append(scatterPlotContainer);
     
-    const shadow = scatterPlotContainer.attachShadow({mode: 'open'});
-    const svgDomElement = createNewElement('svg');
-    shadow.append(svgDomElement);
-    
-    const svg = d3.select(svgDomElement);
-    const scatterPlotGroup = svg.append('g');
+    const svg = d3.select(scatterPlotContainer).append('svg');
+    const scatterPlotGroup = svg
+          .append('g')
+          .attr('id', 'scatter-plot-group');
     const pointSetGroups = Object.keys(scatterPlotData.pointSetLookup).map(
         (pointSetName) => scatterPlotGroup
             .append('g')
@@ -135,7 +146,7 @@ const addScatterPlot = (container, scatterPlotData) => {
             .attr('transform', 'rotate(-90)')
             .attr('y', -60) // @todo move this to a parameter
             .attr('x', -innerHeight/3) // @todo this seems questionable
-            .text('Mean Cross Entropy Loss');
+            .text(scatterPlotData.yAxisTitle);
         
         const xAxisTickFormat = number => d3.format('.3s')(number).replace(/G/,'B');
         xAxisGroup.call(d3.axisBottom(xScale).tickFormat(xAxisTickFormat).tickSize(-innerHeight))
@@ -148,7 +159,7 @@ const addScatterPlot = (container, scatterPlotData) => {
             .attr('fill', 'black')
             .attr('y', margin.bottom * 0.75) // @todo this seems questionable
             .attr('x', innerWidth / 2) // @todo this seems questionable
-            .text('Parameter Count');
+            .text(scatterPlotData.xAxisTitle);
 
         Object.entries(scatterPlotData.pointSetLookup).forEach(([pointSetName, points]) => {
             const pointSetGroup = scatterPlotGroup
@@ -168,17 +179,84 @@ const addScatterPlot = (container, scatterPlotData) => {
                 .attr('cy', datum => yScale(scatterPlotData.yAccessor(datum)));
         });
     };
+    
+    return render;
 };
 
-d3.json('') // @todo add a JSON fille
-    .then(data => {
-        const render = addScatterPlot();
-        const redraw = () => {
-            render();
-        };
-        redraw();
-        window.addEventListener('resize', redraw);
-    }).catch(err => {
-        console.error(err.message);
-        return;
-    });
+/********/
+/* Main */
+/********/
+
+[
+    './result_analysis/rank_0_summary.json',
+    // './result_analysis/rank_1_summary.json',
+    // './result_analysis/rank_2_summary.json',
+    // './result_analysis/rank_3_summary.json',
+    // './result_analysis/rank_4_summary.json',
+    // './result_analysis/rank_5_summary.json',
+    // './result_analysis/rank_6_summary.json',
+    // './result_analysis/rank_7_summary.json',
+    // './result_analysis/rank_8_summary.json',
+    // './result_analysis/rank_9_summary.json',
+].forEach(jsonFile => {
+    d3.json(jsonFile)
+        .then(summaryData => {
+            const userScatterPlotContainer = createNewElement('div', {classes: ['scatter-plot-container']});
+            document.querySelector('body').append(userScatterPlotContainer);
+            const userScatterPlotData = {
+                'pointSetLookup': {
+                    'users': Object.entries(summaryData.user_data).map(([userId, userData]) => Object.assign(userData, {'id': userId})),
+                },
+                'xAccessor': datum => datum.example_count,
+                'yAccessor': datum => datum.mean_mse_loss,
+                'toolTipHTMLGenerator': datum => `
+<p>User Id: ${datum.id}</p>
+<p>Total MSE Loss: ${datum.total_mse_loss}</p>
+<p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
+<p>Example Count: ${datum.example_count}</p>
+`,
+                'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
+                'xMinValue': 0,
+                'xMaxValue': Math.max(...Object.values(summaryData.user_data).map(datum => datum.example_count)) + 10,
+                'yMinValue': 0,
+                'yMaxValue': Math.max(...Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss)) + 10,
+                'xAxisTitle': 'Example count',
+                'yAxisTitle': 'Mean MSE Loss',
+            };
+            const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
+            redrawUserScatterPlot();
+            
+            const animeScatterPlotContainer = createNewElement('div', {classes: ['scatter-plot-container']});
+            document.querySelector('body').append(animeScatterPlotContainer);
+            const animeScatterPlotData = {
+                'pointSetLookup': {
+                    'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
+                },
+                'xAccessor': datum => datum.example_count,
+                'yAccessor': datum => datum.mean_mse_loss,
+                'toolTipHTMLGenerator': datum => `
+<p>Anime Id: ${datum.id}</p>
+<p>Total MSE Loss: ${datum.total_mse_loss}</p>
+<p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
+<p>Example Count: ${datum.example_count}</p>
+`,
+                'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
+                'xMinValue': 0,
+                'xMaxValue': Math.max(...Object.values(summaryData.anime_data).map(datum => datum.example_count)) + 10,
+                'yMinValue': 0,
+                'yMaxValue': Math.max(...Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss)) + 10,
+                'xAxisTitle': 'Example count',
+                'yAxisTitle': 'Mean MSE Loss',
+            };
+            const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
+            redrawAnimeScatterPlot();
+            
+            window.addEventListener('resize', () => {
+                userScatterPlotData();
+                redrawAnimeScatterPlot();
+            });
+        }).catch(err => {
+            console.error(err.message);
+            return;
+        });
+});
