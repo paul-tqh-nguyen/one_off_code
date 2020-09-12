@@ -53,6 +53,7 @@ scatterPlotData looks like this:
             'ps2': 'ps2-point',
         }[pointSetName];
     },
+    'cssFile': 'custom.css',
     'xMinValue': 0,
     'xMaxValue': 100,
     'yMinValue': 0,
@@ -105,22 +106,26 @@ This returns a re-render function, but does not actually call the re-render func
     
     shadow.append(shadowStyleElement);
     
+    const styleInheritanceLinkElement = document.createElement('link');
+    styleInheritanceLinkElement.setAttribute('rel', 'stylesheet');
+    styleInheritanceLinkElement.setAttribute('href', scatterPlotData.cssFile);
+    shadow.append(styleInheritanceLinkElement);
+    
     const scatterPlotContainer = createNewElement('div', {classes: ['scatter-plot-container']});
     shadow.append(scatterPlotContainer);
     
     const svg = d3.select(scatterPlotContainer).append('svg');
     const scatterPlotGroup = svg
           .append('g')
-          .attr('id', 'scatter-plot-group');
-    const pointSetGroups = Object.keys(scatterPlotData.pointSetLookup).map(
-        (pointSetName) => scatterPlotGroup
-            .append('g')
-            .attr('id', `point-set-group-${pointSetName}`)
-    );
+          .classed('scatter-plot-group', true);
     const scatterPlotTitle = scatterPlotGroup.append('text');
-    const xAxisGroup = scatterPlotGroup.append('g');
+    const xAxisGroup = scatterPlotGroup
+          .append('g')
+          .attr('class', 'x-axis-group', true);
     const xAxisLabel = xAxisGroup.append('text');
-    const yAxisGroup = scatterPlotGroup.append('g');
+    const yAxisGroup = scatterPlotGroup
+          .append('g')
+          .classed('y-axis-group', true);
     const yAxisLabel = yAxisGroup.append('text');
     // @todo add legend
 
@@ -183,10 +188,13 @@ This returns a re-render function, but does not actually call the re-render func
             .text(scatterPlotData.xAxisTitle);
 
         Object.entries(scatterPlotData.pointSetLookup).forEach(([pointSetName, points]) => {
+            const pointCSSClass = scatterPlotData.pointCSSClassAccessor(pointSetName);
+            console.log(`pointCSSClass ${JSON.stringify(pointCSSClass)}`);
             const pointSetGroup = scatterPlotGroup
                   .append('g')
-                  .attr('id', `point-set-group-${pointSetName}`);
-            pointSetGroup.selectAll('circle').data(points)
+                  .classed(`point-set-group-${pointSetName}`, true);
+            pointSetGroup.selectAll('circle')
+                .data(points)
                 .enter()
                 .append('circle')
                 .on('mouseover', datum => {
@@ -195,7 +203,7 @@ This returns a re-render function, but does not actually call the re-render func
                 .on('mouseout', datum => {
                     // @todo add tooltip functionality
                 })
-                .classed(scatterPlotData.pointCSSClassAccessor(pointSetName), true)
+                .classed(pointCSSClass, true)
                 .attr('cx', datum => xScale(scatterPlotData.xAccessor(datum)))
                 .attr('cy', datum => yScale(scatterPlotData.yAccessor(datum)));
         });
@@ -237,6 +245,7 @@ This returns a re-render function, but does not actually call the re-render func
 <p>Example Count: ${datum.example_count}</p>
 `,
                 'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
+                'cssFile': 'index.css',
                 'xMinValue': 0,
                 'xMaxValue': Math.max(...Object.values(summaryData.user_data).map(datum => datum.example_count)) + 10,
                 'yMinValue': 0,
@@ -262,6 +271,7 @@ This returns a re-render function, but does not actually call the re-render func
 <p>Example Count: ${datum.example_count}</p>
 `,
                 'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
+                'cssFile': 'index.css',
                 'xMinValue': 0,
                 'xMaxValue': Math.max(...Object.values(summaryData.anime_data).map(datum => datum.example_count)) + 10,
                 'yMinValue': 0,

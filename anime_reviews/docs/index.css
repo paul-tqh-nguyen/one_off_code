@@ -16,8 +16,15 @@ body {
     height: 80vh;
 }
 
+.user-scatter-plot-point, .anime-scatter-plot-point {
+    r: 10;
+    stroke: black;
+    stroke-width: 1;
+    fill: red;
+}
+
 .user-scatter-plot-point {
 }
 
-.anime-scatter-plot {
+.anime-scatter-plot-point {
 }
