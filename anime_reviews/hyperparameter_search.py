@@ -188,8 +188,9 @@ def analyze_hyperparameter_search_results() -> None:
             predicted_scores, _ = model(batch_dict)
             predicted_scores = predicted_scores.detach()
             target_scores = batch_dict['rating']
+            mse_loss = MSE_LOSS(predicted_scores, target_scores)
             
-            batch_df = pd.DataFrame({'user_id': user_ids, 'anime_id': anime_ids, 'mse_loss': mse_loss = MSE_LOSS(predicted_scores, target_scores)})
+            batch_df = pd.DataFrame({'user_id': user_ids, 'anime_id': anime_ids, 'mse_loss': mse_loss})
             batch_anime_df = batch_df.groupby('anime_id').agg({'mse_loss': ['sum', 'count']})
             batch_user_df = batch_df.groupby('user_id').agg({'mse_loss': ['sum', 'count']})
             
