@@ -191,14 +191,14 @@ def analyze_hyperparameter_search_results() -> None:
             batch_df = pd.DataFrame({'user_id': user_ids, 'anime_id': anime_ids, 'target_score': target_scores})
             batch_anime_df = batch_df.groupby('anime_id').agg({'target_score': ['sum', 'count']})
             batch_user_df = batch_df.groupby('user_id').agg({'target_score': ['sum', 'count']})
-
+            
+            anime_df.loc[batch_anime_df.index, 'total_mse_loss'] += batch_anime_df['target_score']['sum']
+            anime_df.loc[batch_anime_df.index, 'example_count'] += batch_anime_df['target_score']['count']
+            
             breakpoint()
-            
-            anime_df.loc[batch_anime_df.index]['total_mse_loss'] += batch_anime_df['target_score']['sum']
-            anime_df.loc[batch_anime_df.index]['example_count'] += batch_anime_df['target_score']['count']
-            
-            user_df.loc[batch_user_df.index]['total_mse_loss'] += batch_user_df['target_score']['sum']
-            user_df.loc[batch_user_df.index]['example_count'] += batch_user_df['target_score']['count']
+                        
+            user_df.loc[batch_user_df.index, 'total_mse_loss'] += batch_user_df['target_score']['sum']
+            user_df.loc[batch_user_df.index, 'example_count'] += batch_user_df['target_score']['count']
             
         anime_df['mean_mse_loss'] = anime_df['total_mse_loss'] / anime_df['example_count']
         user_df['mean_mse_loss'] = user_df['total_mse_loss'] / user_df['example_count']
