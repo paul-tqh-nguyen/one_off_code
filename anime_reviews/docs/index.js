@@ -68,7 +68,6 @@ scatterPlotData looks like this:
 This returns a re-render function, but does not actually call the re-render function initially.
 
 */
-    // @todo make sure all the attributes of scatterPlotData are used
     
     /* Visualization Aesthetic Parameters */
     
@@ -261,16 +260,16 @@ This returns a re-render function, but does not actually call the re-render func
 
 [
     './result_analysis/rank_0_summary.json',
-    // './result_analysis/rank_1_summary.json',
-    // './result_analysis/rank_2_summary.json',
-    // './result_analysis/rank_3_summary.json',
-    // './result_analysis/rank_4_summary.json',
-    // './result_analysis/rank_5_summary.json',
-    // './result_analysis/rank_6_summary.json',
-    // './result_analysis/rank_7_summary.json',
-    // './result_analysis/rank_8_summary.json',
-    // './result_analysis/rank_9_summary.json',
-].forEach(jsonFile => {
+    './result_analysis/rank_1_summary.json',
+    './result_analysis/rank_2_summary.json',
+    './result_analysis/rank_3_summary.json',
+    './result_analysis/rank_4_summary.json',
+    './result_analysis/rank_5_summary.json',
+    './result_analysis/rank_6_summary.json',
+    './result_analysis/rank_7_summary.json',
+    './result_analysis/rank_8_summary.json',
+    './result_analysis/rank_9_summary.json',
+].forEach((jsonFile, rank) => {
     d3.json(jsonFile)
         .then(summaryData => {
 
@@ -291,7 +290,7 @@ This returns a re-render function, but does not actually call the re-render func
 <p>Example Count: ${datum.example_count}</p>
 `,
                 'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
-                'title': 'User Mean MSE Loss vs User Example Count',
+                'title': `Rank ${rank}User Mean MSE Loss vs User Example Count`,
                 'cssFile': 'index.css',
                 'xMinValue': 0,
                 'xMaxValue': Math.max(...userExampleCounts) + 1,
@@ -322,7 +321,7 @@ This returns a re-render function, but does not actually call the re-render func
 <p>Example Count: ${datum.example_count}</p>
 `,
                 'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
-                'title': 'Anime Mean MSE Loss vs Anime Example Count',
+                'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
                 'cssFile': 'index.css',
                 'xMinValue': Math.min(...animeExampleCounts) + 1,
                 'xMaxValue': Math.max(...animeExampleCounts) + 1,
