@@ -38,7 +38,7 @@ if not os.path.isdir(ANALYSIS_OUTPUT_DIR):
     os.makedirs(ANALYSIS_OUTPUT_DIR)
 
 NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS = 200
-NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 1 # 10 # @todo change this
+NUMBER_OF_BEST_HYPERPARAMETER_RESULTS_TO_DISPLAY = 10
 
 #########################
 # Hyperparameter Search #
@@ -194,11 +194,11 @@ def analyze_hyperparameter_search_results() -> None:
             
             anime_df.loc[batch_anime_df.index, 'total_mse_loss'] += batch_anime_df['target_score']['sum']
             anime_df.loc[batch_anime_df.index, 'example_count'] += batch_anime_df['target_score']['count']
+            assert (anime_df.loc[batch_anime_df.index, 'example_count'] > 0).all()
             
-            breakpoint()
-                        
             user_df.loc[batch_user_df.index, 'total_mse_loss'] += batch_user_df['target_score']['sum']
             user_df.loc[batch_user_df.index, 'example_count'] += batch_user_df['target_score']['count']
+            assert (user_df.loc[batch_user_df.index, 'example_count'] > 0).all()
             
         anime_df['mean_mse_loss'] = anime_df['total_mse_loss'] / anime_df['example_count']
         user_df['mean_mse_loss'] = user_df['total_mse_loss'] / user_df['example_count']
