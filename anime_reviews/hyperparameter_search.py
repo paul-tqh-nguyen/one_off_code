@@ -59,7 +59,7 @@ def _training_logging_suppressed() -> Generator:
 
 class HyperParameterSearchObjective:
     def __init__(self, gpu_id_queue: Optional[object]):
-        # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classs are generated dyanmically
+        # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dyanmically
         self.gpu_id_queue = gpu_id_queue
 
     def __call__(self, trial: optuna.Trial) -> float:
@@ -192,21 +192,23 @@ def analyze_hyperparameter_search_results() -> None:
             batch_anime_df = batch_df.groupby('anime_id').agg({'target_score': ['sum', 'count']})
             batch_user_df = batch_df.groupby('user_id').agg({'target_score': ['sum', 'count']})
 
+            breakpoint()
+            
             anime_df.loc[batch_anime_df.index]['total_mse_loss'] += batch_anime_df['target_score']['sum']
             anime_df.loc[batch_anime_df.index]['example_count'] += batch_anime_df['target_score']['count']
             
             user_df.loc[batch_user_df.index]['total_mse_loss'] += batch_user_df['target_score']['sum']
             user_df.loc[batch_user_df.index]['example_count'] += batch_user_df['target_score']['count']
-        
+            
         anime_df['mean_mse_loss'] = anime_df['total_mse_loss'] / anime_df['example_count']
         user_df['mean_mse_loss'] = user_df['total_mse_loss'] / user_df['example_count']
         
-        assert anime_df['total_mse_loss'] > 0
-        assert anime_df['example_count'] > 0
-        assert anime_df['mean_mse_loss'] > 0 
-        assert user_df['total_mse_loss'] > 0
-        assert user_df['example_count'] > 0
-        assert user_df['mean_mse_loss'] > 0
+        assert (anime_df['total_mse_loss'] > 0).all()
+        assert (anime_df['example_count'] > 0).all()
+        assert (anime_df['mean_mse_loss'] > 0).all() 
+        assert (user_df['total_mse_loss'] > 0).all()
+        assert (user_df['example_count'] > 0).all()
+        assert (user_df['mean_mse_loss'] > 0).all()
         
         result_summary_dict['anime_data'] = anime_df.to_dict(orient='index')
         result_summary_dict['user_data'] = user_df.to_dict(orient='index')
