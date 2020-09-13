@@ -32,7 +32,7 @@ from global_values import *
 ###########
 
 # https://www.kaggle.com/CooperUnion/anime-recommendations-database
-# ANIME_CSV_FILE_LOCATION = './data/anime.csv' # @todo use this
+# ANIME_CSV_FILE_LOCATION = './data/anime.csv'
 RATING_CSV_FILE_LOCATION = './data/rating.csv'
 
 PROCESSED_DATA_CSV_FILE_LOCATION = './data/processed_data.csv'
