@@ -50,8 +50,7 @@ _initialize_logger()
 HYPERPARAMETER_SEARCH_IS_DISTRIBUTED = True
 
 CPU_COUNT = mp.cpu_count()
-if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
-    pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
+pandarallel.initialize(nb_workers=CPU_COUNT, progress_bar=False, verbose=0)
 
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 DEFAULT_GPU = GPU_IDS[0]
