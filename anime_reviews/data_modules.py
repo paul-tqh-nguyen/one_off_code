@@ -15,6 +15,7 @@ Sections:
 # Imports #
 ###########
 
+import os
 import more_itertools
 import numpy as np
 import pandas as pd
@@ -32,8 +33,34 @@ from global_values import *
 ###########
 
 # https://www.kaggle.com/CooperUnion/anime-recommendations-database
-# ANIME_CSV_FILE_LOCATION = './data/anime.csv'
+# ANIME_CSV_FILE_LOCATION = './data/compressed_data/anime.csv'
 RATING_CSV_FILE_LOCATION = './data/rating.csv'
+
+COMPRESSED_RATING_CSV_FILE_PIECES = [
+    './data/compressed_data/rating_1.csv',
+    './data/compressed_data/rating_2.csv',
+    './data/compressed_data/rating_3.csv',
+    './data/compressed_data/rating_4.csv',
+    './data/compressed_data/rating_5.csv',
+    './data/compressed_data/rating_6.csv',
+    './data/compressed_data/rating_7.csv',
+    './data/compressed_data/rating_8.csv',
+    './data/compressed_data/rating_9.csv',
+    './data/compressed_data/rating_10.csv',
+    './data/compressed_data/rating_11.csv',
+    './data/compressed_data/rating_12.csv',
+    './data/compressed_data/rating_13.csv',
+    './data/compressed_data/rating_14.csv',
+    './data/compressed_data/rating_15.csv',
+    './data/compressed_data/rating_16.csv',
+    './data/compressed_data/rating_17.csv',
+    './data/compressed_data/rating_18.csv',
+    './data/compressed_data/rating_19.csv',
+    './data/compressed_data/rating_20.csv',
+    './data/compressed_data/rating_21.csv',
+    './data/compressed_data/rating_22.csv',
+    './data/compressed_data/rating_23.csv',
+]
 
 PROCESSED_DATA_CSV_FILE_LOCATION = './data/processed_data.csv'
 
@@ -56,6 +83,13 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     LOGGER.info('')
     LOGGER.info(f'Preprocessing data.')
     LOGGER.info('')
+    if not os.path.isfile(RATING_CSV_FILE_LOCATION):
+        full_data = ''
+        for piece in COMPRESSED_RATING_CSV_FILE_PIECES:
+            with open(piece, 'r') as f:
+                full_data += f.read()
+        with open(RATING_CSV_FILE_LOCATION, 'w') as f:
+            f.write(full_data)
     rating_df = pd.read_csv(RATING_CSV_FILE_LOCATION)
     assert all(rating_df[rating_df.isnull()].count() == 0)
     rating_df.drop(rating_df[rating_df.rating == -1].index, inplace=True)
