@@ -28,7 +28,7 @@ import joblib
 
 from misc_utilities import *
 from global_values import *
-from data_modules import AnimeRatingDataModule
+from data_modules import AnimeRatingDataModule, preprocess_data
 from models import LinearColaborativeFilteringModel, MSE_LOSS
 from trainer import train_model, checkpoint_directory_from_hyperparameters
 
@@ -110,6 +110,7 @@ def hyperparameter_search() -> None:
         catch=(Exception,),
     )
     with _training_logging_suppressed():
+        preprocess_data()
         if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
             optimize_kawrgs['func'] = HyperParameterSearchObjective(None)
             study.optimize(**optimize_kawrgs)

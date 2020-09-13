@@ -19,7 +19,6 @@ import os
 import more_itertools
 import numpy as np
 import pandas as pd
-from typing import Tuple
 
 import torch
 from torch.utils import data
@@ -79,7 +78,7 @@ MINIMUM_NUMBER_OF_RATINGS_PER_USER = 100
 # Data Modules #
 ################
 
-def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _preprocess_data() -> pd.DataFrame:
     LOGGER.info('')
     LOGGER.info(f'Preprocessing data.')
     LOGGER.info('')
@@ -191,6 +190,14 @@ def preprocess_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     LOGGER.info('')
     return rating_df
 
+def preprocess_data() -> pd.DataFrame:
+    if os.path.isfile(PROCESSED_DATA_CSV_FILE_LOCATION):
+        rating_df = pd.read_csv(PROCESSED_DATA_CSV_FILE_LOCATION)
+    else:
+        rating_df = _preprocess_data()
+    return rating_df
+    
+
 class AnimeRatingDataset(data.Dataset):
     def __init__(self, df: pd.DataFrame, user_id_to_user_id_index: dict, anime_id_to_anime_id_index: dict):
         self.df = df
@@ -216,10 +223,7 @@ class AnimeRatingDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     def prepare_data(self) -> None:
-        if os.path.isfile(PROCESSED_DATA_CSV_FILE_LOCATION):
-            self.rating_df = pd.read_csv(PROCESSED_DATA_CSV_FILE_LOCATION)
-        else:
-            self.rating_df = preprocess_data()
+        self.rating_df = preprocess_data()
         return
     
     def setup(self) -> None:
