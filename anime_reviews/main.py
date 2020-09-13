@@ -18,6 +18,7 @@ Sections:
 import argparse
 
 from misc_utilities import *
+from global_values import GPU_IDS
 
 #################
 # Default Model #
