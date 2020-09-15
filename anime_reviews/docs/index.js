@@ -4,6 +4,26 @@
 /***************/
 
 const isUndefined = value => value === void(0);
+const createSeparatedNumbeString = number => number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+// D3 Extensions
+d3.selection.prototype.moveToFront = function() {
+    return this.each(function() {
+	if (this.parentNode !== null) {
+	    this.parentNode.appendChild(this);
+	}
+    });
+};
+
+d3.selection.prototype.moveToBack = function() {
+    return this.each(function() {
+        var firstChild = this.parentNode.firstChild;
+        if (firstChild) {
+            this.parentNode.insertBefore(this, firstChild);
+        }
+    });
+};
+
 
 /**********************/
 /* HTML Element Utils */
@@ -118,6 +138,16 @@ This returns a re-render function, but does not actually call the re-render func
   transform: rotate(-90deg);
 }
 
+.crosshair-label {
+  fill: black;
+  font-size: 15px;
+}
+
+.vertical-crosshair, .horizontal-crosshair {
+  fill: black;
+  font-size: 1.25em;
+}
+
 .axis-label {
   fill: black;
   font-size: 1.25em;
@@ -161,6 +191,7 @@ This returns a re-render function, but does not actually call the re-render func
     const render = () => {
         svg.selectAll('*').remove();
         
+        // @todo add legend
         const scatterPlotGroup = svg
               .append('g')
               .classed('scatter-plot-group', true);
@@ -177,7 +208,18 @@ This returns a re-render function, but does not actually call the re-render func
         const yAxisLabel = yAxisGroup
               .append('text')
               .classed('axis-label', true);
-        // @todo add legend
+        const crosshairVertical = xAxisGroup
+              .append('line')
+              .classed('vertical-crosshair', true);
+        const crosshairHorizontal = yAxisGroup
+              .append('line')
+              .classed('horizontal-crosshair', true);
+        const crossHairLabelGroup = yAxisGroup
+              .append('g');
+        const crossHairLabel = crossHairLabelGroup
+              .append('text')
+              .classed('crosshair-label', true)
+              .style('text-anchor', 'end');
 
         svg
             .attr('width', scatterPlotContainer.clientWidth)
@@ -222,6 +264,34 @@ This returns a re-render function, but does not actually call the re-render func
             .attr('y', -60)
             .attr('x', -innerHeight/3)
             .text(scatterPlotData.yAxisTitle);
+
+        crossHairLabel
+            .attr('x', yAxisGroup.select('path.domain').node().getBBox().width - 10)
+            .attr('y', yAxisGroup.select('path.domain').node().getBBox().height - 10);
+        svg
+            // .on("mouseover", () => {
+            //     crosshair.style("display", null); // @todo make this a CSS class
+            // })
+            .on('mouseout', () =>  {
+                // crosshair.style('display', 'none'); // @todo make this a CSS class
+                crossHairLabel.text('');
+            })
+            .on('mousemove', function() {
+                const x = d3.event.pageX;
+                const y = d3.event.pageY;
+                svg.select('.vertical-crosshair')
+                    .attr('x1', x)
+                    .attr('y1', yScale(scatterPlotData.yMinValue))
+                    .attr('x2', x)
+                    .attr('y2', yScale(scatterPlotData.yMaxValue));
+                svg.select('.horizontal-crosshair')
+                    .attr('x1', xScale(scatterPlotData.xMinValue))
+                    .attr('y1', y)
+                    .attr('x2', xScale(scatterPlotData.xMaxValue))
+                    .attr('y2', y);
+                crossHairLabel
+                    .text(`Crosshair Example Count: ${xScale.invert(x).toFixed(2)}, Crosshair MSELoss: ${yScale.invert(y).toFixed(2)}`); // @todo parameterize the label text
+            });
         
         const xAccessor = scatterPlotData.xAccessor;
         const yAccessor = scatterPlotData.yAccessor;
@@ -286,7 +356,19 @@ d3.csv("./anime.csv").then(
           .then(summaryData => {
 
               const body = document.querySelector('body');
-
+              
+              const roundedScoreToUserCount = Object.entries(summaryData.user_data).reduce((accumulator, [userId, datum]) => {
+                  const roundedMSELoss = Math.round(datum.mean_mse_loss);
+                  if (!(accumulator.hasOwnProperty(roundedMSELoss))) {
+                      accumulator[roundedMSELoss] = 0;
+                  }
+                  accumulator[roundedMSELoss] += 1;
+                  return accumulator;
+              }, {});
+              Object.entries(roundedScoreToUserCount).forEach(([roundedMSELoss, userCount]) => {
+                  body.append(createNewElement('p', {innerHTML: `${roundedMSELoss}: ${createSeparatedNumbeString(userCount)} (${(100*userCount/Object.keys(summaryData.user_data).length).toFixed(2)}%)`}));
+              });
+              
               body.append(createNewElement('p', {innerHTML: `Testing MSE Loss: ${summaryData.testing_mse_loss}`}));
               body.append(createNewElement('p', {innerHTML: `Best Validation Loss: ${summaryData.best_validation_loss}`}));
               body.append(createNewElement('p', {innerHTML: `Testing MSE Loss: ${summaryData.learning_rate}`}));
@@ -295,6 +377,7 @@ d3.csv("./anime.csv").then(
               body.append(createNewElement('p', {innerHTML: `Embedding Size: ${summaryData.embedding_size}`}));
               body.append(createNewElement('p', {innerHTML: `Regularization Factor: ${summaryData.regularization_factor}`}));
               body.append(createNewElement('p', {innerHTML: `Dropout Porbability: ${summaryData.dropout_probability}`}));
+              
 
               const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
               body.append(userScatterPlotContainer);
