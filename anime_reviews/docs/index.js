@@ -307,7 +307,6 @@ This returns a re-render function, but does not actually call the re-render func
             const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
             redrawUserScatterPlot();
 
-            /*
             const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
             document.querySelector('body').append(animeScatterPlotContainer);
             const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
@@ -338,11 +337,10 @@ This returns a re-render function, but does not actually call the re-render func
             };
             const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
             redrawAnimeScatterPlot();
-            */
             
             window.addEventListener('resize', () => {
                 redrawUserScatterPlot();
-                // redrawAnimeScatterPlot();
+                redrawAnimeScatterPlot();
             });
             
         }).catch(err => {
