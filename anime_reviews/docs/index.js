@@ -208,13 +208,6 @@ This returns a re-render function, but does not actually call the re-render func
             .attr('x', innerWidth * 0.325)
             .attr('y', -10);
         
-        const yAxisTickFormat = number => d3.format('.3f')(number);
-        yAxisGroup.call(d3.axisLeft(yScale).tickFormat(yAxisTickFormat).tickSize(-innerWidth));
-        yAxisLabel
-            .attr('y', -60)
-            .attr('x', -innerHeight/3)
-            .text(scatterPlotData.yAxisTitle);
-        
         const xAxisTickFormat = number => d3.format('.3s')(number).replace(/G/,'B');
         xAxisGroup.call(d3.axisBottom(xScale).tickFormat(xAxisTickFormat).tickSize(-innerHeight))
             .attr('transform', `translate(0, ${innerHeight})`);
@@ -223,6 +216,16 @@ This returns a re-render function, but does not actually call the re-render func
             .attr('x', xAxisGroup.node().getBoundingClientRect().width / 2)
             .text(scatterPlotData.xAxisTitle);
 
+        const yAxisTickFormat = number => d3.format('.3f')(number);
+        yAxisGroup.call(d3.axisLeft(yScale).tickFormat(yAxisTickFormat).tickSize(-innerWidth));
+        yAxisLabel
+            .attr('y', -60)
+            .attr('x', -innerHeight/3)
+            .text(scatterPlotData.yAxisTitle);
+        
+        const xAccessor = scatterPlotData.xAccessor;
+        const yAccessor = scatterPlotData.yAccessor;
+        
         Object.entries(scatterPlotData.pointSetLookup).forEach(([pointSetName, points]) => {
             const pointCSSClass = scatterPlotData.pointCSSClassAccessor(pointSetName);
             const pointSetGroup = scatterPlotGroup
@@ -248,8 +251,8 @@ This returns a re-render function, but does not actually call the re-render func
 		        .classed('hidden', true);
                 })
                 .classed(pointCSSClass, true)
-                .attr('cx', datum => xScale(scatterPlotData.xAccessor(datum)))
-                .attr('cy', datum => yScale(scatterPlotData.yAccessor(datum)));
+                .attr('cx', datum => xScale(xAccessor(datum)))
+                .attr('cy', datum => yScale(yAccessor(datum)));
         });
     };
     
@@ -294,15 +297,14 @@ This returns a re-render function, but does not actually call the re-render func
                 'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
                 'title': `Rank ${rank}User Mean MSE Loss vs User Example Count`,
                 'cssFile': 'index.css',
-                'xMinValue': 0,
+                'xMinValue': Math.min(...userExampleCounts),
                 'xMaxValue': Math.max(...userExampleCounts) + 1,
-                'yMinValue': 0,
-                // 'yMaxValue': Math.max(...userMSELossValues) + 1,
-                'yMaxValue': 10,
+                'yMinValue': Math.min(...userMSELossValues),
+                'yMaxValue': Math.max(...userMSELossValues) + 1,
                 'xAxisTitle': 'Example count',
                 'yAxisTitle': 'Mean MSE Loss',
-                'xScale': 'linear',
-                'yScale': 'linear',
+                'xScale': 'log',
+                'yScale': 'log',
             };
             const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
             redrawUserScatterPlot();
@@ -324,16 +326,16 @@ This returns a re-render function, but does not actually call the re-render func
 <p>Example Count: ${datum.example_count}</p>
 `,
                 'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
-                'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
+                'title': `Rank ${rank}Anime Mean MSE Loss vs Anime Example Count`,
                 'cssFile': 'index.css',
-                'xMinValue': Math.min(...animeExampleCounts) + 1,
+                'xMinValue': Math.min(...animeExampleCounts),
                 'xMaxValue': Math.max(...animeExampleCounts) + 1,
-                'yMinValue': 0,
+                'yMinValue': Math.min(...animeMSELossValues),
                 'yMaxValue': Math.max(...animeMSELossValues) + 1,
                 'xAxisTitle': 'Example count',
                 'yAxisTitle': 'Mean MSE Loss',
-                'xScale': 'linear',
-                'yScale': 'linear',
+                'xScale': 'log',
+                'yScale': 'log',
             };
             const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
             redrawAnimeScatterPlot();
