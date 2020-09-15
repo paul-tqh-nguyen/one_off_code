@@ -263,90 +263,102 @@ This returns a re-render function, but does not actually call the re-render func
 /* Main */
 /********/
 
-[
-    './result_analysis/rank_0_summary.json',
-    // './result_analysis/rank_1_summary.json',
-    // './result_analysis/rank_2_summary.json',
-    // './result_analysis/rank_3_summary.json',
-    // './result_analysis/rank_4_summary.json',
-    // './result_analysis/rank_5_summary.json',
-    // './result_analysis/rank_6_summary.json',
-    // './result_analysis/rank_7_summary.json',
-    // './result_analysis/rank_8_summary.json',
-    // './result_analysis/rank_9_summary.json',
-].forEach((jsonFile, rank) => {
-    d3.json(jsonFile)
-        .then(summaryData => {
+d3.csv("./anime.csv").then(
+    animeCSVData =>
+        animeCSVData.reduce((accumulator, row) => {
+            accumulator[row.anime_id] = row;
+            delete row.anime_id;
+            return accumulator;
+        }, {})
+).then((animeLookupById) => Promise.all(
+    [
+        './result_analysis/rank_0_summary.json',
+        './result_analysis/rank_1_summary.json',
+        './result_analysis/rank_2_summary.json',
+        './result_analysis/rank_3_summary.json',
+        './result_analysis/rank_4_summary.json',
+        './result_analysis/rank_5_summary.json',
+        './result_analysis/rank_6_summary.json',
+        './result_analysis/rank_7_summary.json',
+        './result_analysis/rank_8_summary.json',
+        './result_analysis/rank_9_summary.json',
+    ].map((jsonFile, rank) => d3.json(jsonFile)
+          .then(summaryData => {
 
-            const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
-            document.querySelector('body').append(userScatterPlotContainer);
-            const userExampleCounts = Object.values(summaryData.user_data).map(datum => datum.example_count);
-            const userMSELossValues = Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss);
-            const userScatterPlotData = {
-                'pointSetLookup': {
-                    'users': Object.entries(summaryData.user_data).map(([userId, userData]) => Object.assign(userData, {'id': userId})),
-                },
-                'xAccessor': datum => datum.example_count,
-                'yAccessor': datum => datum.mean_mse_loss,
-                'toolTipHTMLGenerator': datum => `
+              const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
+              document.querySelector('body').append(userScatterPlotContainer);
+              const userExampleCounts = Object.values(summaryData.user_data).map(datum => datum.example_count);
+              const userMSELossValues = Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss);
+              const userScatterPlotData = {
+                  'pointSetLookup': {
+                      'users': Object.entries(summaryData.user_data).map(([userId, userData]) => Object.assign(userData, {'id': userId})),
+                  },
+                  'xAccessor': datum => datum.example_count,
+                  'yAccessor': datum => datum.mean_mse_loss,
+                  'toolTipHTMLGenerator': datum => `
 <p>User Id: ${datum.id}</p>
 <p>Total MSE Loss: ${datum.total_mse_loss}</p>
 <p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
 <p>Example Count: ${datum.example_count}</p>
 `,
-                'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
-                'title': `Rank ${rank}User Mean MSE Loss vs User Example Count`,
-                'cssFile': 'index.css',
-                'xMinValue': Math.min(...userExampleCounts),
-                'xMaxValue': Math.max(...userExampleCounts) + 1,
-                'yMinValue': Math.min(...userMSELossValues),
-                'yMaxValue': Math.max(...userMSELossValues) + 1,
-                'xAxisTitle': 'Example count',
-                'yAxisTitle': 'Mean MSE Loss',
-                'xScale': 'log',
-                'yScale': 'log',
-            };
-            const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
-            redrawUserScatterPlot();
+                  'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
+                  'title': `Rank ${rank} User Mean MSE Loss vs User Example Count`,
+                  'cssFile': 'index.css',
+                  'xMinValue': Math.min(...userExampleCounts) / 2,
+                  'xMaxValue': Math.max(...userExampleCounts) + 1,
+                  'yMinValue': Math.min(...userMSELossValues) / 2,
+                  'yMaxValue': Math.max(...userMSELossValues) + 1,
+                  'xAxisTitle': 'Example count',
+                  'yAxisTitle': 'Mean MSE Loss',
+                  'xScale': 'log',
+                  'yScale': 'log',
+              };
+              const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
+              redrawUserScatterPlot();
 
-            const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
-            document.querySelector('body').append(animeScatterPlotContainer);
-            const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
-            const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
-            const animeScatterPlotData = {
-                'pointSetLookup': {
-                    'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
-                },
-                'xAccessor': datum => datum.example_count,
-                'yAccessor': datum => datum.mean_mse_loss,
-                'toolTipHTMLGenerator': datum => `
+              const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
+              document.querySelector('body').append(animeScatterPlotContainer);
+              const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
+              const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
+              const animeScatterPlotData = {
+                  'pointSetLookup': {
+                      'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
+                  },
+                  'xAccessor': datum => datum.example_count,
+                  'yAccessor': datum => datum.mean_mse_loss,
+                  'toolTipHTMLGenerator': datum => `
 <p>Anime Id: ${datum.id}</p>
 <p>Total MSE Loss: ${datum.total_mse_loss}</p>
 <p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
 <p>Example Count: ${datum.example_count}</p>
+<p></p>
+<p>Anime Name: ${animeLookupById[datum.id].name}</p>
+<p>Genre: ${animeLookupById[datum.id].genre}</p>
+<p>Anime Type: ${animeLookupById[datum.id].type}</p>
+<p>Episode Count: ${animeLookupById[datum.id].episodes}</p>
 `,
-                'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
-                'title': `Rank ${rank}Anime Mean MSE Loss vs Anime Example Count`,
-                'cssFile': 'index.css',
-                'xMinValue': Math.min(...animeExampleCounts),
-                'xMaxValue': Math.max(...animeExampleCounts) + 1,
-                'yMinValue': Math.min(...animeMSELossValues),
-                'yMaxValue': Math.max(...animeMSELossValues) + 1,
-                'xAxisTitle': 'Example count',
-                'yAxisTitle': 'Mean MSE Loss',
-                'xScale': 'log',
-                'yScale': 'log',
-            };
-            const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
-            redrawAnimeScatterPlot();
-            
-            window.addEventListener('resize', () => {
-                redrawUserScatterPlot();
-                redrawAnimeScatterPlot();
-            });
-            
-        }).catch(err => {
-            console.error(err.message);
-            return;
-        });
-});
+                  'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
+                  'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
+                  'cssFile': 'index.css',
+                  'xMinValue': Math.min(...animeExampleCounts) / 2,
+                  'xMaxValue': Math.max(...animeExampleCounts) + 1,
+                  'yMinValue': Math.min(...animeMSELossValues) / 2,
+                  'yMaxValue': Math.max(...animeMSELossValues) + 1,
+                  'xAxisTitle': 'Example count',
+                  'yAxisTitle': 'Mean MSE Loss',
+                  'xScale': 'log',
+                  'yScale': 'log',
+              };
+              const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
+              redrawAnimeScatterPlot();
+              
+              window.addEventListener('resize', () => {
+                  redrawUserScatterPlot();
+                  redrawAnimeScatterPlot();
+              });
+              
+          }))
+).catch(err => {
+    console.error(err.message);
+    return;
+}));
