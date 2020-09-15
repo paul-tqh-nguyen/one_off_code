@@ -153,30 +153,32 @@ This returns a re-render function, but does not actually call the re-render func
     shadow.append(scatterPlotContainer);
     
     const svg = d3.select(scatterPlotContainer).append('svg');
-    const scatterPlotGroup = svg
-          .append('g')
-          .classed('scatter-plot-group', true);
-    const scatterPlotTitle = scatterPlotGroup.append('text');
-    const xAxisGroup = scatterPlotGroup
-          .append('g')
-          .attr('class', 'x-axis-group', true);
-    const xAxisLabel = xAxisGroup
-          .append('text')
-          .classed('axis-label', true);
-    const yAxisGroup = scatterPlotGroup
-          .append('g')
-          .classed('y-axis-group', true);
-    const yAxisLabel = yAxisGroup
-          .append('text')
-          .classed('axis-label', true);
-    // @todo add legend
-
+    
     const tooltipDivDomElement = createNewElement('div', {classes: ['hidden'], attributes: {'id': 'tooltip'}});
     scatterPlotContainer.append(tooltipDivDomElement);
     const tooltipDiv = d3.select(tooltipDivDomElement);
     
     const render = () => {
+        svg.selectAll('*').remove();
         
+        const scatterPlotGroup = svg
+              .append('g')
+              .classed('scatter-plot-group', true);
+        const scatterPlotTitle = scatterPlotGroup.append('text');
+        const xAxisGroup = scatterPlotGroup
+              .append('g')
+              .attr('class', 'x-axis-group', true);
+        const xAxisLabel = xAxisGroup
+              .append('text')
+              .classed('axis-label', true);
+        const yAxisGroup = scatterPlotGroup
+              .append('g')
+              .classed('y-axis-group', true);
+        const yAxisLabel = yAxisGroup
+              .append('text')
+              .classed('axis-label', true);
+        // @todo add legend
+
         svg
             .attr('width', scatterPlotContainer.clientWidth)
             .attr('height', scatterPlotContainer.clientHeight);
@@ -191,13 +193,13 @@ This returns a re-render function, but does not actually call the re-render func
         
         const xScale = scatterPlotData.xScale === 'log' ? d3.scaleLog() : d3.scaleLinear();
         xScale
-              .domain([scatterPlotData.xMinValue, scatterPlotData.xMaxValue])
-              .range([0, innerWidth]);
+            .domain([scatterPlotData.xMinValue, scatterPlotData.xMaxValue])
+            .range([0, innerWidth]);
         
         const yScale = scatterPlotData.yScale === 'log' ? d3.scaleLog() : d3.scaleLinear();
         yScale
-              .domain([scatterPlotData.yMaxValue, scatterPlotData.yMinValue])
-              .range([0, innerHeight]);
+            .domain([scatterPlotData.yMaxValue, scatterPlotData.yMinValue])
+            .range([0, innerHeight]);
         
         scatterPlotGroup.attr('transform', `translate(${margin.left}, ${margin.top})`);
         
@@ -260,15 +262,15 @@ This returns a re-render function, but does not actually call the re-render func
 
 [
     './result_analysis/rank_0_summary.json',
-    './result_analysis/rank_1_summary.json',
-    './result_analysis/rank_2_summary.json',
-    './result_analysis/rank_3_summary.json',
-    './result_analysis/rank_4_summary.json',
-    './result_analysis/rank_5_summary.json',
-    './result_analysis/rank_6_summary.json',
-    './result_analysis/rank_7_summary.json',
-    './result_analysis/rank_8_summary.json',
-    './result_analysis/rank_9_summary.json',
+    // './result_analysis/rank_1_summary.json',
+    // './result_analysis/rank_2_summary.json',
+    // './result_analysis/rank_3_summary.json',
+    // './result_analysis/rank_4_summary.json',
+    // './result_analysis/rank_5_summary.json',
+    // './result_analysis/rank_6_summary.json',
+    // './result_analysis/rank_7_summary.json',
+    // './result_analysis/rank_8_summary.json',
+    // './result_analysis/rank_9_summary.json',
 ].forEach((jsonFile, rank) => {
     d3.json(jsonFile)
         .then(summaryData => {
@@ -295,7 +297,8 @@ This returns a re-render function, but does not actually call the re-render func
                 'xMinValue': 0,
                 'xMaxValue': Math.max(...userExampleCounts) + 1,
                 'yMinValue': 0,
-                'yMaxValue': Math.max(...userMSELossValues) + 1,
+                // 'yMaxValue': Math.max(...userMSELossValues) + 1,
+                'yMaxValue': 10,
                 'xAxisTitle': 'Example count',
                 'yAxisTitle': 'Mean MSE Loss',
                 'xScale': 'linear',
@@ -303,7 +306,8 @@ This returns a re-render function, but does not actually call the re-render func
             };
             const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
             redrawUserScatterPlot();
-            
+
+            /*
             const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
             document.querySelector('body').append(animeScatterPlotContainer);
             const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
@@ -334,11 +338,13 @@ This returns a re-render function, but does not actually call the re-render func
             };
             const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
             redrawAnimeScatterPlot();
+            */
             
             window.addEventListener('resize', () => {
                 redrawUserScatterPlot();
-                redrawAnimeScatterPlot();
+                // redrawAnimeScatterPlot();
             });
+            
         }).catch(err => {
             console.error(err.message);
             return;
