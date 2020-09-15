@@ -67,7 +67,7 @@ header {
 
 .stone-background {
     color: #fff;
-    background-color: #8874ab;
+    background-color: #5498ba;
     background-image: url(./backgrounds/contours.png), url(./backgrounds/gridlines.png), url(./backgrounds/stone.png);
     background-attachment: scroll, scroll, fixed;
     background-position: top left, top left, top left;
