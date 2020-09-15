@@ -285,8 +285,19 @@ d3.csv("./anime.csv").then(
     ].map((jsonFile, rank) => d3.json(jsonFile)
           .then(summaryData => {
 
+              const body = document.querySelector('body');
+
+              body.append(createNewElement('p', {innerHTML: `Testing MSE Loss: ${summaryData.testing_mse_loss}`}));
+              body.append(createNewElement('p', {innerHTML: `Best Validation Loss: ${summaryData.best_validation_loss}`}));
+              body.append(createNewElement('p', {innerHTML: `Testing MSE Loss: ${summaryData.learning_rate}`}));
+              body.append(createNewElement('p', {innerHTML: `Number of Training Epochs: ${summaryData.number_of_epochs}`}));
+              body.append(createNewElement('p', {innerHTML: `Batch Size: ${summaryData.batch_size}`}));
+              body.append(createNewElement('p', {innerHTML: `Embedding Size: ${summaryData.embedding_size}`}));
+              body.append(createNewElement('p', {innerHTML: `Regularization Factor: ${summaryData.regularization_factor}`}));
+              body.append(createNewElement('p', {innerHTML: `Dropout Porbability: ${summaryData.dropout_probability}`}));
+
               const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
-              document.querySelector('body').append(userScatterPlotContainer);
+              body.append(userScatterPlotContainer);
               const userExampleCounts = Object.values(summaryData.user_data).map(datum => datum.example_count);
               const userMSELossValues = Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss);
               const userScatterPlotData = {
@@ -317,7 +328,7 @@ d3.csv("./anime.csv").then(
               redrawUserScatterPlot();
 
               const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
-              document.querySelector('body').append(animeScatterPlotContainer);
+              body.append(animeScatterPlotContainer);
               const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
               const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
               const animeScatterPlotData = {
