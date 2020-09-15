@@ -273,15 +273,15 @@ d3.csv("./anime.csv").then(
 ).then((animeLookupById) => Promise.all(
     [
         './result_analysis/rank_0_summary.json',
-        './result_analysis/rank_1_summary.json',
-        './result_analysis/rank_2_summary.json',
-        './result_analysis/rank_3_summary.json',
-        './result_analysis/rank_4_summary.json',
-        './result_analysis/rank_5_summary.json',
-        './result_analysis/rank_6_summary.json',
-        './result_analysis/rank_7_summary.json',
-        './result_analysis/rank_8_summary.json',
-        './result_analysis/rank_9_summary.json',
+        // './result_analysis/rank_1_summary.json',
+        // './result_analysis/rank_2_summary.json',
+        // './result_analysis/rank_3_summary.json',
+        // './result_analysis/rank_4_summary.json',
+        // './result_analysis/rank_5_summary.json',
+        // './result_analysis/rank_6_summary.json',
+        // './result_analysis/rank_7_summary.json',
+        // './result_analysis/rank_8_summary.json',
+        // './result_analysis/rank_9_summary.json',
     ].map((jsonFile, rank) => d3.json(jsonFile)
           .then(summaryData => {
 
@@ -327,45 +327,45 @@ d3.csv("./anime.csv").then(
               const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
               redrawUserScatterPlot();
 
-              const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
-              body.append(animeScatterPlotContainer);
-              const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
-              const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
-              const animeScatterPlotData = {
-                  'pointSetLookup': {
-                      'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
-                  },
-                  'xAccessor': datum => datum.example_count,
-                  'yAccessor': datum => datum.mean_mse_loss,
-                  'toolTipHTMLGenerator': datum => `
-<p>Anime Id: ${datum.id}</p>
-<p>Total MSE Loss: ${datum.total_mse_loss}</p>
-<p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
-<p>Example Count: ${datum.example_count}</p>
-<p></p>
-<p>Anime Name: ${animeLookupById[datum.id].name}</p>
-<p>Genre: ${animeLookupById[datum.id].genre}</p>
-<p>Anime Type: ${animeLookupById[datum.id].type}</p>
-<p>Episode Count: ${animeLookupById[datum.id].episodes}</p>
-`,
-                  'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
-                  'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
-                  'cssFile': 'index.css',
-                  'xMinValue': Math.min(...animeExampleCounts) / 2,
-                  'xMaxValue': Math.max(...animeExampleCounts) + 1,
-                  'yMinValue': Math.min(...animeMSELossValues) / 2,
-                  'yMaxValue': Math.max(...animeMSELossValues) + 1,
-                  'xAxisTitle': 'Example count',
-                  'yAxisTitle': 'Mean MSE Loss',
-                  'xScale': 'log',
-                  'yScale': 'log',
-              };
-              const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
-              redrawAnimeScatterPlot();
+//               const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
+//               body.append(animeScatterPlotContainer);
+//               const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
+//               const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
+//               const animeScatterPlotData = {
+//                   'pointSetLookup': {
+//                       'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
+//                   },
+//                   'xAccessor': datum => datum.example_count,
+//                   'yAccessor': datum => datum.mean_mse_loss,
+//                   'toolTipHTMLGenerator': datum => `
+// <p>Anime Id: ${datum.id}</p>
+// <p>Total MSE Loss: ${datum.total_mse_loss}</p>
+// <p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
+// <p>Example Count: ${datum.example_count}</p>
+// <p></p>
+// <p>Anime Name: ${animeLookupById[datum.id].name}</p>
+// <p>Genre: ${animeLookupById[datum.id].genre}</p>
+// <p>Anime Type: ${animeLookupById[datum.id].type}</p>
+// <p>Episode Count: ${animeLookupById[datum.id].episodes}</p>
+// `,
+//                   'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
+//                   'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
+//                   'cssFile': 'index.css',
+//                   'xMinValue': Math.min(...animeExampleCounts) / 2,
+//                   'xMaxValue': Math.max(...animeExampleCounts) + 1,
+//                   'yMinValue': Math.min(...animeMSELossValues) / 2,
+//                   'yMaxValue': Math.max(...animeMSELossValues) + 1,
+//                   'xAxisTitle': 'Example count',
+//                   'yAxisTitle': 'Mean MSE Loss',
+//                   'xScale': 'log',
+//                   'yScale': 'log',
+//               };
+//               const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
+//               redrawAnimeScatterPlot();
               
               window.addEventListener('resize', () => {
                   redrawUserScatterPlot();
-                  redrawAnimeScatterPlot();
+                  // redrawAnimeScatterPlot();
               });
               
           }))
