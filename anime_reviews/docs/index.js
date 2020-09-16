@@ -4,7 +4,15 @@
 /***************/
 
 const isUndefined = value => value === void(0);
+
 const createSeparatedNumbeString = number => number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+const absoluteXYOffset = (element) => {
+    const rect = element.getBoundingClientRect();
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    return [rect.left + scrollLeft, rect.top + scrollTop];
+};
 
 // D3 Extensions
 d3.selection.prototype.moveToFront = function() {
@@ -138,14 +146,13 @@ This returns a re-render function, but does not actually call the re-render func
   transform: rotate(-90deg);
 }
 
+.vertical-crosshair, .horizontal-crosshair {
+  stroke: black;
+}
+
 .crosshair-label {
   fill: black;
   font-size: 15px;
-}
-
-.vertical-crosshair, .horizontal-crosshair {
-  fill: black;
-  font-size: 1.25em;
 }
 
 .axis-label {
@@ -214,9 +221,7 @@ This returns a re-render function, but does not actually call the re-render func
         const crosshairHorizontal = yAxisGroup
               .append('line')
               .classed('horizontal-crosshair', true);
-        const crossHairLabelGroup = yAxisGroup
-              .append('g');
-        const crossHairLabel = crossHairLabelGroup
+        const crossHairLabel = yAxisGroup
               .append('text')
               .classed('crosshair-label', true)
               .style('text-anchor', 'end');
@@ -277,18 +282,21 @@ This returns a re-render function, but does not actually call the re-render func
                 crossHairLabel.text('');
             })
             .on('mousemove', function() {
-                const x = d3.event.pageX;
-                const y = d3.event.pageY;
-                svg.select('.vertical-crosshair')
-                    .attr('x1', x)
-                    .attr('y1', yScale(scatterPlotData.yMinValue))
-                    .attr('x2', x)
+                // const x = d3.event.pageX;
+                // const y = d3.event.pageY;
+                const [x, y] = d3.mouse(this);
+                crosshairVertical
+                    .attr('x1', x - margin.left)
+                    .attr('y1', -yScale(scatterPlotData.yMinValue))
+                    .attr('x2', x - margin.left)
                     .attr('y2', yScale(scatterPlotData.yMaxValue));
-                svg.select('.horizontal-crosshair')
+                crosshairHorizontal
                     .attr('x1', xScale(scatterPlotData.xMinValue))
-                    .attr('y1', y)
+                    // .attr('y1', y)
+                    .attr('y1', y - margin.top - innerHeight)
                     .attr('x2', xScale(scatterPlotData.xMaxValue))
-                    .attr('y2', y);
+                    // .attr('y2', y)
+                    .attr('y2', 2);
                 crossHairLabel
                     .text(`Crosshair Example Count: ${xScale.invert(x).toFixed(2)}, Crosshair MSELoss: ${yScale.invert(y).toFixed(2)}`); // @todo parameterize the label text
             });
@@ -410,45 +418,45 @@ d3.csv("./anime.csv").then(
               const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
               redrawUserScatterPlot();
 
-//               const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
-//               body.append(animeScatterPlotContainer);
-//               const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
-//               const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
-//               const animeScatterPlotData = {
-//                   'pointSetLookup': {
-//                       'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
-//                   },
-//                   'xAccessor': datum => datum.example_count,
-//                   'yAccessor': datum => datum.mean_mse_loss,
-//                   'toolTipHTMLGenerator': datum => `
-// <p>Anime Id: ${datum.id}</p>
-// <p>Total MSE Loss: ${datum.total_mse_loss}</p>
-// <p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
-// <p>Example Count: ${datum.example_count}</p>
-// <p></p>
-// <p>Anime Name: ${animeLookupById[datum.id].name}</p>
-// <p>Genre: ${animeLookupById[datum.id].genre}</p>
-// <p>Anime Type: ${animeLookupById[datum.id].type}</p>
-// <p>Episode Count: ${animeLookupById[datum.id].episodes}</p>
-// `,
-//                   'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
-//                   'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
-//                   'cssFile': 'index.css',
-//                   'xMinValue': Math.min(...animeExampleCounts) / 2,
-//                   'xMaxValue': Math.max(...animeExampleCounts) + 1,
-//                   'yMinValue': Math.min(...animeMSELossValues) / 2,
-//                   'yMaxValue': Math.max(...animeMSELossValues) + 1,
-//                   'xAxisTitle': 'Example count',
-//                   'yAxisTitle': 'Mean MSE Loss',
-//                   'xScale': 'log',
-//                   'yScale': 'log',
-//               };
-//               const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
-//               redrawAnimeScatterPlot();
+              const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
+              body.append(animeScatterPlotContainer);
+              const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
+              const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
+              const animeScatterPlotData = {
+                  'pointSetLookup': {
+                      'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
+                  },
+                  'xAccessor': datum => datum.example_count,
+                  'yAccessor': datum => datum.mean_mse_loss,
+                  'toolTipHTMLGenerator': datum => `
+<p>Anime Id: ${datum.id}</p>
+<p>Total MSE Loss: ${datum.total_mse_loss}</p>
+<p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
+<p>Example Count: ${datum.example_count}</p>
+<p></p>
+<p>Anime Name: ${animeLookupById[datum.id].name}</p>
+<p>Genre: ${animeLookupById[datum.id].genre}</p>
+<p>Anime Type: ${animeLookupById[datum.id].type}</p>
+<p>Episode Count: ${animeLookupById[datum.id].episodes}</p>
+`,
+                  'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
+                  'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
+                  'cssFile': 'index.css',
+                  'xMinValue': Math.min(...animeExampleCounts) / 2,
+                  'xMaxValue': Math.max(...animeExampleCounts) + 1,
+                  'yMinValue': Math.min(...animeMSELossValues) / 2,
+                  'yMaxValue': Math.max(...animeMSELossValues) + 1,
+                  'xAxisTitle': 'Example count',
+                  'yAxisTitle': 'Mean MSE Loss',
+                  'xScale': 'log',
+                  'yScale': 'log',
+              };
+              const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
+              redrawAnimeScatterPlot();
               
               window.addEventListener('resize', () => {
                   redrawUserScatterPlot();
-                  // redrawAnimeScatterPlot();
+                  redrawAnimeScatterPlot();
               });
               
           }))
