@@ -56,6 +56,11 @@ const createNewElement = (childTag, {classes, attributes, innerHTML}={}) => {
 /* Visualization Utilities */
 /***************************/
 
+const d3ScaleFromString = scaleString =>
+      (scaleString === 'log') ? d3.scaleLog() :
+      (scaleString === 'squareroot') ? d3.scaleSqrt() :
+      d3.scaleLinear();
+
 const addScatterPlot = (container, scatterPlotData) => {
     /* 
 
@@ -123,6 +128,10 @@ This returns a re-render function, but does not actually call the re-render func
   margin: 0px;
 }
 
+.scatter-plot-group {
+  transform: translate(${margin.left}px, ${margin.top}px);
+}
+
 .x-axis-group .tick line, .y-axis-group .tick line {
   opacity: 0.1;
 }
@@ -161,6 +170,7 @@ This returns a re-render function, but does not actually call the re-render func
   top: 0px;
   opacity: 0.0;
 }
+
 `});
     
     shadow.append(shadowStyleElement);
@@ -213,17 +223,15 @@ This returns a re-render function, but does not actually call the re-render func
 
         const allPoints = [].concat(...Object.values(scatterPlotData.pointSetLookup));
         
-        const xScale = scatterPlotData.xScale === 'log' ? d3.scaleLog() : d3.scaleLinear();
+        const xScale = d3ScaleFromString(scatterPlotData.xScale);
         xScale
             .domain([scatterPlotData.xMinValue, scatterPlotData.xMaxValue])
             .range([0, innerWidth]);
         
-        const yScale = scatterPlotData.yScale === 'log' ? d3.scaleLog() : d3.scaleLinear();
+        const yScale = d3ScaleFromString(scatterPlotData.yScale);
         yScale
             .domain([scatterPlotData.yMaxValue, scatterPlotData.yMinValue])
             .range([0, innerHeight]);
-        
-        scatterPlotGroup.attr('transform', `translate(${margin.left}, ${margin.top})`);
         
         scatterPlotTitle
             .text(scatterPlotData.title)
@@ -292,6 +300,7 @@ barChartData looks like this:
       ],
       'labelAccessor': datum => datum.label,
       'valueAccessor': datum => datum.value,
+      'toolTipHTMLGenerator': datum => `<p>Value: ${datum.value}</p>`,
       'barCSSClassAccessor': barLabel => {
           return {
               'l1': 'l1-bar',
@@ -302,6 +311,7 @@ barChartData looks like this:
       'cssFile': 'custom.css',
       'yMinValue': 0,
       'yMaxValue': 250,
+      'xAxisTitle': 'Name',
       'yAxisTitle': 'Measurement',
       'yScale': 'log',
 }
@@ -310,7 +320,7 @@ This returns a re-render function, but does not actually call the re-render func
 
 */
     
-    //@todo make sure all the attributes of barChartData are used
+    // @todo make sure all the attributes of barChartData are used
     
     /* Visualization Aesthetic Parameters */
     
@@ -345,7 +355,49 @@ This returns a re-render function, but does not actually call the re-render func
   margin: 0px;
 }
 
-#bar-chart-title {
+.bar-chart-group {
+  transform: translate(${margin.left}px, ${margin.top}px);
+}
+
+.x-axis-group {
+}
+
+.x-axis-group .tick line, .y-axis-group .tick line {
+  opacity: 0.1;
+}
+
+.x-axis-group .tick text {
+  transform: translate(0.0px, 5.0px);
+}
+
+.y-axis-group {
+}
+
+.y-axis-group .axis-label {
+  transform: rotate(-90deg);
+}
+
+.axis-label {
+  fill: black;
+  font-size: 1.25em;
+}
+
+#tooltip {
+  position: fixed;
+  transition: all 0.5s;
+  text-align: center;
+  font-size: 0.75em;
+  background: #182A39;
+  border-radius: 8px;
+  pointer-events: none;
+  color: #fff;
+  opacity: 0.9;
+}
+
+#tooltip.hidden{
+  left: 0px;
+  top: 0px;
+  opacity: 0.0;
 }
 
 `});
@@ -357,30 +409,43 @@ This returns a re-render function, but does not actually call the re-render func
     styleInheritanceLinkElement.setAttribute('href', barChartData.cssFile);
     shadow.append(styleInheritanceLinkElement);
     
-    const scatterPlotContainer = createNewElement('div', {classes: ['bar-chart-container']});
-    shadow.append(scatterPlotContainer);
+    const barChartContainer = createNewElement('div', {classes: ['bar-chart-container']});
+    shadow.append(barChartContainer);
     
-    const svg = d3.select(scatterPlotContainer).append('svg');
-        
+    const svg = d3.select(barChartContainer).append('svg');
+    
+    const tooltipDivDomElement = createNewElement('div', {classes: ['hidden'], attributes: {'id': 'tooltip'}});
+    barChartContainer.append(tooltipDivDomElement);
+    const tooltipDiv = d3.select(tooltipDivDomElement);
+    
     const render = () => {
         svg.selectAll('*').remove();
         
         // @todo add legend
-        // @todo add tooltips
         const barChartGroup = svg
               .append('g')
-              .classed('scatter-plot-group', true);
+              .classed('bar-chart-group', true);
         const barChartTitle = barChartGroup
+              .append('text');
+        const barsGroup = barChartGroup
+              .append('g')
+              .classed('bars-group', true);
+        const xAxisGroup = barChartGroup
+              .append('g')
+              .classed('x-axis-group', true);
+        const xAxisLabel = xAxisGroup
               .append('text')
-              .attr('id', 'bar-chart-title');
-        const barsGroup = barChartGroup.append('g');
-        const xAxisGroup = barChartGroup.append('g');
-        const yAxisGroup = barChartGroup.append('g');
-        const yAxisLabel = yAxisGroup.append('text');
+              .classed('axis-label', true);
+        const yAxisGroup = barChartGroup
+              .append('g')
+              .classed('y-axis-group', true);
+        const yAxisLabel = yAxisGroup
+              .append('text')
+              .classed('axis-label', true);
         
         svg
-            .attr('width', scatterPlotContainer.clientWidth)
-            .attr('height', scatterPlotContainer.clientHeight);
+            .attr('width', barChartContainer.clientWidth)
+            .attr('height', barChartContainer.clientHeight);
         
         const svgWidth = parseFloat(svg.attr('width'));
         const svgHeight = parseFloat(svg.attr('height'));
@@ -389,57 +454,62 @@ This returns a re-render function, but does not actually call the re-render func
         const innerHeight = svgHeight - margin.top - margin.bottom;
 
         barChartTitle
-            .attr('x', innerWidth * 0.5)
-            .attr('y', margin.top / 2)
-            .text(barChartData.title);
+            .text(barChartData.title)
+            .attr('x', innerWidth * 0.325)
+            .attr('y', -10);
         
         const xScale = d3.scaleBand()
               .domain(barChartData.labelData.map(barChartData.labelAccessor))
               .range([0, innerWidth]);
-        
-        const yScale = d3.scaleLinear()
+
+        const yScale = d3ScaleFromString(barChartData.yScale)
               .domain([barChartData.yMaxValue, barChartData.yMinValue])
               .range([0, innerHeight]);
         
         xAxisGroup.call(d3.axisBottom(xScale).tickSize(-innerHeight))
-            .attr('transform', `translate(${margin.left}, ${margin.top+innerHeight})`); // @todo move to CSS
+            .attr('transform', `translate(0, ${innerHeight})`);
         xAxisGroup.selectAll('.tick line').remove();
-        xAxisGroup.selectAll('.tick text')
-            // .attr('transform', `translate(${-tickTextSize/2}, ${- tickTextAverageLength * tickTextSize * 0.4}) rotate(-90)`) // @todo do something with this?
-            .style('color', '#fff'); // @todo move to CSS
         
-        yAxisGroup.call(d3.axisLeft(yScale).tickSize(-innerWidth))
-            .attr('transform', `translate(${margin.left}, ${margin.top})`); // @todo move to CSS
+        yAxisGroup.call(d3.axisLeft(yScale).tickSize(-innerWidth));
         yAxisGroup.selectAll('.tick line')
-            .attr('x', margin.left - 10)
-            .style('opacity', 0.1); // @todo move to CSS
-        yAxisGroup.selectAll('.tick text')
-            .attr('transform', 'translate(-10.0, 0.0)'); // @todo move to CSS
+            .attr('x', margin.left - 10);
         yAxisLabel
-            .attr('transform', 'rotate(-90)') // @todo move to CSS
             .attr('y', -60)
             .attr('x', -innerHeight/3)
             .text(barChartData.yAxisTitle);
 
+        xAxisLabel
+            .attr('y', margin.bottom * 0.75)
+            .attr('x', xAxisGroup.node().getBoundingClientRect().width / 2)
+            .text(barChartData.xAxisTitle);
+        
+        const yAxisTickFormat = number => d3.format(',')(number);
+        yAxisGroup.call(d3.axisLeft(yScale).tickFormat(yAxisTickFormat).tickSize(-innerWidth));
+
         barsGroup.selectAll('rect')
             .data(barChartData.labelData)
             .enter()
-            .append('rect') // @todo handle tooltips
-            .attr('y', datum => margin.top+yScale(barChartData.valueAccessor(datum)))
-            .attr('x', datum => xScale(barChartData.labelAccessor(datum))+margin.left)
+            .append('rect')
+            .attr('y', datum => yScale(barChartData.valueAccessor(datum)))
+            .attr('x', datum => xScale(barChartData.labelAccessor(datum)))
             .attr('width', xScale.bandwidth())
-            .attr('height', datum => {
-                console.log('\n\n\n');
-                console.log(`datum ${JSON.stringify(datum)}`);
-                console.log(`innerHeight ${JSON.stringify(innerHeight)}`);
-                console.log(`barChartData.yMaxValue ${JSON.stringify(barChartData.yMaxValue)}`);
-                console.log(`barChartData.yMinValue ${JSON.stringify(barChartData.yMinValue)}`);
-                console.log(`barChartData.valueAccessor(datum) ${JSON.stringify(barChartData.valueAccessor(datum))}`);
-                console.log(`yScale(barChartData.valueAccessor(datum)) ${JSON.stringify(yScale(barChartData.valueAccessor(datum)))}`);
-                console.log(`innerHeight-yScale(barChartData.valueAccessor(datum)) ${JSON.stringify(innerHeight-yScale(barChartData.valueAccessor(datum)))}`);
-                return innerHeight-yScale(barChartData.valueAccessor(datum));
+            .attr('height', datum => innerHeight-yScale(barChartData.valueAccessor(datum)))
+            .on('mouseover', function(datum) {
+                const boundingBox = d3.select(this).node().getBoundingClientRect();
+                const x = boundingBox.left;
+                const y = boundingBox.top;
+                const htmlString = barChartData.toolTipHTMLGenerator(datum);
+		tooltipDiv
+		    .classed('hidden', false)
+		    .html(htmlString)
+		    .style('left', x + 10 + 'px')
+		    .style('top', y + 10 + 'px');
+	    })
+            .on('mouseout', datum => {
+		tooltipDiv
+		    .classed('hidden', true);
             })
-            .attr('fill', 'red'); // @todo move to css
+            .attr('class', datum => barChartData.barCSSClassAccessor(barChartData.labelAccessor(datum)));
         
     };
     
@@ -494,13 +564,15 @@ d3.csv("./anime.csv").then(
                   }),
                   'labelAccessor': datum => datum.roundedMSELoss,
                   'valueAccessor': datum => datum.userCount,
+                  'toolTipHTMLGenerator': datum => `<p>User Count: ${datum.userCount}</p><p>User Count: ${datum.roundedMSELoss}</p>`,
                   'barCSSClassAccessor': barLabel => 'histogram-bar',
                   'title': 'User Count vs MSE Loss Histogram',
                   'cssFile': 'index.css',
                   'yMinValue': 0,
-                  'yMaxValue': Math.max(...Object.values(roundedScoreToUserCount)),
-                  'yAxisTitle': 'User Count',
-                  'yScale': 'linear',
+                  'yMaxValue': Math.max(...Object.values(roundedScoreToUserCount)) + 1000,
+                  'xAxisTitle': 'Rounded MSE Loss',
+                  'yAxisTitle': 'User Count (Squareroot Scale)',
+                  'yScale': 'squareroot',
               };
               const redrawBarChart = addBarChart(roundedScoreHistogramContainer, roundedScoreHistogramData);
               redrawBarChart();
