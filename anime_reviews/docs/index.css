@@ -170,6 +170,11 @@ card a {
     backdrop-filter: grayscale(100%) brightness(40%);
 }
 
+#linear-result {
+    display: block;
+    text-align: -webkit-center;
+}
+
 /*****************/
 /* Visualization */
 /*****************/
@@ -197,16 +202,35 @@ card a {
 }
 
 svg * {
-  font-family: 'Oxygen';
+    font-family: 'Oxygen';
+}
+
+.hyperparameter-table-container {
+    font-family: 'Oxygen';
+}
+
+.hyperparameter-table-container p {
+    font-family: inherit;
+    padding: 1px 5px 1px 5px;
+}
+
+.hyperparameter-table {
+    width: 50vw;
+    border-collapse: collapse
+}
+
+.hyperparameter-table tr {
+    border: 0.25px solid rgba(0,0,0,0.05);
 }
 
 svg #tooltip {
     padding: 10px;
 }
 
-svg #tooltip p {
-    margin: 0px;
-    
+.bar-chart-container #tooltip p,
+.scatter-plot-container #tooltip p {
+    margin: 0px;  
+    font-family: 'Oxygen';  
 }
 
 svg .user-scatter-plot-point, .anime-scatter-plot-point {

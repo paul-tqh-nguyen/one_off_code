@@ -7,13 +7,6 @@ const isUndefined = value => value === void(0);
 
 const createSeparatedNumbeString = number => number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-const absoluteXYOffset = (element) => {
-    const rect = element.getBoundingClientRect();
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    return [rect.left + scrollLeft, rect.top + scrollTop];
-};
-
 // D3 Extensions
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -59,12 +52,80 @@ const createNewElement = (childTag, {classes, attributes, innerHTML}={}) => {
     return newElement;
 };
 
+const createTableWithElements = (rows, {classes, attributes}={}) => {
+    const table = createNewElement('table', {classes, attributes});
+    rows.forEach(elements => {
+        const tr = document.createElement('tr');
+        table.append(tr);
+        elements.forEach(element => {
+            const td = document.createElement('td');
+            tr.append(td);
+            td.append(element);
+        });
+    });
+    return table;
+};
+
+/*/
+const createLazyAccordion = (labelGeneratorDestructorTriples) => {
+    const accordionContainer = createNewElement('div');
+    const shadow = accordionContainer.attachShadow({mode: 'open'});    const shadowStyleElement = createNewElement('style', {innerHTML: `
+
+:host {
+  position: relative;
+  width: inherit;
+  height: inherit;
+}
+
+.accordion-content-container {
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  margin: 0px;
+}
+
+`});
+    
+    shadow.append(shadowStyleElement);
+    
+    const accordionContentContainer = createNewElement('div', {classes: ['accordion-content-container']});
+    accordionContainer.append(accordionContentContainer);
+    
+    labelGeneratorDestructorTriples.forEach(([labelInnerHTML, contentGenerator, contentDestructor], i) => {
+        // contentGenerator and contentDestructor take an HTML element
+        const labelContentPairElement = createNewElement('div');
+        const label = createNewElement('p', {innerHTML: labelInnerHTML});
+        const contentDiv = createNewElement('div');
+        labelContentPairElement.append(label);
+        labelContentPairElement.append(contentDiv);
+        label.onclick = () => {
+            label.classList.toggle('active');
+            contentDiv.classList.toggle('active');
+            if (label.classList.contains('active')) {
+                contentGenerator(contentDiv);
+            } else {
+                contentDestructor(contentDiv);
+            }
+        };
+        if (i === 0) {
+            label.onclick();
+        }
+        accordionContentContainer.append(label);
+        accordionContentContainer.append(contentDiv);
+    });
+    return accordionContainer;
+};
+//*/
+
 /***************************/
 /* Visualization Utilities */
 /***************************/
 
 const d3ScaleFromString = scaleString =>
-      (scaleString === 'log') ? d3.scaleLog() :
+      (scaleString === 'log10') ? d3.scaleLog() :
+      (scaleString === 'log2') ? d3.scaleLog().base(2) :
       (scaleString === 'squareroot') ? d3.scaleSqrt() :
       d3.scaleLinear();
 
@@ -94,7 +155,7 @@ scatterPlotData looks like this:
     'yMaxValue': 250,
     'xAxisTitle': 'Rank',
     'yAxisTitle': 'Scores',
-    'xScale': 'log',
+    'xScale': 'log10',
     'yScale': 'linear',
 }
 
@@ -133,6 +194,7 @@ This returns a re-render function, but does not actually call the re-render func
   left: 0px;
   right: 0px;
   margin: 0px;
+  font-family: sans-serif;
 }
 
 .scatter-plot-group {
@@ -170,12 +232,20 @@ This returns a re-render function, but does not actually call the re-render func
   pointer-events: none;
   color: #fff;
   opacity: 0.9;
+  padding: 10px;
 }
 
 #tooltip.hidden{
   left: 0px;
   top: 0px;
   opacity: 0.0;
+}
+
+#tooltip p {
+  margin: 0px;
+  padding: 0px;
+  font-size: 12px;
+  font-family: inherit;
 }
 
 `});
@@ -245,7 +315,7 @@ This returns a re-render function, but does not actually call the re-render func
             .attr('x', innerWidth * 0.325)
             .attr('y', -10);
         
-        const xAxisTickFormat = number => d3.format('.3s')(number).replace(/G/,'B');
+        const xAxisTickFormat = number => d3.format('.0s')(number).replace(/G/,'B');
         xAxisGroup.call(d3.axisBottom(xScale).tickFormat(xAxisTickFormat).tickSize(-innerHeight))
             .attr('transform', `translate(0, ${innerHeight})`);
         xAxisLabel
@@ -253,7 +323,7 @@ This returns a re-render function, but does not actually call the re-render func
             .attr('x', xAxisGroup.node().getBoundingClientRect().width / 2)
             .text(scatterPlotData.xAxisTitle);
 
-        const yAxisTickFormat = number => d3.format('.3f')(number);
+        const yAxisTickFormat = number => d3.format('.2f')(number);
         yAxisGroup.call(d3.axisLeft(yScale).tickFormat(yAxisTickFormat).tickSize(-innerWidth));
         yAxisLabel
             .attr('y', -60)
@@ -320,14 +390,12 @@ barChartData looks like this:
       'yMaxValue': 250,
       'xAxisTitle': 'Name',
       'yAxisTitle': 'Measurement',
-      'yScale': 'log',
+      'yScale': 'log10',
 }
 
 This returns a re-render function, but does not actually call the re-render function initially.
 
 */
-    
-    // @todo make sure all the attributes of barChartData are used
     
     /* Visualization Aesthetic Parameters */
     
@@ -366,18 +434,12 @@ This returns a re-render function, but does not actually call the re-render func
   transform: translate(${margin.left}px, ${margin.top}px);
 }
 
-.x-axis-group {
-}
-
 .x-axis-group .tick line, .y-axis-group .tick line {
   opacity: 0.1;
 }
 
 .x-axis-group .tick text {
   transform: translate(0.0px, 5.0px);
-}
-
-.y-axis-group {
 }
 
 .y-axis-group .axis-label {
@@ -399,12 +461,20 @@ This returns a re-render function, but does not actually call the re-render func
   pointer-events: none;
   color: #fff;
   opacity: 0.9;
+  padding: 10px;
 }
 
 #tooltip.hidden{
   left: 0px;
   top: 0px;
   opacity: 0.0;
+}
+
+#tooltip p {
+  margin: 0px;
+  padding: 0px;
+  font-size: 12px;
+  font-family: inherit;
 }
 
 `});
@@ -492,7 +562,7 @@ This returns a re-render function, but does not actually call the re-render func
         
         const yAxisTickFormat = number => d3.format(',')(number);
         yAxisGroup.call(d3.axisLeft(yScale).tickFormat(yAxisTickFormat).tickSize(-innerWidth));
-
+        
         barsGroup.selectAll('rect')
             .data(barChartData.labelData)
             .enter()
@@ -551,94 +621,109 @@ d3.csv("./anime.csv").then(
         // './result_analysis/rank_9_summary.json',
     ].map((jsonFile, rank) => d3.json(jsonFile)
           .then(summaryData => {
+              let renderContent;
+              const labelInnerHTML = `Rank: ${rank}`;
+              const contentGenerator = (contentContainer) => {
 
-              const body = document.querySelector('body');
-              
-              const roundedScoreToUserCount = Object.entries(summaryData.user_data).reduce((accumulator, [userId, datum]) => {
-                  const roundedMSELoss = Math.round(datum.mean_mse_loss);
-                  if (!(accumulator.hasOwnProperty(roundedMSELoss))) {
-                      accumulator[roundedMSELoss] = 0;
+                  const hyperparameterTableContainer = createNewElement('div', {classes: ['hyperparameter-table-container']});
+                  contentContainer.append(hyperparameterTableContainer);
+                  const renderHyperparameterTable = () => {
+                      removeAllChildNodes(hyperparameterTableContainer);
+                      hyperparameterTableContainer.append(createNewElement('p', {innerHTML: 'Results', attributes: {style: 'margin-bottom: 10px'}}));
+                      hyperparameterTableContainer.append(
+                          createTableWithElements([
+                              [createNewElement('p', {innerHTML: `Testing MSE Loss:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: `${summaryData.testing_mse_loss}`})],
+                              [createNewElement('p', {innerHTML: `Best Validation Loss:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.best_validation_loss}`})],
+                          ], {classes: ['hyperparameter-table'], attributes: {style: 'margin-bottom: 1em;'}})
+                      );
+                      hyperparameterTableContainer.append(createNewElement('p', {innerHTML: 'Hyperparameters', attributes: {style: 'margin-bottom: 10px'}}));
+                      hyperparameterTableContainer.append(
+                          createTableWithElements([
+                              [createNewElement('p', {innerHTML: `Learning Rate:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.learning_rate}`})],
+                              [createNewElement('p', {innerHTML: `Number of Training Epochs:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.number_of_epochs}`})],
+                              [createNewElement('p', {innerHTML: `Batch Size:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.batch_size}`})],
+                              [createNewElement('p', {innerHTML: `Embedding Size:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.embedding_size}`})],
+                              [createNewElement('p', {innerHTML: `Regularization Factor:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.regularization_factor}`})],
+                              [createNewElement('p', {innerHTML: `Dropout Probability:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.dropout_probability}`})],
+                          ], {classes: ['hyperparameter-table']})
+                      );
+                  };
+                  
+                  const roundedScoreToUserCount = Object.entries(summaryData.user_data).reduce((accumulator, [userId, datum]) => {
+                      const roundedMSELoss = Math.round(datum.mean_mse_loss);
+                      if (!(accumulator.hasOwnProperty(roundedMSELoss))) {
+                          accumulator[roundedMSELoss] = 0;
+                      }
+                      accumulator[roundedMSELoss] += 1;
+                      return accumulator;
+                  }, {});
+                  for(let i=0; i<Object.keys(roundedScoreToUserCount).reduce((a, b) => Math.max(parseInt(a), b), 0); i++) {
+                      if (!(roundedScoreToUserCount.hasOwnProperty(i.toString()))) {
+                          roundedScoreToUserCount[i.toString()] = 0;
+                      }
                   }
-                  accumulator[roundedMSELoss] += 1;
-                  return accumulator;
-              }, {});
-              Object.entries(roundedScoreToUserCount).forEach(([roundedMSELoss, userCount]) => {
-                  body.append(createNewElement('p', {innerHTML: `${roundedMSELoss}: ${createSeparatedNumbeString(userCount)} (${(100*userCount/Object.keys(summaryData.user_data).length).toFixed(2)}%)`}));
-              });
-              
-              const roundedScoreHistogramContainer = createNewElement('div', {classes: ['rounded-score-histogram-container']});
-              body.append(roundedScoreHistogramContainer);
-              const roundedScoreHistogramData = {
-                  'labelData': Object.entries(roundedScoreToUserCount).map(([roundedMSELoss, userCount]) => {
-                      return {'userCount': userCount, 'roundedMSELoss': roundedMSELoss};
-                  }),
-                  'labelAccessor': datum => datum.roundedMSELoss,
-                  'valueAccessor': datum => datum.userCount,
-                  'toolTipHTMLGenerator': datum => `<p>User Count: ${datum.userCount}</p><p>User Count: ${datum.roundedMSELoss}</p>`,
-                  'barCSSClassAccessor': barLabel => 'histogram-bar',
-                  'title': 'User Count vs MSE Loss Histogram',
-                  'cssFile': 'index.css',
-                  'yMinValue': 0,
-                  'yMaxValue': Math.max(...Object.values(roundedScoreToUserCount)) + 1000,
-                  'xAxisTitle': 'Rounded MSE Loss',
-                  'yAxisTitle': 'User Count (Squareroot Scale)',
-                  'yScale': 'squareroot',
-              };
-              const redrawBarChart = addBarChart(roundedScoreHistogramContainer, roundedScoreHistogramData);
-              redrawBarChart();
-              
-              body.append(createNewElement('p', {innerHTML: `Testing MSE Loss: ${summaryData.testing_mse_loss}`}));
-              body.append(createNewElement('p', {innerHTML: `Best Validation Loss: ${summaryData.best_validation_loss}`}));
-              body.append(createNewElement('p', {innerHTML: `Testing MSE Loss: ${summaryData.learning_rate}`}));
-              body.append(createNewElement('p', {innerHTML: `Number of Training Epochs: ${summaryData.number_of_epochs}`}));
-              body.append(createNewElement('p', {innerHTML: `Batch Size: ${summaryData.batch_size}`}));
-              body.append(createNewElement('p', {innerHTML: `Embedding Size: ${summaryData.embedding_size}`}));
-              body.append(createNewElement('p', {innerHTML: `Regularization Factor: ${summaryData.regularization_factor}`}));
-              body.append(createNewElement('p', {innerHTML: `Dropout Probability: ${summaryData.dropout_probability}`}));
-              
+                  const roundedScoreHistogramContainer = createNewElement('div', {classes: ['rounded-score-histogram-container']});
+                  contentContainer.append(roundedScoreHistogramContainer);
+                  const roundedScoreHistogramData = {
+                      'labelData': Object.entries(roundedScoreToUserCount).map(([roundedMSELoss, userCount]) => {
+                          return {'userCount': userCount, 'roundedMSELoss': roundedMSELoss};
+                      }),
+                      'labelAccessor': datum => datum.roundedMSELoss,
+                      'valueAccessor': datum => datum.userCount,
+                      'toolTipHTMLGenerator': datum => `<p>User Count: ${datum.userCount}</p><p>Rounded MSE Loss: ${datum.roundedMSELoss}</p>`,
+                      'barCSSClassAccessor': barLabel => 'histogram-bar',
+                      'title': 'User Count vs MSE Loss Histogram',
+                      'cssFile': 'index.css',
+                      'yMinValue': Math.min(...Object.values(roundedScoreToUserCount)) / 2,
+                      'yMaxValue': Math.max(...Object.values(roundedScoreToUserCount)) + 1000,
+                      'xAxisTitle': 'Rounded MSE Loss',
+                      'yAxisTitle': 'User Count (Squareroot Scale)',
+                      'yScale': 'squareroot',
+                  };
+                  const redrawBarChart = addBarChart(roundedScoreHistogramContainer, roundedScoreHistogramData);
+                  
 
-              const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
-              body.append(userScatterPlotContainer);
-              const userExampleCounts = Object.values(summaryData.user_data).map(datum => datum.example_count);
-              const userMSELossValues = Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss);
-              const userScatterPlotData = {
-                  'pointSetLookup': {
-                      'users': Object.entries(summaryData.user_data).map(([userId, userData]) => Object.assign(userData, {'id': userId})),
-                  },
-                  'xAccessor': datum => datum.example_count,
-                  'yAccessor': datum => datum.mean_mse_loss,
-                  'toolTipHTMLGenerator': datum => `
+                  const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
+                  contentContainer.append(userScatterPlotContainer);
+                  const userExampleCounts = Object.values(summaryData.user_data).map(datum => datum.example_count);
+                  const userMSELossValues = Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss);
+                  const userScatterPlotData = {
+                      'pointSetLookup': {
+                          'users': Object.entries(summaryData.user_data).map(([userId, userData]) => Object.assign(userData, {'id': userId})),
+                      },
+                      'xAccessor': datum => datum.example_count,
+                      'yAccessor': datum => datum.mean_mse_loss,
+                      'toolTipHTMLGenerator': datum => `
 <p>User Id: ${datum.id}</p>
 <p>Total MSE Loss: ${datum.total_mse_loss}</p>
 <p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
 <p>Example Count: ${datum.example_count}</p>
 `,
-                  'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
-                  'title': `Rank ${rank} User Mean MSE Loss vs User Example Count`,
-                  'cssFile': 'index.css',
-                  'xMinValue': Math.min(...userExampleCounts) / 2,
-                  'xMaxValue': Math.max(...userExampleCounts) + 1,
-                  'yMinValue': Math.min(...userMSELossValues) / 2,
-                  'yMaxValue': Math.max(...userMSELossValues) + 1,
-                  'xAxisTitle': 'Example count',
-                  'yAxisTitle': 'Mean MSE Loss',
-                  'xScale': 'log',
-                  'yScale': 'log',
-              };
-              const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
-              redrawUserScatterPlot();
+                      'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
+                      'title': `Rank ${rank} User Mean MSE Loss vs User Example Count`,
+                      'cssFile': 'index.css',
+                      'xMinValue': Math.min(...userExampleCounts) / 2,
+                      'xMaxValue': Math.max(...userExampleCounts) + 100,
+                      'yMinValue': Math.min(...userMSELossValues) / 2,
+                      'yMaxValue': Math.max(...userMSELossValues) + 10,
+                      'xAxisTitle': 'Example count',
+                      'yAxisTitle': 'Mean MSE Loss',
+                      'xScale': 'log10',
+                      'yScale': 'log10',
+                  };
+                  const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
 
-              const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
-              body.append(animeScatterPlotContainer);
-              const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
-              const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
-              const animeScatterPlotData = {
-                  'pointSetLookup': {
-                      'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
-                  },
-                  'xAccessor': datum => datum.example_count,
-                  'yAccessor': datum => datum.mean_mse_loss,
-                  'toolTipHTMLGenerator': datum => `
+                  const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
+                  contentContainer.append(animeScatterPlotContainer);
+                  const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
+                  const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
+                  const animeScatterPlotData = {
+                      'pointSetLookup': {
+                          'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
+                      },
+                      'xAccessor': datum => datum.example_count,
+                      'yAccessor': datum => datum.mean_mse_loss,
+                      'toolTipHTMLGenerator': datum => `
 <p>Anime Id: ${datum.id}</p>
 <p>Total MSE Loss: ${datum.total_mse_loss}</p>
 <p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
@@ -649,29 +734,42 @@ d3.csv("./anime.csv").then(
 <p>Anime Type: ${animeLookupById[datum.id].type}</p>
 <p>Episode Count: ${animeLookupById[datum.id].episodes}</p>
 `,
-                  'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
-                  'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
-                  'cssFile': 'index.css',
-                  'xMinValue': Math.min(...animeExampleCounts) / 2,
-                  'xMaxValue': Math.max(...animeExampleCounts) + 1,
-                  'yMinValue': Math.min(...animeMSELossValues) / 2,
-                  'yMaxValue': Math.max(...animeMSELossValues) + 1,
-                  'xAxisTitle': 'Example count',
-                  'yAxisTitle': 'Mean MSE Loss',
-                  'xScale': 'log',
-                  'yScale': 'log',
+                      'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
+                      'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
+                      'cssFile': 'index.css',
+                      'xMinValue': Math.min(...animeExampleCounts) / 2,
+                      'xMaxValue': Math.max(...animeExampleCounts) + 100,
+                      'yMinValue': Math.min(...animeMSELossValues) / 2,
+                      'yMaxValue': Math.max(...animeMSELossValues) + 10,
+                      'xAxisTitle': 'Example count',
+                      'yAxisTitle': 'Mean MSE Loss',
+                      'xScale': 'log10',
+                      'yScale': 'log10',
+                  };
+                  const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
+                  
+                  renderContent = () => {
+                      renderHyperparameterTable();
+                      redrawBarChart();
+                      redrawUserScatterPlot();
+                      redrawAnimeScatterPlot();
+                  };
+                  renderContent();
+                  window.addEventListener('resize', renderContent);
               };
-              const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
-              redrawAnimeScatterPlot();
-              
-              window.addEventListener('resize', () => {
-                  redrawBarChart();
-                  redrawUserScatterPlot();
-                  redrawAnimeScatterPlot();
-              });
-              
+              const contentDestructor = (contentContainer) => {
+                  window.removeEventListener('resize', renderContent);
+                  removeAllChildNodes(contentContainer);
+              };
+
+              return [labelInnerHTML, contentGenerator, contentDestructor];
           }))
-).catch(err => {
+).then((labelGeneratorDestructorTriples) => {
+    const [labelInnerHTML, contentGenerator, contentDestructor] = labelGeneratorDestructorTriples[0];
+    const resultDiv = document.querySelector('#linear-result');
+    contentGenerator(resultDiv);
+    // @todo finish accordion
+}).catch(err => {
     console.error(err.message);
     return;
 }));
