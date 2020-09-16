@@ -7,6 +7,13 @@ const isUndefined = value => value === void(0);
 
 const createSeparatedNumbeString = number => number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
+const absoluteXYOffset = (element) => {
+    const rect = element.getBoundingClientRect();
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    return [rect.left + scrollLeft, rect.top + scrollTop];
+};
+
 // D3 Extensions
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -499,11 +506,14 @@ This returns a re-render function, but does not actually call the re-render func
                 const x = boundingBox.left;
                 const y = boundingBox.top;
                 const htmlString = barChartData.toolTipHTMLGenerator(datum);
+                const tooltipBoundingBox = tooltipDiv.node().getBoundingClientRect();
+                const tooltipWidth = tooltipBoundingBox.width;
+                const tooltipHeight = tooltipBoundingBox.height;
 		tooltipDiv
 		    .classed('hidden', false)
-		    .html(htmlString)
-		    .style('left', x + 10 + 'px')
-		    .style('top', y + 10 + 'px');
+		    .style('left', x + boundingBox.width / 2 - tooltipWidth / 2 + 'px')
+		    .style('top', y - tooltipHeight - 10 + 'px')
+		    .html(htmlString);
 	    })
             .on('mouseout', datum => {
 		tooltipDiv
