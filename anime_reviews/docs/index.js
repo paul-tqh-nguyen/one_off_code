@@ -66,38 +66,13 @@ const createTableWithElements = (rows, {classes, attributes}={}) => {
     return table;
 };
 
-/*/
 const createLazyAccordion = (labelGeneratorDestructorTriples) => {
-    const accordionContainer = createNewElement('div');
-    const shadow = accordionContainer.attachShadow({mode: 'open'});    const shadowStyleElement = createNewElement('style', {innerHTML: `
-
-:host {
-  position: relative;
-  width: inherit;
-  height: inherit;
-}
-
-.accordion-content-container {
-  position: absolute;
-  top: 0px;
-  bottom: 0px;
-  left: 0px;
-  right: 0px;
-  margin: 0px;
-}
-
-`});
-    
-    shadow.append(shadowStyleElement);
-    
-    const accordionContentContainer = createNewElement('div', {classes: ['accordion-content-container']});
-    accordionContainer.append(accordionContentContainer);
-    
+    const accordionContainer = createNewElement('div', {classes: ['accordion-container']});
     labelGeneratorDestructorTriples.forEach(([labelInnerHTML, contentGenerator, contentDestructor], i) => {
         // contentGenerator and contentDestructor take an HTML element
         const labelContentPairElement = createNewElement('div');
-        const label = createNewElement('p', {innerHTML: labelInnerHTML});
-        const contentDiv = createNewElement('div');
+        const label = createNewElement('p', {classes: ['accordion-label'], innerHTML: labelInnerHTML});
+        const contentDiv = createNewElement('div', {classes: ['accordion-content']});
         labelContentPairElement.append(label);
         labelContentPairElement.append(contentDiv);
         label.onclick = () => {
@@ -109,15 +84,10 @@ const createLazyAccordion = (labelGeneratorDestructorTriples) => {
                 contentDestructor(contentDiv);
             }
         };
-        if (i === 0) {
-            label.onclick();
-        }
-        accordionContentContainer.append(label);
-        accordionContentContainer.append(contentDiv);
+        accordionContainer.append(labelContentPairElement);
     });
     return accordionContainer;
 };
-//*/
 
 /***************************/
 /* Visualization Utilities */
@@ -181,10 +151,13 @@ This returns a re-render function, but does not actually call the re-render func
 
     const shadowStyleElement = createNewElement('style', {innerHTML: `
 
+@import url('https://fonts.googleapis.com/css?family=Oxygen');
+
 :host {
   position: relative;
   width: inherit;
   height: inherit;
+  font-family: 'Oxygen',  sans-serif;
 }
 
 .scatter-plot-container {
@@ -415,10 +388,13 @@ This returns a re-render function, but does not actually call the re-render func
 
     const shadowStyleElement = createNewElement('style', {innerHTML: `
 
+@import url('https://fonts.googleapis.com/css?family=Oxygen');
+
 :host {
   position: relative;
   width: inherit;
   height: inherit;
+  font-family: 'Oxygen',  sans-serif;
 }
 
 .bar-chart-container {
@@ -610,15 +586,15 @@ d3.csv("./anime.csv").then(
 ).then((animeLookupById) => Promise.all(
     [
         './result_analysis/rank_0_summary.json',
-        // './result_analysis/rank_1_summary.json',
-        // './result_analysis/rank_2_summary.json',
-        // './result_analysis/rank_3_summary.json',
-        // './result_analysis/rank_4_summary.json',
-        // './result_analysis/rank_5_summary.json',
-        // './result_analysis/rank_6_summary.json',
-        // './result_analysis/rank_7_summary.json',
-        // './result_analysis/rank_8_summary.json',
-        // './result_analysis/rank_9_summary.json',
+        './result_analysis/rank_1_summary.json',
+        './result_analysis/rank_2_summary.json',
+        './result_analysis/rank_3_summary.json',
+        './result_analysis/rank_4_summary.json',
+        './result_analysis/rank_5_summary.json',
+        './result_analysis/rank_6_summary.json',
+        './result_analysis/rank_7_summary.json',
+        './result_analysis/rank_8_summary.json',
+        './result_analysis/rank_9_summary.json',
     ].map((jsonFile, rank) => d3.json(jsonFile)
           .then(summaryData => {
               let renderContent;
@@ -629,7 +605,7 @@ d3.csv("./anime.csv").then(
                   contentContainer.append(hyperparameterTableContainer);
                   const renderHyperparameterTable = () => {
                       removeAllChildNodes(hyperparameterTableContainer);
-                      hyperparameterTableContainer.append(createNewElement('p', {innerHTML: 'Results', attributes: {style: 'margin-bottom: 10px'}}));
+                      hyperparameterTableContainer.append(createNewElement('p', {innerHTML: 'Results', attributes: {style: 'margin: 2em 0px 10px 0px'}}));
                       hyperparameterTableContainer.append(
                           createTableWithElements([
                               [createNewElement('p', {innerHTML: `Testing MSE Loss:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: `${summaryData.testing_mse_loss}`})],
@@ -765,10 +741,9 @@ d3.csv("./anime.csv").then(
               return [labelInnerHTML, contentGenerator, contentDestructor];
           }))
 ).then((labelGeneratorDestructorTriples) => {
-    const [labelInnerHTML, contentGenerator, contentDestructor] = labelGeneratorDestructorTriples[0];
     const resultDiv = document.querySelector('#linear-result');
-    contentGenerator(resultDiv);
-    // @todo finish accordion
+    const accordion = createLazyAccordion(labelGeneratorDestructorTriples);
+    resultDiv.append(accordion);
 }).catch(err => {
     console.error(err.message);
     return;
