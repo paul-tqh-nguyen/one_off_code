@@ -57,10 +57,6 @@ function git-black {
 }
 
 function git-add-mod {
-    if [[ $(pwd | grep "metagraph" ) ]]
-    then
-	git-black
-    fi
     git add $(git status | grep modified | cut -d":" -f2)
 }
 alias gam="git-add-mod"
