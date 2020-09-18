@@ -67,7 +67,8 @@ def main() -> None:
         train_default_model()
     elif args.hyperparameter_search:
         from hyperparameter_search import hyperparameter_search
-        hyperparameter_search()
+        from models import LinearColaborativeFilteringModel
+        hyperparameter_search(LinearColaborativeFilteringModel)
     elif args.analyze_hyperparameter_search_results:
         from hyperparameter_search import  analyze_hyperparameter_search_results
         analyze_hyperparameter_search_results()
