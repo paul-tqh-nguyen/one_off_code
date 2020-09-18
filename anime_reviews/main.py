@@ -34,8 +34,8 @@ REGULARIZATION_FACTOR = 1
 DROPOUT_PROBABILITY = 0.5
 
 def train_default_model() -> None:
-    from trainer import train_model
-    train_model(
+    from models import LinearColaborativeFilteringModel
+    LinearColaborativeFilteringModel.train_model(
         learning_rate=LEARNING_RATE,
         number_of_epochs=NUMBER_OF_EPOCHS,
         batch_size=BATCH_SIZE,
