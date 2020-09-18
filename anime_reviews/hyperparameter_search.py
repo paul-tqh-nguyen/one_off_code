@@ -187,7 +187,7 @@ def analyze_hyperparameter_search_results(model_class: type) -> None:
         with open(result_summary_json_file_location, 'r') as file_handle:
             result_summary_dict = json.loads(file_handle.read())
         
-        model = LinearColaborativeFilteringModel.load_from_checkpoint(result_summary_dict['best_validation_model_path'])
+        model = model_class.load_from_checkpoint(result_summary_dict['best_validation_model_path'])
         model.eval()
 
         data_module = AnimeRatingDataModule(1, NUM_WORKERS)
