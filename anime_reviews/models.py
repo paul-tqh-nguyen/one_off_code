@@ -235,7 +235,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
         return checkpoint_dir
 
     @classmethod    
-    def train_model(cls, learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float, gpus: List[int]) -> float:
+    def train_model(cls, gpus: List[int], learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float) -> float:
     
         checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(learning_rate, number_of_epochs, batch_size, gradient_clip_val, embedding_size, regularization_factor, dropout_probability)
         if not os.path.isdir(checkpoint_dir):
@@ -250,7 +250,7 @@ class LinearColaborativeFilteringModel(pl.LightningModule):
             )
     
         trainer = pl.Trainer(
-            callbacks=[PrintingCallback(checkpoint_callback)],
+            callbacks=[cls.PrintingCallback(checkpoint_callback)],
             max_epochs=number_of_epochs,
             min_epochs=number_of_epochs,
             gradient_clip_val=gradient_clip_val,

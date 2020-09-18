@@ -36,6 +36,7 @@ DROPOUT_PROBABILITY = 0.5
 def train_default_model() -> None:
     from models import LinearColaborativeFilteringModel
     LinearColaborativeFilteringModel.train_model(
+        gpus=GPU_IDS,
         learning_rate=LEARNING_RATE,
         number_of_epochs=NUMBER_OF_EPOCHS,
         batch_size=BATCH_SIZE,
@@ -43,7 +44,6 @@ def train_default_model() -> None:
         embedding_size=EMBEDDING_SIZE,
         regularization_factor=REGULARIZATION_FACTOR,
         dropout_probability=DROPOUT_PROBABILITY,
-        gpus=GPU_IDS,
     )
     return
 
