@@ -181,7 +181,6 @@ class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
         pass
     
     @classmethod
-    @abstractmethod
     def train_model(cls, gpus: List[int], **hyperparameter_dict) -> float:
     
         checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
@@ -214,7 +213,7 @@ class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
         data_module.prepare_data()
         data_module.setup()
     
-        model = self.__class__(number_of_training_batches = len(data_module.training_dataloader), **hyperparameter_dict)
+        model = cls(number_of_training_batches = len(data_module.training_dataloader), **hyperparameter_dict)
     
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
