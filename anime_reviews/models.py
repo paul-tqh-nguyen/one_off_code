@@ -349,6 +349,7 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
         
         self.anime_embedding_layer = nn.Embedding(self.hparams.number_of_animes, self.hparams.embedding_size)
         self.user_embedding_layer = nn.Embedding(self.hparams.number_of_users, self.hparams.embedding_size)
+        self.dropout_layer = nn.Dropout(self.hparams.dropout_probability)
         self.dense_layers = nn.Sequential(
             OrderedDict(
                 sum(
