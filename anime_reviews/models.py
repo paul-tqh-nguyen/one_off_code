@@ -19,7 +19,7 @@ Sections:
 
 import json
 from abc import ABC, abstractmethod
-from colections import OrderedDict
+from collections import OrderedDict
 from typing import Tuple
 from typing_extensions import Literal
 
