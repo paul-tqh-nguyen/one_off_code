@@ -90,7 +90,7 @@ class HyperParameterSearchObjective:
                 'regularization_factor': regularization_factor,
                 'dropout_probability': dropout_probability,
             }
-        elif self.model_class == models.LinearColaborativeFilteringModel:
+        elif self.model_class == models.DeepConcatenationColaborativeFilteringModel:
             learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
             number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
             batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6,12)]))
