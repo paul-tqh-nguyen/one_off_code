@@ -109,6 +109,8 @@ class HyperParameterSearchObjective:
                 'regularization_factor': regularization_factor,
                 'dropout_probability': dropout_probability,
             }
+        else:
+            raise ValueError(f'Unrecognized model {model_class}')
         return hyperparameters
     
     def __call__(self, trial: optuna.Trial) -> float:
@@ -175,14 +177,10 @@ def hyperparameter_search(model_class: type) -> None:
         LOGGER.info(f'Testing Regularization Loss: {result_summary_dict["testing_regularization_loss"]}')
         LOGGER.info(f'Testing MSE Loss: {result_summary_dict["testing_mse_loss"]}')
         LOGGER.info('')
-        LOGGER.info(f'Learning Rate: {result_summary_dict["learning_rate"]}')
-        LOGGER.info(f'Number of Epochs: {result_summary_dict["number_of_epochs"]}')
-        LOGGER.info(f'Batch Size: {result_summary_dict["batch_size"]}')
         LOGGER.info(f'number of Animes: {result_summary_dict["number_of_animes"]}')
         LOGGER.info(f'Number of Users: {result_summary_dict["number_of_users"]}')
-        LOGGER.info(f'Embedding Size: {result_summary_dict["embedding_size"]}')
-        LOGGER.info(f'Regularization Factor: {result_summary_dict["regularization_factor"]}')
-        LOGGER.info(f'Dropout Probability: {result_summary_dict["dropout_probability"]}')
+        for hyperparameter_name, hyperparameter_value in hyperparameters.items():
+            LOGGER.info(f'hyperparameter_name: {hyperparameter_value}')
         LOGGER.info('')
     return
 
