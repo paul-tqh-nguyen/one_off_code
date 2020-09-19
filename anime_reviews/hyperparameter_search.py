@@ -29,7 +29,8 @@ import joblib
 from misc_utilities import *
 from global_values import *
 from data_modules import AnimeRatingDataModule, preprocess_data
-from models import LinearColaborativeFilteringModel, MSE_LOSS
+import models
+from models import MSE_LOSS
 
 ###########
 # Globals #
@@ -71,26 +72,45 @@ class HyperParameterSearchObjective:
         self.model_class = model_class
         self.gpu_id_queue = gpu_id_queue
 
-    def get_trial_hyperparameters(self, trial) -> dict: # @todo get type of trial
-        # @todo use self.model_class
-        learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-        number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
-        batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6,12)]))
-        gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
-        embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
-        regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
-        dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
-        hyperparameters = {
-            'learning_rate': learning_rate,
-            'number_of_epochs': number_of_epochs,
-            'batch_size': batch_size,
-            'gradient_clip_val': gradient_clip_val,
-            'embedding_size': embedding_size,
-            'regularization_factor': regularization_factor,
-            'dropout_probability': dropout_probability,
-        }
+    def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
+        if self.model_class == models.LinearColaborativeFilteringModel:
+            learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
+            number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
+            batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6,12)]))
+            gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
+            embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
+            regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
+            dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
+            hyperparameters = {
+                'learning_rate': learning_rate,
+                'number_of_epochs': number_of_epochs,
+                'batch_size': batch_size,
+                'gradient_clip_val': gradient_clip_val,
+                'embedding_size': embedding_size,
+                'regularization_factor': regularization_factor,
+                'dropout_probability': dropout_probability,
+            }
+        elif self.model_class == models.LinearColaborativeFilteringModel:
+            learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
+            number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
+            batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6,12)]))
+            gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
+            embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
+            dense_layer_count = int(trial.suggest_int('embedding_size', 1, 5))
+            regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
+            dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 1.0)
+            hyperparameters = {
+                'learning_rate': learning_rate,
+                'number_of_epochs': number_of_epochs,
+                'batch_size': batch_size,
+                'gradient_clip_val': gradient_clip_val,
+                'embedding_size': embedding_size,
+                'dense_layer_count': dense_layer_count,
+                'regularization_factor': regularization_factor,
+                'dropout_probability': dropout_probability,
+            }
         return hyperparameters
-
+    
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get() if self.gpu_id_queue else DEFAULT_GPU
 
