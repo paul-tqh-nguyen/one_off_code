@@ -44,7 +44,7 @@ MSE_LOSS = nn.MSELoss(reduction='none')
 class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
         
     @abstractmethod
-    def forward(self, batch_dict: dict) -> Tuplle[torch.Tensor, torch.Tensor]:
+    def forward(self, batch_dict: dict) -> Tuple[torch.Tensor, torch.Tensor]:
         pass
 
     def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
@@ -198,8 +198,8 @@ class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
     
         trainer = pl.Trainer(
             callbacks=[cls.PrintingCallback(checkpoint_callback)],
-            max_epochs=number_of_epochs,
-            min_epochs=number_of_epochs,
+            max_epochs=hyperparameter_dict['number_of_epochs'],
+            min_epochs=hyperparameter_dict['number_of_epochs'],
             gradient_clip_val=hyperparameter_dict.get('gradient_clip_val', 0),
             terminate_on_nan=True,
             gpus=gpus,
@@ -276,7 +276,7 @@ class LinearColaborativeFilteringModel(AbstractColaborativeFilteringModel):
         self.user_embedding_layer = nn.Embedding(self.hparams.number_of_users, self.hparams.embedding_size)
         self.dropout_layer = nn.Dropout(self.hparams.dropout_probability)
 
-    def forward(self, batch_dict: dict) -> Tuplle[torch.Tensor, torch.Tensor]:
+    def forward(self, batch_dict: dict) -> Tuple[torch.Tensor, torch.Tensor]:
         user_id_indices: torch.Tensor = batch_dict['user_id_index']
         batch_size = user_id_indices.shape[0]
         assert tuple(user_id_indices.shape) == (batch_size,)
@@ -366,7 +366,7 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
                 ])
         )
 
-    def forward(self, batch_dict: dict) -> Tuplle[torch.Tensor, torch.Tensor]:
+    def forward(self, batch_dict: dict) -> Tuple[torch.Tensor, torch.Tensor]:
         user_id_indices: torch.Tensor = batch_dict['user_id_index']
         batch_size = user_id_indices.shape[0]
         assert tuple(user_id_indices.shape) == (batch_size,)
