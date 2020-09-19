@@ -35,13 +35,6 @@ from models import LinearColaborativeFilteringModel, MSE_LOSS
 # Globals #
 ###########
 
-MODEL_TO_DB_URL = {
-        LinearColaborativeFilteringModel: 'sqlite:///collaborative_filtering_linear.db',
-}
-MODEL_TO_STUDY_NAME = {
-    LinearColaborativeFilteringModel: 'collaborative-filtering-linear',
-}
-
 ANALYSIS_OUTPUT_DIR = './result_analysis'
 if not os.path.isdir(ANALYSIS_OUTPUT_DIR):
     os.makedirs(ANALYSIS_OUTPUT_DIR)
@@ -65,6 +58,12 @@ def _training_logging_suppressed() -> Generator:
     logger.disabled = lightning_original_disability
     LOGGER_STREAM_HANDLER.setStream(logger_stream_handler_original_stream)
     return
+
+def _model_to_study_name(model_class: type) -> str:
+    return f'collaborative-filtering-{model_class}'
+
+def _model_to_db_url(model_class: type) -> str:
+    return f'sqlite:///collaborative_filtering_{model_class}.db'
 
 class HyperParameterSearchObjective:
     def __init__(self, model_class: type, gpu_id_queue: Optional[object]):
@@ -113,8 +112,8 @@ class HyperParameterSearchObjective:
         return best_validation_loss
 
 def hyperparameter_search(model_class: type) -> None:
-    study_name = MODEL_TO_STUDY_NAME[model_class]
-    db_url = MODEL_TO_DB_URL[model_class]
+    study_name = _model_to_study_name(model_class)
+    db_url = _model_to_db_url(model_class)
     study = optuna.create_study(study_name=study_name, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=db_url, direction='minimize', load_if_exists=True)
     optimize_kawrgs = dict(
         n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS,
@@ -172,8 +171,8 @@ def hyperparameter_search(model_class: type) -> None:
 #########################################
 
 def analyze_hyperparameter_search_results(model_class: type) -> None:
-    study_name = MODEL_TO_STUDY_NAME[model_class]
-    db_url = MODEL_TO_DB_URL[model_class]
+    study_name = _model_to_study_name(model_class)
+    db_url = _model_to_db_url(model_class)
     
     study = optuna.create_study(study_name=study_name, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=db_url, direction='minimize', load_if_exists=True)
     trials_df = study.trials_dataframe()

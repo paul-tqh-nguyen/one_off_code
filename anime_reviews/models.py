@@ -133,7 +133,7 @@ class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
             LOGGER.info(model)
             LOGGER.info('')
             LOGGER.info(f'Training GPUs: {trainer.gpus}')
-            for hyperparameter_name in sorted(m.hparams.keys()):
+            for hyperparameter_name in sorted(model.hparams.keys()):
                 LOGGER.info(f'{hyperparameter_name}: {model.hparams[hyperparameter_name]:,}')
             LOGGER.info('')
             LOGGER.info('Data:')
