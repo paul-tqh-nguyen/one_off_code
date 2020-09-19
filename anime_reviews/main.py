@@ -34,7 +34,7 @@ def train_default_model_linear() -> None:
     regularization_factor = 1
     dropout_probability = 0.5
     LinearColaborativeFilteringModel.train_model(
-        gpus=gpu_ids,
+        gpus=GPU_IDS,
         learning_rate=learning_rate,
         number_of_epochs=number_of_epochs,
         batch_size=batch_size,
@@ -56,7 +56,7 @@ def train_default_model_deep_concat() -> None:
     regularization_factor = 1
     dropout_probability = 0.5
     DeepConcatenationColaborativeFilteringModel.train_model(
-        gpus=gpu_ids,
+        gpus=GPU_IDS,
         learning_rate=learning_rate,
         number_of_epochs=number_of_epochs,
         batch_size=batch_size,
