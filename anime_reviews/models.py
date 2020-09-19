@@ -213,7 +213,7 @@ class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
         data_module.prepare_data()
         data_module.setup()
     
-        model = cls(number_of_training_batches = len(data_module.training_dataloader), **hyperparameter_dict)
+        model = cls(number_of_training_batches = len(data_module.training_dataloader), number_of_animes=data_module.number_of_animes, number_of_users=data_module.number_of_users, **hyperparameter_dict)
     
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
@@ -360,8 +360,8 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
                         for i in range(self.hparams.dense_layer_count-1)
                     ], [])
                 + [
-                    (f'dense_layer_{i}', nn.Linear(self.hparams.embedding_size * 2, 1)),
-                    (f'activation_layer_{i}', nn.Sigmoid()),
+                    (f'dense_layer_{self.hparams.dense_layer_count-1}', nn.Linear(self.hparams.embedding_size * 2, 1)),
+                    (f'activation_layer_{self.hparams.dense_layer_count-1}', nn.Sigmoid()),
                 ])
         )
 
