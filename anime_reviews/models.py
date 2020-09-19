@@ -210,7 +210,7 @@ class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
             checkpoint_callback=checkpoint_callback,
         )
     
-        data_module = AnimeRatingDataModule(batch_size, NUM_WORKERS)
+        data_module = AnimeRatingDataModule(hyperparameter_dict['batch_size'], NUM_WORKERS)
         data_module.prepare_data()
         data_module.setup()
     
