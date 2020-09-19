@@ -53,7 +53,7 @@ def train_default_model_linear() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
     parser.add_argument('-train-default-model-linear', action='store_true', help='Train the default linear model.')
-    parser.add_argument('-hyperparameter-search-llinear', action='store_true', help='Perform several trials of hyperparameter search for the linear model.')
+    parser.add_argument('-hyperparameter-search-linear', action='store_true', help='Perform several trials of hyperparameter search for the linear model.')
     parser.add_argument('-analyze-hyperparameter-search-results-linear', action='store_true', help=f'Analyze completed hyperparameter search trials so far for the linear model.')
     args = parser.parse_args()
     number_of_args_specified = sum(map(int,map(bool,vars(args).values())))
