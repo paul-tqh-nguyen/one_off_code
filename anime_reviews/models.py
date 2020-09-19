@@ -389,7 +389,7 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
         anime_embedding = self.dropout_layer(anime_embedding)
         assert tuple(anime_embedding.shape) == (batch_size, self.hparams.embedding_size)
 
-        concatenated_embedding = torch.cat([user_embedding, anime_embedding], dim=2)
+        concatenated_embedding = torch.cat([user_embedding, anime_embedding], dim=1)
         assert tuple(concatenated_embedding.shape) == (batch_size, self.hparams.embedding_size*2)
         
         scores = self.dense_layers(concatenated_embedding)
