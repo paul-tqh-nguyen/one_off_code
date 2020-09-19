@@ -407,7 +407,7 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
             f'batch_{batch_size}_' \
             f'gradient_clip_{gradient_clip_val:.3g}_' \
             f'embed_{embedding_size}_' \
-            f'layers_{dense_layer_count}_' \
+            f'dense_layers_{dense_layer_count}_' \
             f'regularization_{regularization_factor:.5g}_' \
             f'dropout_{dropout_probability:.5g}'
         return checkpoint_dir
