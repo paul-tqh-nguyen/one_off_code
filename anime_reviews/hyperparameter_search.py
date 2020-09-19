@@ -36,10 +36,10 @@ from models import LinearColaborativeFilteringModel, MSE_LOSS
 ###########
 
 MODEL_TO_DB_URL = {
-        LinearColaborativeFilteringModel: 'sqlite:///collaborative_filtering.db',
+        LinearColaborativeFilteringModel: 'sqlite:///collaborative_filtering_linear.db',
 }
 MODEL_TO_STUDY_NAME = {
-    LinearColaborativeFilteringModel: 'collaborative-filtering',
+    LinearColaborativeFilteringModel: 'collaborative-filtering-linear',
 }
 
 ANALYSIS_OUTPUT_DIR = './result_analysis'
