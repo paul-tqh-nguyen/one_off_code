@@ -194,7 +194,7 @@ class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
                 monitor='val_checkpoint_on',
                 mode='min',
             )
-    
+        
         trainer = pl.Trainer(
             callbacks=[cls.PrintingCallback(checkpoint_callback)],
             max_epochs=hyperparameter_dict['number_of_epochs'],

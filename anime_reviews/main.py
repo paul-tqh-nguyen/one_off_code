@@ -45,6 +45,29 @@ def train_default_model_linear() -> None:
     )
     return
 
+def train_default_model_deep_concat() -> None:
+    from models import DeepConcatenationColaborativeFilteringModel
+    number_of_epochs = 15
+    batch_size = 256
+    gradient_clip_val = 1.0
+    learning_rate = 1e-3
+    embedding_size = 100
+    dense_layer_count = 3
+    regularization_factor = 1
+    dropout_probability = 0.5
+    DeepConcatenationColaborativeFilteringModel.train_model(
+        gpus=gpu_ids,
+        learning_rate=learning_rate,
+        number_of_epochs=number_of_epochs,
+        batch_size=batch_size,
+        gradient_clip_val=gradient_clip_val,
+        embedding_size=embedding_size,
+        dense_layer_count=dense_layer_count, 
+        regularization_factor=regularization_factor,
+        dropout_probability=dropout_probability,
+    )
+    return
+
 ##########
 # Driver #
 ##########
@@ -55,6 +78,9 @@ def main() -> None:
     parser.add_argument('-train-default-model-linear', action='store_true', help='Train the default linear model.')
     parser.add_argument('-hyperparameter-search-linear', action='store_true', help='Perform several trials of hyperparameter search for the linear model.')
     parser.add_argument('-analyze-hyperparameter-search-results-linear', action='store_true', help=f'Analyze completed hyperparameter search trials so far for the linear model.')
+    parser.add_argument('-train-default-model-deep-concat', action='store_true', help='Train the default deep concatenation model.')
+    parser.add_argument('-hyperparameter-search-deep concat', action='store_true', help='Perform several trials of hyperparameter search for the deep concatenation model.')
+    parser.add_argument('-analyze-hyperparameter-search-results-deep-concat', action='store_true', help=f'Analyze completed hyperparameter search trials so far for the deep concatenation model.')
     args = parser.parse_args()
     number_of_args_specified = sum(map(int,map(bool,vars(args).values())))
     if number_of_args_specified == 0:
@@ -71,6 +97,16 @@ def main() -> None:
         from hyperparameter_search import  analyze_hyperparameter_search_results
         from models import LinearColaborativeFilteringModel
         analyze_hyperparameter_search_results(LinearColaborativeFilteringModel)
+    elif args.train_default_model_deep_concat:
+        train_default_model_deep_concat()
+    elif args.hyperparameter_search_deep_concat:
+        from hyperparameter_search import hyperparameter_search
+        from models import DeepConcatenationColaborativeFilteringModel
+        hyperparameter_search(DeepConcatenationColaborativeFilteringModel)
+    elif args.analyze_hyperparameter_search_results_deep_concat:
+        from hyperparameter_search import  analyze_hyperparameter_search_results
+        from models import DeepConcatenationColaborativeFilteringModel
+        analyze_hyperparameter_search_results(DeepConcatenationColaborativeFilteringModel)
     else:
         raise ValueError('Unexpected args received.')
     return
