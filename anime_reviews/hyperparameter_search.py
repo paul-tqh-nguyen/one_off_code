@@ -61,10 +61,10 @@ def _training_logging_suppressed() -> Generator:
     return
 
 def _model_to_study_name(model_class: type) -> str:
-    return f'collaborative-filtering-{model_class}'
+    return f'collaborative-filtering-{model_class.__qualname__}'
 
 def _model_to_db_url(model_class: type) -> str:
-    return f'sqlite:///collaborative_filtering_{model_class}.db'
+    return f'sqlite:///collaborative_filtering_{model_class.__qualname__}.db'
 
 class HyperParameterSearchObjective:
     def __init__(self, model_class: type, gpu_id_queue: Optional[object]):
