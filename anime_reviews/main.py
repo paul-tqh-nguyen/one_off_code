@@ -79,7 +79,7 @@ def main() -> None:
     parser.add_argument('-hyperparameter-search-linear', action='store_true', help='Perform several trials of hyperparameter search for the linear model.')
     parser.add_argument('-analyze-hyperparameter-search-results-linear', action='store_true', help=f'Analyze completed hyperparameter search trials so far for the linear model.')
     parser.add_argument('-train-default-model-deep-concat', action='store_true', help='Train the default deep concatenation model.')
-    parser.add_argument('-hyperparameter-search-deep concat', action='store_true', help='Perform several trials of hyperparameter search for the deep concatenation model.')
+    parser.add_argument('-hyperparameter-search-deep-concat', action='store_true', help='Perform several trials of hyperparameter search for the deep concatenation model.')
     parser.add_argument('-analyze-hyperparameter-search-results-deep-concat', action='store_true', help=f'Analyze completed hyperparameter search trials so far for the deep concatenation model.')
     args = parser.parse_args()
     number_of_args_specified = sum(map(int,map(bool,vars(args).values())))
