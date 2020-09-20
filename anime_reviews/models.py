@@ -204,7 +204,7 @@ class AbstractColaborativeFilteringModel(pl.LightningModule, ABC):
             terminate_on_nan=True,
             gpus=gpus,
             distributed_backend='dp',
-            deterministic=False,
+            deterministic=True,
             # precision=16, # not supported for data parallel (e.g. multiple GPUs) https://github.com/NVIDIA/apex/issues/227
             logger=pl.loggers.TensorBoardLogger(checkpoint_dir, name='cf_model'),
             checkpoint_callback=checkpoint_callback,
@@ -360,13 +360,13 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
                             (f'activation_layer_{i}', nn.ReLU(True)),
                         ]
                         for i in range(self.hparams.dense_layer_count-1)
-                    ], [])
-                + [
+                    ],
+                []) + [
                     (f'dense_layer_{self.hparams.dense_layer_count-1}', nn.Linear(self.hparams.embedding_size * 2, 1)),
                     (f'activation_layer_{self.hparams.dense_layer_count-1}', nn.Sigmoid()),
                 ])
         )
-
+    
     def forward(self, batch_dict: dict) -> Tuple[torch.Tensor, torch.Tensor]:
         user_id_indices: torch.Tensor = batch_dict['user_id_index']
         batch_size = user_id_indices.shape[0]
@@ -380,9 +380,41 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
         assert tuple(anime_embedding.shape) == (batch_size, self.hparams.embedding_size)
         
         get_norm = lambda batch_matrix: batch_matrix.mul(batch_matrix).sum(dim=1)
-        regularization_loss = get_norm(user_embedding[:,:-1]) + get_norm(anime_embedding[:,:-1])
-        assert tuple(regularization_loss.shape) == (batch_size,)
-        assert regularization_loss.gt(0).all()
+        user_regularization_loss = get_norm(user_embedding[:,:-1])
+        anime_regularization_loss = get_norm(anime_embedding[:,:-1])
+        regularization_loss = user_regularization_loss + anime_regularization_loss
+        # assert tuple(regularization_loss.shape) == (batch_size,)
+        # if not user_regularization_loss.gt(0).all() or not anime_regularization_loss.gt(0).all(): # @todo remove this
+        #     torch.set_printoptions(profile="full")
+        #     user_bad_index = torch.where(user_regularization_loss==0)[0].cpu()
+        #     anime_bad_index = torch.where(anime_regularization_loss==0)[0].cpu()
+        #     data_module = AnimeRatingDataModule(batch_size, NUM_WORKERS)
+        #     data_module.prepare_data()
+        #     data_module.setup()
+        #     LOGGER.info(f"user_bad_index {repr(user_bad_index)}")
+        #     LOGGER.info(f"anime_bad_index {repr(anime_bad_index)}")
+        #     user_id_indices = user_id_indices.cpu()
+        #     anime_id_indices = anime_id_indices.cpu()
+        #     user_embedding = user_embedding.cpu()
+        #     anime_embedding = anime_embedding.cpu()
+        #     LOGGER.info(f"regularization_loss[user_bad_index] = torch.{repr(regularization_loss[user_bad_index])}")
+        #     LOGGER.info(f"user_embedding[user_bad_index] = torch.{repr(user_embedding[user_bad_index])}")
+        #     LOGGER.info(f"anime_embedding[user_bad_index] = torch.{repr(anime_embedding[user_bad_index])}")
+        #     LOGGER.info(f"user_id_indices[user_bad_index] = torch.{repr(user_id_indices[user_bad_index])}")
+        #     LOGGER.info(f"anime_id_indices[user_bad_index] = torch.{repr(anime_id_indices[user_bad_index])}")
+        #     LOGGER.info(f"data_module.user_id_index_to_user_id[user_id_indices[user_bad_index]] = torch.{repr(data_module.user_id_index_to_user_id[user_id_indices[user_bad_index]])}")
+        #     LOGGER.info(f"data_module.anime_id_index_to_anime_id[anime_id_indices[user_bad_index]] = torch.{repr(data_module.anime_id_index_to_anime_id[anime_id_indices[user_bad_index]])}")
+        #     LOGGER.info("")
+        #     LOGGER.info(f"regularization_loss[anime_bad_index] = torch.{repr(regularization_loss[anime_bad_index])}")
+        #     LOGGER.info(f"user_embedding[anime_bad_index] = torch.{repr(user_embedding[anime_bad_index])}")
+        #     LOGGER.info(f"anime_embedding[anime_bad_index] = torch.{repr(anime_embedding[anime_bad_index])}")
+        #     LOGGER.info(f"user_id_indices[anime_bad_index] = torch.{repr(user_id_indices[anime_bad_index])}")
+        #     LOGGER.info(f"anime_id_indices[anime_bad_index] = torch.{repr(anime_id_indices[anime_bad_index])}")
+        #     LOGGER.info(f"data_module.user_id_index_to_user_id[user_id_indices[anime_bad_index]] = torch.{repr(data_module.user_id_index_to_user_id[user_id_indices[anime_bad_index]])}")
+        #     LOGGER.info(f"data_module.anime_id_index_to_anime_id[anime_id_indices[anime_bad_index]] = torch.{repr(data_module.anime_id_index_to_anime_id[anime_id_indices[anime_bad_index]])}")
+        #     breakpoint()
+        #     # os.system('pkill -9 py')
+        # assert regularization_loss.gt(0).all() # @todo evalulate if we need this
         
         user_embedding = self.dropout_layer(user_embedding)
         assert tuple(user_embedding.shape) == (batch_size, self.hparams.embedding_size)

@@ -76,7 +76,7 @@ class HyperParameterSearchObjective:
         if self.model_class == models.LinearColaborativeFilteringModel:
             learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
             number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
-            batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6,12)]))
+            batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6, 12)]))
             gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
             embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
             regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
@@ -93,7 +93,7 @@ class HyperParameterSearchObjective:
         elif self.model_class == models.DeepConcatenationColaborativeFilteringModel:
             learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
             number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
-            batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6,12)]))
+            batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6, 12)]))
             gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
             embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
             dense_layer_count = int(trial.suggest_int('dense_layer_count', 1, 5))
@@ -140,12 +140,12 @@ def hyperparameter_search(model_class: type) -> None:
     optimize_kawrgs = dict(
         n_trials=NUMBER_OF_HYPERPARAMETER_SEARCH_TRIALS,
         gc_after_trial=True,
-        catch=(Exception,),
+        # catch=(Exception,), # @todo enable this
     )
     with _training_logging_suppressed():
         preprocess_data()
         if not HYPERPARAMETER_SEARCH_IS_DISTRIBUTED:
-            optimize_kawrgs['func'] = HyperParameterSearchObjective(self.model_class, None)
+            optimize_kawrgs['func'] = HyperParameterSearchObjective(model_class, None)
             study.optimize(**optimize_kawrgs)
         else:
             with mp.Manager() as manager:

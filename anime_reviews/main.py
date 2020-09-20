@@ -47,14 +47,15 @@ def train_default_model_linear() -> None:
 
 def train_default_model_deep_concat() -> None:
     from models import DeepConcatenationColaborativeFilteringModel
-    number_of_epochs = 15
-    batch_size = 256
+    # @todo change these defaults
+    number_of_epochs = 13
+    batch_size = 2048
     gradient_clip_val = 1.0
-    learning_rate = 1e-3
-    embedding_size = 100
-    dense_layer_count = 3
-    regularization_factor = 1
-    dropout_probability = 0.5
+    learning_rate = 0.04051541383517857
+    embedding_size = 230
+    dense_layer_count = 2
+    regularization_factor = 2.1908736439954413
+    dropout_probability = 0.3954686174994483
     DeepConcatenationColaborativeFilteringModel.train_model(
         gpus=GPU_IDS,
         learning_rate=learning_rate,
