@@ -45,6 +45,10 @@ pandarallel.initialize(nb_workers=mp.cpu_count(), progress_bar=False, verbose=0)
 APPS_CSV_FILE = './data/apps.csv'
 REVIEWS_CSV_FILE = './data/reviews.csv'
 
+RESULTS_DIR = './results/'
+RESULT_SUMMARY_JSON_FILE_BASE_NAME = 'testing_results.json'
+AGGREGATED_RESULTS_JSON_FILE = 'aggregated_results.json'
+
 NUMBER_OF_WORKERS = 0
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 RANDOM_SEED = 1234
@@ -313,12 +317,14 @@ class Classifier(ABC):
     
     @classmethod
     def checkpoint_directory_for_model_hyperparameters(cls, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, gradient_clipping_max_threshold: float):
-        return f'./results/{model_name.replace("-", "_")}_epochs_{number_of_epochs}_batch_{batch_size}_lr_{learning_rate}_seq_len_{max_sequence_length}_grad_clip_{gradient_clipping_max_threshold}'
+        checkpoint_dir = f'{model_name.replace("-", "_")}_epochs_{number_of_epochs}_batch_{batch_size}_lr_{learning_rate}_seq_len_{max_sequence_length}_grad_clip_{gradient_clipping_max_threshold}'
+        checkpoint_dir = os.path.join(RESULTS_DIR, checkpoint_dir)
+        return checkpoint_dir
     
     @classmethod
     def model_already_trained(cls, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, gradient_clipping_max_threshold: float) -> bool:
         checkpoint_directory = cls.checkpoint_directory_for_model_hyperparameters(model_name, number_of_epochs, batch_size, learning_rate, max_sequence_length, gradient_clipping_max_threshold)
-        testing_result_file = os.path.join(checkpoint_directory, 'testing_results.json')
+        testing_result_file = os.path.join(checkpoint_directory, RESULT_SUMMARY_JSON_FILE_BASE_NAME)
         return os.path.exists(testing_result_file)
     
     def __init__(self, model_name: str, number_of_epochs: int, batch_size: int, learning_rate: float, max_sequence_length: int, gradient_clipping_max_threshold: float):
@@ -462,7 +468,7 @@ class Classifier(ABC):
                 print()
             self.load_model_parameters()
             testing_loss, testing_accuracy = self.test()
-            self.note_results('testing_results.json', epoch_index, testing_loss, testing_accuracy, {'best_validation_epoch': best_validation_epoch})
+            self.note_results(RESULT_SUMMARY_JSON_FILE_BASE_NAME, epoch_index, testing_loss, testing_accuracy, {'best_validation_epoch': best_validation_epoch})
             print(f'Testing Loss Per Example:        {validation_loss:.8f}')
             print(f'Testing Accuracy Per Example:    {testing_accuracy:.8f}')
         return
@@ -493,6 +499,23 @@ for transformer_model_spec in TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS.keys():
     class_name = transformer_model_spec.capitalize()+'Classifier'
     TRANSFORMER_MODEL_SPEC_TO_MODEL_UTILS[transformer_model_spec]['classifier'] = TransformersClassifierType(class_name, (), {}, transformer_model_spec=transformer_model_spec)
 
+###########################################
+# Aggregate Hyperparameter Search Results #
+###########################################
+
+def aggregate_hyperparameter_search_results() -> None:
+    trial_dirs = [os.path.join(RESULTS_DIR, trial_dir) for trial_dir in os.listdir(RESULTS_DIR)]
+    result_summary_dicts = []
+    for trial_dir in trial_dirs:
+        result_summary_file = os.path.join(trial_dir, RESULT_SUMMARY_JSON_FILE_BASE_NAME)
+        if os.path.isfile(result_summary_file):
+            with open(result_summary_file, 'r') as file_handle:
+                result_summary_dict = json.loads(file_handle.read())
+            result_summary_dicts.append(result_summary_dict)
+    with open(AGGREGATED_RESULTS_JSON_FILE, 'w') as file_handle:
+        json.dump(result_summary_dicts, file_handle, indent=4)
+    return
+
 ##########
 # Driver #
 ##########
@@ -516,13 +539,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
     parser.add_argument('-cuda-device-id', type=int, default=0, help='Perform hyperparameter search on specified CUDA device with the given id.')
     parser.add_argument('-use-cpu', action='store_true', help='Perform hyperparameter search on the CPU.')
+    parser.add_argument('-aggregate-results', action='store_true', help='Aggregate the results of our hyperparameter search.')
     args = parser.parse_args()
-    if args.use_cpu:
-        global DEVICE
-        DEVICE = torch.device('cpu')
+    if args.aggregate_results:
+        aggregate_hyperparameter_search_results()
     else:
-        set_cuda_device_id(args.cuda_device_id)
-    perform_hyperparameter_search()
+        if args.use_cpu:
+            global DEVICE
+            DEVICE = torch.device('cpu')
+        else:
+            set_cuda_device_id(args.cuda_device_id)
+        perform_hyperparameter_search()
     return
 
 if __name__ == '__main__':
