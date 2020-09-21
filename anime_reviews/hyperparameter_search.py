@@ -91,12 +91,12 @@ class HyperParameterSearchObjective:
                 'dropout_probability': dropout_probability,
             }
         elif self.model_class == models.DeepConcatenationColaborativeFilteringModel:
-            learning_rate = trial.suggest_uniform('learning_rate', 1e-5, 1e-1)
-            number_of_epochs = int(trial.suggest_int('number_of_epochs', 3, 15))
-            batch_size = int(trial.suggest_categorical('batch_size', [2**power for power in range(6, 12)]))
+            learning_rate = trial.suggest_uniform('learning_rate', 1e-4, 1e-3)
+            number_of_epochs = int(trial.suggest_int('number_of_epochs', 10, 15))
+            batch_size = int(trial.suggest_categorical('batch_size', [2048]))
             gradient_clip_val = trial.suggest_uniform('gradient_clip_val', 1.0, 1.0)
             embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
-            dense_layer_count = int(trial.suggest_int('dense_layer_count', 1, 2))
+            dense_layer_count = int(trial.suggest_int('dense_layer_count', 1, 4))
             regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
             dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 0.5)
             hyperparameters = {
