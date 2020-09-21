@@ -98,7 +98,7 @@ class HyperParameterSearchObjective:
             embedding_size = int(trial.suggest_int('embedding_size', 100, 500))
             dense_layer_count = int(trial.suggest_int('dense_layer_count', 1, 4))
             regularization_factor = trial.suggest_uniform('regularization_factor', 1, 100)
-            dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 0.5)
+            dropout_probability = trial.suggest_uniform('dropout_probability', 0.0, 0.75)
             hyperparameters = {
                 'learning_rate': learning_rate,
                 'number_of_epochs': number_of_epochs,
