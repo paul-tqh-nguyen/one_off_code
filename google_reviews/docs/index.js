@@ -444,16 +444,19 @@ d3.json('./aggregated_results.json')
                 window.removeEventListener('resize', renderContent);
                 removeAllChildNodes(contentContainer);
             };
-            console.log(`contentDestructor ${JSON.stringify(contentDestructor)}`);
             
             return [labelInnerHTML, contentGenerator, contentDestructor];
         });
-        labelGeneratorDestructorTriples.forEach(labelGeneratorDestructorTriples => {
+        
+        labelGeneratorDestructorTriples.forEach(labelGeneratorDestructorTriple => {
+            console.log(`labelGeneratorDestructorTriple ${JSON.stringify(labelGeneratorDestructorTriple)}`);
             const resultDiv = document.querySelector('#result-accordion');
-            const accordion = createLazyAccordion(labelGeneratorDestructorTriples);
+            const accordion = createLazyAccordion(labelGeneratorDestructorTriple);
             resultDiv.append(accordion);
         });
-    }).catch(err => {
-        console.error(err.message);
-        return;
-    });
+    })
+// .catch(err => { // @todo enable this
+    //     console.error(err.message);
+    //     return;
+    // })
+;
