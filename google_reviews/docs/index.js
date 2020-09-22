@@ -275,7 +275,7 @@ This returns a re-render function, but does not actually call the re-render func
 
         barChartTitle
             .text(barChartData.title)
-            .attr('x', innerWidth * 0.325)
+            .attr('x', innerWidth / 2 - barChartTitle.node().getBBox().width / 2)
             .attr('y', -10);
         
         const xScale = d3.scaleBand()
@@ -366,9 +366,11 @@ const createRainbowColormap = (shadeCount) => {
         const rgbEndIndex = Math.ceil((rainbowMap.length-1) * i/(shadeCount-1));
         const rgbStart = rainbowMap[rgbStartIndex].rgb;
         const rgbEnd = rainbowMap[rgbEndIndex].rgb;
-        const interpolationAmount = (i/(shadeCount-1) - rainbowMap[rgbStartIndex].amount) / (rainbowMap[rgbEndIndex].amount - rainbowMap[rgbStartIndex].amount);
+        const interpolationRange = rainbowMap[rgbEndIndex].amount - rainbowMap[rgbStartIndex].amount;
+        const interpolationAmount = interpolationRange === 0 ? 0 : (i/(shadeCount-1) - rainbowMap[rgbStartIndex].amount) / interpolationRange;
         const rgbInterpolated = zip([rgbStart, rgbEnd]).map(([rgbStartChannel, rgbEndChannel]) => Math.round(lerp(rgbStartChannel, rgbEndChannel, interpolationAmount)));
-        const hex = '#' + rgbInterpolated.map(channel => channel.toString(16));
+        const hex = '#' + rgbInterpolated.map(channel => channel.toString(16).padStart(2, '0')).join('');
+        colors.push(hex);
     }
     return colors;
 };
@@ -389,28 +391,32 @@ d3.json('./aggregated_results.json')
         
         const colorMap = createRainbowColormap(Object.keys(resultsByArchitectureName).length);
         
-        const labelGeneratorDestructorTriples = Object.entries(resultsByArchitectureName).map(([architectureName, modelData], architectureIndex) => {
+        
+        const labelGeneratorDestructorTriples = Object.entries(resultsByArchitectureName)
+              .sort(([architectureNameA, modelDataA], [architectureNameB, modelDataB]) => architectureNameA < architectureNameB ? -1 : 1)
+              .map(([architectureName, modelData], architectureIndex) => {
 
-            const modelIndexToTestingAccuracy = modelData.reduce((accumulator, modelDatum) => {
-                accumulator.push(modelData.accuracy_per_example);
-                return accumulator;
-            }, []).sort();
-            
-            let renderContent;
-            
-            const labelInnerHTML = architectureName;
-            
-            const contentGenerator = contentContainer => {
-                const testingAccuracyBarChartContainer = createNewElement('div', {classes: ['testing-accuracy-bar-chart-container']});
-                contentContainer.append(testingAccuracyBarChartContainer);
-                const additionalStylesString = `.testing-accuracy-bar-${architectureName} {fill: ${colorMap[architectureIndex]}}`;
-                const architectureScoreData = {
-                    'labelData': modelIndexToTestingAccuracy.map(score => {
-                        return {'testingAccuracyPerExample': score};
-                    }),
-                    'labelAccessor': datum => '',
-                    'valueAccessor': datum => datum.testingAccuracyPerExample,
-                    'toolTipHTMLGenerator': datum => `
+                  // @todo why is modelData.length == 1 ?
+                  const modelIndexToTestingAccuracy = modelData.reduce((accumulator, modelDatum) => {
+                      accumulator.push(modelDatum.accuracy_per_example);
+                      return accumulator;
+                  }, []);
+                  
+                  let renderContent;
+                  
+                  const labelInnerHTML = architectureName;
+                  
+                  const contentGenerator = contentContainer => {
+                      const testingAccuracyBarChartContainer = createNewElement('div', {classes: ['testing-accuracy-bar-chart-container', 'container-center']});
+                      contentContainer.append(testingAccuracyBarChartContainer);
+                      const additionalStylesString = `.testing-accuracy-bar-${architectureName} {fill: ${colorMap[architectureIndex]}}`;
+                      const architectureScoreData = {
+                          'labelData': modelIndexToTestingAccuracy.map(score => {
+                              return {'testingAccuracyPerExample': score};
+                          }),
+                          'labelAccessor': datum => '',
+                          'valueAccessor': datum => datum.testingAccuracyPerExample,
+                          'toolTipHTMLGenerator': datum => `
 <p>Best Validation Epoch: ${datum.best_validation_epoch}</p>
 <p>Number of Training Epochs: ${datum.number_of_epochs}</p>
 <p>Testing Acccuracy Per Examplle: ${datum.accuracy_per_example}</p>
@@ -420,40 +426,39 @@ d3.json('./aggregated_results.json')
 <p>Max Sequence Length: ${datum.max_sequence_length}</p>
 <p>Gradient Clipping Max Threshold: ${datum.gradient_clipping_max_threshold}</p>
 `,
-                    'barCSSClassAccessor': barLabel => `testing-accuracy-bar-${architectureName}`,
-                    'additionalStylesString': additionalStylesString,
-                    'barAttributes': barLabel => {
-                    },
-                    'title': `Testing Accuracy Per Example for ${architectureName}`,
-                    'cssFile': 'index.css',
-                    'yMinValue': 0,
-                    'yMaxValue': 1,
-                    'xAxisTitle': 'Models (hover over bars for more detail)',
-                    'yAxisTitle': 'Testing Accuracy Per Example',
-                    'yScale': 'linear',
-                };
-                const redrawBarChart = addBarChart(testingAccuracyBarChartContainer, architectureScoreData);
-                
-                renderContent = redrawBarChart;
-                
-                renderContent();
-                window.addEventListener('resize', renderContent);
-            };
-            
-            const contentDestructor = contentContainer => {
-                window.removeEventListener('resize', renderContent);
-                removeAllChildNodes(contentContainer);
-            };
+                          'barCSSClassAccessor': barLabel => `testing-accuracy-bar-${architectureName}`,
+                          'additionalStylesString': additionalStylesString,
+                          'barAttributes': barLabel => {
+                          },
+                          'title': `Testing Accuracy Per Example for ${architectureName}`,
+                          'cssFile': 'index.css',
+                          'yMinValue': 0,
+                          'yMaxValue': 1,
+                          'xAxisTitle': 'Models (hover over bars for more detail)',
+                          'yAxisTitle': 'Testing Accuracy Per Example',
+                          'yScale': 'linear',
+                      };
+                      const redrawBarChart = addBarChart(testingAccuracyBarChartContainer, architectureScoreData);
+                      
+                      renderContent = redrawBarChart;
+                      
+                      renderContent();
+                      window.addEventListener('resize', renderContent);
+                  };
+                  
+                  const contentDestructor = contentContainer => {
+                      window.removeEventListener('resize', renderContent);
+                      removeAllChildNodes(contentContainer);
+                  };
 
-            return [labelInnerHTML, contentGenerator, contentDestructor];
-        });
+                  return [labelInnerHTML, contentGenerator, contentDestructor];
+              });
         
         const resultDiv = document.querySelector('#result-accordion');
         const accordion = createLazyAccordion(labelGeneratorDestructorTriples);
+        accordion.classList.add('container-center');
         resultDiv.append(accordion);
-    })
-// .catch(err => { // @todo enable this
-    //     console.error(err.message);
-    //     return;
-    // })
-;
+    }).catch(err => {
+        console.error(err.message);
+        return;
+    });

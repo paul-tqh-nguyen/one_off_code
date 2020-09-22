@@ -199,10 +199,11 @@ card a {
     border: 1px solid rgba(0,0,0,0.25);
     box-shadow: 3px 3px 6px rgba(0,0,0,0.125);
     background: #fdfdfd;
-    width: 90vw;
+    width: 80vw;
 }
 
 .accordion-label {
+    transition: all 0.25s linear;
     border: 0.125px solid rgba(0,0,0,0.05);
     text-align: left;
     background: #efefef;
@@ -210,6 +211,14 @@ card a {
     padding: 0px;
     user-select: none;
     font-family: 'Oxygen';
+}
+
+.accordion-label:hover {
+    background: #e0e0e0;
+}
+
+.accordion-label:active {
+    background: #d0d0d0;
 }
 
 .accordion-label:before {
@@ -229,7 +238,18 @@ card a {
 /* Bar Charts */
 /**************/
 
-.testing-accuracy-bar-chart {
-    width: 80vw;
+.container-center {
+    position: relative;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    transform: translateX(-50%);
+    font-family: sans-serif;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.testing-accuracy-bar-chart-container {
+    width: 60vw;
     height: 80vh;
 }
