@@ -285,7 +285,7 @@ This returns a re-render function, but does not actually call the re-render func
         
         scatterPlotTitle
             .text(scatterPlotData.title)
-            .attr('x', innerWidth * 0.325)
+            .attr('x', innerWidth / 2 - scatterPlotTitle.node().getBBox().width / 2)
             .attr('y', -10);
         
         const xAxisTickFormat = number => d3.format('.0s')(number).replace(/G/,'B');
@@ -508,7 +508,7 @@ This returns a re-render function, but does not actually call the re-render func
 
         barChartTitle
             .text(barChartData.title)
-            .attr('x', innerWidth * 0.325)
+            .attr('x', innerWidth / 2 - barChartTitle.node().getBBox().width / 2)
             .attr('y', -10);
         
         const xScale = d3.scaleBand()
