@@ -31,7 +31,7 @@ def main() -> None:
          "pyspark",
          "pyspark and spark"]
     )
-    result = words.filter(lambda x: 'spark' in x).collect()
+    result = words.map(lambda x: x+'123').collect()
     print(f"result {repr(result)}")
     return
             
