@@ -31,8 +31,8 @@ def main() -> None:
          "pyspark",
          "pyspark and spark"]
     )
-    counts = words.count()
-    print("Number of elements in RDD -> %i" % (counts))
+    result = words.filter(lambda x: 'spark' in x).collect()
+    print(f"result {repr(result)}")
     return
             
 if __name__ == '__main__':
