@@ -31,7 +31,7 @@ def main() -> None:
          "pyspark",
          "pyspark and spark"]
     )
-    result = words.map(lambda x: x+'123').collect()
+    result = words.reduce(lambda x, y: x+'__'+y)
     print(f"result {repr(result)}")
     return
             
