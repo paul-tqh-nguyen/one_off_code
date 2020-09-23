@@ -187,8 +187,9 @@ card a {
     backdrop-filter: grayscale(100%) brightness(40%);
 }
 
-#linear-result {
+#linear-result, #deep-result {
     text-align: -webkit-center;
+    padding-bottom: 50px;
 }
 
 /*************/
@@ -199,10 +200,11 @@ card a {
     border: 1px solid rgba(0,0,0,0.25);
     box-shadow: 3px 3px 6px rgba(0,0,0,0.125);
     background: #fdfdfd;
-    width: 90vw;
+    width: 80vw;
 }
 
 .accordion-label {
+    transition: all 0.5s;
     border: 0.125px solid rgba(0,0,0,0.05);
     text-align: left;
     background: #efefef;
@@ -210,6 +212,14 @@ card a {
     padding: 0px;
     user-select: none;
     font-family: 'Oxygen';
+}
+
+.accordion-label:hover {
+    background: #e0e0e0;
+}
+
+.accordion-label:active {
+    background: #d0d0d0;
 }
 
 .accordion-label:before {
@@ -230,7 +240,7 @@ card a {
 /*********/
 
 .rounded-score-histogram-container, .user-scatter-plot-container, .anime-scatter-plot-container {
-    width: 80vw;
+    width: 60vw;
     height: 80vh;
 }
 
@@ -248,7 +258,7 @@ card a {
 }
 
 .hyperparameter-table {
-    width: 50vw;
+    width: 40vw;
     border-collapse: collapse
 }
 
@@ -261,16 +271,4 @@ svg .user-scatter-plot-point, .anime-scatter-plot-point {
     stroke: black;
     stroke-width: 0.25;
     fill-opacity: 0.25
-}
-
-svg .user-scatter-plot-point {
-    fill: red;
-}
-
-svg .anime-scatter-plot-point {
-    fill: green;
-}
-
-svg .histogram-bar {
-    fill: blue;
 }

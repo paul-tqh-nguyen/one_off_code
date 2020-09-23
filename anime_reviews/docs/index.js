@@ -7,7 +7,62 @@ const isUndefined = value => value === void(0);
 
 const createSeparatedNumbeString = number => number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-// D3 Extensions
+const zip = rows => rows[0].map((_, i) => rows.map(row => row[i]));
+
+const numberToOrdinal = (number) => {
+    const onesDigit = number % 10;
+    const tensDigit = number % 100;
+    if (onesDigit == 1 && tensDigit != 11) {
+        return number + 'st';
+    } else if (onesDigit == 2 && tensDigit != 12) {
+        return number + 'nd';
+    } else if (onesDigit == 3 && tensDigit != 13) {
+        return number + 'rd';
+    } else {
+        return number + 'th';
+    }
+};
+
+
+/*************/
+/* Color Map */
+/*************/
+
+const lerp = (start, end, interpolationAmount) => start + interpolationAmount * (end - start);
+
+const createRainbowColormap = (shadeCount) => {
+
+    const rainbowMap = [
+        {'amount': 0,      'rgb':[150, 0, 90]},
+        {'amount': 0.125,  'rgb': [0, 0, 200]},
+        {'amount': 0.25,   'rgb': [0, 25, 255]},
+        {'amount': 0.375,  'rgb': [0, 152, 255]},
+        {'amount': 0.5,    'rgb': [44, 255, 150]},
+        {'amount': 0.625,  'rgb': [151, 255, 0]},
+        {'amount': 0.75,   'rgb': [255, 234, 0]},
+        {'amount': 0.875,  'rgb': [255, 111, 0]},
+        {'amount': 1,      'rgb': [255, 0, 0]}
+    ];
+
+    const colors = [];
+    for (let i = 0; i < shadeCount; i++) {
+        const rgbStartIndex = Math.floor((rainbowMap.length-1) * i/(shadeCount-1));
+        const rgbEndIndex = Math.ceil((rainbowMap.length-1) * i/(shadeCount-1));
+        const rgbStart = rainbowMap[rgbStartIndex].rgb;
+        const rgbEnd = rainbowMap[rgbEndIndex].rgb;
+        const interpolationRange = rainbowMap[rgbEndIndex].amount - rainbowMap[rgbStartIndex].amount;
+        const interpolationAmount = interpolationRange === 0 ? 0 : (i/(shadeCount-1) - rainbowMap[rgbStartIndex].amount) / interpolationRange;
+        const rgbInterpolated = zip([rgbStart, rgbEnd]).map(([rgbStartChannel, rgbEndChannel]) => Math.round(lerp(rgbStartChannel, rgbEndChannel, interpolationAmount)));
+        const hex = '#' + rgbInterpolated.map(channel => channel.toString(16).padStart(2, '0')).join('');
+        colors.push(hex);
+    }
+    return colors;
+};
+
+/*****************/
+/* D3 Extensions */
+/*****************/
+
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
 	if (this.parentNode !== null) {
@@ -24,7 +79,6 @@ d3.selection.prototype.moveToBack = function() {
         }
     });
 };
-
 
 /**********************/
 /* HTML Element Utils */
@@ -117,6 +171,11 @@ scatterPlotData looks like this:
             'ps2': 'ps2-point',
         }[pointSetName];
     },
+    'additionalStylesString': `
+        .ps1-point {
+            fill: red;
+        }
+    `,
     'title': 'Chart of X vs Y',
     'cssFile': 'custom.css',
     'xMinValue': 0,
@@ -221,7 +280,7 @@ This returns a re-render function, but does not actually call the re-render func
   font-family: inherit;
 }
 
-`});
+` + scatterPlotData.additionalStylesString});
     
     shadow.append(shadowStyleElement);
     
@@ -357,6 +416,11 @@ barChartData looks like this:
               'l2': 'l2-bar',
           }[barLabel];
       },
+      'additionalStylesString': `
+          .l2-bar {
+              fill: red;
+          }
+      `,
       'title': 'Measurement Histogram',
       'cssFile': 'custom.css',
       'yMinValue': 0,
@@ -453,7 +517,7 @@ This returns a re-render function, but does not actually call the re-render func
   font-family: inherit;
 }
 
-`});
+` + barChartData.additionalStylesString});
     
     shadow.append(shadowStyleElement);
     
@@ -576,130 +640,116 @@ This returns a re-render function, but does not actually call the re-render func
 /* Main */
 /********/
 
-d3.csv("./anime.csv").then(
-    animeCSVData =>
-        animeCSVData.reduce((accumulator, row) => {
-            accumulator[row.anime_id] = row;
-            delete row.anime_id;
+const generateLabelGeneratorDestructorTriples = (architectureName, rank, summaryData, animeLookupById, additionalStylesString) => {
+    let renderContent;
+    const labelInnerHTML = `${architectureName} ${numberToOrdinal(rank)} Place`;
+    const contentGenerator = (contentContainer) => {
+
+        const hyperparameterTableContainer = createNewElement('div', {classes: ['hyperparameter-table-container']});
+        contentContainer.append(hyperparameterTableContainer);
+        const renderHyperparameterTable = () => {
+            removeAllChildNodes(hyperparameterTableContainer);
+            hyperparameterTableContainer.append(createNewElement('p', {innerHTML: 'Results', attributes: {style: 'margin: 2em 0px 10px 0px'}}));
+            hyperparameterTableContainer.append(
+                createTableWithElements([
+                    [createNewElement('p', {innerHTML: `Testing MSE Loss:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: `${summaryData.testing_mse_loss}`})],
+                    [createNewElement('p', {innerHTML: `Best Validation Loss:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.best_validation_loss}`})],
+                ], {classes: ['hyperparameter-table'], attributes: {style: 'margin-bottom: 1em;'}})
+            );
+            hyperparameterTableContainer.append(createNewElement('p', {innerHTML: 'Hyperparameters', attributes: {style: 'margin-bottom: 10px'}}));
+            const rows = [
+                [createNewElement('p', {innerHTML: `Learning Rate:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.learning_rate}`})],
+                [createNewElement('p', {innerHTML: `Number of Training Epochs:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.number_of_epochs}`})],
+                [createNewElement('p', {innerHTML: `Batch Size:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.batch_size}`})],
+                [createNewElement('p', {innerHTML: `Embedding Size:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.embedding_size}`})],
+            ];
+            if (summaryData.hasOwnProperty('dense_layer_count')) {
+                rows.push([createNewElement('p', {innerHTML: `Number of Dense Layers:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.dense_layer_count}`})]);
+            }
+            rows.push([createNewElement('p', {innerHTML: `Regularization Factor:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.regularization_factor}`})]);
+            rows.push([createNewElement('p', {innerHTML: `Dropout Probability:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.dropout_probability}`})]);
+            hyperparameterTableContainer.append(
+                createTableWithElements(rows, {classes: ['hyperparameter-table']})
+            );
+        };
+        
+        const roundedScoreToUserCount = Object.entries(summaryData.user_data).reduce((accumulator, [userId, datum]) => {
+            const roundedMSELoss = Math.round(datum.mean_mse_loss);
+            if (!(accumulator.hasOwnProperty(roundedMSELoss))) {
+                accumulator[roundedMSELoss] = 0;
+            }
+            accumulator[roundedMSELoss] += 1;
             return accumulator;
-        }, {})
-).then((animeLookupById) => Promise.all(
-    [
-        './result_analysis/rank_0_summary.json',
-        './result_analysis/rank_1_summary.json',
-        './result_analysis/rank_2_summary.json',
-        './result_analysis/rank_3_summary.json',
-        './result_analysis/rank_4_summary.json',
-        './result_analysis/rank_5_summary.json',
-        './result_analysis/rank_6_summary.json',
-        './result_analysis/rank_7_summary.json',
-        './result_analysis/rank_8_summary.json',
-        './result_analysis/rank_9_summary.json',
-    ].map((jsonFile, rank) => d3.json(jsonFile)
-          .then(summaryData => {
-              let renderContent;
-              const labelInnerHTML = `Rank: ${rank}`;
-              const contentGenerator = (contentContainer) => {
+        }, {});
+        for(let i=0; i<Object.keys(roundedScoreToUserCount).reduce((a, b) => Math.max(parseInt(a), b), 0); i++) {
+            if (!(roundedScoreToUserCount.hasOwnProperty(i.toString()))) {
+                roundedScoreToUserCount[i.toString()] = 0;
+            }
+        }
+        const roundedScoreHistogramContainer = createNewElement('div', {classes: ['rounded-score-histogram-container']});
+        contentContainer.append(roundedScoreHistogramContainer);
+        const roundedScoreHistogramData = {
+            'labelData': Object.entries(roundedScoreToUserCount).map(([roundedMSELoss, userCount]) => {
+                return {'userCount': userCount, 'roundedMSELoss': roundedMSELoss};
+            }),
+            'labelAccessor': datum => datum.roundedMSELoss,
+            'valueAccessor': datum => datum.userCount,
+            'toolTipHTMLGenerator': datum => `<p>User Count: ${datum.userCount}</p><p>Rounded MSE Loss: ${datum.roundedMSELoss}</p>`,
+            'barCSSClassAccessor': barLabel => 'histogram-bar',
+            'additionalStylesString': additionalStylesString,
+            'title': 'User Count vs MSE Loss Histogram',
+            'cssFile': 'index.css',
+            'yMinValue': Math.min(...Object.values(roundedScoreToUserCount)) / 2,
+            'yMaxValue': Math.max(...Object.values(roundedScoreToUserCount)) + 1000,
+            'xAxisTitle': 'Rounded MSE Loss',
+            'yAxisTitle': 'User Count (Squareroot Scale)',
+            'yScale': 'squareroot',
+        };
+        const redrawBarChart = addBarChart(roundedScoreHistogramContainer, roundedScoreHistogramData);
+        
 
-                  const hyperparameterTableContainer = createNewElement('div', {classes: ['hyperparameter-table-container']});
-                  contentContainer.append(hyperparameterTableContainer);
-                  const renderHyperparameterTable = () => {
-                      removeAllChildNodes(hyperparameterTableContainer);
-                      hyperparameterTableContainer.append(createNewElement('p', {innerHTML: 'Results', attributes: {style: 'margin: 2em 0px 10px 0px'}}));
-                      hyperparameterTableContainer.append(
-                          createTableWithElements([
-                              [createNewElement('p', {innerHTML: `Testing MSE Loss:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: `${summaryData.testing_mse_loss}`})],
-                              [createNewElement('p', {innerHTML: `Best Validation Loss:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.best_validation_loss}`})],
-                          ], {classes: ['hyperparameter-table'], attributes: {style: 'margin-bottom: 1em;'}})
-                      );
-                      hyperparameterTableContainer.append(createNewElement('p', {innerHTML: 'Hyperparameters', attributes: {style: 'margin-bottom: 10px'}}));
-                      hyperparameterTableContainer.append(
-                          createTableWithElements([
-                              [createNewElement('p', {innerHTML: `Learning Rate:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.learning_rate}`})],
-                              [createNewElement('p', {innerHTML: `Number of Training Epochs:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.number_of_epochs}`})],
-                              [createNewElement('p', {innerHTML: `Batch Size:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.batch_size}`})],
-                              [createNewElement('p', {innerHTML: `Embedding Size:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.embedding_size}`})],
-                              [createNewElement('p', {innerHTML: `Regularization Factor:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.regularization_factor}`})],
-                              [createNewElement('p', {innerHTML: `Dropout Probability:`}), createNewElement('p', {attributes: {style: 'float: right;'}, innerHTML: ` ${summaryData.dropout_probability}`})],
-                          ], {classes: ['hyperparameter-table']})
-                      );
-                  };
-                  
-                  const roundedScoreToUserCount = Object.entries(summaryData.user_data).reduce((accumulator, [userId, datum]) => {
-                      const roundedMSELoss = Math.round(datum.mean_mse_loss);
-                      if (!(accumulator.hasOwnProperty(roundedMSELoss))) {
-                          accumulator[roundedMSELoss] = 0;
-                      }
-                      accumulator[roundedMSELoss] += 1;
-                      return accumulator;
-                  }, {});
-                  for(let i=0; i<Object.keys(roundedScoreToUserCount).reduce((a, b) => Math.max(parseInt(a), b), 0); i++) {
-                      if (!(roundedScoreToUserCount.hasOwnProperty(i.toString()))) {
-                          roundedScoreToUserCount[i.toString()] = 0;
-                      }
-                  }
-                  const roundedScoreHistogramContainer = createNewElement('div', {classes: ['rounded-score-histogram-container']});
-                  contentContainer.append(roundedScoreHistogramContainer);
-                  const roundedScoreHistogramData = {
-                      'labelData': Object.entries(roundedScoreToUserCount).map(([roundedMSELoss, userCount]) => {
-                          return {'userCount': userCount, 'roundedMSELoss': roundedMSELoss};
-                      }),
-                      'labelAccessor': datum => datum.roundedMSELoss,
-                      'valueAccessor': datum => datum.userCount,
-                      'toolTipHTMLGenerator': datum => `<p>User Count: ${datum.userCount}</p><p>Rounded MSE Loss: ${datum.roundedMSELoss}</p>`,
-                      'barCSSClassAccessor': barLabel => 'histogram-bar',
-                      'title': 'User Count vs MSE Loss Histogram',
-                      'cssFile': 'index.css',
-                      'yMinValue': Math.min(...Object.values(roundedScoreToUserCount)) / 2,
-                      'yMaxValue': Math.max(...Object.values(roundedScoreToUserCount)) + 1000,
-                      'xAxisTitle': 'Rounded MSE Loss',
-                      'yAxisTitle': 'User Count (Squareroot Scale)',
-                      'yScale': 'squareroot',
-                  };
-                  const redrawBarChart = addBarChart(roundedScoreHistogramContainer, roundedScoreHistogramData);
-                  
-
-                  const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
-                  contentContainer.append(userScatterPlotContainer);
-                  const userExampleCounts = Object.values(summaryData.user_data).map(datum => datum.example_count);
-                  const userMSELossValues = Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss);
-                  const userScatterPlotData = {
-                      'pointSetLookup': {
-                          'users': Object.entries(summaryData.user_data).map(([userId, userData]) => Object.assign(userData, {'id': userId})),
-                      },
-                      'xAccessor': datum => datum.example_count,
-                      'yAccessor': datum => datum.mean_mse_loss,
-                      'toolTipHTMLGenerator': datum => `
+        const userScatterPlotContainer = createNewElement('div', {classes: ['user-scatter-plot-container']});
+        contentContainer.append(userScatterPlotContainer);
+        const userExampleCounts = Object.values(summaryData.user_data).map(datum => datum.example_count);
+        const userMSELossValues = Object.values(summaryData.user_data).map(datum => datum.mean_mse_loss);
+        const userScatterPlotData = {
+            'pointSetLookup': {
+                'users': Object.entries(summaryData.user_data).map(([userId, userData]) => Object.assign(userData, {'id': userId})),
+            },
+            'xAccessor': datum => datum.example_count,
+            'yAccessor': datum => datum.mean_mse_loss,
+            'toolTipHTMLGenerator': datum => `
 <p>User Id: ${datum.id}</p>
 <p>Total MSE Loss: ${datum.total_mse_loss}</p>
 <p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
 <p>Example Count: ${datum.example_count}</p>
 `,
-                      'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
-                      'title': `Rank ${rank} User Mean MSE Loss vs User Example Count`,
-                      'cssFile': 'index.css',
-                      'xMinValue': Math.min(...userExampleCounts) / 2,
-                      'xMaxValue': Math.max(...userExampleCounts) + 100,
-                      'yMinValue': Math.min(...userMSELossValues) / 2,
-                      'yMaxValue': Math.max(...userMSELossValues) + 10,
-                      'xAxisTitle': 'Example count',
-                      'yAxisTitle': 'Mean MSE Loss',
-                      'xScale': 'log10',
-                      'yScale': 'log10',
-                  };
-                  const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
+            'pointCSSClassAccessor': pointSetName => 'user-scatter-plot-point',
+            'additionalStylesString': additionalStylesString,
+            'title': `User Mean MSE Loss vs User Example Count`,
+            'cssFile': 'index.css',
+            'xMinValue': Math.min(...userExampleCounts) / 2,
+            'xMaxValue': Math.max(...userExampleCounts) + 100,
+            'yMinValue': Math.min(...userMSELossValues) / 2,
+            'yMaxValue': Math.max(...userMSELossValues) + 10,
+            'xAxisTitle': 'Example count',
+            'yAxisTitle': 'Mean MSE Loss',
+            'xScale': 'log10',
+            'yScale': 'log10',
+        };
+        const redrawUserScatterPlot = addScatterPlot(userScatterPlotContainer, userScatterPlotData);
 
-                  const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
-                  contentContainer.append(animeScatterPlotContainer);
-                  const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
-                  const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
-                  const animeScatterPlotData = {
-                      'pointSetLookup': {
-                          'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
-                      },
-                      'xAccessor': datum => datum.example_count,
-                      'yAccessor': datum => datum.mean_mse_loss,
-                      'toolTipHTMLGenerator': datum => `
+        const animeScatterPlotContainer = createNewElement('div', {classes: ['anime-scatter-plot-container']});
+        contentContainer.append(animeScatterPlotContainer);
+        const animeExampleCounts = Object.values(summaryData.anime_data).map(datum => datum.example_count);
+        const animeMSELossValues = Object.values(summaryData.anime_data).map(datum => datum.mean_mse_loss);
+        const animeScatterPlotData = {
+            'pointSetLookup': {
+                'animes': Object.entries(summaryData.anime_data).map(([animeId, animeData]) => Object.assign(animeData, {'id': animeId})),
+            },
+            'xAccessor': datum => datum.example_count,
+            'yAccessor': datum => datum.mean_mse_loss,
+            'toolTipHTMLGenerator': datum => `
 <p>Anime Id: ${datum.id}</p>
 <p>Total MSE Loss: ${datum.total_mse_loss}</p>
 <p>Mean MSE Loss: ${datum.mean_mse_loss}</p>
@@ -710,38 +760,117 @@ d3.csv("./anime.csv").then(
 <p>Anime Type: ${animeLookupById[datum.id].type}</p>
 <p>Episode Count: ${animeLookupById[datum.id].episodes}</p>
 `,
-                      'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
-                      'title': `Rank ${rank} Anime Mean MSE Loss vs Anime Example Count`,
-                      'cssFile': 'index.css',
-                      'xMinValue': Math.min(...animeExampleCounts) / 2,
-                      'xMaxValue': Math.max(...animeExampleCounts) + 100,
-                      'yMinValue': Math.min(...animeMSELossValues) / 2,
-                      'yMaxValue': Math.max(...animeMSELossValues) + 10,
-                      'xAxisTitle': 'Example count',
-                      'yAxisTitle': 'Mean MSE Loss',
-                      'xScale': 'log10',
-                      'yScale': 'log10',
-                  };
-                  const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
-                  
-                  renderContent = () => {
-                      renderHyperparameterTable();
-                      redrawBarChart();
-                      redrawUserScatterPlot();
-                      redrawAnimeScatterPlot();
-                  };
-                  renderContent();
-                  window.addEventListener('resize', renderContent);
-              };
-              const contentDestructor = (contentContainer) => {
-                  window.removeEventListener('resize', renderContent);
-                  removeAllChildNodes(contentContainer);
-              };
+            'pointCSSClassAccessor': pointSetName => 'anime-scatter-plot-point',
+            'additionalStylesString': additionalStylesString,
+            'title': `Anime Mean MSE Loss vs Anime Example Count`,
+            'cssFile': 'index.css',
+            'xMinValue': Math.min(...animeExampleCounts) / 2,
+            'xMaxValue': Math.max(...animeExampleCounts) + 100,
+            'yMinValue': Math.min(...animeMSELossValues) / 2,
+            'yMaxValue': Math.max(...animeMSELossValues) + 10,
+            'xAxisTitle': 'Example count',
+            'yAxisTitle': 'Mean MSE Loss',
+            'xScale': 'log10',
+            'yScale': 'log10',
+        };
+        const redrawAnimeScatterPlot = addScatterPlot(animeScatterPlotContainer, animeScatterPlotData);
+        
+        renderContent = () => {
+            renderHyperparameterTable();
+            redrawBarChart();
+            redrawUserScatterPlot();
+            redrawAnimeScatterPlot();
+        };
+        renderContent();
+        window.addEventListener('resize', renderContent);
+    };
+    const contentDestructor = (contentContainer) => {
+        window.removeEventListener('resize', renderContent);
+        removeAllChildNodes(contentContainer);
+    };
 
-              return [labelInnerHTML, contentGenerator, contentDestructor];
-          }))
+    return [labelInnerHTML, contentGenerator, contentDestructor];
+};
+
+const colorMap = createRainbowColormap(6).reverse();
+
+d3.csv("./anime.csv").then(
+    animeCSVData =>
+        animeCSVData.reduce((accumulator, row) => {
+            accumulator[row.anime_id] = row;
+            delete row.anime_id;
+            return accumulator;
+        }, {})
+).then((animeLookupById) => Promise.all(
+    [
+        './result_analysis/LinearColaborativeFilteringModel_rank_0_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_1_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_2_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_3_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_4_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_5_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_6_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_7_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_8_summary.json',
+        './result_analysis/LinearColaborativeFilteringModel_rank_9_summary.json',
+    ].map((jsonFile, jsonFileIndex) => d3.json(jsonFile)
+          .then(summaryData => generateLabelGeneratorDestructorTriples('Linear Model', jsonFileIndex+1, summaryData, animeLookupById, `
+.user-scatter-plot-point {
+    fill: ${colorMap[0]};
+}
+
+.anime-scatter-plot-point {
+    fill: ${colorMap[2]};
+}
+
+.histogram-bar {
+    fill: ${colorMap[4]};
+}
+`)))
 ).then((labelGeneratorDestructorTriples) => {
     const resultDiv = document.querySelector('#linear-result');
+    const accordion = createLazyAccordion(labelGeneratorDestructorTriples);
+    resultDiv.append(accordion);
+}).catch(err => {
+    console.error(err.message);
+    return;
+}));
+
+d3.csv("./anime.csv").then(
+    animeCSVData =>
+        animeCSVData.reduce((accumulator, row) => {
+            accumulator[row.anime_id] = row;
+            delete row.anime_id;
+            return accumulator;
+        }, {})
+).then((animeLookupById) => Promise.all(
+    [
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_0_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_1_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_2_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_3_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_4_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_5_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_6_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_7_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_8_summary.json',
+        './result_analysis/DeepConcatenationColaborativeFilteringModel_rank_9_summary.json',
+    ].map((jsonFile, jsonFileIndex) => d3.json(jsonFile)
+          .then(summaryData => generateLabelGeneratorDestructorTriples('Deep Model', jsonFileIndex+1, summaryData, animeLookupById, `
+.user-scatter-plot-point {
+    fill: ${colorMap[1]};
+}
+
+.anime-scatter-plot-point {
+    fill: ${colorMap[3]};
+}
+
+.histogram-bar {
+    fill: ${colorMap[5]};
+}
+`)))
+).then((labelGeneratorDestructorTriples) => {
+    const resultDiv = document.querySelector('#deep-result');
     const accordion = createLazyAccordion(labelGeneratorDestructorTriples);
     resultDiv.append(accordion);
 }).catch(err => {
