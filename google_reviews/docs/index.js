@@ -205,6 +205,9 @@ This returns a re-render function, but does not actually call the re-render func
   color: #fff;
   opacity: 0.9;
   padding: 10px;
+  max-width: 100vw;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 #tooltip.hidden{
@@ -313,18 +316,16 @@ This returns a re-render function, but does not actually call the re-render func
             .attr('x', datum => xScale(barChartData.labelAccessor(datum)))
             .attr('width', xScale.bandwidth())
             .attr('height', datum => innerHeight-yScale(barChartData.valueAccessor(datum)))
-            .on('mouseover', function(datum) {
-                const boundingBox = d3.select(this).node().getBoundingClientRect();
-                const x = boundingBox.left;
-                const y = boundingBox.top;
+            .on('mousemove', function(datum) {
+                const [x, y] = d3.mouse(this);
                 const htmlString = barChartData.toolTipHTMLGenerator(datum);
                 const tooltipBoundingBox = tooltipDiv.node().getBoundingClientRect();
                 const tooltipWidth = tooltipBoundingBox.width;
                 const tooltipHeight = tooltipBoundingBox.height;
 		tooltipDiv
 		    .classed('hidden', false)
-		    .style('left', x + boundingBox.width / 2 - tooltipWidth / 2 + 'px')
-		    .style('top', y - tooltipHeight - 10 + 'px')
+		    .style('left', x + margin.left + 'px')
+		    .style('top', y + margin.top + 'px')
 		    .html(htmlString);
 	    })
             .on('mouseout', datum => {
