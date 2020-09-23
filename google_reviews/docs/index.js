@@ -241,7 +241,6 @@ This returns a re-render function, but does not actually call the re-render func
     const render = () => {
         svg.selectAll('*').remove();
         
-        // @todo add legend
         const barChartGroup = svg
               .append('g')
               .classed('bar-chart-group', true);
@@ -382,7 +381,7 @@ const createRainbowColormap = (shadeCount) => {
 d3.json('./aggregated_results.json')
     .then(aggregatedResults => {
         const resultsByArchitectureName = aggregatedResults.reduce((accumulator, resultData) => {
-            if (!accumulator.hasOwnProperty(resultData.architecture_name)) {
+            if (!accumulator.hasOwnProperty(resultData.model_name)) {
                 accumulator[resultData.model_name] = [];
             }
             accumulator[resultData.model_name].push(resultData);
@@ -394,13 +393,9 @@ d3.json('./aggregated_results.json')
         
         const labelGeneratorDestructorTriples = Object.entries(resultsByArchitectureName)
               .sort(([architectureNameA, modelDataA], [architectureNameB, modelDataB]) => architectureNameA < architectureNameB ? -1 : 1)
-              .map(([architectureName, modelData], architectureIndex) => {
+              .map(([architectureName, modelDataUnsorted], architectureIndex) => {
 
-                  // @todo why is modelData.length == 1 ?
-                  const modelIndexToTestingAccuracy = modelData.reduce((accumulator, modelDatum) => {
-                      accumulator.push(modelDatum.accuracy_per_example);
-                      return accumulator;
-                  }, []);
+                  const modelData = modelDataUnsorted.sort((a,b) => a.accuracy_per_example - b.accuracy_per_example);
                   
                   let renderContent;
                   
@@ -409,13 +404,11 @@ d3.json('./aggregated_results.json')
                   const contentGenerator = contentContainer => {
                       const testingAccuracyBarChartContainer = createNewElement('div', {classes: ['testing-accuracy-bar-chart-container', 'container-center']});
                       contentContainer.append(testingAccuracyBarChartContainer);
-                      const additionalStylesString = `.testing-accuracy-bar-${architectureName} {fill: ${colorMap[architectureIndex]}}`;
+                      const additionalStylesString = `.testing-accuracy-bar-${architectureName} {fill: ${colorMap[architectureIndex]}; stroke-width: 1; stroke: black}`;
                       const architectureScoreData = {
-                          'labelData': modelIndexToTestingAccuracy.map(score => {
-                              return {'testingAccuracyPerExample': score};
-                          }),
-                          'labelAccessor': datum => '',
-                          'valueAccessor': datum => datum.testingAccuracyPerExample,
+                          'labelData': modelData,
+                          'labelAccessor': datum => `#${modelData.indexOf(datum)}`,
+                          'valueAccessor': datum => datum.accuracy_per_example,
                           'toolTipHTMLGenerator': datum => `
 <p>Best Validation Epoch: ${datum.best_validation_epoch}</p>
 <p>Number of Training Epochs: ${datum.number_of_epochs}</p>
@@ -434,7 +427,7 @@ d3.json('./aggregated_results.json')
                           'cssFile': 'index.css',
                           'yMinValue': 0,
                           'yMaxValue': 1,
-                          'xAxisTitle': 'Models (hover over bars for more detail)',
+                          'xAxisTitle': 'Models (hover over bars for model details)',
                           'yAxisTitle': 'Testing Accuracy Per Example',
                           'yScale': 'linear',
                       };
