@@ -21,10 +21,18 @@ def main() -> None:
     logFile = f'file://{CURRENT_DIRECTORY}/test.py'
     conf = pyspark.SparkConf().set('spark.driver.host','127.0.0.1')
     sc = pyspark.SparkContext(master='local', appName='first app', conf=conf)
-    logData = sc.textFile(logFile).cache()
-    numAs = logData.filter(lambda s: 'a' in s).count()
-    numBs = logData.filter(lambda s: 'b' in s).count()
-    print(f'Lines with a: {numAs}, lines with b: {numBs}')
+    words = sc.parallelize (
+        ["scala", 
+         "java", 
+         "hadoop", 
+         "spark", 
+         "akka",
+         "spark vs hadoop", 
+         "pyspark",
+         "pyspark and spark"]
+    )
+    counts = words.count()
+    print("Number of elements in RDD -> %i" % (counts))
     return
             
 if __name__ == '__main__':
