@@ -307,10 +307,10 @@ class LinearColaborativeFilteringModel(AbstractColaborativeFilteringModel):
     def checkpoint_directory_from_hyperparameters(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, regularization_factor: float, dropout_probability: float) -> str:
         checkpoint_dir = f'./checkpoints/' \
             f'linear_cf_lr_{learning_rate:.5g}_' \
-            f'epochs_{number_of_epochs}_' \
-            f'batch_{batch_size}_' \
+            f'epochs_{int(number_of_epochs)}_' \
+            f'batch_{int(batch_size)}_' \
             f'gradient_clip_{gradient_clip_val:.3g}_' \
-            f'embed_{embedding_size}_' \
+            f'embed_{int(embedding_size)}_' \
             f'regularization_{regularization_factor:.5g}_' \
             f'dropout_{dropout_probability:.5g}'
         return checkpoint_dir
@@ -383,38 +383,7 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
         user_regularization_loss = get_norm(user_embedding[:,:-1])
         anime_regularization_loss = get_norm(anime_embedding[:,:-1])
         regularization_loss = user_regularization_loss + anime_regularization_loss
-        # assert tuple(regularization_loss.shape) == (batch_size,)
-        # if not user_regularization_loss.gt(0).all() or not anime_regularization_loss.gt(0).all(): # @todo remove this
-        #     torch.set_printoptions(profile="full")
-        #     user_bad_index = torch.where(user_regularization_loss==0)[0].cpu()
-        #     anime_bad_index = torch.where(anime_regularization_loss==0)[0].cpu()
-        #     data_module = AnimeRatingDataModule(batch_size, NUM_WORKERS)
-        #     data_module.prepare_data()
-        #     data_module.setup()
-        #     LOGGER.info(f"user_bad_index {repr(user_bad_index)}")
-        #     LOGGER.info(f"anime_bad_index {repr(anime_bad_index)}")
-        #     user_id_indices = user_id_indices.cpu()
-        #     anime_id_indices = anime_id_indices.cpu()
-        #     user_embedding = user_embedding.cpu()
-        #     anime_embedding = anime_embedding.cpu()
-        #     LOGGER.info(f"regularization_loss[user_bad_index] = torch.{repr(regularization_loss[user_bad_index])}")
-        #     LOGGER.info(f"user_embedding[user_bad_index] = torch.{repr(user_embedding[user_bad_index])}")
-        #     LOGGER.info(f"anime_embedding[user_bad_index] = torch.{repr(anime_embedding[user_bad_index])}")
-        #     LOGGER.info(f"user_id_indices[user_bad_index] = torch.{repr(user_id_indices[user_bad_index])}")
-        #     LOGGER.info(f"anime_id_indices[user_bad_index] = torch.{repr(anime_id_indices[user_bad_index])}")
-        #     LOGGER.info(f"data_module.user_id_index_to_user_id[user_id_indices[user_bad_index]] = torch.{repr(data_module.user_id_index_to_user_id[user_id_indices[user_bad_index]])}")
-        #     LOGGER.info(f"data_module.anime_id_index_to_anime_id[anime_id_indices[user_bad_index]] = torch.{repr(data_module.anime_id_index_to_anime_id[anime_id_indices[user_bad_index]])}")
-        #     LOGGER.info("")
-        #     LOGGER.info(f"regularization_loss[anime_bad_index] = torch.{repr(regularization_loss[anime_bad_index])}")
-        #     LOGGER.info(f"user_embedding[anime_bad_index] = torch.{repr(user_embedding[anime_bad_index])}")
-        #     LOGGER.info(f"anime_embedding[anime_bad_index] = torch.{repr(anime_embedding[anime_bad_index])}")
-        #     LOGGER.info(f"user_id_indices[anime_bad_index] = torch.{repr(user_id_indices[anime_bad_index])}")
-        #     LOGGER.info(f"anime_id_indices[anime_bad_index] = torch.{repr(anime_id_indices[anime_bad_index])}")
-        #     LOGGER.info(f"data_module.user_id_index_to_user_id[user_id_indices[anime_bad_index]] = torch.{repr(data_module.user_id_index_to_user_id[user_id_indices[anime_bad_index]])}")
-        #     LOGGER.info(f"data_module.anime_id_index_to_anime_id[anime_id_indices[anime_bad_index]] = torch.{repr(data_module.anime_id_index_to_anime_id[anime_id_indices[anime_bad_index]])}")
-        #     breakpoint()
-        #     # os.system('pkill -9 py')
-        # assert regularization_loss.gt(0).all() # @todo evalulate if we need this
+        # assert regularization_loss.gt(0).all() # the model magicaly works even with embeddings near zero
         
         user_embedding = self.dropout_layer(user_embedding)
         assert tuple(user_embedding.shape) == (batch_size, self.hparams.embedding_size)
@@ -435,11 +404,11 @@ class DeepConcatenationColaborativeFilteringModel(AbstractColaborativeFilteringM
     def checkpoint_directory_from_hyperparameters(learning_rate: float, number_of_epochs: int, batch_size: int, gradient_clip_val: float, embedding_size: int, dense_layer_count: int, regularization_factor: float, dropout_probability: float) -> str:
         checkpoint_dir = f'./checkpoints/' \
             f'concat_cf_lr_{learning_rate:.5g}_' \
-            f'epochs_{number_of_epochs}_' \
-            f'batch_{batch_size}_' \
+            f'epochs_{int(number_of_epochs)}_' \
+            f'batch_{int(batch_size)}_' \
             f'gradient_clip_{gradient_clip_val:.3g}_' \
-            f'embed_{embedding_size}_' \
-            f'dense_layers_{dense_layer_count}_' \
+            f'embed_{int(embedding_size)}_' \
+            f'dense_layers_{int(dense_layer_count)}_' \
             f'regularization_{regularization_factor:.5g}_' \
             f'dropout_{dropout_probability:.5g}'
         return checkpoint_dir

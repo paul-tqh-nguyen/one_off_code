@@ -254,7 +254,7 @@ def analyze_hyperparameter_search_results(model_class: type) -> None:
         result_summary_dict['anime_data'] = anime_df.to_dict(orient='index')
         result_summary_dict['user_data'] = user_df.to_dict(orient='index')
 
-        with open(os.path.join(ANALYSIS_OUTPUT_DIR, f'rank_{rank}_summary.json'), 'w') as file_handle:
+        with open(os.path.join(ANALYSIS_OUTPUT_DIR, f'{model_class.__qualname__}_rank_{rank}_summary.json'), 'w') as file_handle:
             json.dump(result_summary_dict, file_handle, indent=4)
     
     return
