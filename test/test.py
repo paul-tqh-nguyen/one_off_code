@@ -21,19 +21,14 @@ def main() -> None:
     logFile = f'file://{CURRENT_DIRECTORY}/test.py'
     conf = pyspark.SparkConf().set('spark.driver.host','127.0.0.1')
     sc = pyspark.SparkContext(master='local', appName='first app', conf=conf)
-    words = sc.parallelize (
-        ["scala", 
-         "java", 
-         "hadoop", 
-         "spark", 
-         "akka",
-         "spark vs hadoop", 
-         "pyspark",
-         "pyspark and spark"]
-    )
-    result = words.reduce(lambda x, y: x+'__'+y)
+
+    aaa = sc.parallelize([('a', 1), ('b', 2)])
+    bbb = sc.parallelize([('b', 3), ('d', 4)])
+    result = aaa.join(bbb).collect()
     print(f"result {repr(result)}")
+    
     return
             
 if __name__ == '__main__':
+    print('\n' * 100)
     main()
