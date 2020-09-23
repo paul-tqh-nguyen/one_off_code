@@ -9,6 +9,21 @@ const createSeparatedNumbeString = number => number.toString().replace(/\B(?=(\d
 
 const zip = rows => rows[0].map((_, i) => rows.map(row => row[i]));
 
+const numberToOrdinal = (number) => {
+    const onesDigit = number % 10;
+    const tensDigit = number % 100;
+    if (onesDigit == 1 && tensDigit != 11) {
+        return number + 'st';
+    } else if (onesDigit == 2 && tensDigit != 12) {
+        return number + 'nd';
+    } else if (onesDigit == 3 && tensDigit != 13) {
+        return number + 'rd';
+    } else {
+        return number + 'th';
+    }
+};
+
+
 // D3 Extensions
 d3.selection.prototype.moveToFront = function() {
     return this.each(function() {
@@ -112,6 +127,7 @@ barChartData looks like this:
       ],
       'labelAccessor': datum => datum.label,
       'valueAccessor': datum => datum.value,
+      'hideLabels': false,
       'toolTipHTMLGenerator': datum => `<p>Value: ${datum.value}</p>`,
       'barCSSClassAccessor': barLabel => {
           return {
@@ -324,8 +340,8 @@ This returns a re-render function, but does not actually call the re-render func
                 const tooltipHeight = tooltipBoundingBox.height;
 		tooltipDiv
 		    .classed('hidden', false)
-		    .style('left', x + margin.left + 'px')
-		    .style('top', y + margin.top + 'px')
+		    .style('left', x + margin.left - tooltipDiv.node().offsetWidth/2 + 'px')
+		    .style('top', y + margin.top + 10 +'px')
 		    .html(htmlString);
 	    })
             .on('mouseout', datum => {
@@ -333,8 +349,10 @@ This returns a re-render function, but does not actually call the re-render func
 		    .classed('hidden', true);
             })
             .attr('class', datum => barChartData.barCSSClassAccessor(barChartData.labelAccessor(datum)));
-        
-        
+
+        if (barChartData.hideLabels) {
+            xAxisGroup.selectAll('g.tick text').text('');
+        }
     };
     
     return render;
@@ -388,13 +406,23 @@ d3.json('./aggregated_results.json')
             accumulator[resultData.model_name].push(resultData);
             return accumulator;
         }, {});
+
+        const architectureNameToArchitectureResultsPairs = Object.entries(resultsByArchitectureName)
+              .sort(([architectureNameA, modelDataA], [architectureNameB, modelDataB]) => architectureNameA < architectureNameB ? -1 : 1);
+
+        const architectureNames = architectureNameToArchitectureResultsPairs.map(pair => pair[0]);
+        const colors = createRainbowColormap(Object.keys(resultsByArchitectureName).length);
+        const architectureNameToColor = zip([architectureNames, colors]).reduce((accumulator, [architectureName, color]) => {
+            accumulator[architectureName] = color;
+            return accumulator;
+        }, {});
+        const additionalStylesString  = architectureNameToArchitectureResultsPairs.reduce((accumulator, [architectureName, _]) => {
+            accumulator += `.testing-accuracy-bar-${architectureName} {fill: ${architectureNameToColor[architectureName]}; stroke-width: 1; stroke: black} `;
+            return accumulator;
+        }, '');
         
-        const colorMap = createRainbowColormap(Object.keys(resultsByArchitectureName).length);
-        
-        
-        const labelGeneratorDestructorTriples = Object.entries(resultsByArchitectureName)
-              .sort(([architectureNameA, modelDataA], [architectureNameB, modelDataB]) => architectureNameA < architectureNameB ? -1 : 1)
-              .map(([architectureName, modelDataUnsorted], architectureIndex) => {
+        const labelGeneratorDestructorTriples = architectureNameToArchitectureResultsPairs
+              .map(([architectureName, modelDataUnsorted]) => {
 
                   const modelData = modelDataUnsorted.sort((a,b) => a.accuracy_per_example - b.accuracy_per_example);
                   
@@ -405,18 +433,19 @@ d3.json('./aggregated_results.json')
                   const contentGenerator = contentContainer => {
                       const testingAccuracyBarChartContainer = createNewElement('div', {classes: ['testing-accuracy-bar-chart-container', 'container-center']});
                       contentContainer.append(testingAccuracyBarChartContainer);
-                      const additionalStylesString = `.testing-accuracy-bar-${architectureName} {fill: ${colorMap[architectureIndex]}; stroke-width: 1; stroke: black}`;
                       const architectureScoreData = {
                           'labelData': modelData,
-                          'labelAccessor': datum => `#${modelData.indexOf(datum)}`,
+                          'labelAccessor': datum => `${numberToOrdinal(modelData.length - modelData.indexOf(datum))}`,
                           'valueAccessor': datum => datum.accuracy_per_example,
+                          'hideLabels': false,
                           'toolTipHTMLGenerator': datum => `
+<p>Pretrained Model: ${datum.model_name}</p>
 <p>Best Validation Epoch: ${datum.best_validation_epoch}</p>
 <p>Number of Training Epochs: ${datum.number_of_epochs}</p>
-<p>Testing Acccuracy Per Examplle: ${datum.accuracy_per_example}</p>
-<p>Testing Loss Per Example: ${datum.loss_per_example}</p>
+<p>Testing Acccuracy Per Examplle: ${datum.accuracy_per_example.toFixed(3)}</p>
+<p>Testing Loss Per Example: ${datum.loss_per_example.toFixed(3)}</p>
 <p>Batch Size: ${datum.batch_size}</p>
-<p>Learning Rate: ${datum.learning_rate}</p>
+<p>Learning Rate: ${datum.learning_rate.toExponential()}</p>
 <p>Max Sequence Length: ${datum.max_sequence_length}</p>
 <p>Gradient Clipping Max Threshold: ${datum.gradient_clipping_max_threshold}</p>
 `,
@@ -428,7 +457,7 @@ d3.json('./aggregated_results.json')
                           'cssFile': 'index.css',
                           'yMinValue': 0,
                           'yMaxValue': 1,
-                          'xAxisTitle': 'Models (hover over bars for model details)',
+                          'xAxisTitle': 'Models (ranked by accuracy)',
                           'yAxisTitle': 'Testing Accuracy Per Example',
                           'yScale': 'linear',
                       };
@@ -448,10 +477,51 @@ d3.json('./aggregated_results.json')
                   return [labelInnerHTML, contentGenerator, contentDestructor];
               });
         
-        const resultDiv = document.querySelector('#result-accordion');
+        const allResultsDiv = document.querySelector('#all-results-accordion');
         const accordion = createLazyAccordion(labelGeneratorDestructorTriples);
         accordion.classList.add('container-center');
-        resultDiv.append(accordion);
+        allResultsDiv.append(accordion);
+
+        const redrawBestResultsBarChart = () => {
+            const numberOfBestModelsToDisplay = window.innerWidth / 20;
+            const bestResultsDiv = document.querySelector('#best-results');
+            removeAllChildNodes(bestResultsDiv);
+            const bestResultsBarChartContainer = createNewElement('div', {classes: ['best-results-bar-chart-container', 'container-center']});
+            bestResultsDiv.append(bestResultsBarChartContainer);
+            const bestModels = aggregatedResults.sort((modelResultA, modelResultB) => modelResultA.accuracy_per_example < modelResultB.accuracy_per_example ? 1 : -1).slice(0, numberOfBestModelsToDisplay).reverse();
+            const architectureScoreData = {
+                'labelData': bestModels,
+                'labelAccessor': datum => `${numberToOrdinal(bestModels.length - bestModels.indexOf(datum))}`,
+                'valueAccessor': datum => datum.accuracy_per_example,
+                'hideLabels': true,
+                'toolTipHTMLGenerator': datum => `
+<p>Pretrained Model: ${datum.model_name}</p>
+<p>Best Validation Epoch: ${datum.best_validation_epoch}</p>
+<p>Number of Training Epochs: ${datum.number_of_epochs}</p>
+<p>Testing Acccuracy Per Examplle: ${datum.accuracy_per_example.toFixed(3)}</p>
+<p>Testing Loss Per Example: ${datum.loss_per_example.toFixed(3)}</p>
+<p>Batch Size: ${datum.batch_size}</p>
+<p>Learning Rate: ${datum.learning_rate.toExponential()}</p>
+<p>Max Sequence Length: ${datum.max_sequence_length}</p>
+<p>Gradient Clipping Max Threshold: ${datum.gradient_clipping_max_threshold}</p>
+`,
+                'barCSSClassAccessor': barLabel => `testing-accuracy-bar-${bestModels[bestModels.length - parseInt(barLabel)].model_name}`,
+                'additionalStylesString': additionalStylesString,
+                'barAttributes': barLabel => {
+                },
+                'title': `Testing Accuracy Per Example`,
+                'cssFile': 'index.css',
+                'yMinValue': 0,
+                'yMaxValue': 1,
+                'xAxisTitle': 'Models (colored by architecture)',
+                'yAxisTitle': 'Testing Accuracy Per Example',
+                'yScale': 'linear',
+            };
+            addBarChart(bestResultsBarChartContainer, architectureScoreData)();
+        };
+        redrawBestResultsBarChart();
+        window.addEventListener('resize', redrawBestResultsBarChart);
+        
     }).catch(err => {
         console.error(err.message);
         return;
