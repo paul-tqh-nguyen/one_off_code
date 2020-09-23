@@ -2,7 +2,7 @@
 
 '''
 
-This module is the main interface towards our collaborative filtering model. 
+This module is the main interface towards our collaborative filtering models. 
 
 Sections:
 * Imports
