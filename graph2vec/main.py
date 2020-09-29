@@ -16,9 +16,11 @@ import multiprocessing as mp
 import networkx as nx
 from functools import reduce
 from karateclub import Graph2Vec
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 from misc_utilities import *
+
+# @todo make sure these imports are used
 
 ###########
 # Globals #
@@ -39,36 +41,35 @@ if not os.path.isdir(CHECKPOINT_DIR):
 # Data Processing #
 ###################
 
-def process_data() -> List[nx.Graph]:
-    nx_graphs = nx.Graph()
-    # with open(EDGES_FILE, 'r') as edges_file_handle:
-    #     edges_file_lines = edges_file_handle.readlines()
-    #     split_lines = eager_map(lambda s: s.split(','), edges_file_lines)
-    #     assert set(map(len, split_lines)) == {2}
-    #     edges = map(lambda l: (int(l[0]), int(l[1])), split_lines)
-    #     del split_lines
-    # with open(EDGE_LABELS_FILE, 'r') as edge_labels_file_handle:
-    #     edge_labels = map(int, edge_labels_file_handle.readlines())
-    #     edges = (src, dst, label for (src, dst), label in zip(edges, edge_labels))
-    # nx_graph.add_weighted_edges_from(edges, weight='edge_label')
-    # assert functools.reduce(lambda l, s: s.union(l), edges, set()) == set(nx_graph.nodes)
-    # with open(NODE_LABELS_FILE, 'r') as node_labels_file_handle:
-    #     node_id_to_node_label = dict(enumerate(map(int, node_labels_file_handle.readlines())))
-    #     assert len(node_id_to_node_label) == len(nx_graph.nodes)
-    #     nx.set_node_attributes(nx_graph, node_id_to_node_label, 'node_label')
-    # with open(GRAPH_IDS_FILE, 'r') as graph_ids_file_handle:
-    #     node_id_to_graph_id = dict(enumerate(map(int, graph_ids_file_handle.readlines())))
-    #     assert len(node_id_to_graph_id) == len(nx_graph.nodes)
-    #     nx.set_node_attributes(nx_graph, node_id_to_graph_id, 'graph_id')
+def process_data() -> Tuple[dict, dict]:
+    with open(GRAPH_IDS_FILE, 'r') as graph_ids_file_handle:
+        node_id_to_graph_id = dict(enumerate(map(int, graph_ids_file_handle.readlines()), start=1))
+        graph_id_to_graph = {graph_id: nx.Graph() for graph_id in set(node_id_to_graph_id.values())}
+        for node_id, graph_id in node_id_to_graph_id.items:
+            graph_id_to_graph[graph_id].add_node(node_id)
+    with open(NODE_LABELS_FILE, 'r') as node_labels_file_handle:
+        node_labels_file_lines = node_labels_file_handle.readlines()
+        assert len(node_labels_file_lines) == len(node_id_to_graph_id)
+        for node_id, node_label in enumerate(map(int, node_labels_file_lines), start=1):
+            graph_id = node_id_to_graph_id[node_id]
+            graph = graph_id_to_graph[graph_id]
+            graph.nodes[node_id]['node_label'] = node_label
+    with open(EDGES_FILE, 'r') as edges_file_handle:
+        edges_file_lines = edges_file_handle.readlines()
+        split_lines = eager_map(lambda s: s.split(','), edges_file_lines)
+        assert set(map(len, split_lines)) == {2}
+        edges = map(lambda l: (int(l[0]), int(l[1])), split_lines)
+    with open(EDGE_LABELS_FILE, 'r') as edge_labels_file_handle:
+        edge_labels = map(int, edge_labels_file_handle.readlines())
+    for (src_id, dst_id), edge_label in zip(edges, edge_labels)):
+        graph_id = node_id_to_graph_id[src_id]
+        graph = graph_id_to_graph[graph_id]
+        assert dst_id in graph.nodes
+        graph.add_edge(src_id, dst_id, edge_label=edge_label)
     with open(GRAPH_LABELS_FILE, 'r') as graph_labels_file_handle:
         graph_id_to_graph_label = dict(enumerate(map(int, graph_labels_file_handle.readlines())))
         assert len(graph_id_to_graph_label) == 188
-        node_id_to_graph_label = ((node_id, graph_id_to_graph_label[graph_id]) for node_id, graph_id in node_id_to_graph_id.items())
-        assert len(node_id_to_graph_label) == len(nx_graph.nodes)
-        nx.set_node_attributes(nx_graph, node_id_to_graph_label, 'graph_label')
-    
-    # @todo make this return a list of graphs
-    return nx_graphs
+    return graph_id_to_graph, graph_id_to_graph_label
 
 #######################
 # graph2vec Utilities #
@@ -135,7 +136,7 @@ class HyperParameterSearchObjective:
 
 @debug_on_error
 def main() -> None:
-    nx_graph = process_data()
+    graph_id_to_graph, graph_id_to_graph_label = process_data()
     # @todo set up hyperparameter search
     return
 
