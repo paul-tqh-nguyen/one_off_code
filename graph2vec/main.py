@@ -7,18 +7,27 @@ Sections:
 
 '''
 
+# @todo update docstring
+
 ###########
 # Imports #
 ###########
 
 import os
+import json
+import pickle
+import optuna
+import gensim
+import karateclub
+import numpy as np
 import multiprocessing as mp
 import networkx as nx
+from collections import OrderedDict
 from functools import reduce
-from karateclub import Graph2Vec
-from typing import Iterable, List, Tuple
+from typing import Iterable, Dict, Tuple
 
 from misc_utilities import *
+from mutag_classifier import MUTAGClassifier
 
 # @todo make sure these imports are used
 
@@ -26,17 +35,22 @@ from misc_utilities import *
 # Globals #
 ###########
 
+KEYED_EMBEDDING_PICKLE_FILE_BASENAME = 'doc2vec.model'
+DOC2VEC_MODEL_FILE_BASENAME = 'doc2vec.model'
+RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
+
+LARGE_INT = 2**32
+
+# Data Files
+
 EDGES_FILE = './data/MUTAG_A.txt'
 EDGE_LABELS_FILE = './data/MUTAG_edge_labels.txt'
 NODE_LABELS_FILE = './data/MUTAG_node_labels.txt'
 GRAPH_IDS_FILE = './data/MUTAG_graph_indicator.txt'
 GRAPH_LABELS_FILE = './data/MUTAG_graph_labels.txt'
 
-CHECKPOINT_DIR = './checkpoints'
-
-if not os.path.isdir(CHECKPOINT_DIR):
-    os.makedirs(CHECKPOINT_DIR)
-
+# @todo make sure all these globals are used
+    
 ###################
 # Data Processing #
 ###################
@@ -69,42 +83,94 @@ def process_data() -> Tuple[dict, dict]:
     with open(GRAPH_LABELS_FILE, 'r') as graph_labels_file_handle:
         graph_id_to_graph_label = dict(enumerate(map(int, graph_labels_file_handle.readlines())))
         assert len(graph_id_to_graph_label) == 188
+    graph_id_to_graph = {graph_id: nx.convert_node_labels_to_integers(graph) for graph_id, graph in graph_id_to_graph.items()}
     return graph_id_to_graph, graph_id_to_graph_label
 
 #######################
 # graph2vec Utilities #
 #######################
 
+class VectorDict():
+    '''Index into matrix by keys'''
 
-class HyperParameterSearchObjective:
-    def __init__(self, graphs: List[nx.Graph], process_id_queue: object):
+    def __init__(self, keys: Iterable, matrix: np.ndarray):
+        assert len(matrix.shape) == 2
+        assert len(keys) == len(matrix.shape[0])
+        self.key_to_index_map = dict(map(reversed, enumerate(keys)))
+        self.matrix = matrix
+
+    def __getitem__(self, key) -> np.ndarray:
+        return self.matrix[self.key_to_index_map[key]]
+    
+class Graph2VecHyperParameterSearchObjective:
+    def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], process_id_queue: object):
         # process_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dyanmically
+        self.graph_id_to_graph: OrderedDict = OrderedDict(((graph_id, graph_id_to_graph[graph_id]) for graph_id in sorted(graph_id_to_graph.keys())))
+        self.graph_id_to_graph_label: OrderedDict = OrderedDict(((graph_id, graph_id_to_label[graph_id]) for graph_id in sorted(graph_id_to_graph_label.keys())))
         self.process_id_queue = process_id_queue
-        self.graphs = graphs
         
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
-        hyperparameters: {,
+        hyperparameters = {
             'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 6)),
             'dimensions': int(trial.suggest_int('dimensions', 100, 500)),
-            'workers': 1,
             'epochs': int(trial.suggest_int('epochs', 10, 15)),
             'learning_rate': trial.suggest_uniform('learning_rate', 1e-5, 1e-1),
-            'min_count': 0,
-            'seed': 1234,
         }
         return hyperparameters
 
-    def train_model(**hyperparameters) -> float:
-        grgaph2vec_trainer = Graph2Vec(**hyperparameters)
-        grgaph2vec_trainer.fit(self.graphs)
-        graph_embeddings = grgaph2vec_trainer.get_embedding()
-        # @todo save embeddings
-        # @todo finish this
-        return best_validation_loss
+    def train_model(wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> float:
+        random.seed(RANDOM_SEED)
+        np.random.seed(RANDOM_SEED)
+        
+        graphs = self.graph_id_to_graph.values()
+        assert all(nx.is_connected(graph) for graph in graphs)
+        assert not any(nx.is_directed(graph) for graph in graphs)
+        assert all(list(range(graph.number_of_nodes())) == sorted(graph.nodes()) for graph in graphs)
+        
+        weisfeiler_lehman_features = [karateclub.utils.treefeatures.WeisfeilerLehmanHashing(graph, wl_iterations, False, False) for graph in graphs]
+        documents = [gensim.models.doc2vec.TaggedDocument(words=doc.get_graph_features(), tags=[str(i)]) for i, doc in enumerate(weisfeiler_lehman_features)]
+        
+        model = gensim.models.doc2vec.Doc2Vec(
+            documents,
+            vector_size=dimensions,
+            window=0,
+            min_count=0,
+            dm=0,
+            sample=0.0001,
+            workers=1,
+            epochs=epochs,
+            alpha=learning_rate,
+            seed=RANDOM_SEED,
+            compute_loss=True,
+        )
+        
+        graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
+        graph_id_to_graph_embeddings = VectorDict(self.graph_id_to_graph.keys(), graph_embedding_matrix)
+        
+        loss = model.get_latest_training_loss()
 
-    def checkpoint_directory_from_hyperparameters() -> str:
+        saved_model_location = os.path.join(checkpoint_directory, DOC2VEC_MODEL_FILE_BASENAME)
+        model.save(saved_model_location)
+
+        keyed_embedding_pickle_location = os.path.join(checkpoint_directory, KEYED_EMBEDDING_PICKLE_FILE_BASENAME)
+        with open(keyed_embedding_pickle_location, 'wb') as file_handle:
+            pickle.dump(graph_id_to_graph_embeddings, file_handle)
+        
+        checkpoint_directory = checkpoint_directory_from_hyperparameters(wl_iterations, dimensions, epochs, learning_rate)
+        result_summary_json_file_location = os.path.join(checkpoint_directory, RESULT_SUMMARY_JSON_FILE_BASENAME)
+        with open(result_summary_json_file_location, 'r') as file_handle:
+            json.dump({
+                'loss': loss,
+                'saved_model_location': saved_model_location,
+                'keyed_embedding_pickle_location': keyed_embedding_pickle_location, 
+                
+            }, file_handle, indent=4)
+        
+        return loss
+
+    def checkpoint_directory_from_hyperparameters(wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> str:
         checkpoint_dir = os.path.join(
-            CHECKPOINT_DIR,
+            GRAPH2VEC_CHECKPOINT_DIR,
             f'wl_iterations_{int(wl_iterations)}_' \
             f'dimensions_{int(dimensions)}_' \
             f'epochs_{int(epochs)}_' \
@@ -123,13 +189,117 @@ class HyperParameterSearchObjective:
         try:
             with suppressed_output():
                 with warnings_suppressed():
-                    best_validation_loss = self.train_model(**hyperparameters)
+                    loss = self.train_model(**hyperparameters)
         except Exception as exception:
             self.process_id_queue.put(process_id)
             raise exception
         self.process_id_queue.put(process_id)
+        return loss
+
+def get_number_of_graph2vec_hyperparameter_search_trials(study: optuna.Study) -> int:
+    number_of_completed_trials = study.trials_dataframe().state.eq('COMPLETE').sum()
+    number_of_remaining_trials = NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS - number_of_completed_trials
+    return number_of_remaining_trials
+    
+def graph2vec_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
+    study = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True)
+    number_of_trials = get_number_of_graph2vec_hyperparameter_search_trials(study)
+    optimize_kawrgs = dict(
+        n_trials=number_of_trials,
+        gc_after_trial=True,
+        catch=(Exception,),
+    )
+    with mp.Manager() as manager:
+        process_id_queue = manager.Queue()
+        more_itertools.consume((process_id_queue.put(process_id) for process_id in range(NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_PROCESSES)))
+        optimize_kawrgs['func'] = Graph2VecHyperParameterSearchObjective(graph_id_to_graph, graph_id_to_graph_label, process_id_queue)
+        optimize_kawrgs['n_jobs'] = NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_PROCESSES
+        with joblib.parallel_backend('multiprocessing', n_jobs=NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_PROCESSES):
+            study.optimize(**optimize_kawrgs)
+    return
+
+####################
+# MUTAG Classifier #
+####################
+
+class MUTAGClassifierHyperParameterSearchObjective:
+    def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], gpu_id_queue: object):
+        # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dyanmically
+        self.graph_id_to_graph = graph_id_to_graph
+        self.graph_id_to_graph_label = graph_id_to_graph_label
+        self.gpu_id_queue = gpu_id_queue
+        self._graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, storage=GRAPH2VEC_DB_URL, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner()).trials_dataframe()
+
+    def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
+        assert len(self._graph2vec_study_df) < LARGE_INT
+        trial.suggest_categorical('graph2vec_trial_index', 0, LARGE_INT) # workaround for https://github.com/optuna/optuna/issues/372
+        graph2vec_trial_indices = self._graph2vec_study_df[self._graph2vec_study_df.state.eq('COMPLETE')].index.tolist()
+        hyperparameters = {
+            'batch_size': int(trial.suggest_int('batch_size', 1, 1024)),
+            'graph2vec_trial_index': int(trial.suggest_categorical('graph2vec_trial_index', graph2vec_trial_indices)),
+            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 5)),
+            'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 1.0),
+        }
+        return hyperparameters
+
+    def train_model(gpu_id: int, **hyperparameters) -> float:
+        # @todo finish this
+        # MUTAGClassifier
+        return
+
+    def checkpoint_directory_from_hyperparameters(batch_size: int, graph2vec_trial_index: int, number_of_layers: int, dropout_probability: float) -> str: # @todo move this to the pytorch lightning model
+        checkpoint_dir = os.path.join(
+            MUTAG_CLASSIFIER_CHECKPOINT_DIR,
+            f'batch_size_{int(batch_size)}_' \
+            f'graph2vec_trial_index_{int(graph2vec_trial_index)}_' \
+            f'number_of_layers_{int(number_of_layers)}_' \
+            f'dropout_{dropout_probability}'
+        )
+        return checkpoint_directory
+    
+    def __call__(self, trial: optuna.Trial) -> float:
+        gpu_id = self.gpu_id_queue.get()
+
+        hyperparameters = self.get_trial_hyperparameters(trial)
+        hyperparameters['gpu_id'] = gpu_id
+        
+        checkpoint_dir = self.model_class.checkpoint_directory_from_hyperparameters(**hyperparameters)
+        print(f'Starting MUTAG classifier training for {checkpoint_dir} on GPU {gpu_id}.')
+        
+        try:
+            with suppressed_output():
+                with warnings_suppressed():
+                    best_validation_loss = self.train_model(**hyperparameters)
+        except Exception as exception:
+            if self.gpu_id_queue is not None:
+                self.gpu_id_queue.put(gpu_id)
+            raise exception
+        if self.gpu_id_queue is not None:
+            self.gpu_id_queue.put(gpu_id)
         return best_validation_loss
 
+def get_number_of_mutag_classifier_hyperparameter_search_trials(study: optuna.Study) -> int:
+    number_of_completed_trials = study.trials_dataframe().state.eq('COMPLETE').sum()
+    number_of_remaining_trials = NUMBER_OF_MUTAG_CLASSIFIER_HYPERPARAMETER_TRIALS - number_of_completed_trials
+    return number_of_remaining_trials
+
+def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
+    study = optuna.create_study(study_name=MUTAG_CLASSIFIER_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=MUTAG_CLASSIFIER_DB_URL, direction='minimize', load_if_exists=True)
+    number_of_trials = get_number_of_mutag_classifier_hyperparameter_search_trials(study)
+    optimize_kawrgs = dict(
+        n_trials=number_of_trials,
+        gc_after_trial=True,
+        catch=(Exception,),
+    )
+    with mp.Manager() as manager:
+        gpu_id_queue = manager.Queue()
+        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
+        optimize_kawrgs['func'] = MUTAGClassifierHyperParameterSearchObjective(graph_id_to_graph, graph_id_to_graph_label, gpu_id_queue)
+        optimize_kawrgs['n_jobs'] = len(GPU_IDS)
+        with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
+            study.optimize(**optimize_kawrgs)
+    return
+    
 ##########
 # Driver #
 ##########
@@ -137,7 +307,8 @@ class HyperParameterSearchObjective:
 @debug_on_error
 def main() -> None:
     graph_id_to_graph, graph_id_to_graph_label = process_data()
-    # @todo set up hyperparameter search
+    graph2vec_hyperparameter_search(graph_id_to_graph, graph_id_to_graph_label)
+    mutag_classifier_hyperparameter_search(graph_id_to_graph, graph_id_to_graph_label)
     return
 
 if __name__ == '__main__':

@@ -2,5 +2,10 @@ name: graph2vec
 
 dependencies:
   - pytorch==1.4.0
-  - conda-forge::karateclub
   - networkx
+  - gensim==3.8.0
+  - conda-forge::karateclub==1.0.15
+  - conda-forge::optuna
+  - pip
+  - pip:
+    - pytorch-lightning==0.9.1rc3
