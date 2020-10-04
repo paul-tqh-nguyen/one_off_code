@@ -140,6 +140,8 @@ class Graph2VecHyperParameterSearchObjective:
         graph_id_to_graph_embeddings = VectorDict(self.graph_id_to_graph.keys(), graph_embedding_matrix)
 
         checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(wl_iterations, dimensions, epochs, learning_rate)
+        if not os.path.isdir(checkpoint_directory):
+            os.makedirs(checkpoint_directory)
         
         saved_model_location = os.path.join(checkpoint_directory, DOC2VEC_MODEL_FILE_BASENAME)
         model.save(saved_model_location)
