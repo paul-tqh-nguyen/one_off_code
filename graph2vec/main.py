@@ -139,8 +139,6 @@ class Graph2VecHyperParameterSearchObjective:
         graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
         graph_id_to_graph_embeddings = VectorDict(self.graph_id_to_graph.keys(), graph_embedding_matrix)
 
-        loss = model.get_latest_training_loss()
-
         saved_model_location = os.path.join(checkpoint_directory, DOC2VEC_MODEL_FILE_BASENAME)
         model.save(saved_model_location)
 
@@ -152,13 +150,12 @@ class Graph2VecHyperParameterSearchObjective:
         result_summary_json_file_location = os.path.join(checkpoint_directory, RESULT_SUMMARY_JSON_FILE_BASENAME)
         with open(result_summary_json_file_location, 'r') as file_handle:
             json.dump({
-                'loss': loss,
                 'saved_model_location': saved_model_location,
                 'keyed_embedding_pickle_location': keyed_embedding_pickle_location, 
                 
             }, file_handle, indent=4)
         
-        return loss
+        return random.random() # stub
 
     @staticmethod
     def checkpoint_directory_from_hyperparameters(wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> str:
