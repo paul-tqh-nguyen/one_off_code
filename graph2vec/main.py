@@ -148,7 +148,7 @@ class Graph2VecHyperParameterSearchObjective:
         with open(keyed_embedding_pickle_location, 'wb') as file_handle:
             pickle.dump(graph_id_to_graph_embeddings, file_handle)
         
-        checkpoint_directory = self.checkpoint_directory_from_hyperparameters(wl_iterations, dimensions, epochs, learning_rate)
+        checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(wl_iterations, dimensions, epochs, learning_rate)
         result_summary_json_file_location = os.path.join(checkpoint_directory, RESULT_SUMMARY_JSON_FILE_BASENAME)
         with open(result_summary_json_file_location, 'r') as file_handle:
             json.dump({
@@ -160,6 +160,7 @@ class Graph2VecHyperParameterSearchObjective:
         
         return loss
 
+    @staticmethod
     def checkpoint_directory_from_hyperparameters(wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> str:
         checkpoint_dir = os.path.join(
             GRAPH2VEC_CHECKPOINT_DIR,
@@ -175,8 +176,7 @@ class Graph2VecHyperParameterSearchObjective:
         
         hyperparameters = self.get_trial_hyperparameters(trial)
 
-        print(f"hyperparameters {repr(hyperparameters)}")
-        checkpoint_dir = self.checkpoint_directory_from_hyperparameters(**hyperparameters)
+        checkpoint_dir = self.__class__.checkpoint_directory_from_hyperparameters(**hyperparameters)
         print(f'Starting training for {checkpoint_dir} on GPU {process_id}.')
         
         try:
