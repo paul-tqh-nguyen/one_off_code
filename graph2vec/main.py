@@ -174,7 +174,8 @@ class Graph2VecHyperParameterSearchObjective:
         process_id = self.process_id_queue.get()
         
         hyperparameters = self.get_trial_hyperparameters(trial)
-        
+
+        print(f"hyperparameters {repr(hyperparameters)}")
         checkpoint_dir = self.checkpoint_directory_from_hyperparameters(**hyperparameters)
         print(f'Starting training for {checkpoint_dir} on GPU {process_id}.')
         
