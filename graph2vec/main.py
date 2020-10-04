@@ -144,6 +144,7 @@ class Graph2VecHyperParameterSearchObjective:
         print(f"model.compute_loss {repr(model.compute_loss)}")
         for pc in parent_classes(model):
             LOGGER.info(f"pc {repr(pc)}")
+        exit()
         loss = model.get_latest_training_loss()
 
         saved_model_location = os.path.join(checkpoint_directory, DOC2VEC_MODEL_FILE_BASENAME)
