@@ -151,7 +151,7 @@ class Graph2VecHyperParameterSearchObjective:
             pickle.dump(graph_id_to_graph_embeddings, file_handle)
         
         result_summary_json_file_location = os.path.join(checkpoint_directory, RESULT_SUMMARY_JSON_FILE_BASENAME)
-        with open(result_summary_json_file_location, 'r') as file_handle:
+        with open(result_summary_json_file_location, 'w') as file_handle:
             json.dump({
                 'saved_model_location': saved_model_location,
                 'keyed_embedding_pickle_location': keyed_embedding_pickle_location, 
