@@ -6,6 +6,7 @@ dependencies:
   - gensim==3.8.0
   - conda-forge::karateclub==1.0.15
   - conda-forge::optuna
+  - scikit-learn
   - pip
   - pip:
     - pytorch-lightning==0.9.1rc3

@@ -90,18 +90,6 @@ def process_data() -> Tuple[dict, dict]:
 #######################
 # graph2vec Utilities #
 #######################
-
-class VectorDict():
-    '''Index into matrix by keys'''
-
-    def __init__(self, keys: Iterable, matrix: np.ndarray):
-        assert len(matrix.shape) == 2
-        assert len(keys) == len(matrix.shape[0])
-        self.key_to_index_map = dict(map(reversed, enumerate(keys)))
-        self.matrix = matrix
-
-    def __getitem__(self, key) -> np.ndarray:
-        return self.matrix[self.key_to_index_map[key]]
     
 class Graph2VecHyperParameterSearchObjective:
     def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], process_id_queue: object):
@@ -239,32 +227,22 @@ class MUTAGClassifierHyperParameterSearchObjective:
             'batch_size': int(trial.suggest_int('batch_size', 1, 1024)),
             'graph2vec_trial_index': int(trial.suggest_categorical('graph2vec_trial_index', graph2vec_trial_indices)),
             'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 5)),
+            'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 25.0), 
             'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 1.0),
         }
+        assert set(hyperparameters.keys()) == set(MUTAGClassifier.hyperparameter_names)
         return hyperparameters
 
     def train_model(gpu_id: int, **hyperparameters) -> float:
-        # @todo finish this
-        # MUTAGClassifier
-        return
-
-    def checkpoint_directory_from_hyperparameters(batch_size: int, graph2vec_trial_index: int, number_of_layers: int, dropout_probability: float) -> str: # @todo move this to the pytorch lightning model
-        checkpoint_dir = os.path.join(
-            MUTAG_CLASSIFIER_CHECKPOINT_DIR,
-            f'batch_size_{int(batch_size)}_' \
-            f'graph2vec_trial_index_{int(graph2vec_trial_index)}_' \
-            f'number_of_layers_{int(number_of_layers)}_' \
-            f'dropout_{dropout_probability}'
-        )
-        return checkpoint_directory
+        loss = MUTAGClassifier.train_model(gpus=[gpu_id], **hyperparameters)
+        return loss
     
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get()
 
         hyperparameters = self.get_trial_hyperparameters(trial)
-        hyperparameters['gpu_id'] = gpu_id
         
-        checkpoint_dir = self.model_class.checkpoint_directory_from_hyperparameters(**hyperparameters)
+        checkpoint_dir = MUTAGClassifier.checkpoint_directory_from_hyperparameters(**hyperparameters)
         print(f'Starting MUTAG classifier training for {checkpoint_dir} on GPU {gpu_id}.')
         
         try:
