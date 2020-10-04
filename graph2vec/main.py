@@ -157,7 +157,7 @@ class Graph2VecHyperParameterSearchObjective:
                 'keyed_embedding_pickle_location': keyed_embedding_pickle_location, 
             }, file_handle, indent=4)
         
-        return random.random() # stub
+        return 1 # stub
 
     @staticmethod
     def checkpoint_directory_from_hyperparameters(wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> str:
@@ -240,6 +240,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
         assert set(hyperparameters.keys()) == set(MUTAGClassifier.hyperparameter_names)
         return hyperparameters
 
+    @trace
     def train_model(gpu_id: int, **hyperparameters) -> float:
         loss = MUTAGClassifier.train_model(gpus=[gpu_id], **hyperparameters)
         return loss
