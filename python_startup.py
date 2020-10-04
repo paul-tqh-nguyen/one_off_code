@@ -81,6 +81,15 @@ def warnings_suppressed() -> Generator:
         yield
     return
 
+from contextlib import contextmanager
+@contextmanager
+def exceptions_suppressed() -> Generator:
+    try:
+        yield
+    except Exception:
+        pass
+    return
+
 import io
 from typing import Generator
 from contextlib import contextmanager

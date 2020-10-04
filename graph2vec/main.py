@@ -142,7 +142,8 @@ class Graph2VecHyperParameterSearchObjective:
 
         LOGGER.info(f"model {repr(model)}")
         for attr in dir(model):
-            LOGGER.info(f'{attr} {getattr(model, attr)}')
+            with exceptions_suppressed():
+                LOGGER.info(f'{attr} {getattr(model, attr)}')
         for pc in parent_classes(model):
             LOGGER.info(f"pc {repr(pc)}")
         loss = model.get_latest_training_loss()
