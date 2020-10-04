@@ -50,7 +50,7 @@ RANDOM_SEED = 1234
 
 # graph2vec Globals
 
-GRAPH2VEC_CHECKPOINT_DIR = './graph2vec_checkpoints'
+GRAPH2VEC_CHECKPOINT_DIR = './checkpoints_graph2vec'
 GRAPH2VEC_STUDY_NAME = 'graph2vec'
 GRAPH2VEC_DB_URL = 'sqlite:///graph2vec.db'
 
@@ -62,7 +62,7 @@ if not os.path.isdir(GRAPH2VEC_CHECKPOINT_DIR):
 
 # MUTAG Classifier Globals
     
-MUTAG_CLASSIFIER_CHECKPOINT_DIR = './mutag_classifier_checkpoints'
+MUTAG_CLASSIFIER_CHECKPOINT_DIR = './checkpoints_mutag_classifier'
 MUTAG_CLASSIFIER_STUDY_NAME = 'mutag-classifier'
 MUTAG_CLASSIFIER_DB_URL = 'sqlite:///mutag-classifier.db'
 

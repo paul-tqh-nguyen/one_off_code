@@ -15,6 +15,8 @@ Sections:
 
 import os
 import json
+import more_itertools
+import joblib
 import pickle
 import optuna
 import gensim
@@ -96,9 +98,10 @@ class Graph2VecHyperParameterSearchObjective:
     def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], process_id_queue: object):
         # process_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dyanmically
         self.graph_id_to_graph: OrderedDict = OrderedDict(((graph_id, graph_id_to_graph[graph_id]) for graph_id in sorted(graph_id_to_graph.keys())))
-        self.graph_id_to_graph_label: OrderedDict = OrderedDict(((graph_id, graph_id_to_label[graph_id]) for graph_id in sorted(graph_id_to_graph_label.keys())))
+        self.graph_id_to_graph_label: OrderedDict = OrderedDict(((graph_id, graph_id_to_graph_label[graph_id]) for graph_id in sorted(graph_id_to_graph_label.keys())))
         self.process_id_queue = process_id_queue
-        
+
+    @trace
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         hyperparameters = {
             'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 6)),
@@ -187,8 +190,12 @@ class Graph2VecHyperParameterSearchObjective:
         return loss
 
 def get_number_of_graph2vec_hyperparameter_search_trials(study: optuna.Study) -> int:
-    number_of_completed_trials = study.trials_dataframe().state.eq('COMPLETE').sum()
-    number_of_remaining_trials = NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS - number_of_completed_trials
+    df = study.trials_dataframe()
+    if len(df) == 0:
+        number_of_remaining_trials = 0
+    else:
+        number_of_completed_trials = df.state.eq('COMPLETE').sum()
+        number_of_remaining_trials = NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS - number_of_completed_trials
     return number_of_remaining_trials
     
 def graph2vec_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
@@ -218,7 +225,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
         self.graph_id_to_graph = graph_id_to_graph
         self.graph_id_to_graph_label = graph_id_to_graph_label
         self.gpu_id_queue = gpu_id_queue
-        self._graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, storage=GRAPH2VEC_DB_URL, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner()).trials_dataframe()
+        self._graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         assert len(self._graph2vec_study_df) < LARGE_INT
@@ -259,8 +266,12 @@ class MUTAGClassifierHyperParameterSearchObjective:
         return best_validation_loss
 
 def get_number_of_mutag_classifier_hyperparameter_search_trials(study: optuna.Study) -> int:
-    number_of_completed_trials = study.trials_dataframe().state.eq('COMPLETE').sum()
-    number_of_remaining_trials = NUMBER_OF_MUTAG_CLASSIFIER_HYPERPARAMETER_TRIALS - number_of_completed_trials
+    df = study.trials_dataframe()
+    if len(df) == 0:
+        number_of_remaining_trials = 0
+    else:
+        number_of_completed_trials = df.state.eq('COMPLETE').sum()
+        number_of_remaining_trials = NUMBER_OF_MUTAG_CLASSIFIER_HYPERPARAMETER_TRIALS - number_of_completed_trials
     return number_of_remaining_trials
 
 def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
