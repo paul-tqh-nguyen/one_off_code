@@ -142,7 +142,8 @@ class Graph2VecHyperParameterSearchObjective:
         checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(wl_iterations, dimensions, epochs, learning_rate)
         
         saved_model_location = os.path.join(checkpoint_directory, DOC2VEC_MODEL_FILE_BASENAME)
-        model.save(saved_model_location)
+        with open('saved_model_location', 'w') as f:
+            model.save(f)
 
         keyed_embedding_pickle_location = os.path.join(checkpoint_directory, KEYED_EMBEDDING_PICKLE_FILE_BASENAME)
         with open(keyed_embedding_pickle_location, 'wb') as file_handle:
@@ -153,7 +154,6 @@ class Graph2VecHyperParameterSearchObjective:
             json.dump({
                 'saved_model_location': saved_model_location,
                 'keyed_embedding_pickle_location': keyed_embedding_pickle_location, 
-                
             }, file_handle, indent=4)
         
         return random.random() # stub
