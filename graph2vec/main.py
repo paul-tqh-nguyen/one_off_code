@@ -133,8 +133,7 @@ class Graph2VecHyperParameterSearchObjective:
             workers=1,
             epochs=epochs,
             alpha=learning_rate,
-            seed=RANDOM_SEED,
-            compute_loss=True,
+            seed=RANDOM_SEED
         )
         
         graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
