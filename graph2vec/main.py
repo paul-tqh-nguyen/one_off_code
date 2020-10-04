@@ -140,11 +140,6 @@ class Graph2VecHyperParameterSearchObjective:
         graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
         graph_id_to_graph_embeddings = VectorDict(self.graph_id_to_graph.keys(), graph_embedding_matrix)
 
-        LOGGER.info(f"model {repr(model)}")
-        print(f"model.compute_loss {repr(model.compute_loss)}")
-        for pc in parent_classes(model):
-            LOGGER.info(f"pc {repr(pc)}")
-        exit()
         loss = model.get_latest_training_loss()
 
         saved_model_location = os.path.join(checkpoint_directory, DOC2VEC_MODEL_FILE_BASENAME)

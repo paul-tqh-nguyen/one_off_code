@@ -14,6 +14,7 @@ Sections:
 ###########
 
 import os
+import gensim
 import logging
 import torch
 import numpy as np
@@ -71,6 +72,22 @@ GPU_IDS = [0, 1, 2, 3]
 
 if not os.path.isdir(MUTAG_CLASSIFIER_CHECKPOINT_DIR):
     os.makedirs(MUTAG_CLASSIFIER_CHECKPOINT_DIR)
+
+###############
+# Vector Dict #
+###############
+
+class VectorDict():
+    '''Index into matrix by keys'''
+
+    def __init__(self, keys: Iterable, matrix: np.ndarray):
+        assert len(matrix.shape) == 2
+        assert len(keys) == matrix.shape[0]
+        self.key_to_index_map = dict(map(reversed, enumerate(keys)))
+        self.matrix = matrix
+
+    def __getitem__(self, key) -> np.ndarray:
+        return self.matrix[self.key_to_index_map[key]]
 
 ###################
 # Nadam Optimizer #
@@ -166,18 +183,49 @@ def monkey_patch_nadam() -> None:
 
 monkey_patch_nadam()
 
-###############
-# Vector Dict #
-###############
+#######################
+# Monkey Patch Gensim #
+#######################
 
-class VectorDict():
-    '''Index into matrix by keys'''
+# def monkey_patch_gensim_doc2vec_compute_loss():
+#     '''The official gensim doc2vec interface doesn't support the compute_loss attribute. '''
+#     def train(self, documents=None, corpus_file=None, total_examples=None, total_words=None,
+#               epochs=None, start_alpha=None, end_alpha=None,
+#               word_count=0, queue_factor=2, report_delay=1.0, callbacks=()):
+        
+#         kwargs = {}
 
-    def __init__(self, keys: Iterable, matrix: np.ndarray):
-        assert len(matrix.shape) == 2
-        assert len(keys) == matrix.shape[0]
-        self.key_to_index_map = dict(map(reversed, enumerate(keys)))
-        self.matrix = matrix
+#         if corpus_file is None and documents is None:
+#             raise TypeError("Either one of corpus_file or documents value must be provided")
 
-    def __getitem__(self, key) -> np.ndarray:
-        return self.matrix[self.key_to_index_map[key]]
+#         if corpus_file is not None and documents is not None:
+#             raise TypeError("Both corpus_file and documents must not be provided at the same time")
+
+#         if documents is None and not os.path.isfile(corpus_file):
+#             raise TypeError("Parameter corpus_file must be a valid path to a file, got %r instead" % corpus_file)
+
+#         if documents is not None and not isinstance(documents, Iterable):
+#             raise TypeError("documents must be an iterable of list, got %r instead" % documents)
+
+#         if corpus_file is not None:
+#             # Calculate offsets for each worker along with initial doctags (doctag ~ document/line number in a file)
+#             offsets, start_doctags = self._get_offsets_and_start_doctags_for_corpusfile(corpus_file, self.workers)
+#             kwargs['offsets'] = offsets
+#             kwargs['start_doctags'] = start_doctags
+
+#         kwargs['compute_loss'] = getattr(self, 'compute_loss', False)
+#         with open('/tmp/test.py', 'a') as f: # @todo remove this
+#             import traceback ; traceback.print_stack(file=f)
+#             f.write('\n\n')
+#             f.write(f"Doc2Vec.train\n")
+#             f.write(f"self.compute_loss {repr(self.compute_loss)}\n")
+#             f.write(f"kwargs {repr(kwargs)}\n")
+#             f.write('\n\n')
+#         super(gensim.models.doc2vec.Doc2Vec, self).train(
+#             sentences=documents, corpus_file=corpus_file, total_examples=total_examples, total_words=total_words,
+#             epochs=epochs, start_alpha=start_alpha, end_alpha=end_alpha, word_count=word_count,
+#             queue_factor=queue_factor, report_delay=report_delay, callbacks=callbacks, **kwargs)
+    
+#     gensim.models.doc2vec.Doc2Vec.train = train
+    
+# monkey_patch_gensim_doc2vec_compute_loss()
