@@ -110,6 +110,7 @@ class Graph2VecHyperParameterSearchObjective:
         }
         return hyperparameters
 
+    @staticmethod
     def train_model(wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> float:
         random.seed(RANDOM_SEED)
         np.random.seed(RANDOM_SEED)
@@ -182,7 +183,7 @@ class Graph2VecHyperParameterSearchObjective:
         try:
             with suppressed_output():
                 with warnings_suppressed():
-                    loss = self.train_model(**hyperparameters)
+                    loss = self.__class__.train_model(**hyperparameters)
         except Exception as exception:
             self.process_id_queue.put(process_id)
             raise exception
@@ -257,7 +258,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
         try:
             with suppressed_output():
                 with warnings_suppressed():
-                    best_validation_loss = self.train_model(**hyperparameters)
+                    best_validation_loss = MUTAGClassifier.train_model(**hyperparameters)
         except Exception as exception:
             if self.gpu_id_queue is not None:
                 self.gpu_id_queue.put(gpu_id)
