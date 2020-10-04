@@ -20,6 +20,7 @@ from torch import nn
 from torch.utils import data
 from collections import OrderedDict
 from typing import Tuple, Dict
+from typing_extensions import Literal
 
 from global_values import *
 from misc_utilities import *

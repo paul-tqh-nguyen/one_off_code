@@ -6,6 +6,7 @@ dependencies:
   - gensim==3.8.0
   - conda-forge::karateclub==1.0.15
   - conda-forge::optuna
+  - conda-forge::typing_extensions
   - scikit-learn
   - pip
   - pip:
