@@ -248,9 +248,8 @@ class MUTAGClassifierHyperParameterSearchObjective:
         gpu_id = self.gpu_id_queue.get()
 
         hyperparameters = self.get_trial_hyperparameters(trial)
-        
-        checkpoint_dir = MUTAGClassifier.checkpoint_directory_from_hyperparameters(**hyperparameters)
-        print(f'Starting MUTAG classifier training for {checkpoint_dir} on GPU {gpu_id}.')
+        checkpoint_dir = MUTAGClassifier.checkpoint_directory_from_hyperparameters(**hyperparameters) # @todo do something with this
+        LOGGER.info(f'Starting MUTAG classifier training for {checkpoint_dir} on GPU {gpu_id}.')
         
         try:
             with suppressed_output():
