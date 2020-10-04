@@ -43,7 +43,7 @@ KEYED_EMBEDDING_PICKLE_FILE_BASENAME = 'doc2vec.model'
 DOC2VEC_MODEL_FILE_BASENAME = 'doc2vec.model'
 RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
 
-LARGE_INT = 2**32
+MAX_NUMBER_OF_GRAPH2VEC_MODELS = 1e5
 
 # Data Files
 
@@ -227,8 +227,8 @@ class MUTAGClassifierHyperParameterSearchObjective:
         self._graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
-        assert len(self._graph2vec_study_df) < LARGE_INT
-        trial.suggest_categorical('graph2vec_trial_index', range(0, LARGE_INT)) # workaround for https://github.com/optuna/optuna/issues/372
+        assert len(self._graph2vec_study_df) < MAX_NUMBER_OF_GRAPH2VEC_MODELS
+        trial.suggest_categorical('graph2vec_trial_index', range(0, MAX_NUMBER_OF_GRAPH2VEC_MODELS)) # workaround for https://github.com/optuna/optuna/issues/372
         graph2vec_trial_indices = self._graph2vec_study_df[self._graph2vec_study_df.state.eq('COMPLETE')].index.tolist()
         hyperparameters = {
             'batch_size': int(trial.suggest_int('batch_size', 1, 1024)),
