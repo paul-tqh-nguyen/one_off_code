@@ -141,9 +141,7 @@ class Graph2VecHyperParameterSearchObjective:
         graph_id_to_graph_embeddings = VectorDict(self.graph_id_to_graph.keys(), graph_embedding_matrix)
 
         LOGGER.info(f"model {repr(model)}")
-        for attr in dir(model):
-            with exceptions_suppressed():
-                LOGGER.info(f'{attr} {getattr(model, attr)}')
+        print(f"model.compute_loss {repr(model.compute_loss)}")
         for pc in parent_classes(model):
             LOGGER.info(f"pc {repr(pc)}")
         loss = model.get_latest_training_loss()
