@@ -101,7 +101,6 @@ class Graph2VecHyperParameterSearchObjective:
         self.graph_id_to_graph_label: OrderedDict = OrderedDict(((graph_id, graph_id_to_graph_label[graph_id]) for graph_id in sorted(graph_id_to_graph_label.keys())))
         self.process_id_queue = process_id_queue
 
-    @trace
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         hyperparameters = {
             'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 6)),
@@ -189,15 +188,16 @@ class Graph2VecHyperParameterSearchObjective:
         self.process_id_queue.put(process_id)
         return loss
 
+@trace
 def get_number_of_graph2vec_hyperparameter_search_trials(study: optuna.Study) -> int:
     df = study.trials_dataframe()
     if len(df) == 0:
-        number_of_remaining_trials = 0
+        number_of_remaining_trials = NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS
     else:
         number_of_completed_trials = df.state.eq('COMPLETE').sum()
         number_of_remaining_trials = NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS - number_of_completed_trials
     return number_of_remaining_trials
-    
+
 def graph2vec_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
     study = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True)
     number_of_trials = get_number_of_graph2vec_hyperparameter_search_trials(study)
@@ -268,7 +268,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
 def get_number_of_mutag_classifier_hyperparameter_search_trials(study: optuna.Study) -> int:
     df = study.trials_dataframe()
     if len(df) == 0:
-        number_of_remaining_trials = 0
+        number_of_remaining_trials = NUMBER_OF_MUTAG_CLASSIFIER_HYPERPARAMETER_TRIALS
     else:
         number_of_completed_trials = df.state.eq('COMPLETE').sum()
         number_of_remaining_trials = NUMBER_OF_MUTAG_CLASSIFIER_HYPERPARAMETER_TRIALS - number_of_completed_trials
