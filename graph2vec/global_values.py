@@ -175,7 +175,7 @@ class VectorDict():
 
     def __init__(self, keys: Iterable, matrix: np.ndarray):
         assert len(matrix.shape) == 2
-        assert len(keys) == len(matrix.shape[0])
+        assert len(keys) == matrix.shape[0]
         self.key_to_index_map = dict(map(reversed, enumerate(keys)))
         self.matrix = matrix
 
