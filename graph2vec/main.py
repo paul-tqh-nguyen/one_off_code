@@ -245,10 +245,14 @@ class MUTAGClassifierHyperParameterSearchObjective:
         return loss
 
     def __call__(self, trial: optuna.Trial) -> float:
+        print(f"1 {repr(1)}")
         gpu_id = self.gpu_id_queue.get()
+        print(f"2 {repr(2)}")
 
         hyperparameters = self.get_trial_hyperparameters(trial)
+        print(f"3 {repr(3)}")
         checkpoint_dir = MUTAGClassifier.checkpoint_directory_from_hyperparameters(**hyperparameters) # @todo do something with this
+        print(f"4 {repr(4)}")
         LOGGER.info(f'Starting MUTAG classifier training for {checkpoint_dir} on GPU {gpu_id}.')
         
         try:
