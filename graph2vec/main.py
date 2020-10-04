@@ -176,7 +176,7 @@ class Graph2VecHyperParameterSearchObjective:
         hyperparameters = self.get_trial_hyperparameters(trial)
 
         checkpoint_dir = self.__class__.checkpoint_directory_from_hyperparameters(**hyperparameters)
-        print(f'Starting training for {checkpoint_dir} on GPU {process_id}.')
+        print(f'Starting training for {checkpoint_dir} with sub-process #{process_id}.')
         
         try:
             with suppressed_output():
