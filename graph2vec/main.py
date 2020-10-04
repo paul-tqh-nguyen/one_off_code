@@ -75,7 +75,7 @@ def process_data() -> Tuple[dict, dict]:
         edges = map(lambda l: (int(l[0]), int(l[1])), split_lines)
     with open(EDGE_LABELS_FILE, 'r') as edge_labels_file_handle:
         edge_labels = map(int, edge_labels_file_handle.readlines())
-    for (src_id, dst_id), edge_label in zip(edges, edge_labels)):
+    for (src_id, dst_id), edge_label in zip(edges, edge_labels):
         graph_id = node_id_to_graph_id[src_id]
         graph = graph_id_to_graph[graph_id]
         assert dst_id in graph.nodes
