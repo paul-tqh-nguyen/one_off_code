@@ -162,7 +162,7 @@ class Graph2VecHyperParameterSearchObjective:
 
     @staticmethod
     def checkpoint_directory_from_hyperparameters(wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> str:
-        checkpoint_dir = os.path.join(
+        checkpoint_directory = os.path.join(
             GRAPH2VEC_CHECKPOINT_DIR,
             f'wl_iterations_{int(wl_iterations)}_' \
             f'dimensions_{int(dimensions)}_' \
