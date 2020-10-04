@@ -148,7 +148,7 @@ class Graph2VecHyperParameterSearchObjective:
         with open(keyed_embedding_pickle_location, 'wb') as file_handle:
             pickle.dump(graph_id_to_graph_embeddings, file_handle)
         
-        checkpoint_directory = checkpoint_directory_from_hyperparameters(wl_iterations, dimensions, epochs, learning_rate)
+        checkpoint_directory = self.checkpoint_directory_from_hyperparameters(wl_iterations, dimensions, epochs, learning_rate)
         result_summary_json_file_location = os.path.join(checkpoint_directory, RESULT_SUMMARY_JSON_FILE_BASENAME)
         with open(result_summary_json_file_location, 'r') as file_handle:
             json.dump({
@@ -229,7 +229,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         assert len(self._graph2vec_study_df) < LARGE_INT
-        trial.suggest_categorical('graph2vec_trial_index', 0, LARGE_INT) # workaround for https://github.com/optuna/optuna/issues/372
+        trial.suggest_categorical('graph2vec_trial_index', range(0, LARGE_INT)) # workaround for https://github.com/optuna/optuna/issues/372
         graph2vec_trial_indices = self._graph2vec_study_df[self._graph2vec_study_df.state.eq('COMPLETE')].index.tolist()
         hyperparameters = {
             'batch_size': int(trial.suggest_int('batch_size', 1, 1024)),
