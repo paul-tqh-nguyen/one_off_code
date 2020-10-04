@@ -244,7 +244,6 @@ class MUTAGClassifierHyperParameterSearchObjective:
         loss = MUTAGClassifier.train_model(gpus=[gpu_id], **hyperparameters)
         return loss
 
-    @trace
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get()
 
