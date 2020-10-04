@@ -27,6 +27,7 @@ from functools import reduce
 from typing import Iterable, Dict, Tuple
 
 from misc_utilities import *
+from global_values import *
 from mutag_classifier import MUTAGClassifier
 
 # @todo make sure these imports are used
@@ -81,7 +82,7 @@ def process_data() -> Tuple[dict, dict]:
         assert dst_id in graph.nodes
         graph.add_edge(src_id, dst_id, edge_label=edge_label)
     with open(GRAPH_LABELS_FILE, 'r') as graph_labels_file_handle:
-        graph_id_to_graph_label = dict(enumerate(map(lambda label: 1 if label=='1' else 0, graph_labels_file_handle.readlines())))
+        graph_id_to_graph_label = dict(enumerate(map(lambda label: 1 if label.strip()=='1' else 0, graph_labels_file_handle.readlines())))
         assert set(graph_id_to_graph_label.values()) == {0, 1}
         assert len(graph_id_to_graph_label) == 188
     graph_id_to_graph = {graph_id: nx.convert_node_labels_to_integers(graph) for graph_id, graph in graph_id_to_graph.items()}
