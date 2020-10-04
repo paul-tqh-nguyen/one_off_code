@@ -19,7 +19,7 @@ import torch
 from torch import nn
 from torch.utils import data
 from collections import OrderedDict
-from typing import Tuple
+from typing import Tuple, Dict
 
 from global_values import *
 from misc_utilities import *
