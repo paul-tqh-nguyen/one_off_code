@@ -111,8 +111,7 @@ class Graph2VecHyperParameterSearchObjective:
         }
         return hyperparameters
 
-    @staticmethod
-    def train_model(wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> float:
+    def train_model(self, wl_iterations: int, dimensions: int, epochs: int, learning_rate: float) -> float:
         random.seed(RANDOM_SEED)
         np.random.seed(RANDOM_SEED)
         
@@ -184,7 +183,7 @@ class Graph2VecHyperParameterSearchObjective:
         try:
             with suppressed_output():
                 with warnings_suppressed():
-                    loss = self.__class__.train_model(**hyperparameters)
+                    loss = self.train_model(**hyperparameters)
         except Exception as exception:
             self.process_id_queue.put(process_id)
             raise exception
