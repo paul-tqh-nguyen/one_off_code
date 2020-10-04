@@ -63,8 +63,8 @@ if not os.path.isdir(GRAPH2VEC_CHECKPOINT_DIR):
 # MUTAG Classifier Globals
     
 MUTAG_CLASSIFIER_CHECKPOINT_DIR = './checkpoints_mutag_classifier'
-MUTAG_CLASSIFIER_STUDY_NAME = 'mutag-classifier'
-MUTAG_CLASSIFIER_DB_URL = 'sqlite:///mutag-classifier.db'
+MUTAG_CLASSIFIER_STUDY_NAME = 'classifier-mutag'
+MUTAG_CLASSIFIER_DB_URL = 'sqlite:///classifier-mutag.db'
 
 NUMBER_OF_MUTAG_CLASSIFIER_HYPERPARAMETER_TRIALS = 1 # 9999 # @todo enable this
 GPU_IDS = [0, 1, 2, 3]

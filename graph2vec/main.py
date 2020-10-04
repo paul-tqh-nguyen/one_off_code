@@ -190,7 +190,6 @@ class Graph2VecHyperParameterSearchObjective:
         self.process_id_queue.put(process_id)
         return loss
 
-@trace
 def get_number_of_graph2vec_hyperparameter_search_trials(study: optuna.Study) -> int:
     df = study.trials_dataframe()
     if len(df) == 0:
