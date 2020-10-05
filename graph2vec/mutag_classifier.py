@@ -13,8 +13,11 @@ Sections:
 # Imports #
 ###########
 
+import networkx as nx
+import pickle
 from sklearn.model_selection import train_test_split
 import pytorch_lightning as pl
+import optuna
 import torch
 from torch import nn
 from torch.utils import data
@@ -33,6 +36,8 @@ from misc_utilities import *
 
 BCE_LOSS = torch.nn.BCELoss()
 
+INITIAL_LEARNING_RATE = 1e-3
+
 #####################
 # Graph Data Module #
 #####################
@@ -42,10 +47,10 @@ class MUTAGDataset(data.Dataset):
         self.graph_id_to_graph_label = graph_id_to_graph_label
         
     def __getitem__(self, graph_id: int):
-        return self.graph_id_to_graph_label[graph_id]
+        return {'graph_id': graph_id, 'target': self.graph_id_to_graph_label[graph_id]}
     
     def __len__(self):
-        return len(self.df)
+        return len(self.graph_id_to_graph_label)
 
 class MUTAGDataModule(pl.LightningDataModule):
 
@@ -58,7 +63,7 @@ class MUTAGDataModule(pl.LightningDataModule):
     
     def setup(self) -> None:
         
-        graph_ids = graph_id_to_graph_label.keys()
+        graph_ids = list(self.graph_id_to_graph_label.keys())
         training_graph_ids, testing_graph_ids = train_test_split(graph_ids, test_size=0.30, random_state=RANDOM_SEED)
         validation_graph_ids, testing_graph_ids = train_test_split(testing_graph_ids, test_size=0.5, random_state=RANDOM_SEED)
 
@@ -66,7 +71,7 @@ class MUTAGDataModule(pl.LightningDataModule):
         validation_graph_id_to_graph_label = {}
         testing_graph_id_to_graph_label = {}
 
-        for graph_id, graph_label in graph_id_to_graph_label.items():
+        for graph_id, graph_label in self.graph_id_to_graph_label.items():
             if graph_id in training_graph_ids:
                 training_graph_id_to_graph_label[graph_id] = graph_label
             elif graph_id in validation_graph_ids:
@@ -75,7 +80,6 @@ class MUTAGDataModule(pl.LightningDataModule):
                 testing_graph_id_to_graph_label[graph_id] = graph_label
             else:
                 raise ValueError(f'{graph_id} not in any split.')
-    
         
         training_dataset = MUTAGDataset(training_graph_id_to_graph_label)
         validation_dataset = MUTAGDataset(validation_graph_id_to_graph_label)
@@ -111,13 +115,13 @@ class MUTAGClassifier(pl.LightningModule):
         'dropout_probability',
     )
     
-    def __init__(self, graph_id_to_graph_embeddings: VectorDict, graph_id_to_graph_label: Dict[int, int], batch_size: int, graph2vec_trial_index: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float):
+    def __init__(self, batch_size: int, graph_id_to_graph_embeddings: VectorDict, graph2vec_trial_index: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float, learning_rate: float = INITIAL_LEARNING_RATE):
         super().__init__()
-        self.save_hyperparameters(**self.__class__.hyperparameter_names)
-        
-        graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, storage=GRAPH2VEC_DB_URL, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner()).trials_dataframe()
-        graph_vector_size = graph2vec_study_df.iloc[self.hparams.graph2vec_trial_index]['params_dimensions']
+        self.save_hyperparameters(*(self.__class__.hyperparameter_names+('learning_rate',)))
 
+        self.graph_id_to_graph_embeddings = graph_id_to_graph_embeddings
+        graph_vector_size = graph_id_to_graph_embeddings.matrix.shape[1]
+        
         self.linear_layers = nn.Sequential(
             OrderedDict( # @todo try decreasing the linear layer sizes
                 sum(
@@ -136,10 +140,6 @@ class MUTAGClassifier(pl.LightningModule):
                 (f'activation_layer', nn.Tanh()),
             ])
         )
-
-        self.data_module = MUTAGDataModule(hyperparameter_dict['batch_size'], graph_id_to_graph_label)
-        self.data_module.prepare_data()
-        self.data_module.setup()
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor: # @todo sweep all return signatures
         batch_size = batch.shape[0]
@@ -161,11 +161,11 @@ class MUTAGClassifier(pl.LightningModule):
 
     def configure_optimizers(self) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
         # @todo use Nadam and explore its parameters in the hyperparameter search
-        optimizer: torch.optim.Optimizer = torch.optim.Adam(self.parameters(), lr=self.lr or self.learning_rate) # @todo print out the learning rate to make sure this works
+        optimizer: torch.optim.Optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         return {'optimizer': optimizer}
-        
+    
     def _get_batch_loss(self, batch_dict: dict) -> torch.Tensor:
-        batch = batch_dict['graph_embedding']
+        batch = self.graph_id_to_graph_embeddings[batch_dict['graph_id']]
         target_predictions = batch_dict['target']
         batch_size = only_one(target_predictions.shape)
         graph_vector_size = self.linear_layers.dense_layer_0.in_features
@@ -285,11 +285,11 @@ class MUTAGClassifier(pl.LightningModule):
         return checkpoint_dir
 
     @classmethod
-    def train_model(cls, gpus: List[int], **model_initialization_args) -> float:
+    def train_model(cls, gpus: List[int], graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], **model_initialization_args) -> float:
         
         hyperparameter_dict = {
             hyperparameter_name: hyperparameter_value
-            for hyperparameter_name, hyperparameter_value in model_initialization_args.items
+            for hyperparameter_name, hyperparameter_value in model_initialization_args.items()
             if hyperparameter_name in cls.hyperparameter_names
         }
         
@@ -308,7 +308,7 @@ class MUTAGClassifier(pl.LightningModule):
         trainer = pl.Trainer(
             callbacks=[cls.PrintingCallback(checkpoint_callback)],
             auto_lr_find=True,
-            early_stop_callback=EarlyStopping(
+            early_stop_callback=pl.callbacks.EarlyStopping(
                 monitor='val_accuracy',
                 min_delta=1.00, # @todo change this
                 patience=3,
@@ -324,10 +324,28 @@ class MUTAGClassifier(pl.LightningModule):
             logger=pl.loggers.TensorBoardLogger(checkpoint_dir, name='cf_model'),
             checkpoint_callback=checkpoint_callback,
         )
-    
-        model = cls(**model_initialization_args)
-    
-        trainer.fit(model, self.data_module)
+        
+        graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
+        graph2vec_hyperparameter_row = graph2vec_study_df.iloc[model_initialization_args['graph2vec_trial_index']]
+        parameter_name_prefix = 'params_'
+        graph2vec_hyperparameter_dict = {attr_name[len(parameter_name_prefix):]: getattr(graph2vec_hyperparameter_row, attr_name) for attr_name in dir(graph2vec_hyperparameter_row) if attr_name.startswith(parameter_name_prefix)}
+        from main import Graph2VecHyperParameterSearchObjective
+        checkpoint_directory = Graph2VecHyperParameterSearchObjective.checkpoint_directory_from_hyperparameters(**graph2vec_hyperparameter_dict)
+        keyed_embedding_pickle_location = os.path.join(checkpoint_directory, KEYED_EMBEDDING_PICKLE_FILE_BASENAME)
+        with open(keyed_embedding_pickle_location, 'rb') as file_handle:
+            graph_id_to_graph_embeddings = pickle.load(file_handle)
+
+        model_initialization_args['graph_id_to_graph_embeddings'] = graph_id_to_graph_embeddings
+        model = cls(**model_initialization_args) 
+            
+        data_module = MUTAGDataModule(hyperparameter_dict['batch_size'], graph_id_to_graph_label)
+        data_module.prepare_data()
+        data_module.setup()
+
+        lr_finder = trainer.tuner.lr_find(model, data_module.train_dataloader(), data_module.val_dataloader())
+        model.hparams.learning_rate = lr_finder.suggestion()
+        
+        trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
         

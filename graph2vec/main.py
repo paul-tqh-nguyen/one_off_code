@@ -39,12 +39,6 @@ from mutag_classifier import MUTAGClassifier
 # Globals #
 ###########
 
-KEYED_EMBEDDING_PICKLE_FILE_BASENAME = 'doc2vec.model'
-DOC2VEC_MODEL_FILE_BASENAME = 'doc2vec.model'
-RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
-
-MAX_NUMBER_OF_GRAPH2VEC_MODELS = 1e5
-
 # Data Files
 
 EDGES_FILE = './data/MUTAG_A.txt'
@@ -198,7 +192,7 @@ def get_number_of_graph2vec_hyperparameter_search_trials(study: optuna.Study) ->
     return number_of_remaining_trials
 
 def graph2vec_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
-    study = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True)
+    study = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True)
     number_of_trials = get_number_of_graph2vec_hyperparameter_search_trials(study)
     optimize_kawrgs = dict(
         n_trials=number_of_trials,
@@ -224,11 +218,9 @@ class MUTAGClassifierHyperParameterSearchObjective:
         self.graph_id_to_graph = graph_id_to_graph
         self.graph_id_to_graph_label = graph_id_to_graph_label
         self.gpu_id_queue = gpu_id_queue
-        self._graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
+        self._graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
-        assert len(self._graph2vec_study_df) < MAX_NUMBER_OF_GRAPH2VEC_MODELS
-        trial.suggest_categorical('graph2vec_trial_index', range(0, MAX_NUMBER_OF_GRAPH2VEC_MODELS)) # workaround for https://github.com/optuna/optuna/issues/372
         graph2vec_trial_indices = self._graph2vec_study_df[self._graph2vec_study_df.state.eq('COMPLETE')].index.tolist()
         hyperparameters = {
             'batch_size': int(trial.suggest_int('batch_size', 1, 1024)),
@@ -245,20 +237,16 @@ class MUTAGClassifierHyperParameterSearchObjective:
         return loss
 
     def __call__(self, trial: optuna.Trial) -> float:
-        print(f"1 {repr(1)}")
         gpu_id = self.gpu_id_queue.get()
-        print(f"2 {repr(2)}")
 
         hyperparameters = self.get_trial_hyperparameters(trial)
-        print(f"3 {repr(3)}")
         checkpoint_dir = MUTAGClassifier.checkpoint_directory_from_hyperparameters(**hyperparameters) # @todo do something with this
-        print(f"4 {repr(4)}")
         LOGGER.info(f'Starting MUTAG classifier training for {checkpoint_dir} on GPU {gpu_id}.')
         
         try:
             with suppressed_output():
                 with warnings_suppressed():
-                    best_validation_loss = MUTAGClassifier.train_model(**hyperparameters)
+                    best_validation_loss = MUTAGClassifier.train_model(gpus=[gpu_id], graph_id_to_graph=self.graph_id_to_graph, graph_id_to_graph_label=self.graph_id_to_graph_label, **hyperparameters)
         except Exception as exception:
             if self.gpu_id_queue is not None:
                 self.gpu_id_queue.put(gpu_id)
@@ -277,7 +265,7 @@ def get_number_of_mutag_classifier_hyperparameter_search_trials(study: optuna.St
     return number_of_remaining_trials
 
 def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
-    study = optuna.create_study(study_name=MUTAG_CLASSIFIER_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=MUTAG_CLASSIFIER_DB_URL, direction='minimize', load_if_exists=True)
+    study = optuna.create_study(study_name=MUTAG_CLASSIFIER_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=MUTAG_CLASSIFIER_DB_URL, direction='minimize', load_if_exists=True)
     number_of_trials = get_number_of_mutag_classifier_hyperparameter_search_trials(study)
     optimize_kawrgs = dict(
         n_trials=number_of_trials,

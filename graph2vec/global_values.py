@@ -18,6 +18,7 @@ import gensim
 import logging
 import torch
 import numpy as np
+from typing import Union, Iterable
 
 from misc_utilities import *
 
@@ -48,6 +49,10 @@ _initialize_logger()
 ###########
 
 RANDOM_SEED = 1234
+
+KEYED_EMBEDDING_PICKLE_FILE_BASENAME = 'doc2vec_keyed_embedding.pickle'
+DOC2VEC_MODEL_FILE_BASENAME = 'doc2vec.model'
+RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
 
 # graph2vec Globals
 
@@ -86,8 +91,12 @@ class VectorDict():
         self.key_to_index_map = dict(map(reversed, enumerate(keys)))
         self.matrix = matrix
 
-    def __getitem__(self, key) -> np.ndarray:
-        return self.matrix[self.key_to_index_map[key]]
+    def __getitem__(self, key: Union[int, Iterable]) -> np.ndarray:
+        if isinstance(key, int):
+            item = self.matrix[self.key_to_index_map[key]]
+        else:
+            item = self.matrix[[self.key_to_index_map[sub_key] for sub_key in key]]
+        return item
 
 ###################
 # Nadam Optimizer #
