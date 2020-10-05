@@ -308,7 +308,7 @@ class MUTAGClassifier(pl.LightningModule):
         checkpoint_callback = pl.callbacks.ModelCheckpoint(
                 filepath=os.path.join(checkpoint_dir, 'checkpoint_{epoch:03d}_{val_checkpoint_on}'),
                 save_top_k=1,
-                verbose=True,
+                verbose=False,
                 save_last=True,
                 monitor='val_checkpoint_on',
                 mode='min',
@@ -319,7 +319,7 @@ class MUTAGClassifier(pl.LightningModule):
             auto_lr_find=True,
             early_stop_callback=pl.callbacks.EarlyStopping(
                 monitor='val_checkpoint_on',
-                min_delta=0.005, # @todo change this
+                min_delta=0.001,
                 patience=3,
                 verbose=False,
                 mode='min',
@@ -332,11 +332,12 @@ class MUTAGClassifier(pl.LightningModule):
             distributed_backend='dp',
             deterministic=True,
             # precision=16, # not supported for data parallel (e.g. multiple GPUs) https://github.com/NVIDIA/apex/issues/227
-            logger=pl.loggers.TensorBoardLogger(checkpoint_dir, name='cf_model'),
+            logger=pl.loggers.TensorBoardLogger(checkpoint_dir, name='checkpoint_model'),
+            default_root_dir=checkpoint_dir,
             checkpoint_callback=checkpoint_callback,
         )
         
-        graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
+        graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPE(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
         graph2vec_hyperparameter_row = graph2vec_study_df.iloc[model_initialization_args['graph2vec_trial_index']]
         parameter_name_prefix = 'params_'
         graph2vec_hyperparameter_dict = {attr_name[len(parameter_name_prefix):]: getattr(graph2vec_hyperparameter_row, attr_name) for attr_name in dir(graph2vec_hyperparameter_row) if attr_name.startswith(parameter_name_prefix)}
