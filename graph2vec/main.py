@@ -100,9 +100,9 @@ class Graph2VecHyperParameterSearchObjective:
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         hyperparameters = {
             'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 6)),
-            'dimensions': int(trial.suggest_int('dimensions', 100, 500)),
-            'epochs': int(trial.suggest_int('epochs', 10, 15)),
-            'learning_rate': trial.suggest_uniform('learning_rate', 1e-5, 1e-1),
+            'dimensions': int(trial.suggest_int('dimensions', 1024, 1024)),
+            'epochs': int(trial.suggest_int('epochs', 10, 30)),
+            'learning_rate': trial.suggest_uniform('learning_rate', 1e-6, 1e-2),
         }
         return hyperparameters
 
@@ -194,7 +194,7 @@ def get_number_of_graph2vec_hyperparameter_search_trials(study: optuna.Study) ->
 
 def graph2vec_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
     set(graph_id_to_graph.keys()) == set(graph_id_to_graph_label.keys())
-    study = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True)
+    study = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.NopPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True)
     number_of_trials = get_number_of_graph2vec_hyperparameter_search_trials(study)
     optimize_kawrgs = dict(
         n_trials=number_of_trials,
@@ -220,7 +220,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
         self.graph_id_to_graph = graph_id_to_graph
         self.graph_id_to_graph_label = graph_id_to_graph_label
         self.gpu_id_queue = gpu_id_queue
-        self._graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
+        self._graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.NopPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         graph2vec_trial_indices = self._graph2vec_study_df[self._graph2vec_study_df.state.eq('COMPLETE')].index.tolist()

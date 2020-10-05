@@ -337,7 +337,7 @@ class MUTAGClassifier(pl.LightningModule):
             checkpoint_callback=checkpoint_callback,
         )
         
-        graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.TPE(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
+        graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.NopPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
         graph2vec_hyperparameter_row = graph2vec_study_df.iloc[model_initialization_args['graph2vec_trial_index']]
         parameter_name_prefix = 'params_'
         graph2vec_hyperparameter_dict = {attr_name[len(parameter_name_prefix):]: getattr(graph2vec_hyperparameter_row, attr_name) for attr_name in dir(graph2vec_hyperparameter_row) if attr_name.startswith(parameter_name_prefix)}
