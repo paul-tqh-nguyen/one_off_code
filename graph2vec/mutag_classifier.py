@@ -13,6 +13,7 @@ Sections:
 # Imports #
 ###########
 
+import json
 import networkx as nx
 import pickle
 from sklearn.model_selection import train_test_split
@@ -317,12 +318,14 @@ class MUTAGClassifier(pl.LightningModule):
             callbacks=[cls.PrintingCallback(checkpoint_callback)],
             auto_lr_find=True,
             early_stop_callback=pl.callbacks.EarlyStopping(
-                monitor='val_accuracy',
-                min_delta=1.00, # @todo change this
+                monitor='val_checkpoint_on',
+                min_delta=0.005, # @todo change this
                 patience=3,
-                verbose=True, # @todo turn this off
-                mode='min'
+                verbose=False,
+                mode='min',
+                strict=True,
             ),
+            min_epochs=10,
             gradient_clip_val=model_initialization_args.get('gradient_clip_val', 0),
             terminate_on_nan=True,
             gpus=gpus,
@@ -350,8 +353,10 @@ class MUTAGClassifier(pl.LightningModule):
         data_module.prepare_data()
         data_module.setup()
 
+        LOGGER.info(f'Initial learning rate: {model.hparams.learning_rate}')
         lr_finder = trainer.tuner.lr_find(model, data_module.train_dataloader(), data_module.val_dataloader())
         model.hparams.learning_rate = lr_finder.suggestion()
+        LOGGER.info(f'Best learning rate found: {model.hparams.learning_rate}')
         
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
@@ -361,8 +366,6 @@ class MUTAGClassifier(pl.LightningModule):
         with open(output_json_file_location, 'w') as file_handle:
             json_dict = {
                 'testing_loss': test_results['testing_loss'],
-                'testing_regularization_loss': test_results['testing_regularization_loss'],
-                'testing_mse_loss': test_results['testing_mse_loss'],
                 
                 'best_validation_loss': best_validation_loss,
                 'best_validation_model_path': checkpoint_callback.best_model_path,

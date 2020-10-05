@@ -233,7 +233,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
         }
         assert set(hyperparameters.keys()) == set(MUTAGClassifier.hyperparameter_names)
         return hyperparameters
-
+    
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get()
 
@@ -271,12 +271,13 @@ def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph
         catch=(Exception,),
     )
     with mp.Manager() as manager:
-        gpu_id_queue = manager.Queue()
-        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
-        optimize_kawrgs['func'] = MUTAGClassifierHyperParameterSearchObjective(graph_id_to_graph, graph_id_to_graph_label, gpu_id_queue)
-        optimize_kawrgs['n_jobs'] = len(GPU_IDS)
-        with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
-            study.optimize(**optimize_kawrgs)
+        # with training_logging_suppressed():
+            gpu_id_queue = manager.Queue()
+            more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
+            optimize_kawrgs['func'] = MUTAGClassifierHyperParameterSearchObjective(graph_id_to_graph, graph_id_to_graph_label, gpu_id_queue)
+            optimize_kawrgs['n_jobs'] = len(GPU_IDS)
+            with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
+                study.optimize(**optimize_kawrgs)
     return
     
 ##########

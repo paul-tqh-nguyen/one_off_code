@@ -44,6 +44,19 @@ def _initialize_logger() -> None:
 
 _initialize_logger()
 
+@contextmanager
+def training_logging_suppressed() -> Generator:
+    logger = logging.root.manager.loggerDict['lightning']
+    lightning_original_disability = logger.disabled
+    logger.disabled = True
+    logger_stream_handler_original_stream = LOGGER_STREAM_HANDLER.stream
+    with open(os.devnull, 'w') as dev_null:
+        LOGGER_STREAM_HANDLER.setStream(dev_null)
+        yield
+    logger.disabled = lightning_original_disability
+    LOGGER_STREAM_HANDLER.setStream(logger_stream_handler_original_stream)
+    return
+
 ###########
 # Globals #
 ###########
@@ -60,7 +73,7 @@ GRAPH2VEC_CHECKPOINT_DIR = './checkpoints_graph2vec'
 GRAPH2VEC_STUDY_NAME = 'graph2vec'
 GRAPH2VEC_DB_URL = 'sqlite:///graph2vec.db'
 
-NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS = 50 # 9999 # @todo enable this
+NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS = 10 # 9999 # @todo enable this
 NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_PROCESSES = 50
 
 if not os.path.isdir(GRAPH2VEC_CHECKPOINT_DIR):
