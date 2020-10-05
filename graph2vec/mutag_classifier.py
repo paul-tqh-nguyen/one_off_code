@@ -34,7 +34,7 @@ from misc_utilities import *
 # Globals #
 ###########
 
-BCE_LOSS = torch.nn.BCELoss()
+BCE_LOSS = torch.nn.BCELoss(reduction='none')
 
 INITIAL_LEARNING_RATE = 1e-3
 
@@ -44,10 +44,12 @@ INITIAL_LEARNING_RATE = 1e-3
 
 class MUTAGDataset(data.Dataset):
     def __init__(self, graph_id_to_graph_label: Dict[int, int]):
-        self.graph_id_to_graph_label = graph_id_to_graph_label
+        self.graph_id_to_graph_label = OrderedDict(graph_id_to_graph_label)
+        self.index_to_graph_id = np.array(list(self.graph_id_to_graph_label.keys()), dtype=int)
         
-    def __getitem__(self, graph_id: int):
-        return {'graph_id': graph_id, 'target': self.graph_id_to_graph_label[graph_id]}
+    def __getitem__(self, index: int):
+        graph_id = self.index_to_graph_id[index]
+        return {'graph_id': torch.tensor(graph_id, dtype=torch.float32), 'target': torch.tensor(self.graph_id_to_graph_label[graph_id], dtype=torch.float32)}
     
     def __len__(self):
         return len(self.graph_id_to_graph_label)
@@ -66,7 +68,7 @@ class MUTAGDataModule(pl.LightningDataModule):
         graph_ids = list(self.graph_id_to_graph_label.keys())
         training_graph_ids, testing_graph_ids = train_test_split(graph_ids, test_size=0.30, random_state=RANDOM_SEED)
         validation_graph_ids, testing_graph_ids = train_test_split(testing_graph_ids, test_size=0.5, random_state=RANDOM_SEED)
-
+        
         training_graph_id_to_graph_label = {}
         validation_graph_id_to_graph_label = {}
         testing_graph_id_to_graph_label = {}
@@ -85,10 +87,14 @@ class MUTAGDataModule(pl.LightningDataModule):
         validation_dataset = MUTAGDataset(validation_graph_id_to_graph_label)
         testing_dataset = MUTAGDataset(testing_graph_id_to_graph_label)
 
-        # https://github.com/PyTorchLightning/pytorch-lightning/issues/408 forces us to use shuffle and drop_last in training
+        # https://github.com/PyTorchLightning/pytorch-lightning/issues/408 forces us to use shuffle in training and drop_last pervasively
         self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=0, shuffle=True, drop_last=True)
-        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=1, num_workers=0, shuffle=False, drop_last=False)
-        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=1, num_workers=0, shuffle=False, drop_last=False)
+        self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=len(validation_dataset)//4, num_workers=0, shuffle=False, drop_last=True)
+        self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=len(testing_dataset)//4, num_workers=0, shuffle=False, drop_last=True)
+        
+        assert 0 < len(self.training_dataloader) <= len(training_graph_ids) == len(training_graph_id_to_graph_label)
+        assert 0 < len(self.validation_dataloader) <= len(validation_graph_ids) == len(validation_graph_id_to_graph_label)
+        assert 0 < len(self.testing_dataloader) <= len(testing_graph_ids) == len(testing_graph_id_to_graph_label)
         
         return
     
@@ -118,7 +124,7 @@ class MUTAGClassifier(pl.LightningModule):
     def __init__(self, batch_size: int, graph_id_to_graph_embeddings: VectorDict, graph2vec_trial_index: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float, learning_rate: float = INITIAL_LEARNING_RATE):
         super().__init__()
         self.save_hyperparameters(*(self.__class__.hyperparameter_names+('learning_rate',)))
-
+        
         self.graph_id_to_graph_embeddings = graph_id_to_graph_embeddings
         graph_vector_size = graph_id_to_graph_embeddings.matrix.shape[1]
         
@@ -134,10 +140,11 @@ class MUTAGClassifier(pl.LightningModule):
                     ], [])
             )
         )
+        
         self.prediction_layers = nn.Sequential(
             OrderedDict([
                 (f'reduction_layer', nn.Linear(graph_vector_size, 1)),
-                (f'activation_layer', nn.Tanh()),
+                (f'activation_layer', nn.Sigmoid()),
             ])
         )
 
@@ -165,8 +172,9 @@ class MUTAGClassifier(pl.LightningModule):
         return {'optimizer': optimizer}
     
     def _get_batch_loss(self, batch_dict: dict) -> torch.Tensor:
-        batch = self.graph_id_to_graph_embeddings[batch_dict['graph_id']]
-        target_predictions = batch_dict['target']
+        device = only_one({parameter.device for parameter in self.parameters()})
+        batch = self.graph_id_to_graph_embeddings[batch_dict['graph_id']].to(device)
+        target_predictions = batch_dict['target'].to(device)
         batch_size = only_one(target_predictions.shape)
         graph_vector_size = self.linear_layers.dense_layer_0.in_features
         assert tuple(batch.shape) == (batch_size, graph_vector_size)
@@ -273,16 +281,16 @@ class MUTAGClassifier(pl.LightningModule):
             LOGGER.info(f'Best validation model checkpoint saved to {self.checkpoint_callback.best_model_path} .')
             LOGGER.info('')
             return
-
+    
     @staticmethod
     def checkpoint_directory_from_hyperparameters(batch_size: int, graph2vec_trial_index: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float) -> str:
-        checkpoint_dir = f'./checkpoints/' \
+        checkpoint_directory = os.path.join(MUTAG_CLASSIFIER_CHECKPOINT_DIR, 
             f'batch_{int(batch_size)}_' \
             f'graph2vec_trial_index_{int(graph2vec_trial_index)}_' \
             f'number_of_layers_{int(number_of_layers)}_' \
             f'gradient_clip_{int(gradient_clip_val)}_' \
-            f'dropout_{dropout_probability:.5g}'
-        return checkpoint_dir
+            f'dropout_{dropout_probability:.5g}')
+        return checkpoint_directory
 
     @classmethod
     def train_model(cls, gpus: List[int], graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], **model_initialization_args) -> float:
@@ -333,11 +341,11 @@ class MUTAGClassifier(pl.LightningModule):
         checkpoint_directory = Graph2VecHyperParameterSearchObjective.checkpoint_directory_from_hyperparameters(**graph2vec_hyperparameter_dict)
         keyed_embedding_pickle_location = os.path.join(checkpoint_directory, KEYED_EMBEDDING_PICKLE_FILE_BASENAME)
         with open(keyed_embedding_pickle_location, 'rb') as file_handle:
-            graph_id_to_graph_embeddings = pickle.load(file_handle)
+            graph_id_to_graph_embeddings = pickle.load(file_handle).to('cuda')
 
         model_initialization_args['graph_id_to_graph_embeddings'] = graph_id_to_graph_embeddings
-        model = cls(**model_initialization_args) 
-            
+        model = cls(**model_initialization_args)
+        
         data_module = MUTAGDataModule(hyperparameter_dict['batch_size'], graph_id_to_graph_label)
         data_module.prepare_data()
         data_module.setup()

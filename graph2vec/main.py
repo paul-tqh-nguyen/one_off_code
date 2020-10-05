@@ -79,10 +79,11 @@ def process_data() -> Tuple[dict, dict]:
         assert dst_id in graph.nodes
         graph.add_edge(src_id, dst_id, edge_label=edge_label)
     with open(GRAPH_LABELS_FILE, 'r') as graph_labels_file_handle:
-        graph_id_to_graph_label = dict(enumerate(map(lambda label: 1 if label.strip()=='1' else 0, graph_labels_file_handle.readlines())))
+        graph_id_to_graph_label = dict(enumerate(map(lambda label: 1 if label.strip()=='1' else 0, graph_labels_file_handle.readlines()), start=1))
         assert set(graph_id_to_graph_label.values()) == {0, 1}
         assert len(graph_id_to_graph_label) == 188
     graph_id_to_graph = {graph_id: nx.convert_node_labels_to_integers(graph) for graph_id, graph in graph_id_to_graph.items()}
+    assert set(graph_id_to_graph.keys()) == set(graph_id_to_graph_label.keys())
     return graph_id_to_graph, graph_id_to_graph_label
 
 #######################
@@ -192,6 +193,7 @@ def get_number_of_graph2vec_hyperparameter_search_trials(study: optuna.Study) ->
     return number_of_remaining_trials
 
 def graph2vec_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
+    set(graph_id_to_graph.keys()) == set(graph_id_to_graph_label.keys())
     study = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True)
     number_of_trials = get_number_of_graph2vec_hyperparameter_search_trials(study)
     optimize_kawrgs = dict(
@@ -223,7 +225,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         graph2vec_trial_indices = self._graph2vec_study_df[self._graph2vec_study_df.state.eq('COMPLETE')].index.tolist()
         hyperparameters = {
-            'batch_size': int(trial.suggest_int('batch_size', 1, 1024)),
+            'batch_size': int(trial.suggest_int('batch_size', 1, 32)),
             'graph2vec_trial_index': int(trial.suggest_categorical('graph2vec_trial_index', graph2vec_trial_indices)),
             'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 5)),
             'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 25.0), 
@@ -231,10 +233,6 @@ class MUTAGClassifierHyperParameterSearchObjective:
         }
         assert set(hyperparameters.keys()) == set(MUTAGClassifier.hyperparameter_names)
         return hyperparameters
-
-    def train_model(gpu_id: int, **hyperparameters) -> float:
-        loss = MUTAGClassifier.train_model(gpus=[gpu_id], **hyperparameters)
-        return loss
 
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get()

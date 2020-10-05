@@ -60,7 +60,7 @@ GRAPH2VEC_CHECKPOINT_DIR = './checkpoints_graph2vec'
 GRAPH2VEC_STUDY_NAME = 'graph2vec'
 GRAPH2VEC_DB_URL = 'sqlite:///graph2vec.db'
 
-NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS = 100 # 9999 # @todo enable this
+NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS = 50 # 9999 # @todo enable this
 NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_PROCESSES = 50
 
 if not os.path.isdir(GRAPH2VEC_CHECKPOINT_DIR):
@@ -85,18 +85,24 @@ if not os.path.isdir(MUTAG_CLASSIFIER_CHECKPOINT_DIR):
 class VectorDict():
     '''Index into matrix by keys'''
 
-    def __init__(self, keys: Iterable, matrix: np.ndarray):
+    def __init__(self, keys: Iterable, matrix: Union[torch.tensor, np.ndarray]):
         assert len(matrix.shape) == 2
         assert len(keys) == matrix.shape[0]
         self.key_to_index_map = dict(map(reversed, enumerate(keys)))
+        if isinstance(matrix, np.ndarray):
+            matrix = torch.tensor(matrix)
         self.matrix = matrix
 
-    def __getitem__(self, key: Union[int, Iterable]) -> np.ndarray:
+    def __getitem__(self, key: Union[int, torch.Tensor, Iterable]) -> np.ndarray:
         if isinstance(key, int):
             item = self.matrix[self.key_to_index_map[key]]
         else:
-            item = self.matrix[[self.key_to_index_map[sub_key] for sub_key in key]]
+            item = self.matrix[[self.key_to_index_map[int(sub_key)] for sub_key in key]]
         return item
+
+    def to(self, device_spec: Union[str, torch.device]) -> 'VectorDict':
+        self.matrix.to(device_spec)
+        return self
 
 ###################
 # Nadam Optimizer #
