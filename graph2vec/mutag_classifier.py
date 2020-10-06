@@ -13,6 +13,8 @@ Sections:
 # Imports #
 ###########
 
+import karateclub
+import random
 import json
 import networkx as nx
 import pickle
@@ -127,7 +129,7 @@ class MUTAGClassifier(pl.LightningModule):
         'dropout_probability',
     )
     
-    def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, graph2vec_trial_index: float, batch_size: int, number_of_layers: int, gradient_clip_val: float, dropout_probability: float, learning_rate: float = INITIAL_LEARNING_RATE):
+    def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, batch_size: int, number_of_layers: int, gradient_clip_val: float, dropout_probability: float, learning_rate: float = INITIAL_LEARNING_RATE):
         super().__init__()
         self.save_hyperparameters(*(self.__class__.hyperparameter_names+('learning_rate',)))
         
@@ -152,10 +154,10 @@ class MUTAGClassifier(pl.LightningModule):
         )
 
         self.graph_id_to_graph_embeddings: VectorDict = self.create_graph2vec_embeddings(graph_id_to_graph, graph_id_to_graph_label)
-            
+    
     def create_graph2vec_embeddings(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> VectorDict:
         
-        checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(**{hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in hyperparameter_names})
+        checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(**{hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names})
         if not os.path.isdir(checkpoint_directory):
             os.makedirs(checkpoint_directory)
         
@@ -174,19 +176,19 @@ class MUTAGClassifier(pl.LightningModule):
             assert not any(nx.is_directed(graph) for graph in graphs)
             assert all(list(range(graph.number_of_nodes())) == sorted(graph.nodes()) for graph in graphs)
             
-            weisfeiler_lehman_features = [karateclub.utils.treefeatures.WeisfeilerLehmanHashing(graph, wl_iterations, False, False) for graph in graphs]
+            weisfeiler_lehman_features = [karateclub.utils.treefeatures.WeisfeilerLehmanHashing(graph, self.hparams.wl_iterations, False, False) for graph in graphs]
             documents = [gensim.models.doc2vec.TaggedDocument(words=doc.get_graph_features(), tags=[str(i)]) for i, doc in enumerate(weisfeiler_lehman_features)]
             
             model = gensim.models.doc2vec.Doc2Vec(
                 documents,
-                vector_size=dimensions,
+                vector_size=self.hparams.embedding_size,
                 window=0,
                 min_count=0,
                 dm=0,
                 sample=0.0001,
                 workers=1,
-                epochs=epochs,
-                alpha=learning_rate,
+                epochs=self.hparams.graph2vec_epochs,
+                alpha=self.hparams.graph2vec_learning_rate,
                 seed=RANDOM_SEED
             )
         
@@ -197,19 +199,17 @@ class MUTAGClassifier(pl.LightningModule):
             
             with open(keyed_embedding_pickle_location, 'wb') as file_handle:
                 pickle.dump(graph_id_to_graph_embeddings, file_handle)
-                
-        device = only_one({parameter.device for parameter in self.parameters()})
-        graph_id_to_graph_embeddings = graph_id_to_graph_embeddings.to(device)
+        
+        graph_id_to_graph_embeddings = graph_id_to_graph_embeddings
         
         return graph_id_to_graph_embeddings
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor: # @todo sweep all return signatures
         batch_size = batch.shape[0]
-        graph_vector_size = self.linear_layers.dense_layer_0.in_features
-        assert tuple(batch.shape) == (batch_size, graph_vector_size)
+        assert tuple(batch.shape) == (batch_size, self.hparams.embedding_size)
 
         transformed_batch = self.linear_layers(batch)
-        assert tuple(transformed_batch.shape) == (batch_size, graph_vector_size)
+        assert tuple(transformed_batch.shape) == (batch_size, self.hparams.embedding_size)
         
         predictions = self.prediction_layers(transformed_batch).squeeze(1)
         assert tuple(predictions.shape) == (batch_size,)
@@ -231,8 +231,7 @@ class MUTAGClassifier(pl.LightningModule):
         batch = self.graph_id_to_graph_embeddings[batch_dict['graph_id']].to(device)
         target_predictions = batch_dict['target'].to(device)
         batch_size = only_one(target_predictions.shape)
-        graph_vector_size = self.linear_layers.dense_layer_0.in_features
-        assert tuple(batch.shape) == (batch_size, graph_vector_size)
+        assert tuple(batch.shape) == (batch_size, self.hparams.embedding_size)
         assert tuple(target_predictions.shape) == (batch_size,)
         
         predictions = self(batch)
@@ -338,25 +337,29 @@ class MUTAGClassifier(pl.LightningModule):
             return
     
     @staticmethod
-    def checkpoint_directory_from_hyperparameters(batch_size: int, graph2vec_trial_index: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float) -> str:
-        checkpoint_directory = os.path.join(MUTAG_CLASSIFIER_CHECKPOINT_DIR, 
+    def checkpoint_directory_from_hyperparameters(wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, batch_size: int, number_of_layers: int, gradient_clip_val: float, dropout_probability: float) -> str:
+        checkpoint_directory = os.path.join(
+            MUTAG_CLASSIFIER_CHECKPOINT_DIR, 
+            f'wl_iterations_{int(wl_iterations)}_' \
+            f'embed_{int(embedding_size)}_' \
+            f'graph2vec_epochs_{int(graph2vec_epochs)}_' \
+            f'graph2vec_lr_{graph2vec_learning_rate:.5g}_' \
             f'batch_{int(batch_size)}_' \
-            f'graph2vec_trial_index_{int(graph2vec_trial_index)}_' \
             f'number_of_layers_{int(number_of_layers)}_' \
             f'gradient_clip_{int(gradient_clip_val)}_' \
-            f'dropout_{dropout_probability:.5g}')
+            f'dropout_{dropout_probability:.5g}'
+        )
         return checkpoint_directory
 
     @classmethod
-    def train_model(cls, gpus: List[int], graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], **model_initialization_args) -> float:
-        
+    def train_model(cls, gpus: List[int], **model_initialization_args) -> float:
+
         hyperparameter_dict = {
             hyperparameter_name: hyperparameter_value
             for hyperparameter_name, hyperparameter_value in model_initialization_args.items()
             if hyperparameter_name in cls.hyperparameter_names
         }
-        
-        checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(**model_initialization_args)
+        checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir)
         checkpoint_callback = pl.callbacks.ModelCheckpoint(
@@ -391,23 +394,12 @@ class MUTAGClassifier(pl.LightningModule):
             checkpoint_callback=checkpoint_callback,
         )
         
-        graph2vec_study_df = optuna.create_study(study_name=GRAPH2VEC_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.NopPruner(), storage=GRAPH2VEC_DB_URL, direction='minimize', load_if_exists=True).trials_dataframe()
-        graph2vec_hyperparameter_row = graph2vec_study_df.iloc[model_initialization_args['graph2vec_trial_index']]
-        parameter_name_prefix = 'params_'
-        graph2vec_hyperparameter_dict = {attr_name[len(parameter_name_prefix):]: getattr(graph2vec_hyperparameter_row, attr_name) for attr_name in dir(graph2vec_hyperparameter_row) if attr_name.startswith(parameter_name_prefix)}
-        from main import Graph2VecHyperParameterSearchObjective
-        checkpoint_directory = Graph2VecHyperParameterSearchObjective.checkpoint_directory_from_hyperparameters(**graph2vec_hyperparameter_dict)
-        keyed_embedding_pickle_location = os.path.join(checkpoint_directory, KEYED_EMBEDDING_PICKLE_FILE_BASENAME)
-        with open(keyed_embedding_pickle_location, 'rb') as file_handle:
-            graph_id_to_graph_embeddings = pickle.load(file_handle).to('cuda')
-
-        model_initialization_args['graph_id_to_graph_embeddings'] = graph_id_to_graph_embeddings
         model = cls(**model_initialization_args)
         
-        data_module = MUTAGDataModule(hyperparameter_dict['batch_size'], graph_id_to_graph_label)
+        data_module = MUTAGDataModule(hyperparameter_dict['batch_size'], model_initialization_args['graph_id_to_graph_label'])
         data_module.prepare_data()
         data_module.setup()
-
+        
         LOGGER.info(f'Initial learning rate: {model.hparams.learning_rate}')
         lr_finder = trainer.tuner.lr_find(model, data_module.train_dataloader(), data_module.val_dataloader())
         model.hparams.learning_rate = lr_finder.suggestion()
