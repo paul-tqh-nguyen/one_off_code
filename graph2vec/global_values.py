@@ -18,6 +18,7 @@ import gensim
 import logging
 import torch
 import numpy as np
+from sklearn.decomposition import PCA
 from typing import Union, Iterable
 
 from misc_utilities import *
@@ -52,6 +53,7 @@ _initialize_logger()
 
 RANDOM_SEED = 1234
 
+EMBEDDING_VIALIZATION_FILE_BASENAME = 'embedding_visualization.png'
 KEYED_EMBEDDING_PICKLE_FILE_BASENAME = 'doc2vec_keyed_embedding.pickle'
 DOC2VEC_MODEL_FILE_BASENAME = 'doc2vec.model'
 RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
@@ -65,6 +67,29 @@ GPU_IDS = [0, 1, 2, 3]
 
 if not os.path.isdir(MUTAG_CLASSIFIER_CHECKPOINT_DIR):
     os.makedirs(MUTAG_CLASSIFIER_CHECKPOINT_DIR)
+
+####################
+# Visualize 2D PCA #
+####################
+
+def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_location: str, plot_title: str) -> None:
+    assert matrix.shape[0] == len(labels)
+    
+    pca = PCA(n_components=2, copy=False)
+    pca.fit(graph_embedding_matrix)
+    graph_embedding_reduced = pca.transform(graph_embedding_matrix)
+    with temp_plt_figure(figsize=(20.0,10.0)) as figure:
+        plot = figure.add_subplot(111)
+        plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
+        plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
+        label_to_color_map = matplotlib.cm.rainbow(np.linspace(0, 1, len(np.unique(labels))))
+        label_to_color_map = dict(enumerate(label_to_color_map))
+        colors = np.array([label_to_color_map[label] for label in labels])
+        plot.scatter(rfm_np_2_dim[:,0], rfm_np_2_dim[:,1], c=colors, alpha=0.25)
+        plot.set_title(plot_title)
+        plot.set_xlabel('PCA 1')
+        plot.set_ylabel('PCA 2')
+        figure.savefig(output_file_location)
 
 ###############
 # Vector Dict #

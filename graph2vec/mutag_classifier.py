@@ -16,6 +16,7 @@ Sections:
 import karateclub
 import random
 import json
+import numpy as np
 import networkx as nx
 import pickle
 from sklearn.model_selection import train_test_split
@@ -154,7 +155,7 @@ class MUTAGClassifier(pl.LightningModule):
         )
 
         self.graph_id_to_graph_embeddings: VectorDict = self.create_graph2vec_embeddings(graph_id_to_graph, graph_id_to_graph_label)
-
+    
     @trace
     def create_graph2vec_embeddings(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> VectorDict:
         
@@ -169,50 +170,34 @@ class MUTAGClassifier(pl.LightningModule):
             with open(keyed_embedding_pickle_location, 'rb') as file_handle:
                 graph_id_to_graph_embeddings = pickle.load(file_handle)
         else:
-            random.seed(RANDOM_SEED)
-            np.random.seed(RANDOM_SEED)
         
             graphs = graph_id_to_graph.values()
             assert all(nx.is_connected(graph) for graph in graphs)
             assert not any(nx.is_directed(graph) for graph in graphs)
             assert all(list(range(graph.number_of_nodes())) == sorted(graph.nodes()) for graph in graphs)
             
-            # weisfeiler_lehman_features = [karateclub.utils.treefeatures.WeisfeilerLehmanHashing(graph, self.hparams.wl_iterations, False, False) for graph in graphs]
-            # documents = [gensim.models.doc2vec.TaggedDocument(words=doc.get_graph_features(), tags=[str(i)]) for i, doc in enumerate(weisfeiler_lehman_features)]
-            
-            # model = gensim.models.doc2vec.Doc2Vec(
-            #     documents,
-            #     vector_size=self.hparams.embedding_size,
-            #     window=0,
-            #     min_count=0,
-            #     dm=0,
-            #     sample=0.0001,
-            #     workers=1,
-            #     epochs=self.hparams.graph2vec_epochs,
-            #     alpha=self.hparams.graph2vec_learning_rate,
-            #     seed=RANDOM_SEED
-            # )
-            
-            # graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
-            # model.save(saved_model_location)
             graph2vec_trainer = karateclub.Graph2Vec(
-                wl_iterations = self.hparams.wl_iterations,
+                wl_iterations=self.hparams.wl_iterations,
                 dimensions=self.hparams.embedding_size,
-                workers = 1,
-                epochs = self.hparams.graph2vec_epochs,
-                learning_rate = self.hparams.graph2vec_learning_rate,
-                seed = RANDOM_SEED,
+                workers=1,
+                epochs=self.hparams.graph2vec_epochs,
+                learning_rate=self.hparams.graph2vec_learning_rate,
+                min_count=0,
+                seed=RANDOM_SEED,
             )
             graph2vec_trainer.fit([graph_id_to_graph[graph_id] for graph_id in graph_id_to_graph.keys()])
             graph_embedding_matrix: np.ndarray = graph2vec_trainer.get_embedding()
+            assert tuple(graph_embedding_matrix.shape) == (len(graph_id_to_graph), self.hparams.embedding_size)
             
             graph_id_to_graph_embeddings = VectorDict(graph_id_to_graph.keys(), graph_embedding_matrix)
             
-            LOGGER.info(f"graph_id_to_graph_embeddings[1] {repr(graph_id_to_graph_embeddings[1])}") # @todo remove this
-            LOGGER.info(f"(graph_id_to_graph[1].nodes()) {repr((graph_id_to_graph[1].nodes()))}")
-            
             with open(keyed_embedding_pickle_location, 'wb') as file_handle:
                 pickle.dump(graph_id_to_graph_embeddings, file_handle)
+
+            embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VIALIZATION_FILE_BASENAME)
+            embedding_labels = np.array([graph_id_to_graph_label[graph_id] for graph_id in graph_id_to_graph_label.keys()])
+            visualize_vectors(graph_embedding_matrix, embedding_labels, embedding_visualization_location, 'Embedding Visualization via PCA')
+            LOGGER.info(f'Embeddings visualized at {embedding_visualization_location}')
         
         return graph_id_to_graph_embeddings
 
