@@ -108,7 +108,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
             'batch_size': int(trial.suggest_int('batch_size', 1, 32)),
             'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 5)),
             'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 25.0), 
-            'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 1.0),
+            'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.5),
         }
         assert set(hyperparameters.keys()) == set(MUTAGClassifier.hyperparameter_names)
         return hyperparameters
