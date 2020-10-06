@@ -195,7 +195,9 @@ class MUTAGClassifier(pl.LightningModule):
             
             graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
             graph_id_to_graph_embeddings = VectorDict(graph_id_to_graph.keys(), graph_embedding_matrix)
+
             LOGGER.info(f"graph_id_to_graph_embeddings[1] {repr(graph_id_to_graph_embeddings[1])}") # @todo remove this
+            LOGGER.info(f"len(graph_id_to_graph[1].nodes()) {repr(len(graph_id_to_graph[1].nodes()))}")
         
             model.save(saved_model_location)
             
