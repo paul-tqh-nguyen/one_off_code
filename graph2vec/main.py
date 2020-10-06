@@ -100,13 +100,13 @@ class MUTAGClassifierHyperParameterSearchObjective:
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         hyperparameters = {
             # graph2vec Hyperparameters
-            'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 6)),
+            'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 10)),
             'embedding_size': int(trial.suggest_int('embedding_size', 1024, 1024)),
-            'graph2vec_epochs': int(trial.suggest_int('graph2vec_epochs', 10, 30)),
+            'graph2vec_epochs': int(trial.suggest_int('graph2vec_epochs', 10, 50)),
             'graph2vec_learning_rate': trial.suggest_uniform('graph2vec_learning_rate', 1e-6, 1e-2),
             # NN Classifier Hyperparameters
             'batch_size': int(trial.suggest_int('batch_size', 1, 32)),
-            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 5)),
+            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 1)),
             'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 25.0), 
             'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.5),
         }
@@ -162,10 +162,26 @@ def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph
 # Driver #
 ##########
 
+def train_default_model(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
+    MUTAGClassifier.train_model(
+        # graph2vec Hyperparameters
+        wl_iterations=5,
+        embedding_size=1024,
+        graph2vec_epochs=50,
+        graph2vec_learning_rate=1e-4,
+        # NN Classifier Hyperparameters
+        batch_size=1
+        number_of_layers=1,
+        gradient_clip_val=1.5,
+        dropout_probability=0.25,
+    )
+    return
+
 @debug_on_error
 def main() -> None:
     graph_id_to_graph, graph_id_to_graph_label = process_data()
-    mutag_classifier_hyperparameter_search(graph_id_to_graph, graph_id_to_graph_label)
+    # mutag_classifier_hyperparameter_search(graph_id_to_graph, graph_id_to_graph_label)
+    train_default_model(graph_id_to_graph, graph_id_to_graph_label)
     return
 
 if __name__ == '__main__':
