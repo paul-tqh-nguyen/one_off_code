@@ -401,7 +401,7 @@ class MUTAGClassifier(pl.LightningModule):
         data_module.setup()
         
         LOGGER.info(f'Initial learning rate: {model.hparams.learning_rate}')
-        lr_finder = trainer.tuner.lr_find(model, data_module.train_dataloader(), data_module.val_dataloader(), num_training=200)
+        lr_finder = trainer.tuner.lr_find(model, data_module.train_dataloader(), data_module.val_dataloader(), num_training=1_000)
         model.hparams.learning_rate = lr_finder.suggestion()
         LOGGER.info(f'Best learning rate found: {model.hparams.learning_rate}')
         
