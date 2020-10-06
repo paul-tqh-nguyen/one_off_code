@@ -44,6 +44,8 @@ def _initialize_logger() -> None:
 
 _initialize_logger()
 
+# @todo make sure everything in this file is used
+
 ###########
 # Globals #
 ###########
@@ -53,20 +55,6 @@ RANDOM_SEED = 1234
 KEYED_EMBEDDING_PICKLE_FILE_BASENAME = 'doc2vec_keyed_embedding.pickle'
 DOC2VEC_MODEL_FILE_BASENAME = 'doc2vec.model'
 RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
-
-# graph2vec Globals
-
-GRAPH2VEC_CHECKPOINT_DIR = './checkpoints_graph2vec'
-GRAPH2VEC_STUDY_NAME = 'graph2vec'
-GRAPH2VEC_DB_URL = 'sqlite:///graph2vec.db'
-
-NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_TRIALS = 10_000
-NUMBER_OF_GRAPH2VEC_HYPERPARAMETER_PROCESSES = 50
-
-if not os.path.isdir(GRAPH2VEC_CHECKPOINT_DIR):
-    os.makedirs(GRAPH2VEC_CHECKPOINT_DIR)
-
-# MUTAG Classifier Globals
     
 MUTAG_CLASSIFIER_CHECKPOINT_DIR = './checkpoints_mutag_classifier'
 MUTAG_CLASSIFIER_STUDY_NAME = 'classifier-mutag'

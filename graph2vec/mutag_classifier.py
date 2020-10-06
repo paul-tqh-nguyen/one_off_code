@@ -115,26 +115,28 @@ class MUTAGDataModule(pl.LightningDataModule):
 class MUTAGClassifier(pl.LightningModule):
 
     hyperparameter_names = (
+        # graph2vec Hyperparameters
+        'wl_iterations',
+        'embedding_size',
+        'graph2vec_epochs',
+        'graph2vec_learning_rate',
+        # NN Classifier Hyperparameters
         'batch_size', 
-        'graph2vec_trial_index',
         'number_of_layers',
         'gradient_clip_val',
         'dropout_probability',
     )
     
-    def __init__(self, batch_size: int, graph_id_to_graph_embeddings: VectorDict, graph2vec_trial_index: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float, learning_rate: float = INITIAL_LEARNING_RATE):
+    def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, graph2vec_trial_index: float, batch_size: int, number_of_layers: int, gradient_clip_val: float, dropout_probability: float, learning_rate: float = INITIAL_LEARNING_RATE):
         super().__init__()
         self.save_hyperparameters(*(self.__class__.hyperparameter_names+('learning_rate',)))
-        
-        self.graph_id_to_graph_embeddings = graph_id_to_graph_embeddings
-        graph_vector_size = graph_id_to_graph_embeddings.matrix.shape[1]
         
         self.linear_layers = nn.Sequential(
             OrderedDict( # @todo try decreasing the linear layer sizes
                 sum(
                     [
                         [
-                            (f'dense_layer_{i}', nn.Linear(graph_vector_size, graph_vector_size)),
+                            (f'dense_layer_{i}', nn.Linear(embedding_size, embedding_size)),
                             (f'dropout_layer_{i}', nn.Dropout(self.hparams.dropout_probability)),
                             (f'activation_layer_{i}', nn.ReLU(True)),
                         ] for i in range(number_of_layers)
@@ -144,10 +146,62 @@ class MUTAGClassifier(pl.LightningModule):
         
         self.prediction_layers = nn.Sequential(
             OrderedDict([
-                (f'reduction_layer', nn.Linear(graph_vector_size, 1)),
+                (f'reduction_layer', nn.Linear(embedding_size, 1)),
                 (f'activation_layer', nn.Sigmoid()),
             ])
         )
+
+        self.graph_id_to_graph_embeddings: VectorDict = self.create_graph2vec_embeddings(graph_id_to_graph, graph_id_to_graph_label)
+            
+    def create_graph2vec_embeddings(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> VectorDict:
+        
+        checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(**{hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in hyperparameter_names})
+        if not os.path.isdir(checkpoint_directory):
+            os.makedirs(checkpoint_directory)
+        
+        saved_model_location = os.path.join(checkpoint_directory, DOC2VEC_MODEL_FILE_BASENAME)
+        keyed_embedding_pickle_location = os.path.join(checkpoint_directory, KEYED_EMBEDDING_PICKLE_FILE_BASENAME)
+        
+        if os.path.isfile(saved_model_location):
+            with open(keyed_embedding_pickle_location, 'rb') as file_handle:
+                graph_id_to_graph_embeddings = pickle.load(file_handle)
+        else:
+            random.seed(RANDOM_SEED)
+            np.random.seed(RANDOM_SEED)
+        
+            graphs = graph_id_to_graph.values()
+            assert all(nx.is_connected(graph) for graph in graphs)
+            assert not any(nx.is_directed(graph) for graph in graphs)
+            assert all(list(range(graph.number_of_nodes())) == sorted(graph.nodes()) for graph in graphs)
+            
+            weisfeiler_lehman_features = [karateclub.utils.treefeatures.WeisfeilerLehmanHashing(graph, wl_iterations, False, False) for graph in graphs]
+            documents = [gensim.models.doc2vec.TaggedDocument(words=doc.get_graph_features(), tags=[str(i)]) for i, doc in enumerate(weisfeiler_lehman_features)]
+            
+            model = gensim.models.doc2vec.Doc2Vec(
+                documents,
+                vector_size=dimensions,
+                window=0,
+                min_count=0,
+                dm=0,
+                sample=0.0001,
+                workers=1,
+                epochs=epochs,
+                alpha=learning_rate,
+                seed=RANDOM_SEED
+            )
+        
+            graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
+            graph_id_to_graph_embeddings = VectorDict(graph_id_to_graph.keys(), graph_embedding_matrix)
+        
+            model.save(saved_model_location)
+            
+            with open(keyed_embedding_pickle_location, 'wb') as file_handle:
+                pickle.dump(graph_id_to_graph_embeddings, file_handle)
+                
+        device = only_one({parameter.device for parameter in self.parameters()})
+        graph_id_to_graph_embeddings = graph_id_to_graph_embeddings.to(device)
+        
+        return graph_id_to_graph_embeddings
 
     def forward(self, batch: torch.Tensor) -> torch.Tensor: # @todo sweep all return signatures
         batch_size = batch.shape[0]
