@@ -408,6 +408,7 @@ class MUTAGClassifier(pl.LightningModule):
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
+        LOGGER.info(f'Testing Loss : {test_results["testing_loss"]}')
         
         output_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
         with open(output_json_file_location, 'w') as file_handle:
