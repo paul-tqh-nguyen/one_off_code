@@ -164,13 +164,16 @@ def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph
 
 def train_default_model(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
     MUTAGClassifier.train_model(
+        graph_id_to_graph=graph_id_to_graph,
+        graph_id_to_graph_label=graph_id_to_graph_label,
+        gpus=GPU_IDS,
         # graph2vec Hyperparameters
         wl_iterations=5,
         embedding_size=1024,
-        graph2vec_epochs=50,
-        graph2vec_learning_rate=1e-4,
+        graph2vec_epochs=500,
+        graph2vec_learning_rate=1e-2,
         # NN Classifier Hyperparameters
-        batch_size=1
+        batch_size=1,
         number_of_layers=1,
         gradient_clip_val=1.5,
         dropout_probability=0.25,

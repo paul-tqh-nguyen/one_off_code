@@ -154,7 +154,8 @@ class MUTAGClassifier(pl.LightningModule):
         )
 
         self.graph_id_to_graph_embeddings: VectorDict = self.create_graph2vec_embeddings(graph_id_to_graph, graph_id_to_graph_label)
-    
+
+    @trace
     def create_graph2vec_embeddings(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> VectorDict:
         
         checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(**{hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names})
@@ -191,16 +192,15 @@ class MUTAGClassifier(pl.LightningModule):
                 alpha=self.hparams.graph2vec_learning_rate,
                 seed=RANDOM_SEED
             )
-        
+            
             graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
             graph_id_to_graph_embeddings = VectorDict(graph_id_to_graph.keys(), graph_embedding_matrix)
+            LOGGER.info(f"graph_id_to_graph_embeddings[1] {repr(graph_id_to_graph_embeddings[1])}") # @todo remove this
         
             model.save(saved_model_location)
             
             with open(keyed_embedding_pickle_location, 'wb') as file_handle:
                 pickle.dump(graph_id_to_graph_embeddings, file_handle)
-        
-        graph_id_to_graph_embeddings = graph_id_to_graph_embeddings
         
         return graph_id_to_graph_embeddings
 
