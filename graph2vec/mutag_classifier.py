@@ -177,29 +177,39 @@ class MUTAGClassifier(pl.LightningModule):
             assert not any(nx.is_directed(graph) for graph in graphs)
             assert all(list(range(graph.number_of_nodes())) == sorted(graph.nodes()) for graph in graphs)
             
-            weisfeiler_lehman_features = [karateclub.utils.treefeatures.WeisfeilerLehmanHashing(graph, self.hparams.wl_iterations, False, False) for graph in graphs]
-            documents = [gensim.models.doc2vec.TaggedDocument(words=doc.get_graph_features(), tags=[str(i)]) for i, doc in enumerate(weisfeiler_lehman_features)]
+            # weisfeiler_lehman_features = [karateclub.utils.treefeatures.WeisfeilerLehmanHashing(graph, self.hparams.wl_iterations, False, False) for graph in graphs]
+            # documents = [gensim.models.doc2vec.TaggedDocument(words=doc.get_graph_features(), tags=[str(i)]) for i, doc in enumerate(weisfeiler_lehman_features)]
             
-            model = gensim.models.doc2vec.Doc2Vec(
-                documents,
-                vector_size=self.hparams.embedding_size,
-                window=0,
-                min_count=0,
-                dm=0,
-                sample=0.0001,
-                workers=1,
-                epochs=self.hparams.graph2vec_epochs,
-                alpha=self.hparams.graph2vec_learning_rate,
-                seed=RANDOM_SEED
+            # model = gensim.models.doc2vec.Doc2Vec(
+            #     documents,
+            #     vector_size=self.hparams.embedding_size,
+            #     window=0,
+            #     min_count=0,
+            #     dm=0,
+            #     sample=0.0001,
+            #     workers=1,
+            #     epochs=self.hparams.graph2vec_epochs,
+            #     alpha=self.hparams.graph2vec_learning_rate,
+            #     seed=RANDOM_SEED
+            # )
+            
+            # graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
+            # model.save(saved_model_location)
+            graph2vec_trainer = karateclub.Graph2Vec(
+                wl_iterations = self.hparams.wl_iterations,
+                dimensions=self.hparams.embedding_size,
+                workers = 1,
+                epochs = self.hparams.graph2vec_epochs,
+                learning_rate = self.hparams.graph2vec_learning_rate,
+                seed = RANDOM_SEED,
             )
+            graph2vec_trainer.fit([graph_id_to_graph[graph_id] for graph_id in graph_id_to_graph.keys()])
+            graph_embedding_matrix: np.ndarray = graph2vec_trainer.get_embedding()
             
-            graph_embedding_matrix: np.ndarray = np.array([model.docvecs[str(i)] for i in range(len(documents))])
             graph_id_to_graph_embeddings = VectorDict(graph_id_to_graph.keys(), graph_embedding_matrix)
-
+            
             LOGGER.info(f"graph_id_to_graph_embeddings[1] {repr(graph_id_to_graph_embeddings[1])}") # @todo remove this
-            LOGGER.info(f"len(graph_id_to_graph[1].nodes()) {repr(len(graph_id_to_graph[1].nodes()))}")
-        
-            model.save(saved_model_location)
+            LOGGER.info(f"(graph_id_to_graph[1].nodes()) {repr((graph_id_to_graph[1].nodes()))}")
             
             with open(keyed_embedding_pickle_location, 'wb') as file_handle:
                 pickle.dump(graph_id_to_graph_embeddings, file_handle)
