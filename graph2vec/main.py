@@ -102,7 +102,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
             # graph2vec Hyperparameters
             'wl_iterations': int(trial.suggest_int('wl_iterations', 4, 6)),
             'embedding_size': int(trial.suggest_int('embedding_size', 1024, 1024)),
-            'graph2vec_epochs': int(trial.suggest_int('graph2vec_epochs', 500, 500)),
+            'graph2vec_epochs': int(trial.suggest_int('graph2vec_epochs', 500, 1024)),
             'graph2vec_learning_rate': trial.suggest_uniform('graph2vec_learning_rate', 1e-2, 1e-2),
             # NN Classifier Hyperparameters
             'batch_size': int(trial.suggest_int('batch_size', 1, 1)),
@@ -156,7 +156,7 @@ def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph
         optimize_kawrgs['func'] = MUTAGClassifierHyperParameterSearchObjective(graph_id_to_graph, graph_id_to_graph_label, gpu_id_queue)
         optimize_kawrgs['n_jobs'] = len(GPU_IDS)
         with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
-            # with training_logging_suppressed():
+            with training_logging_suppressed():
                 study.optimize(**optimize_kawrgs)
     return
 
