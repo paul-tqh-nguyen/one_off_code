@@ -107,9 +107,9 @@ class MUTAGClassifierHyperParameterSearchObjective:
             # NN Classifier Hyperparameters
             'batch_size': int(trial.suggest_int('batch_size', 1, 1)),
             'classifier_learning_rate': trial.suggest_uniform('classifier_learning_rate', 1e-6, 1e-2),
-            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 1)),
+            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 5)),
             'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 1.0),
-            'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.5),
+            'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.0),
         }
         assert set(hyperparameters.keys()) == set(MUTAGClassifier.hyperparameter_names)
         return hyperparameters
@@ -142,8 +142,11 @@ def get_number_of_mutag_classifier_hyperparameter_search_trials(study: optuna.St
         number_of_remaining_trials = NUMBER_OF_MUTAG_CLASSIFIER_HYPERPARAMETER_TRIALS - number_of_completed_trials
     return number_of_remaining_trials
 
+def load_hyperparameter_search_study() -> optuna.Study:
+    return optuna.create_study(study_name=MUTAG_CLASSIFIER_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.NopPruner(), storage=MUTAG_CLASSIFIER_DB_URL, direction='minimize', load_if_exists=True)
+
 def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
-    study = optuna.create_study(study_name=MUTAG_CLASSIFIER_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.NopPruner(), storage=MUTAG_CLASSIFIER_DB_URL, direction='minimize', load_if_exists=True)
+    study = load_hyperparameter_search_study()
     number_of_trials = get_number_of_mutag_classifier_hyperparameter_search_trials(study)
     optimize_kawrgs = dict(
         n_trials=number_of_trials,
