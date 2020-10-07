@@ -195,7 +195,6 @@ class MUTAGClassifier(pl.LightningModule):
             embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VISUALIZATION_FILE_BASENAME)
             embedding_labels = np.array([graph_id_to_graph_label[graph_id] for graph_id in graph_id_to_graph_label.keys()])
             visualize_vectors(graph_embedding_matrix, embedding_labels, embedding_visualization_location, 'Embedding Visualization via PCA')
-            LOGGER.info(f'Embeddings visualized at {embedding_visualization_location}')
         
         return graph_id_to_graph_embeddings
 
@@ -390,27 +389,28 @@ class MUTAGClassifier(pl.LightningModule):
         testing_accuracy /= len(testing_graph_ids)
         total_accuracy = correctness_vector.sum() / len(correctness_vector)
 
-        label0_color = 'red'
-        label1_color = 'blue'
-        
-        pca = PCA(n_components=2, copy=False)
-        pca.fit(self.graph_id_to_graph_embeddings.matrix)
-        matrix_transformed = pca.transform(self.graph_id_to_graph_embeddings.matrix)
-        with temp_plt_figure(figsize=(20.0,10.0)) as figure:
-            plot = figure.add_subplot(111)
-            plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
-            plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
-            true_label_colors = [label0_color if label==0 else label1_color for label in true_label_vector]
-            plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=true_label_colors, alpha=1.0, marker='o')
-            correctness_colors = [label0_color if correctness else label1_color for correctness in correctness_vector]
-            plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=correctness_colors, alpha=1.0, marker='+')
-            plot.set_title(f'Classification Accuracy {100*total_accuracy:.2g}%')
-            plot.set_xlabel('PCA 1')
-            plot.set_ylabel('PCA 2')
-            figure.savefig(output_file_location)
-        
-        LOGGER.info(f'Classification correctness visualized at {output_file_location}')
-        
+        if ENABLE_VISUALIZATION_SAVING:
+            label0_color = 'red'
+            label1_color = 'blue'
+            
+            pca = PCA(n_components=2, copy=False)
+            pca.fit(self.graph_id_to_graph_embeddings.matrix)
+            matrix_transformed = pca.transform(self.graph_id_to_graph_embeddings.matrix)
+            with temp_plt_figure(figsize=(20.0,10.0)) as figure:
+                plot = figure.add_subplot(111)
+                plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
+                plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
+                true_label_colors = [label0_color if label==0 else label1_color for label in true_label_vector]
+                plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=true_label_colors, alpha=1.0, marker='o')
+                correctness_colors = [label0_color if correctness else label1_color for correctness in correctness_vector]
+                plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=correctness_colors, alpha=1.0, marker='+')
+                plot.set_title(f'Classification Accuracy {100*total_accuracy:.2g}%')
+                plot.set_xlabel('PCA 1')
+                plot.set_ylabel('PCA 2')
+                figure.savefig(output_file_location)
+            
+            LOGGER.info(f'Classification correctness visualized at {output_file_location}')
+            
         return training_accuracy, validation_accuracy, testing_accuracy, total_accuracy
     
     @classmethod

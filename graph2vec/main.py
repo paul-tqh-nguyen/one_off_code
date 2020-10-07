@@ -93,7 +93,7 @@ def process_data() -> Tuple[dict, dict]:
 
 class MUTAGClassifierHyperParameterSearchObjective:
     def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], gpu_id_queue: object):
-        # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dyanmically
+        # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dynamically
         self.graph_id_to_graph = graph_id_to_graph
         self.graph_id_to_graph_label = graph_id_to_graph_label
         self.gpu_id_queue = gpu_id_queue
@@ -101,16 +101,16 @@ class MUTAGClassifierHyperParameterSearchObjective:
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         hyperparameters = {
             # graph2vec Hyperparameters
-            'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 10)),
+            'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 20)),
             'embedding_size': int(trial.suggest_int('embedding_size', 256, 2048)),
             'graph2vec_epochs': int(trial.suggest_int('graph2vec_epochs', 10, 1024)),
             'graph2vec_learning_rate': trial.suggest_uniform('graph2vec_learning_rate', 1e-6, 1e-2),
             # NN Classifier Hyperparameters
             'batch_size': int(trial.suggest_int('batch_size', 1, 1)),
             'classifier_learning_rate': trial.suggest_uniform('classifier_learning_rate', 1e-6, 1e-2),
-            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 5)),
-            'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 1.0),
-            'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.0),
+            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 1)),
+            'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 2.0),
+            'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.5),
         }
         assert set(hyperparameters.keys()) == set(MUTAGClassifier.hyperparameter_names)
         return hyperparameters

@@ -88,28 +88,32 @@ GPU_IDS = [0, 1, 2, 3]
 if not os.path.isdir(MUTAG_CLASSIFIER_CHECKPOINT_DIR):
     os.makedirs(MUTAG_CLASSIFIER_CHECKPOINT_DIR)
 
+ENABLE_VISUALIZATION_SAVING = False
+
 ####################
 # Visualize 2D PCA #
 ####################
 
 def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_location: str, plot_title: str) -> None:
-    assert matrix.shape[0] == len(labels)
-    pca = PCA(n_components=2, copy=False)
-    pca.fit(matrix)
-    matrix_transformed = pca.transform(matrix)
-    with temp_plt_figure(figsize=(20.0,10.0)) as figure:
-        plot = figure.add_subplot(111)
-        plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
-        plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
-        label_to_color_map = matplotlib.cm.rainbow(np.linspace(0, 1, len(np.unique(labels))))
-        label_to_color_map = dict(enumerate(label_to_color_map))
-        colors = np.array([label_to_color_map[label] for label in labels])
-        plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=colors, alpha=0.25)
-        plot.set_title(plot_title)
-        plot.set_xlabel('PCA 1')
-        plot.set_ylabel('PCA 2')
-        figure.savefig(output_file_location)
-
+    if ENABLE_VISUALIZATION_SAVING:
+        assert matrix.shape[0] == len(labels)
+        pca = PCA(n_components=2, copy=False)
+        pca.fit(matrix)
+        matrix_transformed = pca.transform(matrix)
+        with temp_plt_figure(figsize=(20.0,10.0)) as figure:
+            plot = figure.add_subplot(111)
+            plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
+            plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
+            label_to_color_map = matplotlib.cm.rainbow(np.linspace(0, 1, len(np.unique(labels))))
+            label_to_color_map = dict(enumerate(label_to_color_map))
+            colors = np.array([label_to_color_map[label] for label in labels])
+            plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=colors, alpha=0.25)
+            plot.set_title(plot_title)
+            plot.set_xlabel('PCA 1')
+            plot.set_ylabel('PCA 2')
+            figure.savefig(output_file_location)
+        LOGGER.info(f'Embeddings visualized at {embedding_visualization_location}')
+    
 ###############
 # Vector Dict #
 ###############
