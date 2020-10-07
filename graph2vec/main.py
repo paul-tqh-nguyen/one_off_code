@@ -108,7 +108,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
             # NN Classifier Hyperparameters
             'batch_size': int(trial.suggest_int('batch_size', 1, 1)),
             'classifier_learning_rate': trial.suggest_uniform('classifier_learning_rate', 1e-6, 1e-2),
-            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 1)),
+            'number_of_layers': int(trial.suggest_int('number_of_layers', 0, 0)),
             'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 2.0),
             'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.5),
         }
