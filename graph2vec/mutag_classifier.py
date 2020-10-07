@@ -70,7 +70,7 @@ class MUTAGDataModule(pl.LightningDataModule):
     def setup(self) -> None:
         
         graph_ids = list(self.graph_id_to_graph_label.keys())
-        training_graph_ids, testing_graph_ids = train_test_split(graph_ids, test_size=0.30, random_state=RANDOM_SEED)
+        training_graph_ids, testing_graph_ids = train_test_split(graph_ids, test_size=0.20, random_state=RANDOM_SEED)
         validation_graph_ids, testing_graph_ids = train_test_split(testing_graph_ids, test_size=0.5, random_state=RANDOM_SEED)
         
         training_graph_id_to_graph_label = {}
@@ -156,7 +156,6 @@ class MUTAGClassifier(pl.LightningModule):
 
         self.graph_id_to_graph_embeddings: VectorDict = self.create_graph2vec_embeddings(graph_id_to_graph, graph_id_to_graph_label)
     
-    @trace
     def create_graph2vec_embeddings(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> VectorDict:
         
         checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(**{hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names})
@@ -194,7 +193,7 @@ class MUTAGClassifier(pl.LightningModule):
             with open(keyed_embedding_pickle_location, 'wb') as file_handle:
                 pickle.dump(graph_id_to_graph_embeddings, file_handle)
 
-            embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VIALIZATION_FILE_BASENAME)
+            embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VISUALIZATION_FILE_BASENAME)
             embedding_labels = np.array([graph_id_to_graph_label[graph_id] for graph_id in graph_id_to_graph_label.keys()])
             visualize_vectors(graph_embedding_matrix, embedding_labels, embedding_visualization_location, 'Embedding Visualization via PCA')
             LOGGER.info(f'Embeddings visualized at {embedding_visualization_location}')
@@ -212,7 +211,7 @@ class MUTAGClassifier(pl.LightningModule):
         assert tuple(predictions.shape) == (batch_size,)
         
         return predictions
-
+    
     def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
         del _trainer, _optimizer, _optimizer_idx
         loss.mean().backward() # @todo do we need this mean call here?
@@ -222,11 +221,14 @@ class MUTAGClassifier(pl.LightningModule):
         # @todo use Nadam and explore its parameters in the hyperparameter search
         optimizer: torch.optim.Optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
         return {'optimizer': optimizer}
+
+    @property
+    def device(self) -> Union[str, torch.device]:
+        return only_one({parameter.device for parameter in self.parameters()})
     
     def _get_batch_loss(self, batch_dict: dict) -> torch.Tensor:
-        device = only_one({parameter.device for parameter in self.parameters()})
-        batch = self.graph_id_to_graph_embeddings[batch_dict['graph_id']].to(device)
-        target_predictions = batch_dict['target'].to(device)
+        batch = self.graph_id_to_graph_embeddings[batch_dict['graph_id']].to(self.device)
+        target_predictions = batch_dict['target'].to(self.device)
         batch_size = only_one(target_predictions.shape)
         assert tuple(batch.shape) == (batch_size, self.hparams.embedding_size)
         assert tuple(target_predictions.shape) == (batch_size,)
@@ -347,7 +349,56 @@ class MUTAGClassifier(pl.LightningModule):
             f'dropout_{dropout_probability:.5g}'
         )
         return checkpoint_directory
+    
+    def visualize_classification(self, graph_id_to_graph_label: Dict[int, int]) -> float:
+        hyperparameter_dict = { hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names }
+        LOGGER.info(f"hyperparameter_dict {repr(hyperparameter_dict)}")
+        LOGGER.info(f"dir(self.hparams) {repr(dir(self.hparams))}")
+        LOGGER.info(f"self.__class__.hyperparameter_names {repr(self.__class__.hyperparameter_names)}")
+        
+        checkpoint_dir = self.__class__.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
+        if not os.path.isdir(checkpoint_dir):
+            os.makedirs(checkpoint_dir)
+        output_file_location = os.path.join(checkpoint_dir, CLASSIFICATION_CORRECTNSES_VISUALIZATION_FILE_BASENAME)
 
+        self.eval()
+        correctness_vector: np.ndarray = np.empty(self.graph_id_to_graph_embeddings.matrix.shape[0], dtype=bool)
+        true_label_vector: np.ndarray = np.empty(self.graph_id_to_graph_embeddings.matrix.shape[0], dtype=int)
+        prediced_label_vector: np.ndarray = np.empty(self.graph_id_to_graph_embeddings.matrix.shape[0], dtype=int)
+        for graph_id, graph_label in graph_id_to_graph_label.items():
+            embedding = self.graph_id_to_graph_embeddings[graph_id]
+            batch = embedding.unsqueeze(0).to(self.device)
+            prediction = self.forward(batch).round()
+            prediction_is_correct = graph_label == prediction
+            index = self.graph_id_to_graph_embeddings.key_to_index_map[graph_id]
+            true_label_vector[index] = graph_label
+            prediced_label_vector[index] = prediction
+            correctness_vector[index] = prediction_is_correct
+        accuracy = correctness_vector.sum() / len(correctness_vector)
+
+        label0_color = 'red'
+        label1_color = 'blue'
+        
+        pca = PCA(n_components=2, copy=False)
+        pca.fit(self.graph_id_to_graph_embeddings.matrix)
+        matrix_transformed = pca.transform(self.graph_id_to_graph_embeddings.matrix)
+        with temp_plt_figure(figsize=(20.0,10.0)) as figure:
+            plot = figure.add_subplot(111)
+            plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
+            plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
+            true_label_colors = [label0_color if label==0 else label1_color for label in true_label_vector]
+            plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=true_label_colors, alpha=1.0, marker='o')
+            correctness_colors = [label0_color if correctness else label1_color for correctness in correctness_vector]
+            plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=correctness_colors, alpha=1.0, marker='+')
+            plot.set_title(f'Classification Accuracy {100*accuracy:.2f}%')
+            plot.set_xlabel('PCA 1')
+            plot.set_ylabel('PCA 2')
+            figure.savefig(output_file_location)
+        
+        LOGGER.info(f'Classification correctness visualized at {output_file_location}')
+        
+        return accuracy
+    
     @classmethod
     def train_model(cls, gpus: List[int], **model_initialization_args) -> float:
 
@@ -356,6 +407,7 @@ class MUTAGClassifier(pl.LightningModule):
             for hyperparameter_name, hyperparameter_value in model_initialization_args.items()
             if hyperparameter_name in cls.hyperparameter_names
         }
+        
         checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir)
@@ -407,6 +459,8 @@ class MUTAGClassifier(pl.LightningModule):
         best_validation_loss = checkpoint_callback.best_model_score.item()
         LOGGER.info(f'Testing Loss: {test_results["testing_loss"]}')
         
+        model.visualize_classification(model_initialization_args['graph_id_to_graph_label']) # @todo log the accuracy in the JSON file
+        
         output_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
         with open(output_json_file_location, 'w') as file_handle:
             json_dict = {
@@ -424,5 +478,5 @@ class MUTAGClassifier(pl.LightningModule):
             }
             json_dict.update(hyperparameter_dict)
             json.dump(json_dict, file_handle, indent=4)
-    
+        
         return best_validation_loss

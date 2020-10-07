@@ -18,6 +18,7 @@ import gensim
 import logging
 import torch
 import numpy as np
+import matplotlib.cm
 from sklearn.decomposition import PCA
 from typing import Union, Iterable
 
@@ -53,7 +54,8 @@ _initialize_logger()
 
 RANDOM_SEED = 1234
 
-EMBEDDING_VIALIZATION_FILE_BASENAME = 'embedding_visualization.png'
+EMBEDDING_VISUALIZATION_FILE_BASENAME = 'embedding_visualization.png'
+CLASSIFICATION_CORRECTNSES_VISUALIZATION_FILE_BASENAME = 'classification_visualization.png'
 KEYED_EMBEDDING_PICKLE_FILE_BASENAME = 'doc2vec_keyed_embedding.pickle'
 DOC2VEC_MODEL_FILE_BASENAME = 'doc2vec.model'
 RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
@@ -74,10 +76,9 @@ if not os.path.isdir(MUTAG_CLASSIFIER_CHECKPOINT_DIR):
 
 def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_location: str, plot_title: str) -> None:
     assert matrix.shape[0] == len(labels)
-    
     pca = PCA(n_components=2, copy=False)
-    pca.fit(graph_embedding_matrix)
-    graph_embedding_reduced = pca.transform(graph_embedding_matrix)
+    pca.fit(matrix)
+    matrix_transformed = pca.transform(matrix)
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
         plot = figure.add_subplot(111)
         plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
@@ -85,7 +86,7 @@ def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_locati
         label_to_color_map = matplotlib.cm.rainbow(np.linspace(0, 1, len(np.unique(labels))))
         label_to_color_map = dict(enumerate(label_to_color_map))
         colors = np.array([label_to_color_map[label] for label in labels])
-        plot.scatter(rfm_np_2_dim[:,0], rfm_np_2_dim[:,1], c=colors, alpha=0.25)
+        plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=colors, alpha=0.25)
         plot.set_title(plot_title)
         plot.set_xlabel('PCA 1')
         plot.set_ylabel('PCA 2')
@@ -116,6 +117,13 @@ class VectorDict():
     def to(self, device_spec: Union[str, torch.device]) -> 'VectorDict':
         self.matrix.to(device_spec)
         return self
+
+    def keys(self) -> Iterable:
+        return self.key_to_index_map.keys()
+
+    @property
+    def shape(self) -> torch.Size:
+        return self.matrix.shape
 
 ###################
 # Nadam Optimizer #
