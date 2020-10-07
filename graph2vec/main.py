@@ -143,7 +143,7 @@ def get_number_of_mutag_classifier_hyperparameter_search_trials(study: optuna.St
     return number_of_remaining_trials
 
 def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int]) -> None:
-    study = optuna.create_study(study_name=MUTAG_CLASSIFIER_STUDY_NAME, sampler=optuna.samplers.TPESampler(), pruner=optuna.pruners.SuccessiveHalvingPruner(), storage=MUTAG_CLASSIFIER_DB_URL, direction='minimize', load_if_exists=True)
+    study = optuna.create_study(study_name=MUTAG_CLASSIFIER_STUDY_NAME, sampler=optuna.samplers.RandomSampler(), pruner=optuna.pruners.NopPruner(), storage=MUTAG_CLASSIFIER_DB_URL, direction='minimize', load_if_exists=True)
     number_of_trials = get_number_of_mutag_classifier_hyperparameter_search_trials(study)
     optimize_kawrgs = dict(
         n_trials=number_of_trials,
