@@ -14,13 +14,15 @@ Sections:
 ###########
 
 import os
+import sys
 import gensim
 import logging
 import torch
 import numpy as np
 import matplotlib.cm
+from contextlib import contextmanager
 from sklearn.decomposition import PCA
-from typing import Union, Iterable
+from typing import Union, Iterable, Generator
 
 from misc_utilities import *
 
@@ -33,7 +35,7 @@ from misc_utilities import *
 LOGGER_NAME = 'mutag_logger'
 LOGGER = logging.getLogger(LOGGER_NAME)
 LOGGER_OUTPUT_FILE = './logs.txt'
-LOGGER_STREAM_HANDLER = logging.StreamHandler()
+LOGGER_STREAM_HANDLER = logging.StreamHandler(stream=sys.stdout)
 
 def _initialize_logger() -> None:
     LOGGER.setLevel(logging.INFO)
@@ -45,6 +47,22 @@ def _initialize_logger() -> None:
     return
 
 _initialize_logger()
+
+@contextmanager
+def training_logging_suppressed() -> Generator:
+    logger_to_original_level = {}
+    for name, logger in logging.root.manager.loggerDict.items():
+        if isinstance(logger, logging.Logger) and 'lightning' == name:
+            logger_to_original_level[logger] = logger.level
+            logger.setLevel(logging.ERROR)
+    with open(os.devnull, 'w') as dev_null:
+        orignal_stream = LOGGER_STREAM_HANDLER.stream
+        LOGGER_STREAM_HANDLER.setStream(dev_null)
+        yield
+        LOGGER_STREAM_HANDLER.setStream(orignal_stream)
+    for logger, original_level in logger_to_original_level.items():
+        logger.setLevel(original_level)
+    return
 
 # @todo make sure everything in this file is used
 

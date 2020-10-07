@@ -100,15 +100,15 @@ class MUTAGClassifierHyperParameterSearchObjective:
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         hyperparameters = {
             # graph2vec Hyperparameters
-            'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 10)),
+            'wl_iterations': int(trial.suggest_int('wl_iterations', 4, 6)),
             'embedding_size': int(trial.suggest_int('embedding_size', 1024, 1024)),
-            'graph2vec_epochs': int(trial.suggest_int('graph2vec_epochs', 10, 50)),
+            'graph2vec_epochs': int(trial.suggest_int('graph2vec_epochs', 10, 1024)),
             'graph2vec_learning_rate': trial.suggest_uniform('graph2vec_learning_rate', 1e-6, 1e-2),
             # NN Classifier Hyperparameters
-            'batch_size': int(trial.suggest_int('batch_size', 1, 32)),
+            'batch_size': int(trial.suggest_int('batch_size', 1, 1)),
             'classifier_learning_rate': trial.suggest_uniform('classifier_learning_rate', 1e-6, 1e-2),
-            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 1)),
-            'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 25.0), 
+            'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 5)),
+            'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 2.0), 
             'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.5),
         }
         assert set(hyperparameters.keys()) == set(MUTAGClassifier.hyperparameter_names)
@@ -155,8 +155,9 @@ def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph
         more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
         optimize_kawrgs['func'] = MUTAGClassifierHyperParameterSearchObjective(graph_id_to_graph, graph_id_to_graph_label, gpu_id_queue)
         optimize_kawrgs['n_jobs'] = len(GPU_IDS)
-        with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
-            study.optimize(**optimize_kawrgs)
+        with training_logging_suppressed():
+            with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
+                study.optimize(**optimize_kawrgs)
     return
 
 ##########
@@ -185,8 +186,7 @@ def train_default_model(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_grap
 @debug_on_error
 def main() -> None:
     graph_id_to_graph, graph_id_to_graph_label = process_data()
-    # mutag_classifier_hyperparameter_search(graph_id_to_graph, graph_id_to_graph_label)
-    train_default_model(graph_id_to_graph, graph_id_to_graph_label)
+    mutag_classifier_hyperparameter_search(graph_id_to_graph, graph_id_to_graph_label)
     return
 
 if __name__ == '__main__':

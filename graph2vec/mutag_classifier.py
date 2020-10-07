@@ -343,9 +343,9 @@ class MUTAGClassifier(pl.LightningModule):
             f'graph2vec_epochs_{int(graph2vec_epochs)}_' \
             f'graph2vec_lr_{graph2vec_learning_rate:.5g}_' \
             f'batch_{int(batch_size)}_' \
-            f'classifier_learning_rate_{classifier_learning_rate:.5g}_' \
+            f'classifier_lr_{classifier_learning_rate:.5g}_' \
             f'number_of_layers_{int(number_of_layers)}_' \
-            f'gradient_clip_{int(gradient_clip_val)}_' \
+            f'gradient_clip_{gradient_clip_val}_' \
             f'dropout_{dropout_probability:.5g}'
         )
         return checkpoint_directory
