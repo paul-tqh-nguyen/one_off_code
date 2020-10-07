@@ -163,7 +163,7 @@ def mutag_classifier_hyperparameter_search(graph_id_to_graph: Dict[int, nx.Graph
         optimize_kawrgs['func'] = MUTAGClassifierHyperParameterSearchObjective(graph_id_to_graph, graph_id_to_graph_label, gpu_id_queue)
         optimize_kawrgs['n_jobs'] = len(GPU_IDS)
         with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
-            with training_logging_suppressed():
+            # with training_logging_suppressed():
                 study.optimize(**optimize_kawrgs)
     return
 
