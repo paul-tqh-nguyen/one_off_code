@@ -106,6 +106,7 @@ class MUTAGClassifierHyperParameterSearchObjective:
             'graph2vec_learning_rate': trial.suggest_uniform('graph2vec_learning_rate', 1e-6, 1e-2),
             # NN Classifier Hyperparameters
             'batch_size': int(trial.suggest_int('batch_size', 1, 32)),
+            'classifier_learning_rate': trial.suggest_uniform('classifier_learning_rate', 1e-6, 1e-2),
             'number_of_layers': int(trial.suggest_int('number_of_layers', 1, 1)),
             'gradient_clip_val': trial.suggest_uniform('gradient_clip_val', 1.0, 25.0), 
             'dropout_probability': trial.suggest_uniform('dropout_probability', 0.0, 0.5),
@@ -174,6 +175,7 @@ def train_default_model(graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_grap
         graph2vec_learning_rate=1e-2,
         # NN Classifier Hyperparameters
         batch_size=1,
+        classifier_learning_rate=1e-3,
         number_of_layers=1,
         gradient_clip_val=1.5,
         dropout_probability=0.25,

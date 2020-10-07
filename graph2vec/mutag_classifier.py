@@ -40,8 +40,6 @@ from misc_utilities import *
 
 BCE_LOSS = torch.nn.BCELoss(reduction='none')
 
-INITIAL_LEARNING_RATE = 1e-3
-
 #####################
 # Graph Data Module #
 #####################
@@ -125,14 +123,15 @@ class MUTAGClassifier(pl.LightningModule):
         'graph2vec_learning_rate',
         # NN Classifier Hyperparameters
         'batch_size', 
+        'classifier_learning_rate',
         'number_of_layers',
         'gradient_clip_val',
         'dropout_probability',
     )
     
-    def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, batch_size: int, number_of_layers: int, gradient_clip_val: float, dropout_probability: float, learning_rate: float = INITIAL_LEARNING_RATE):
+    def __init__(self, graph_id_to_graph: Dict[int, nx.Graph], graph_id_to_graph_label: Dict[int, int], wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, batch_size: int, classifier_learning_rate: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float):
         super().__init__()
-        self.save_hyperparameters(*(self.__class__.hyperparameter_names+('learning_rate',)))
+        self.save_hyperparameters(*(self.__class__.hyperparameter_names))
         
         self.linear_layers = nn.Sequential(
             OrderedDict( # @todo try decreasing the linear layer sizes
@@ -214,12 +213,12 @@ class MUTAGClassifier(pl.LightningModule):
     
     def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
         del _trainer, _optimizer, _optimizer_idx
-        loss.mean().backward() # @todo do we need this mean call here?
+        loss.backward() # @todo do we need this mean call here?
         return
 
     def configure_optimizers(self) -> Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR]:
         # @todo use Nadam and explore its parameters in the hyperparameter search
-        optimizer: torch.optim.Optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
+        optimizer: torch.optim.Optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.classifier_learning_rate)
         return {'optimizer': optimizer}
 
     @property
@@ -336,7 +335,7 @@ class MUTAGClassifier(pl.LightningModule):
             return
     
     @staticmethod
-    def checkpoint_directory_from_hyperparameters(wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, batch_size: int, number_of_layers: int, gradient_clip_val: float, dropout_probability: float) -> str:
+    def checkpoint_directory_from_hyperparameters(wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, batch_size: int, classifier_learning_rate: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float) -> str:
         checkpoint_directory = os.path.join(
             MUTAG_CLASSIFIER_CHECKPOINT_DIR, 
             f'wl_iterations_{int(wl_iterations)}_' \
@@ -344,6 +343,7 @@ class MUTAGClassifier(pl.LightningModule):
             f'graph2vec_epochs_{int(graph2vec_epochs)}_' \
             f'graph2vec_lr_{graph2vec_learning_rate:.5g}_' \
             f'batch_{int(batch_size)}_' \
+            f'classifier_learning_rate_{classifier_learning_rate:.5g}_' \
             f'number_of_layers_{int(number_of_layers)}_' \
             f'gradient_clip_{int(gradient_clip_val)}_' \
             f'dropout_{dropout_probability:.5g}'
@@ -352,9 +352,6 @@ class MUTAGClassifier(pl.LightningModule):
     
     def visualize_classification(self, data_module: pl.LightningDataModule, graph_id_to_graph_label: Dict[int, int]) -> Tuple[float, float, float, float]:
         hyperparameter_dict = { hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names }
-        LOGGER.info(f"hyperparameter_dict {repr(hyperparameter_dict)}")
-        LOGGER.info(f"dir(self.hparams) {repr(dir(self.hparams))}")
-        LOGGER.info(f"self.__class__.hyperparameter_names {repr(self.__class__.hyperparameter_names)}")
         
         checkpoint_dir = self.__class__.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
         if not os.path.isdir(checkpoint_dir):
@@ -407,7 +404,7 @@ class MUTAGClassifier(pl.LightningModule):
             plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=true_label_colors, alpha=1.0, marker='o')
             correctness_colors = [label0_color if correctness else label1_color for correctness in correctness_vector]
             plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=correctness_colors, alpha=1.0, marker='+')
-            plot.set_title(f'Classification Accuracy {100*total_accuracy:.2f}%')
+            plot.set_title(f'Classification Accuracy {100*total_accuracy:.2g}%')
             plot.set_xlabel('PCA 1')
             plot.set_ylabel('PCA 2')
             figure.savefig(output_file_location)
@@ -465,12 +462,7 @@ class MUTAGClassifier(pl.LightningModule):
         data_module = MUTAGDataModule(hyperparameter_dict['batch_size'], model_initialization_args['graph_id_to_graph_label'])
         data_module.prepare_data()
         data_module.setup()
-        
-        LOGGER.info(f'Initial learning rate: {model.hparams.learning_rate}')
-        lr_finder = trainer.tuner.lr_find(model, data_module.train_dataloader(), data_module.val_dataloader(), num_training=1_000)
-        model.hparams.learning_rate = lr_finder.suggestion()
-        LOGGER.info(f'Best learning rate found: {model.hparams.learning_rate}')
-        
+                
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
