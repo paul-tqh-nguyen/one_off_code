@@ -350,7 +350,7 @@ class MUTAGClassifier(pl.LightningModule):
         )
         return checkpoint_directory
     
-    def visualize_classification(self, graph_id_to_graph_label: Dict[int, int]) -> float:
+    def visualize_classification(self, data_module: pl.LightningDataModule, graph_id_to_graph_label: Dict[int, int]) -> Tuple[float, float, float, float]:
         hyperparameter_dict = { hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names }
         LOGGER.info(f"hyperparameter_dict {repr(hyperparameter_dict)}")
         LOGGER.info(f"dir(self.hparams) {repr(dir(self.hparams))}")
@@ -361,6 +361,11 @@ class MUTAGClassifier(pl.LightningModule):
             os.makedirs(checkpoint_dir)
         output_file_location = os.path.join(checkpoint_dir, CLASSIFICATION_CORRECTNSES_VISUALIZATION_FILE_BASENAME)
 
+        training_graph_ids = [int(example['graph_id'].item()) for example in data_module.train_dataloader().dataset]
+        validation_graph_ids = [int(example['graph_id'].item()) for example in data_module.val_dataloader().dataset]
+        testing_graph_ids = [int(example['graph_id'].item()) for example in data_module.test_dataloader().dataset]
+        training_accuracy = validation_accuracy = testing_accuracy = 0
+        
         self.eval()
         correctness_vector: np.ndarray = np.empty(self.graph_id_to_graph_embeddings.matrix.shape[0], dtype=bool)
         true_label_vector: np.ndarray = np.empty(self.graph_id_to_graph_embeddings.matrix.shape[0], dtype=int)
@@ -374,7 +379,19 @@ class MUTAGClassifier(pl.LightningModule):
             true_label_vector[index] = graph_label
             prediced_label_vector[index] = prediction
             correctness_vector[index] = prediction_is_correct
-        accuracy = correctness_vector.sum() / len(correctness_vector)
+            if prediction_is_correct:
+                if graph_id in training_graph_ids:
+                    training_accuracy += 1
+                elif graph_id in validation_graph_ids:
+                    validation_accuracy += 1
+                elif graph_id in testing_graph_ids:
+                    testing_accuracy += 1
+                else:
+                    raise ValueError(f'{graph_id} not in any split.')
+        training_accuracy /= len(training_graph_ids)
+        validation_accuracy /= len(validation_graph_ids)
+        testing_accuracy /= len(testing_graph_ids)
+        total_accuracy = correctness_vector.sum() / len(correctness_vector)
 
         label0_color = 'red'
         label1_color = 'blue'
@@ -390,14 +407,14 @@ class MUTAGClassifier(pl.LightningModule):
             plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=true_label_colors, alpha=1.0, marker='o')
             correctness_colors = [label0_color if correctness else label1_color for correctness in correctness_vector]
             plot.scatter(matrix_transformed[:,0], matrix_transformed[:,1], c=correctness_colors, alpha=1.0, marker='+')
-            plot.set_title(f'Classification Accuracy {100*accuracy:.2f}%')
+            plot.set_title(f'Classification Accuracy {100*total_accuracy:.2f}%')
             plot.set_xlabel('PCA 1')
             plot.set_ylabel('PCA 2')
             figure.savefig(output_file_location)
         
         LOGGER.info(f'Classification correctness visualized at {output_file_location}')
         
-        return accuracy
+        return training_accuracy, validation_accuracy, testing_accuracy, total_accuracy
     
     @classmethod
     def train_model(cls, gpus: List[int], **model_initialization_args) -> float:
@@ -459,12 +476,17 @@ class MUTAGClassifier(pl.LightningModule):
         best_validation_loss = checkpoint_callback.best_model_score.item()
         LOGGER.info(f'Testing Loss: {test_results["testing_loss"]}')
         
-        model.visualize_classification(model_initialization_args['graph_id_to_graph_label']) # @todo log the accuracy in the JSON file
+        training_accuracy, validation_accuracy, testing_accuracy, total_accuracy = model.visualize_classification(data_module, model_initialization_args['graph_id_to_graph_label'])
         
         output_json_file_location = os.path.join(checkpoint_dir, 'result_summary.json')
         with open(output_json_file_location, 'w') as file_handle:
             json_dict = {
                 'testing_loss': test_results['testing_loss'],
+
+                'training_accuracy': training_accuracy,
+                'validation_accuracy': validation_accuracy,
+                'testing_accuracy': testing_accuracy,
+                'total_accuracy': total_accuracy,
                 
                 'best_validation_loss': best_validation_loss,
                 'best_validation_model_path': checkpoint_callback.best_model_path,
@@ -478,5 +500,8 @@ class MUTAGClassifier(pl.LightningModule):
             }
             json_dict.update(hyperparameter_dict)
             json.dump(json_dict, file_handle, indent=4)
+            LOGGER.info('Result Summary:')
+            for result_summary_key, result_summary_value in json_dict.items():
+                LOGGER.info(f'    {result_summary_key}: {result_summary_value}')
         
         return best_validation_loss
