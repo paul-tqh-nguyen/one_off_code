@@ -10,13 +10,14 @@
 ###########
 
 import argparse
+import functools
 # import json
 # import more_itertools
 # import joblib
 # import optuna
 # import pandas as pd
 # import multiprocessing as mp
-# import networkx as nx
+import networkx as nx
 from typing import Dict, Tuple
 
 from misc_utilities import *
@@ -41,8 +42,13 @@ RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
 # Data Processing #
 ###################
 
-def process_data() -> None: # @todo update this signature
-    return 
+def process_data() -> nx.Graph: # @todo update this signature
+    graph = nx.Graph()
+    with open('./facebook_combined.txt', 'r') as f:
+        lines = f.readlines()
+    edges = (line.split() for line in lines)
+    graph.add_edges_from(edges)
+    return graph
 
 ########################################
 # Link Predictor Hyperparameter Search #
@@ -171,11 +177,11 @@ def main() -> None:
     elif number_of_args_specified > 1:
         print('Please specify exactly one action.')
     elif args.train_default_model:
-        graph_id_to_graph, graph_id_to_graph_label = process_data()
-        train_default_model(graph_id_to_graph, graph_id_to_graph_label)
+        graph = process_data()
+        train_default_model(graph)
     elif args.hyperparameter_search:
-        graph_id_to_graph, graph_id_to_graph_label = process_data()
-        link_predictor_hyperparameter_search(graph_id_to_graph, graph_id_to_graph_label)
+        graph = process_data()
+        link_predictor_hyperparameter_search(graph)
     elif args.analyze_hyperparameter_search_results:
         analyze_hyperparameter_search_results()
     else:
