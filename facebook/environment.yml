@@ -7,8 +7,9 @@ dependencies:
   - conda-forge::karateclub==1.0.15
   - conda-forge::optuna
 #  - conda-forge::typing_extensions
-#  - scikit-learn
+  - scikit-learn
 #  - matplotlib
   - pip
   - pip:
+    - nvgpu
     - pytorch-lightning==0.9.1rc3

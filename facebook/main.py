@@ -11,6 +11,8 @@
 
 import argparse
 import functools
+import nvgpu
+import random
 # import json
 # import more_itertools
 # import joblib
@@ -18,7 +20,7 @@ import functools
 # import pandas as pd
 # import multiprocessing as mp
 import networkx as nx
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Set
 
 from misc_utilities import *
 from link_predictor import LinkPredictor
@@ -29,7 +31,7 @@ from link_predictor import LinkPredictor
 # Globals #
 ###########
 
-GPU_IDS = [0, 1, 2, 3] # @todo can we grab these from some acessor?
+GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
 STUDY_NAME = 'link-predictor'
 DB_URL = 'sqlite:///link-predictor.db'
@@ -42,13 +44,40 @@ RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
 # Data Processing #
 ###################
 
-def process_data() -> nx.Graph: # @todo update this signature
-    graph = nx.Graph()
-    with open('./facebook_combined.txt', 'r') as f:
+def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
+    remaining_graph = nx.Graph()
+    with open('./data/facebook_combined.txt', 'r') as f:
         lines = f.readlines()
-    edges = (line.split() for line in lines)
-    graph.add_edges_from(edges)
-    return graph
+    edges = (eager_map(int, line.split()) for line in lines)
+    remaining_graph.add_edges_from(edges)
+    
+    nodes = list(remaining_graph.nodes())
+    num_edges_to_sample = len(remaining_graph.nodes()) // 2
+    
+    positive_edges = set()
+    negative_edges = set()
+    
+    while len(negative_edges) < num_edges_to_sample:
+        random_edge = (random.choice(nodes), random.choice(nodes))
+        if len(set(random_edge)) == 2:
+            random_edge = tuple(sorted(random_edge))
+            if random_edge not in negative_edges:
+                negative_edges.add(random_edge)
+    
+    while len(positive_edges) < num_edges_to_sample:
+        random_edge = random.choice(edges)
+        if random_edge not in positive_edges:
+            remaining_graph.remove_edge(*edge)
+            if remaining_graph.is_connected():
+                positive_edges.add(random_edge)
+            else:
+                remaining_graph.add_edge(random_edge)
+
+    positive_edges = np.array(list(positive_edges))
+    negative_edges = np.array(list(negative_edges))
+    
+    assert remaining_graph.is_connected()
+    return remaining_graph, positive_edges, negative_edges
 
 ########################################
 # Link Predictor Hyperparameter Search #
@@ -61,10 +90,7 @@ class LinkPredictorHyperParameterSearchObjective:
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         hyperparameters = { # @todo update these
-            # node2vec Hyperparameters
             'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 20)),
-            # Link Predictor Hyperparameters
-            'batch_size': int(trial.suggest_int('batch_size', 1, 1)),
         }
         assert set(hyperparameters.keys()) == set(LinkPredictor.hyperparameter_names)
         return hyperparameters
@@ -121,22 +147,6 @@ def link_predictor_hyperparameter_search() -> None: # @todo update this signatur
                 study.optimize(**optimize_kawrgs)
     return
 
-#################
-# Default Model #
-#################
-
-def train_default_model() -> None: # @todo update this signature
-    LinkPredictor.train_model( # @todo update these inputs
-        graph_id_to_graph=graph_id_to_graph,
-        graph_id_to_graph_label=graph_id_to_graph_label,
-        gpus=GPU_IDS,
-        # node2vec Hyperparameters
-        wl_iterations=5,
-        # Link Predictor Hyperparameters
-        dropout_probability=0.25,
-    )
-    return
-
 #########################################
 # Hyperparameter Search Result Analysis #
 #########################################
@@ -160,6 +170,27 @@ def analyze_hyperparameter_search_results() -> None:
     LOGGER.info(f'Hyperparameter result summary saved to {HYPERPARAMETER_ANALYSIS_JSON_FILE_LOCATION} .')
     return
 
+#################
+# Default Model #
+#################
+
+def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray) -> None: # @todo update this signature
+    LinkPredictor.train_model( # @todo update these inputs
+        gpus=GPU_IDS,
+        positive_edges=positive_edges,
+        negative_edges=negative_edges,
+        graph=graph,
+        p=1,
+        q=0.5,
+        walks_per_node=5,
+        walk_length=5,
+        embedding_size=300,
+        link_predictor_learning_rate=1e-3,
+        link_predictor_batch_size=256,
+        gradient_clip_val=1.0,
+    )
+    return
+
 ##########
 # Driver #
 ##########
@@ -177,11 +208,11 @@ def main() -> None:
     elif number_of_args_specified > 1:
         print('Please specify exactly one action.')
     elif args.train_default_model:
-        graph = process_data()
-        train_default_model(graph)
+        graph, positive_edges, negative_edges = process_data()
+        train_default_model(graph, positive_edges, negative_edges)
     elif args.hyperparameter_search:
-        graph = process_data()
-        link_predictor_hyperparameter_search(graph)
+        graph, positive_edges, negative_edges = process_data()
+        link_predictor_hyperparameter_search(graph, positive_edges, negative_edges)
     elif args.analyze_hyperparameter_search_results:
         analyze_hyperparameter_search_results()
     else:
