@@ -81,7 +81,7 @@ class FBDataset(data.Dataset):
         edge = self.positive_edges[index] if edge_is_positive else self.negative_edges[index - len(self.positive_edges)]
         return {
             'edge': torch.tensor(edge, dtype=torch.float32),
-            'target_label': torch.tensor(edge_is_positive, dtype=torch.float32)
+            'target': torch.tensor(edge_is_positive, dtype=torch.float32)
         }
     
     def __len__(self):
