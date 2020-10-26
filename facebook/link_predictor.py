@@ -251,7 +251,6 @@ class LinkPredictor(pl.LightningModule):
     def _eval_step(self, batch_dict: dict) -> pl.EvalResult:
         loss = self._get_batch_loss(batch_dict)
         assert len(loss.shape) == 1
-        LOGGER.info(f"loss.shape {repr(loss.shape)}")
         result = pl.EvalResult()
         result.log('loss', loss)
         return result
