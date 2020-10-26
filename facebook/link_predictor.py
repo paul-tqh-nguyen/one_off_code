@@ -236,7 +236,7 @@ class LinkPredictor(pl.LightningModule):
         bce_loss = BCE_LOSS(predictions, target_predictions)
         return bce_loss
     
-    def training_step(self, batch_dict: dict, _: int) -> pl.TrainResult:
+    def training_step(self, batch_dict: dict, _: int) -> torch.Tensor:
         loss = self._get_batch_loss(batch_dict)
         sel
         return loss
