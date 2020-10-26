@@ -9,7 +9,7 @@ dependencies:
   - conda-forge::typing_extensions
   - scikit-learn
   - matplotlib
+  - conda-forge::pytorch-lightning
   - pip
   - pip:
     - nvgpu
-    - pytorch-lightning==0.9.1rc3
