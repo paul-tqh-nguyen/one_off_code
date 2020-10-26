@@ -251,7 +251,7 @@ class LinkPredictor(pl.LightningModule):
     def _eval_step(self, batch_dict: dict) -> pl.EvalResult:
         loss = self._get_batch_loss(batch_dict)
         assert len(loss.shape) == 1
-        result = pl.EvalResult()
+        result = pl.EvalResult(early_stop_on='val_checkpoint_on')
         result.log('loss', loss)
         return result
     
