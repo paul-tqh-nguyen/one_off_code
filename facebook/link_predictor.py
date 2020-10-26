@@ -238,8 +238,8 @@ class LinkPredictor(pl.LightningModule):
     
     def training_step(self, batch_dict: dict, _: int) -> pl.TrainResult:
         loss = self._get_batch_loss(batch_dict)
-        result = pl.TrainResult(minimize=loss)
-        return result
+        sel
+        return loss
 
     def training_step_end(self, training_step_result: pl.TrainResult) -> pl.TrainResult:
         assert only_one(training_step_result.minimize.shape) == self.hparams.link_predictor_batch_size, f'Training loss has shape {only_one(training_step_result.minimize.shape)} (expected {self.hparams.batch_size}).'
