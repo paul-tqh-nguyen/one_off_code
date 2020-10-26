@@ -387,7 +387,6 @@ class LinkPredictor(pl.LightningModule):
             callbacks=[cls.PrintingCallback(checkpoint_callback)],
             # auto_lr_find=True,
             early_stop_callback=pl.callbacks.EarlyStopping(
-                # monitor='val_checkpoint_on',
                 min_delta=0.001,
                 patience=5,
                 verbose=False,
