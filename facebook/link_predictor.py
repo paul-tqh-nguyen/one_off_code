@@ -146,7 +146,7 @@ class LinkPredictor(pl.LightningModule):
         'link_predictor_gradient_clip_val', 
     )
     
-    def __init__(self, graph: nx.Graph, p: float, q: float, walks_per_node: int, walk_length: int, embedding_size: int, link_predictor_learning_rate: float, link_predictor_batch_size: int, gradient_clip_val: float): 
+    def __init__(self, graph: nx.Graph, p: float, q: float, walks_per_node: int, walk_length: int, embedding_size: int, link_predictor_learning_rate: float, link_predictor_batch_size: int, link_predictor_gradient_clip_val: float): 
         super().__init__()
         self.save_hyperparameters(*(self.__class__.hyperparameter_names))
         
@@ -332,7 +332,18 @@ class LinkPredictor(pl.LightningModule):
             return
     
     @staticmethod
-    def checkpoint_directory_from_hyperparameters(wl_iterations: int, embedding_size: int, graph2vec_epochs: int, graph2vec_learning_rate: float, batch_size: int, classifier_learning_rate: float, number_of_layers: int, gradient_clip_val: float, dropout_probability: float) -> str:
+    def checkpoint_directory_from_hyperparameters(
+            p: float,
+            q: float,
+            walks_per_node: int,
+            walk_length: int,
+            node2vec_epochs: int,
+            node2vec_learning_rate: float,
+            link_predictor_learning_rate: float,
+            link_predictor_batch_size: int,
+            link_predictor_gradient_clip_val: float,
+            dropout_probability: float
+    ) -> str:
         checkpoint_directory = os.path.join(
             MUTAG_CLASSIFIER_CHECKPOINT_DIR, 
             f'p_{p:.5g}_' \
@@ -380,7 +391,7 @@ class LinkPredictor(pl.LightningModule):
                 strict=True,
             ),
             min_epochs=10,
-            gradient_clip_val=model_initialization_args.get('gradient_clip_val', 0),
+            gradient_clip_val=model_initialization_args.get('link_predictor_gradient_clip_val', 0),
             terminate_on_nan=True,
             gpus=gpus,
             distributed_backend='dp',
