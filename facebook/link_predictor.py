@@ -9,6 +9,7 @@
 # Imports #
 ###########
 
+import os
 import karateclub
 import numpy as np
 import networkx as nx
@@ -19,7 +20,7 @@ import torch
 from torch import nn
 from torch.utils import data
 from collections import OrderedDict
-from typing import Tuple, List, Set
+from typing import Tuple, Dict, List, Set
 from typing_extensions import Literal
 
 from misc_utilities import *
@@ -38,6 +39,7 @@ BCE_LOSS = nn.BCELoss(reduction='none')
 
 NODE2VEC_MODEL_FILE_BASENAME = 'node2vec.matrix'
 EMBEDDING_VISUALIZATION_FILE_BASENAME = 'node2vec.png'
+LINK_PREDICTOR_CHECKPOINT_DIR = './checkpoints'
 
 #################
 # Visualization #
@@ -146,19 +148,19 @@ class LinkPredictor(pl.LightningModule):
         'link_predictor_gradient_clip_val', 
     )
     
-    def __init__(self, graph: nx.Graph, p: float, q: float, walks_per_node: int, walk_length: int, embedding_size: int, link_predictor_learning_rate: float, link_predictor_batch_size: int, link_predictor_gradient_clip_val: float): 
+    def __init__(self, graph: nx.Graph, embedding_size: int, p: float, q: float, walks_per_node: int, walk_length: int, node2vec_epochs: int, node2vec_learning_rate: float, link_predictor_learning_rate: float, link_predictor_batch_size: int, link_predictor_gradient_clip_val: float): 
         super().__init__()
         self.save_hyperparameters(*(self.__class__.hyperparameter_names))
         
         self.logistic_regression_layers = nn.Sequential(
             OrderedDict([
-                (f'dense_layer_{i}', nn.Linear(self.hparams.embedding_size, 1)),
-                (f'activation_layer_{i}', nn.Sigmoid()),
+                (f'linear_layer', nn.Linear(self.hparams.embedding_size, 1)),
+                (f'activation_layer', nn.Sigmoid()),
             ])
         )
-        self._initialize_embeddings()
+        self._initialize_embeddings(graph)
 
-    def _initialize_embeddings(self) -> None:
+    def _initialize_embeddings(self, graph: nx.Graph) -> None:
         checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(**{hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names})
         if not os.path.isdir(checkpoint_directory):
             os.makedirs(checkpoint_directory)
@@ -333,6 +335,7 @@ class LinkPredictor(pl.LightningModule):
     
     @staticmethod
     def checkpoint_directory_from_hyperparameters(
+            embedding_size: int,
             p: float,
             q: float,
             walks_per_node: int,
@@ -342,10 +345,10 @@ class LinkPredictor(pl.LightningModule):
             link_predictor_learning_rate: float,
             link_predictor_batch_size: int,
             link_predictor_gradient_clip_val: float,
-            dropout_probability: float
     ) -> str:
         checkpoint_directory = os.path.join(
-            MUTAG_CLASSIFIER_CHECKPOINT_DIR, 
+            LINK_PREDICTOR_CHECKPOINT_DIR,
+            f'embed_{int(embedding_size)}_' \
             f'p_{p:.5g}_' \
             f'q_{q:.5g}_' \
             f'walks_{int(walks_per_node)}_' \

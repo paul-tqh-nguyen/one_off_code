@@ -13,12 +13,12 @@ import argparse
 import functools
 import nvgpu
 import random
-# import json
-# import more_itertools
-# import joblib
-# import optuna
-# import pandas as pd
-# import multiprocessing as mp
+import more_itertools
+import joblib
+import optuna
+import numpy as np
+import pandas as pd
+import multiprocessing as mp
 import networkx as nx
 from typing import Dict, Tuple, Set
 
@@ -48,7 +48,7 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
     remaining_graph = nx.Graph()
     with open('./data/facebook_combined.txt', 'r') as f:
         lines = f.readlines()
-    edges = (eager_map(int, line.split()) for line in lines)
+    edges = [tuple(eager_map(int, line.split())) for line in lines]
     remaining_graph.add_edges_from(edges)
     
     nodes = list(remaining_graph.nodes())
@@ -67,16 +67,16 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
     while len(positive_edges) < num_edges_to_sample:
         random_edge = random.choice(edges)
         if random_edge not in positive_edges:
-            remaining_graph.remove_edge(*edge)
-            if remaining_graph.is_connected():
+            remaining_graph.remove_edge(*random_edge)
+            if nx.is_connected(remaining_graph):
                 positive_edges.add(random_edge)
             else:
-                remaining_graph.add_edge(random_edge)
+                remaining_graph.add_edge(*random_edge)
 
     positive_edges = np.array(list(positive_edges))
     negative_edges = np.array(list(negative_edges))
     
-    assert remaining_graph.is_connected()
+    assert nx.is_connected(remaining_graph)
     return remaining_graph, positive_edges, negative_edges
 
 ########################################
@@ -184,6 +184,8 @@ def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_ed
         q=0.5,
         walks_per_node=5,
         walk_length=5,
+        node2vec_epochs=50,
+        node2vec_learning_rate=1e-3,
         embedding_size=300,
         link_predictor_learning_rate=1e-3,
         link_predictor_batch_size=256,
