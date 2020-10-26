@@ -215,7 +215,7 @@ class LinkPredictor(pl.LightningModule):
         del _trainer, _optimizer, _optimizer_idx
         loss.backward()
         return
-
+    
     def configure_optimizers(self) -> Dict[str, torch.optim.Optimizer]:
         optimizer: torch.optim.Optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.link_predictor_learning_rate)
         return {'optimizer': optimizer}
@@ -223,7 +223,7 @@ class LinkPredictor(pl.LightningModule):
     @property
     def device(self) -> Union[str, torch.device]:
         return only_one({parameter.device for parameter in self.parameters()})
-    
+
     def _get_batch_loss(self, batch_dict: dict) -> torch.Tensor:
         batch = batch_dict['edge'].to(self.device)
         target_predictions = batch_dict['target'].to(self.device)
@@ -235,44 +235,39 @@ class LinkPredictor(pl.LightningModule):
         assert only_one(predictions.shape) == batch_size
         bce_loss = BCE_LOSS(predictions, target_predictions)
         return bce_loss
-    
-    def training_step(self, batch_dict: dict, _: int) -> torch.Tensor:
-        loss = self._get_batch_loss(batch_dict)
-        sel
-        return loss
 
-    def training_step_end(self, training_step_result: pl.TrainResult) -> pl.TrainResult:
-        assert only_one(training_step_result.minimize.shape) == self.hparams.link_predictor_batch_size, f'Training loss has shape {only_one(training_step_result.minimize.shape)} (expected {self.hparams.batch_size}).'
-        mean_loss = training_step_result.minimize.mean()
-        result = pl.TrainResult(minimize=mean_loss)
-        result.log('training_loss', mean_loss, prog_bar=True)
-        return result
-    
-    def _eval_step(self, batch_dict: dict) -> pl.EvalResult:
+    def _step(self, batch_dict: dict, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor:
         loss = self._get_batch_loss(batch_dict)
         assert len(loss.shape) == 1
-        result = pl.EvalResult()
-        result.log('loss', loss)
-        return result
+        self.log(f'{eval_type}_loss', loss)
+        return loss
     
-    def _eval_epoch_end(self, step_result: pl.EvalResult, eval_type: Literal['validation', 'testing']) -> pl.EvalResult:
-        assert len(step_result.loss.shape) == 1
-        loss = step_result.loss.mean()
-        result = pl.EvalResult(checkpoint_on=loss, early_stop_on=loss)
-        result.log(f'{eval_type}_loss', loss)
-        return result
+    def _step_or_epoch_end(self, batch_parts_outputs: torch.Tensor, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor: 
+        assert len(batch_parts_outputs.shape) == 1
+        loss = batch_parts_outputs.mean()
+        self.log(f'{eval_type}_loss', loss)
+        return loss
+    
+    def training_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
+        del batch_index
+        return self._step(batch_dict, 'validation')
+
+    def training_step_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
+        return self._step_or_epoch_end(batch_parts_outputs, 'training')
         
-    def validation_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
-        return self._eval_step(batch_dict)
+    def validation_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
+        del batch_index
+        return self._step(batch_dict, 'validation')
 
-    def validation_epoch_end(self, validation_step_results: pl.EvalResult) -> pl.EvalResult:
-        return self._eval_epoch_end(validation_step_results, 'validation')
+    def validation_step_or_epoch_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
+        return self._step_or_epoch_end(batch_parts_outputs, 'validation')
 
-    def test_step(self, batch_dict: dict, _: int) -> pl.EvalResult:
-        return self._eval_step(batch_dict)
+    def test_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
+        del batch_index
+        return self._step(batch_dict, 'testing')
 
-    def test_epoch_end(self, test_step_results: pl.EvalResult) -> pl.EvalResult:
-        return self._eval_epoch_end(test_step_results, 'testing')
+    def test_step_or_epoch_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
+        return self._step_or_epoch_end(batch_parts_outputs, 'testing')
     
     class PrintingCallback(pl.Callback):
     
@@ -382,17 +377,19 @@ class LinkPredictor(pl.LightningModule):
             monitor='val_checkpoint_on',
             mode='min',
         )
+
+        early_stop_callback = pl.callbacks.EarlyStopping(
+            monitor='validation_loss',
+            min_delta=0.001,
+            patience=5,
+            verbose=False,
+            mode='min',
+            strict=True,
+        )
         
         trainer = pl.Trainer(
-            callbacks=[cls.PrintingCallback(checkpoint_callback)],
+            callbacks=[cls.PrintingCallback(checkpoint_callback), early_stop_callback],
             # auto_lr_find=True,
-            early_stop_callback=pl.callbacks.EarlyStopping(
-                min_delta=0.001,
-                patience=5,
-                verbose=False,
-                mode='min',
-                strict=True,
-            ),
             min_epochs=10,
             gradient_clip_val=model_initialization_args['link_predictor_gradient_clip_val'],
             terminate_on_nan=True,
