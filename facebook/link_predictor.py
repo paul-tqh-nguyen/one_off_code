@@ -395,7 +395,7 @@ class LinkPredictor(pl.LightningModule):
                 strict=True,
             ),
             min_epochs=10,
-            gradient_clip_val=model_initialization_args.get('link_predictor_gradient_clip_val'),
+            gradient_clip_val=model_initialization_args['link_predictor_gradient_clip_val'],
             terminate_on_nan=True,
             gpus=gpus,
             distributed_backend='dp',
