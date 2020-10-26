@@ -258,7 +258,7 @@ class LinkPredictor(pl.LightningModule):
     def _eval_epoch_end(self, step_result: pl.EvalResult, eval_type: Literal['validation', 'testing']) -> pl.EvalResult:
         assert len(step_result.loss.shape) == 1
         loss = step_result.loss.mean()
-        result = pl.EvalResult(checkpoint_on=loss)
+        result = pl.EvalResult(checkpoint_on=loss, early_stop_on=loss)
         result.log(f'{eval_type}_loss', loss)
         return result
         
