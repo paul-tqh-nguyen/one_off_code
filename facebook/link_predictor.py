@@ -91,7 +91,7 @@ class FBDataset(data.Dataset):
 class FBDataModule(pl.LightningDataModule):
 
     def __init__(self, batch_size: int, positive_edges: np.ndarray, negative_edges: np.ndarray):
-        assert (positive_edges == negative_edges).all()
+        assert positive_edges.shape == negative_edges.shape
         self.batch_size = batch_size
         self.positive_edges = positive_edges
         self.negative_edges = negative_edges
