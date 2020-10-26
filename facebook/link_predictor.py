@@ -105,9 +105,9 @@ class FBDataModule(pl.LightningDataModule):
         training_edge_indices, testing_edge_indices = train_test_split(edge_indices, test_size=1-TRAINING_PORTION, random_state=RANDOM_SEED)
         validation_edge_indices, testing_edge_indices = train_test_split(testing_edge_indices, test_size=0.5, random_state=RANDOM_SEED)
         
-        training_dataset = FBDataset(self.positive_edges[training_edge_indices], self.negative_edges[len(self.positive_edges)+training_edge_indices])
-        validation_dataset = FBDataset(self.positive_edges[validation_edge_indices], self.negative_edges[len(self.positive_edges)+validation_edge_indices])
-        testing_dataset = FBDataset(self.positive_edges[testing_edge_indices], self.negative_edges[len(self.positive_edges)+testing_edge_indices])
+        training_dataset = FBDataset(self.positive_edges[training_edge_indices], self.negative_edges[training_edge_indices])
+        validation_dataset = FBDataset(self.positive_edges[validation_edge_indices], self.negative_edges[validation_edge_indices])
+        testing_dataset = FBDataset(self.positive_edges[testing_edge_indices], self.negative_edges[testing_edge_indices])
 
         # https://github.com/PyTorchLightning/pytorch-lightning/issues/408 forces us to use shuffle in training and drop_last pervasively
         self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=0, shuffle=True, drop_last=True)
