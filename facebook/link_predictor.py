@@ -225,7 +225,7 @@ class LinkPredictor(pl.LightningModule):
         return only_one({parameter.device for parameter in self.parameters()})
     
     def _get_batch_loss(self, batch_dict: dict) -> torch.Tensor:
-        batch = batch_dict['node_ids'].to(self.device)
+        batch = batch_dict['edge'].to(self.device)
         target_predictions = batch_dict['target'].to(self.device)
         batch_size = only_one(target_predictions.shape)
         assert tuple(batch.shape) == (batch_size, 2)
