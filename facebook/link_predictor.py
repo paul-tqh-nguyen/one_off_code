@@ -374,7 +374,7 @@ class LinkPredictor(pl.LightningModule):
             save_top_k=1,
             verbose=False,
             save_last=True,
-            monitor='val_checkpoint_on',
+            monitor='validation_loss',
             mode='min',
         )
 
