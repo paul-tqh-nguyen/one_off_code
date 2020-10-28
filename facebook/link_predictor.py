@@ -370,7 +370,7 @@ class LinkPredictor(pl.LightningModule):
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir)
         checkpoint_callback = pl.callbacks.ModelCheckpoint(
-            filepath=os.path.join(checkpoint_dir, 'checkpoint_{epoch:03d}_{val_checkpoint_on}'),
+            filepath=os.path.join(checkpoint_dir, 'checkpoint_{epoch:03d}_{validation_loss}'),
             save_top_k=1,
             verbose=False,
             save_last=True,
