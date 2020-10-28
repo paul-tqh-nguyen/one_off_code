@@ -211,8 +211,8 @@ class LinkPredictor(pl.LightningModule):
         
         return prediction_batch
     
-    def backward(self, _trainer: pl.Trainer, loss: torch.Tensor, _optimizer: torch.optim.Optimizer, _optimizer_idx: int) -> None:
-        del _trainer, _optimizer, _optimizer_idx
+    def backward(self, loss: torch.Tensor , _optimizer: torch.optim.Optimizer, _opt_idx: int) -> None:
+        del _optimizer, _opt_idx
         loss.backward()
         return
     
