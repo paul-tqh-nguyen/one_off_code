@@ -68,8 +68,8 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
         edges = [tuple(eager_map(int, line.split())) for line in lines]
         remaining_graph.add_edges_from(edges)
         LOGGER.info('Unprocessed graph loaded.')
-        LOGGER.info(f'{len(remaining_graph.nodes)} nodes.')
-        LOGGER.info(f'{len(remaining_graph.edges)} edges.')
+        LOGGER.info(f'Unprocessed Graph Node Count: {len(remaining_graph.nodes)}')
+        LOGGER.info(f'Unprocessed Graph Edge Count: {len(remaining_graph.edges)}')
     
         assert len(remaining_graph.nodes) == 4039
         assert len(remaining_graph.edges) == 88234
