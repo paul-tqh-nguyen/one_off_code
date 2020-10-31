@@ -80,6 +80,7 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
 
     positive_edges = np.array(list(positive_edges))
     negative_edges = np.array(list(negative_edges))
+    assert len(positive_edges) == len(negative_edges) == num_edges_to_sample
     
     assert nx.is_connected(remaining_graph)
     return remaining_graph, positive_edges, negative_edges
