@@ -31,6 +31,10 @@ from link_predictor import LinkPredictor
 # Globals #
 ###########
 
+SEED = 1234
+random.seed(SEED)
+np.random.seed(SEED)
+
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
 STUDY_NAME = 'link-predictor'
@@ -40,49 +44,54 @@ HYPERPARAMETER_ANALYSIS_JSON_FILE_LOCATION = './docs/hyperparameter_search_resul
 NUMBER_OF_LINK_PREDICTOR_HYPERPARAMETER_TRIALS = 10_000
 RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
 
+PREPROCESSED_DATA_FILE_LOCATION = './preprocessed_data.pickle'
+
 ###################
 # Data Processing #
 ###################
 
 def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
-    remaining_graph = nx.Graph()
-    with open('./data/facebook_combined.txt', 'r') as f:
-        lines = f.readlines()
-    edges = [tuple(eager_map(int, line.split())) for line in lines]
-    remaining_graph.add_edges_from(edges)
-
-    assert len(remaining_graph.nodes) == 4039
-    assert len(remaining_graph.edges) == 88234
+    if os.path.isfile(PREPROCESSED_DATA_FILE_LOCATION):
+        with open(PREPROCESSED_DATA_FILE_LOCATION, 'rb') as f:
+            remaining_graph, positive_edges, negative_edges = pickle.load(f)
+    else:
+        remaining_graph = nx.Graph()
+        with open('./data/facebook_combined.txt', 'r') as f:
+            lines = f.readlines()
+        edges = [tuple(eager_map(int, line.split())) for line in lines]
+        remaining_graph.add_edges_from(edges)
     
-    nodes = list(remaining_graph.nodes())
-    num_edges_to_sample = len(remaining_graph.edges) // 2
-    assert num_edges_to_sample == 44117
-    assert set(nodes) == set(range(4039))
+        assert len(remaining_graph.nodes) == 4039
+        assert len(remaining_graph.edges) == 88234
+        
+        nodes = list(remaining_graph.nodes())
+        num_edges_to_sample = len(remaining_graph.edges) // 2
+        assert num_edges_to_sample == 44117
+        assert set(nodes) == set(range(4039))
+        
+        positive_edges = set()
+        negative_edges = set()
+        
+        while len(negative_edges) < num_edges_to_sample:
+            random_edge = (random.choice(nodes), random.choice(nodes))
+            if len(set(random_edge)) == 2:
+                random_edge = tuple(sorted(random_edge))
+                if random_edge not in negative_edges:
+                    negative_edges.add(random_edge)
+        
+        while len(positive_edges) < num_edges_to_sample:
+            random_edge = random.choice(edges)
+            if random_edge not in positive_edges:
+                remaining_graph.remove_edge(*random_edge)
+                if nx.is_connected(remaining_graph):
+                    positive_edges.add(random_edge)
+                else:
+                    remaining_graph.add_edge(*random_edge)
     
-    positive_edges = set()
-    negative_edges = set()
-    
-    while len(negative_edges) < num_edges_to_sample:
-        random_edge = (random.choice(nodes), random.choice(nodes))
-        if len(set(random_edge)) == 2:
-            random_edge = tuple(sorted(random_edge))
-            if random_edge not in negative_edges:
-                negative_edges.add(random_edge)
-    
-    while len(positive_edges) < num_edges_to_sample:
-        random_edge = random.choice(edges)
-        if random_edge not in positive_edges:
-            remaining_graph.remove_edge(*random_edge)
-            if nx.is_connected(remaining_graph):
-                positive_edges.add(random_edge)
-            else:
-                remaining_graph.add_edge(*random_edge)
-
-    positive_edges = np.array(list(positive_edges))
-    negative_edges = np.array(list(negative_edges))
+        positive_edges = np.array(list(positive_edges))
+        negative_edges = np.array(list(negative_edges))
     assert len(positive_edges) == len(negative_edges) == num_edges_to_sample
-    
-    assert nx.is_connected(remaining_graph)
+    assert nx.is_connected(remaining_graph):
     return remaining_graph, positive_edges, negative_edges
 
 ########################################
