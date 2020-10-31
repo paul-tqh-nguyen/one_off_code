@@ -60,6 +60,9 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
             lines = f.readlines()
         edges = [tuple(eager_map(int, line.split())) for line in lines]
         remaining_graph.add_edges_from(edges)
+        print('Unprocessed graph loaded.')
+        print(f'{len(remaining_graph.nodes)} nodes.')
+        print(f'{len(remaining_graph.edges)} edges.')
     
         assert len(remaining_graph.nodes) == 4039
         assert len(remaining_graph.edges) == 88234
@@ -71,7 +74,7 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
         
         positive_edges = set()
         negative_edges = set()
-        
+
         while len(negative_edges) < num_edges_to_sample:
             random_edge = (random.choice(nodes), random.choice(nodes))
             if len(set(random_edge)) == 2:

@@ -20,6 +20,18 @@ def _initialize_logger() -> None:
 
 _initialize_logger()
 
+# Manual tqdm
+
+from typing import Generator
+from contextlib import contextmanager
+@contextmanager
+def manual_tqdm(*args, **kwargs) -> Generator:
+    import tqdm
+    progress_bar = tqdm.tqdm(*args, **kwargs)
+    yield progress_bar
+    progress_bar.close()
+    return
+
 # Debugging Utilities
 
 from typing import Generator
