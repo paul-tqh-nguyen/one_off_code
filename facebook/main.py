@@ -116,8 +116,8 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
     
     LOGGER.info(f'Remaining Graph Node Count: {repr(len(remaining_graph.nodes))}')
     LOGGER.info(f'Remaining Graph Edge Count: {repr(len(remaining_graph.edges))}')
-    LOGGER.info(f'Positive Edge Count: {repr(positive_edges)}')
-    LOGGER.info(f'Negative Edge Count: {repr(negative_edges)}')
+    LOGGER.info(f'Positive Edge Count: {repr(len(positive_edges))}')
+    LOGGER.info(f'Negative Edge Count: {repr(len(negative_edges))}')
     LOGGER.info('Data processing complete.')
     
     return remaining_graph, positive_edges, negative_edges
