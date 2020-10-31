@@ -50,9 +50,14 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
         lines = f.readlines()
     edges = [tuple(eager_map(int, line.split())) for line in lines]
     remaining_graph.add_edges_from(edges)
+
+    assert len(remaining_graph.nodes) == 4039
+    assert len(remaining_graph.edges) == 88234
     
     nodes = list(remaining_graph.nodes())
     num_edges_to_sample = len(remaining_graph.nodes()) // 2
+    assert num_edges_to_sample == 44117
+    assert set(nodes) == set(range(4039))
     
     positive_edges = set()
     negative_edges = set()
@@ -174,8 +179,8 @@ def analyze_hyperparameter_search_results() -> None:
 # Default Model #
 #################
 
-def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray) -> None: # @todo update this signature
-    LinkPredictor.train_model( # @todo update these inputs
+def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray) -> None:
+    LinkPredictor.train_model(
         gpus=GPU_IDS,
         positive_edges=positive_edges,
         negative_edges=negative_edges,

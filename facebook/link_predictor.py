@@ -235,11 +235,11 @@ class LinkPredictor(pl.LightningModule):
         assert only_one(predictions.shape) == batch_size
         bce_loss = BCE_LOSS(predictions, target_predictions)
         return bce_loss
-
+    
     def _step(self, batch_dict: dict, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor:
         loss = self._get_batch_loss(batch_dict)
         assert len(loss.shape) == 1
-        self.log(f'{eval_type}_loss', loss)
+        self.log(f'{eval_type}_loss', loss.mean())
         return loss
     
     def _step_or_epoch_end(self, batch_parts_outputs: torch.Tensor, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor: 
