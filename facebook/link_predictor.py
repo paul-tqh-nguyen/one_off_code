@@ -225,7 +225,7 @@ class LinkPredictor(pl.LightningModule):
     @property
     def device(self) -> Union[str, torch.device]:
         return only_one({parameter.device for parameter in self.parameters()})
-
+    
     def _get_batch_loss(self, batch_dict: dict) -> Dict[str, torch.Tensor]:
         batch = batch_dict['edge'].to(self.device)
         target_predictions = batch_dict['target'].to(self.device)
@@ -247,7 +247,7 @@ class LinkPredictor(pl.LightningModule):
         batch_results['mean_loss'] = mean_loss
         return batch_results
     
-    def _step_or_epoch_end(self, batch_parts_outputs: torch.Tensor, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor: 
+    def _aggregate_loss(self, batch_parts_outputs: torch.Tensor, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor: 
         assert len(batch_parts_outputs.shape) == 1
         loss = batch_parts_outputs.mean()
         self.log(f'{eval_type}_loss', loss)
@@ -258,14 +258,16 @@ class LinkPredictor(pl.LightningModule):
         return self._step(batch_dict, 'validation')['mean_loss']
 
     def training_step_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
-        return self._step_or_epoch_end(batch_parts_outputs, 'training')
+        assert isinstance(batch_parts_outputs, torch.Tensor)
+        return self._aggregate_loss(batch_parts_outputs, 'training')
         
     def validation_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
         del batch_index
         return self._step(batch_dict, 'validation')['mean_loss']
 
     def validation_step_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
-        return self._step_or_epoch_end(batch_parts_outputs, 'validation')
+        assert isinstance(batch_parts_outputs, torch.Tensor)
+        return self._aggregate_loss(batch_parts_outputs, 'validation')
 
     def test_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
         del batch_index
@@ -274,11 +276,13 @@ class LinkPredictor(pl.LightningModule):
         self.log('testing_step_accuracy', self.accuracy(batch_results['predictions'], batch_dict['target']))
         return mean_loss
     
-    def test_epoch_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
+    def test_epoch_end(self, batch_parts_outputs: List[torch.Tensor]) -> torch.Tensor:
+        assert isinstance(batch_parts_outputs, list)
+        assert all(isinstance(batch_parts_output, torch.Tensor) for batch_parts_output in batch_parts_outputs)
         testing_epoch_accuracy = self.accuracy.compute()
         self.testing_epoch_accuracy = testing_epoch_accuracy
         self.log('testing_epoch_accuracy', testing_epoch_accuracy)
-        return self._step_or_epoch_end(batch_parts_outputs, 'testing')
+        return self._aggregate_loss(batch_parts_outputs, 'testing')
     
     class PrintingCallback(pl.Callback):
     
