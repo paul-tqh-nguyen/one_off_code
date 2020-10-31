@@ -225,7 +225,7 @@ class LinkPredictor(pl.LightningModule):
     @property
     def device(self) -> Union[str, torch.device]:
         return only_one({parameter.device for parameter in self.parameters()})
-    
+
     def _get_batch_loss(self, batch_dict: dict) -> Dict[str, torch.Tensor]:
         batch = batch_dict['edge'].to(self.device)
         target_predictions = batch_dict['target'].to(self.device)
@@ -282,7 +282,7 @@ class LinkPredictor(pl.LightningModule):
         testing_epoch_accuracy = self.accuracy.compute()
         self.testing_epoch_accuracy = testing_epoch_accuracy
         self.log('testing_epoch_accuracy', testing_epoch_accuracy)
-        return self._aggregate_loss(batch_parts_outputs, 'testing')
+        return self._aggregate_loss(torch.stack(batch_parts_outputs), 'testing')
     
     class PrintingCallback(pl.Callback):
     
