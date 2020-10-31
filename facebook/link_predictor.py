@@ -427,6 +427,6 @@ class LinkPredictor(pl.LightningModule):
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
         LOGGER.info(f'Testing Loss: {test_results["testing_loss"]}')
-        LOGGER.info(f'Testing Accuracy: {self.testing_epoch_accuracy}')
+        LOGGER.info(f'Testing Accuracy: {model.testing_epoch_accuracy}')
         
         return best_validation_loss
