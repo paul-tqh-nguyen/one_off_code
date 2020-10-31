@@ -161,6 +161,8 @@ class LinkPredictor(pl.LightningModule):
         )
         self._initialize_embeddings(graph)
 
+        self.accuracy = pl.metrics.Accuracy()
+
     def _initialize_embeddings(self, graph: nx.Graph) -> None:
         checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(**{hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names})
         if not os.path.isdir(checkpoint_directory):
@@ -224,7 +226,7 @@ class LinkPredictor(pl.LightningModule):
     def device(self) -> Union[str, torch.device]:
         return only_one({parameter.device for parameter in self.parameters()})
 
-    def _get_batch_loss(self, batch_dict: dict) -> torch.Tensor:
+    def _get_batch_loss(self, batch_dict: dict) -> Dict[str, torch.Tensor]:
         batch = batch_dict['edge'].to(self.device)
         target_predictions = batch_dict['target'].to(self.device)
         batch_size = only_one(target_predictions.shape)
@@ -234,13 +236,16 @@ class LinkPredictor(pl.LightningModule):
         predictions = self(batch)
         assert only_one(predictions.shape) == batch_size
         bce_loss = BCE_LOSS(predictions, target_predictions)
-        return bce_loss
+        return {'loss': bce_loss, 'predictions': predictions}
     
-    def _step(self, batch_dict: dict, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor:
-        loss = self._get_batch_loss(batch_dict)
+    def _step(self, batch_dict: dict, eval_type: Literal['training', 'validation', 'testing']) -> Dict[str, torch.Tensor]:
+        batch_results = self._get_batch_loss(batch_dict)
+        loss = batch_results['loss']
         assert len(loss.shape) == 1
-        self.log(f'{eval_type}_loss', loss.mean())
-        return loss
+        mean_loss = loss.mean()
+        self.log(f'{eval_type}_loss', mean_loss)
+        batch_results['mean_loss'] = mean_loss
+        return batch_results
     
     def _step_or_epoch_end(self, batch_parts_outputs: torch.Tensor, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor: 
         assert len(batch_parts_outputs.shape) == 1
@@ -250,23 +255,29 @@ class LinkPredictor(pl.LightningModule):
     
     def training_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
         del batch_index
-        return self._step(batch_dict, 'validation')
+        return self._step(batch_dict, 'validation')['mean_loss']
 
     def training_step_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
         return self._step_or_epoch_end(batch_parts_outputs, 'training')
         
     def validation_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
         del batch_index
-        return self._step(batch_dict, 'validation')
+        return self._step(batch_dict, 'validation')['mean_loss']
 
-    def validation_step_or_epoch_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
+    def validation_step_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
         return self._step_or_epoch_end(batch_parts_outputs, 'validation')
 
     def test_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
         del batch_index
-        return self._step(batch_dict, 'testing')
-
-    def test_step_or_epoch_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
+        batch_results = self._step(batch_dict, 'testing')
+        mean_loss = batch_results['mean_loss']
+        self.log('testing_step_accuracy', self.accuracy(batch_results['predictions'], batch_dict['target']))
+        return mean_loss
+    
+    def test_epoch_end(self, batch_parts_outputs: torch.Tensor) -> torch.Tensor:
+        testing_epoch_accuracy = self.accuracy.compute()
+        self.testing_epoch_accuracy = testing_epoch_accuracy
+        self.log('testing_epoch_accuracy', testing_epoch_accuracy)
         return self._step_or_epoch_end(batch_parts_outputs, 'testing')
     
     class PrintingCallback(pl.Callback):
@@ -412,7 +423,6 @@ class LinkPredictor(pl.LightningModule):
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
         LOGGER.info(f'Testing Loss: {test_results["testing_loss"]}')
-
-        breakpoint()
+        LOGGER.info(f'Testing Accuracy: {self.testing_epoch_accuracy}')
         
         return best_validation_loss
