@@ -11,6 +11,7 @@
 
 import argparse
 import functools
+import os
 import nvgpu
 import random
 import more_itertools
@@ -60,9 +61,9 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
             lines = f.readlines()
         edges = [tuple(eager_map(int, line.split())) for line in lines]
         remaining_graph.add_edges_from(edges)
-        print('Unprocessed graph loaded.')
-        print(f'{len(remaining_graph.nodes)} nodes.')
-        print(f'{len(remaining_graph.edges)} edges.')
+        LOGGER.info('Unprocessed graph loaded.')
+        LOGGER.info(f'{len(remaining_graph.nodes)} nodes.')
+        LOGGER.info(f'{len(remaining_graph.edges)} edges.')
     
         assert len(remaining_graph.nodes) == 4039
         assert len(remaining_graph.edges) == 88234
@@ -100,8 +101,13 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
         
         positive_edges = np.array(list(positive_edges))
         negative_edges = np.array(list(negative_edges))
+        
+        with open(PREPROCESSED_DATA_FILE_LOCATION, 'wb') as f:
+            pickle.dump((remaining_graph, positive_edges, negative_edges), f)
+
     assert len(positive_edges) == len(negative_edges) == num_edges_to_sample
-    assert nx.is_connected(remaining_graph):
+    assert nx.is_connected(remaining_graph)
+    
     return remaining_graph, positive_edges, negative_edges
 
 ########################################
