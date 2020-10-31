@@ -55,7 +55,7 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
     assert len(remaining_graph.edges) == 88234
     
     nodes = list(remaining_graph.nodes())
-    num_edges_to_sample = len(remaining_graph.nodes()) // 2
+    num_edges_to_sample = len(remaining_graph.edges) // 2
     assert num_edges_to_sample == 44117
     assert set(nodes) == set(range(4039))
     
