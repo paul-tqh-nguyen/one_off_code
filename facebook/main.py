@@ -75,22 +75,29 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
         positive_edges = set()
         negative_edges = set()
 
-        while len(negative_edges) < num_edges_to_sample:
-            random_edge = (random.choice(nodes), random.choice(nodes))
-            if len(set(random_edge)) == 2:
-                random_edge = tuple(sorted(random_edge))
-                if random_edge not in negative_edges:
-                    negative_edges.add(random_edge)
+        with manual_tqdm(total=num_edges_to_sample, bar_format='{l_bar}{bar:50}{r_bar}') as progress_bar:
+            progress_bar.set_description('Sampling negative edges.')
+            while len(negative_edges) < num_edges_to_sample:
+                random_edge = (random.choice(nodes), random.choice(nodes))
+                if len(set(random_edge)) == 2:
+                    random_edge = tuple(sorted(random_edge))
+                    if random_edge not in negative_edges:
+                        if random_edge not in remaining_graph:
+                            negative_edges.add(random_edge)
+                            progress_bar.update(1)
+
+        with manual_tqdm(total=num_edges_to_sample, bar_format='{l_bar}{bar:50}{r_bar}') as progress_bar:
+            progress_bar.set_description('Sampling positive edges.')
+            while len(positive_edges) < num_edges_to_sample:
+                random_edge = random.choice(edges)
+                if random_edge not in positive_edges:
+                    remaining_graph.remove_edge(*random_edge)
+                    if nx.is_connected(remaining_graph):
+                        positive_edges.add(random_edge)
+                        progress_bar.update(1)
+                    else:
+                        remaining_graph.add_edge(*random_edge)
         
-        while len(positive_edges) < num_edges_to_sample:
-            random_edge = random.choice(edges)
-            if random_edge not in positive_edges:
-                remaining_graph.remove_edge(*random_edge)
-                if nx.is_connected(remaining_graph):
-                    positive_edges.add(random_edge)
-                else:
-                    remaining_graph.add_edge(*random_edge)
-    
         positive_edges = np.array(list(positive_edges))
         negative_edges = np.array(list(negative_edges))
     assert len(positive_edges) == len(negative_edges) == num_edges_to_sample
