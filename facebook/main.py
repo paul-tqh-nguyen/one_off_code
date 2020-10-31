@@ -12,6 +12,7 @@
 import argparse
 import functools
 import os
+import pickle
 import nvgpu
 import random
 import more_itertools
@@ -33,8 +34,11 @@ from link_predictor import LinkPredictor
 ###########
 
 SEED = 1234
-random.seed(SEED)
-np.random.seed(SEED)
+
+def reset_random_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    return
 
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
@@ -52,7 +56,9 @@ PREPROCESSED_DATA_FILE_LOCATION = './preprocessed_data.pickle'
 ###################
 
 def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
+    reset_random_seed(SEED)
     if os.path.isfile(PREPROCESSED_DATA_FILE_LOCATION):
+        LOGGER.info('Loading previously computed processed data.')
         with open(PREPROCESSED_DATA_FILE_LOCATION, 'rb') as f:
             remaining_graph, positive_edges, negative_edges = pickle.load(f)
     else:
@@ -107,6 +113,12 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
 
     assert len(positive_edges) == len(negative_edges) == num_edges_to_sample
     assert nx.is_connected(remaining_graph)
+    
+    LOGGER.info(f'Remaining Graph Node Count: {repr(len(remaining_graph.nodes))}')
+    LOGGER.info(f'Remaining Graph Edge Count: {repr(len(remaining_graph.edges))}')
+    LOGGER.info(f'Positive Edge Count: {repr(positive_edges)}')
+    LOGGER.info(f'Negative Edge Count: {repr(negative_edges)}')
+    LOGGER.info('Data processing complete.')
     
     return remaining_graph, positive_edges, negative_edges
 
