@@ -75,16 +75,16 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
         assert len(remaining_graph.edges) == 88234
         
         nodes = list(remaining_graph.nodes())
-        num_edges_to_sample = len(remaining_graph.edges) // 2
-        assert num_edges_to_sample == 44117
+        number_of_edges_to_sample = len(remaining_graph.edges) // 2
+        assert number_of_edges_to_sample == 44117
         assert set(nodes) == set(range(4039))
         
         positive_edges = set()
         negative_edges = set()
 
-        with manual_tqdm(total=num_edges_to_sample, bar_format='{l_bar}{bar:50}{r_bar}') as progress_bar:
+        with manual_tqdm(total=number_of_edges_to_sample, bar_format='{l_bar}{bar:50}{r_bar}') as progress_bar:
             progress_bar.set_description('Sampling negative edges.')
-            while len(negative_edges) < num_edges_to_sample:
+            while len(negative_edges) < number_of_edges_to_sample:
                 random_edge = (random.choice(nodes), random.choice(nodes))
                 if len(set(random_edge)) == 2:
                     random_edge = tuple(sorted(random_edge))
@@ -93,9 +93,9 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
                             negative_edges.add(random_edge)
                             progress_bar.update(1)
 
-        with manual_tqdm(total=num_edges_to_sample, bar_format='{l_bar}{bar:50}{r_bar}') as progress_bar:
+        with manual_tqdm(total=number_of_edges_to_sample, bar_format='{l_bar}{bar:50}{r_bar}') as progress_bar:
             progress_bar.set_description('Sampling positive edges.')
-            while len(positive_edges) < num_edges_to_sample:
+            while len(positive_edges) < number_of_edges_to_sample:
                 random_edge = random.choice(edges)
                 if random_edge not in positive_edges:
                     remaining_graph.remove_edge(*random_edge)
@@ -111,7 +111,7 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
         with open(PREPROCESSED_DATA_FILE_LOCATION, 'wb') as f:
             pickle.dump((remaining_graph, positive_edges, negative_edges), f)
 
-    assert len(positive_edges) == len(negative_edges) == num_edges_to_sample
+        assert len(positive_edges) == len(negative_edges) == number_of_edges_to_sample
     assert nx.is_connected(remaining_graph)
     
     LOGGER.info(f'Remaining Graph Node Count: {repr(len(remaining_graph.nodes))}')
