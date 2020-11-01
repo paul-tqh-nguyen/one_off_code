@@ -441,7 +441,7 @@ class LinkPredictor(pl.LightningModule):
         assert only_one(set(map(len, model.test_results.values()))) == len(data_module.testing_dataloader.dataset)
         assert int(abs(100*(test_results["testing_loss"] - model.test_results['loss'].mean().item()))) in (0,1)
 
-        testing_auroc = pl.metrics.functional.classification.auroc(model.test_results['target'], model.test_results['predictions'])
+        testing_auroc = pl.metrics.functional.classification.auroc(model.test_results['predictions'], model.test_results['target'])
         testing_correctness_count = torch.sum(model.test_results['target'].int() == model.test_results['predictions'].round().int()).item()
         testing_accuracy = testing_correctness_count / len(model.test_results['predictions'])
         
