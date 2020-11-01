@@ -280,7 +280,7 @@ class LinkPredictor(pl.LightningModule):
             for batch_parts_output in batch_parts_outputs
         )
         test_results_keys = {'loss', 'predictions', 'target'}
-        self.test_results = {key: torch.FloatTensor() for key in test_results_keys}
+        self.test_results = {key: torch.FloatTensor().to(self.device) for key in test_results_keys}
         for batch_parts_output in batch_parts_outputs:
             assert set(batch_parts_output.keys()) == set(self.test_results.keys()) == test_results_keys
             for test_results_key in test_results_keys:
