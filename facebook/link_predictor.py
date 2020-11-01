@@ -475,4 +475,3 @@ class LinkPredictor(pl.LightningModule):
             json.dump(result_summary_dict, f, indent=4)
         
         return best_validation_loss
-l
