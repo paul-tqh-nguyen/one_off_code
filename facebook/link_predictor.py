@@ -463,6 +463,7 @@ class LinkPredictor(pl.LightningModule):
 
         with open(os.path.join(checkpoint_dir, RESULT_SUMMARY_JSON_FILE_BASENAME), 'w') as f:
             result_summary_dict = hyperparameter_dict.copy()
+            result_summary_dict['testing_correctness_count'] = testing_correctness_count
             json.dump(result_summary_dict, f, indent=4)
         
         return best_validation_loss
