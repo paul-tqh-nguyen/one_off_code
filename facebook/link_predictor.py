@@ -50,7 +50,6 @@ LINK_PREDICTOR_CHECKPOINT_DIR = './checkpoints'
 #################
 
 def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_location: str, plot_title: str) -> None:
-    from sklearn.decomposition import PCA
     assert matrix.shape[0] == len(labels)
     matrix_pca = PCA(n_components=2, copy=False).fit_transform(matrix)
     matrix_tsne = TSNE(n_components=2, init='pca').fit_transform(matrix)
