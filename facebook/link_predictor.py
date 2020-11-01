@@ -227,6 +227,7 @@ class LinkPredictor(pl.LightningModule):
                 f.write(f"\n hadamard_product_batch.shape {repr(hadamard_product_batch.shape)}")
                 f.write(f"\n batch_size {repr(batch_size)}")
                 f.write(f"\n self.hparams.embedding_size {repr(self.hparams.embedding_size)}")
+                f.write(f"\n self.hparams {repr(self.hparams)}")
         assert tuple(hadamard_product_batch.shape) == (batch_size, self.hparams.embedding_size)
 
         prediction_batch = self.logistic_regression_layers(hadamard_product_batch).squeeze()
