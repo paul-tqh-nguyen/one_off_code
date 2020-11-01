@@ -469,7 +469,7 @@ class LinkPredictor(pl.LightningModule):
             result_summary_dict['training_portion'] = TRAINING_PORTION
             result_summary_dict['validation_portion'] = VALIDATION_PORTION
             result_summary_dict['testing_portion'] = TESTING_PORTION
-            result_summary_dict[''] = 
+            result_summary_dict['noded2vec_model_location'] = model.saved_noded2vec_model_location
             result_summary_dict[''] = 
             result_summary_dict[''] = 
             result_summary_dict[''] = 
