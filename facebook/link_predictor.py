@@ -465,6 +465,7 @@ class LinkPredictor(pl.LightningModule):
             result_summary_dict = hyperparameter_dict.copy()
             result_summary_dict['testing_correctness_count'] = testing_correctness_count
             result_summary_dict['testing_accuracy'] = testing_accuracy
+            result_summary_dict['testing_loss'] = test_results['testing_loss']
             json.dump(result_summary_dict, f, indent=4)
         
         return best_validation_loss
