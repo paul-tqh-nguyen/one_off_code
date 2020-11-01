@@ -127,7 +127,7 @@ class FBDataModule(pl.LightningDataModule):
         assert len(self.testing_dataloader) == len(self.validation_dataloader) == 4
        
         assert round((len(self.training_dataloader.dataset) / 2) / (88234 / 2), 2) == TRAINING_PORTION
-        assert round((len(self.validation_dataloader.dataset) / 2) / (88234 / 2), 2) == (1-TRAINING_PORTION)/2
+        assert round((len(self.validation_dataloader.dataset) / 2) / (88234 / 2), 2) == VALIDATION_PORTION
         assert round((len(self.testing_dataloader.dataset) / 2) / (88234 / 2), 2) == (1-TRAINING_PORTION)/2
         
         return
