@@ -38,6 +38,7 @@ from misc_utilities import *
 RANDOM_SEED = 1234
 
 TRAINING_PORTION = 0.50
+VALIDATION_PORTION = 0.10
 
 BCE_LOSS = nn.BCELoss(reduction='none')
 
@@ -127,7 +128,7 @@ class FBDataModule(pl.LightningDataModule):
         assert round((len(self.training_dataloader.dataset) / 2) / (88234 / 2), 2) == TRAINING_PORTION
         assert round((len(self.validation_dataloader.dataset) / 2) / (88234 / 2), 2) == (1-TRAINING_PORTION)/2
         assert round((len(self.testing_dataloader.dataset) / 2) / (88234 / 2), 2) == (1-TRAINING_PORTION)/2
-       
+        
         return
    
     def train_dataloader(self) -> data.DataLoader:
