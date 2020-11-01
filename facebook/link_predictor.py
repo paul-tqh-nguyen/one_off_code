@@ -16,6 +16,7 @@ import networkx as nx
 import multiprocessing as mp
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 import matplotlib.cm
 import pytorch_lightning.metrics.functional
 import pytorch_lightning as pl
@@ -50,7 +51,6 @@ LINK_PREDICTOR_CHECKPOINT_DIR = './checkpoints'
 
 def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_location: str, plot_title: str) -> None:
     from sklearn.decomposition import PCA
-    from sklearn.manifold import TSNE
     assert matrix.shape[0] == len(labels)
     matrix_pca = PCA(n_components=2, copy=False).fit_transform(matrix)
     matrix_tsne = TSNE(n_components=2, init='pca').fit_transform(matrix)
