@@ -424,7 +424,7 @@ class LinkPredictor(pl.LightningModule):
             mode='min',
             strict=True,
         )
-       
+        
         trainer = pl.Trainer(
             callbacks=[cls.PrintingCallback(checkpoint_callback), early_stop_callback],
             # auto_lr_find=True,
