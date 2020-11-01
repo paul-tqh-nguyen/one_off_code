@@ -33,13 +33,6 @@ from link_predictor import LinkPredictor
 # Globals #
 ###########
 
-SEED = 1234
-
-def reset_random_seed(seed: int) -> None:
-    random.seed(seed)
-    np.random.seed(seed)
-    return
-
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
 STUDY_NAME = 'link-predictor'
@@ -127,13 +120,24 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
 ########################################
 
 class LinkPredictorHyperParameterSearchObjective:
-    def __init__(self, gpu_id_queue: object): # @todo update these inputs
+    def __init__(self, graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray, gpu_id_queue: object):
         # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dynamically
         self.gpu_id_queue = gpu_id_queue
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
-        hyperparameters = { # @todo update these
-            'wl_iterations': int(trial.suggest_int('wl_iterations', 1, 20)),
+        hyperparameters = {
+            'embedding_size': int(trial.suggest_int('embedding_size', 100, 500)),
+            # node2vec Hyperparameters
+            'p': trial.suggest_uniform('p', 0.25, 4),
+            'q': trial.suggest_uniform('q', 0.25, 4),
+            'walks_per_node': int(trial.suggest_int('walks_per_node', 6, 20)),
+            'walk_length': int(trial.suggest_int('walk_length', 6, 20)),
+            'node2vec_epochs': int(trial.suggest_int('node2vec_epochs', 10, 100)),
+            'node2vec_learning_rate': trial.suggest_uniform('node2vec_learning_rate', 1e-6, 1e-2),
+            # Link Predictor Hyperparameters
+            'link_predictor_learning_rate': trial.suggest_uniform('link_predictor_learning_rate', 1e-6, 1e-2),
+            'link_predictor_batch_size' int(trial.suggest_int('link_predictor_batch_size', 1, 2048)),
+            'link_predictor_gradient_clip_val': int(trial.suggest_int('link_predictor_gradient_clip_val', 1, 1)),
         }
         assert set(hyperparameters.keys()) == set(LinkPredictor.hyperparameter_names)
         return hyperparameters
@@ -148,7 +152,7 @@ class LinkPredictorHyperParameterSearchObjective:
         try:
             with suppressed_output():
                 with warnings_suppressed():
-                    best_validation_loss = LinkPredictor.train_model(gpus=[gpu_id], **hyperparameters) # @todo update this line
+                    best_validation_loss = LinkPredictor.train_model(gpus=[gpu_id], graph=graph, positive_edges=positive_edges, negative_edges=negative_edges, **hyperparameters)
         except Exception as exception:
             if self.gpu_id_queue is not None:
                 self.gpu_id_queue.put(gpu_id)
@@ -172,7 +176,7 @@ def load_hyperparameter_search_study() -> optuna.Study:
 def hyperparameter_search_study_df() -> pd.DataFrame:
     return load_hyperparameter_search_study().trials_dataframe()
 
-def link_predictor_hyperparameter_search() -> None: # @todo update this signature
+def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray) -> None:
     study = load_hyperparameter_search_study()
     number_of_trials = get_number_of_link_predictor_hyperparameter_search_trials(study)
     optimize_kawrgs = dict(
@@ -183,7 +187,7 @@ def link_predictor_hyperparameter_search() -> None: # @todo update this signatur
     with mp.Manager() as manager:
         gpu_id_queue = manager.Queue()
         more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
-        optimize_kawrgs['func'] = LinkPredictorHyperParameterSearchObjective(graph_id_to_graph, graph_id_to_graph_label, gpu_id_queue)
+        optimize_kawrgs['func'] = LinkPredictorHyperParameterSearchObjective(graph, positive_edges, negative_edges, gpu_id_queue)
         optimize_kawrgs['n_jobs'] = len(GPU_IDS)
         with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
             with training_logging_suppressed():

@@ -35,8 +35,6 @@ from misc_utilities import *
 # Globals #
 ###########
 
-RANDOM_SEED = 1234
-
 TRAINING_PORTION = 0.30
 VALIDATION_PORTION = 0.10
 TESTING_PORTION = 1 - TRAINING_PORTION - VALIDATION_PORTION
@@ -108,8 +106,8 @@ class FBDataModule(pl.LightningDataModule):
     def setup(self) -> None:
 
         edge_indices = list(range(len(self.positive_edges)))
-        training_edge_indices, testing_edge_indices = train_test_split(edge_indices, test_size=1-TRAINING_PORTION, random_state=RANDOM_SEED)
-        validation_edge_indices, testing_edge_indices = train_test_split(testing_edge_indices, test_size=TESTING_PORTION/(1-TRAINING_PORTION), random_state=RANDOM_SEED)
+        training_edge_indices, testing_edge_indices = train_test_split(edge_indices, test_size=1-TRAINING_PORTION, random_state=SEED)
+        validation_edge_indices, testing_edge_indices = train_test_split(testing_edge_indices, test_size=TESTING_PORTION/(1-TRAINING_PORTION), random_state=SEED)
        
         training_dataset = FBDataset(self.positive_edges[training_edge_indices], self.negative_edges[training_edge_indices])
         validation_dataset = FBDataset(self.positive_edges[validation_edge_indices], self.negative_edges[validation_edge_indices])
@@ -151,7 +149,7 @@ class FBDataModule(pl.LightningDataModule):
 
 class LinkPredictor(pl.LightningModule):
 
-    hyperparameter_names = ( # @todo verify that these are used
+    hyperparameter_names = (
         'embedding_size',
         # node2vec Hyperparameters
         'p',
@@ -392,16 +390,17 @@ class LinkPredictor(pl.LightningModule):
             f'link_grad_clip_{link_predictor_gradient_clip_val:.5g}'
         )
         return checkpoint_directory
-   
+
     @classmethod
     def train_model(cls, gpus: List[int], positive_edges: np.ndarray, negative_edges: np.ndarray, **model_initialization_args) -> float:
-
+        
         hyperparameter_dict = {
             hyperparameter_name: hyperparameter_value
             for hyperparameter_name, hyperparameter_value in model_initialization_args.items()
             if hyperparameter_name in cls.hyperparameter_names
         }
-       
+        assert set(cls.hyperparameter_names) == set(hyperparameter_dict.keys())
+
         checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir)

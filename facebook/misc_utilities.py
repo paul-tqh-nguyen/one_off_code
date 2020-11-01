@@ -1,4 +1,15 @@
 
+# Random Seed
+
+SEED = 1234
+
+def reset_random_seed(seed: int) -> None:
+    import numpy as np
+    import random
+    random.seed(seed)
+    np.random.seed(seed)
+    return
+
 # Logging
 
 import logging
