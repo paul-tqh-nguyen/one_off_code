@@ -445,22 +445,22 @@ class LinkPredictor(pl.LightningModule):
         data_module = FBDataModule(hyperparameter_dict['link_predictor_batch_size'], positive_edges, negative_edges)
         data_module.prepare_data()
         data_module.setup()
-               
+        
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
-       
+        
         assert len(data_module.testing_dataloader.dataset) - only_one(set(map(len, model.test_results.values()))) < 4
         assert int(abs(100*(test_results['testing_loss'] - model.test_results['loss'].mean().item()))) in (0, 1, 2)
-
+        
         testing_auroc = pl.metrics.functional.classification.auroc(model.test_results['predictions'], model.test_results['target'])
         testing_correctness_count = torch.sum(model.test_results['target'].int() == model.test_results['predictions'].round().int()).item()
         testing_accuracy = testing_correctness_count / len(model.test_results['predictions'])
-       
+        
         LOGGER.info(f'Testing Loss: {test_results["testing_loss"]}')
         LOGGER.info(f'Testing Accuracy: {testing_correctness_count}/{len(model.test_results["predictions"])} ({testing_accuracy*100:.5g}%)')
         LOGGER.info(f'Testing AUROC: {testing_auroc}')
-
+        
         with open(os.path.join(checkpoint_dir, RESULT_SUMMARY_JSON_FILE_BASENAME), 'w') as f:
             result_summary_dict = hyperparameter_dict.copy()
             result_summary_dict['testing_correctness_count'] = testing_correctness_count
