@@ -54,7 +54,7 @@ def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_locati
     matrix_pca = PCA(n_components=2, copy=False).fit_transform(matrix)
     matrix_tsne = TSNE(n_components=2, init='pca').fit_transform(matrix)
     with temp_plt_figure(figsize=(20.0,10.0)) as figure:
-        def add_plot(position: int, matrix_to_plot: np.ndarray):
+        def add_plot(position: int, matrix_to_plot: np.ndarray, sub_plot_title: str):
             plot = figure.add_subplot(position)
             plot.axvline(c='grey', lw=1, ls='--', alpha=0.5)
             plot.axhline(c='grey', lw=1, ls='--', alpha=0.5)
@@ -62,7 +62,7 @@ def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_locati
             label_to_color_map = dict(enumerate(label_to_color_map))
             colors = np.array([label_to_color_map[label] for label in labels])
             plot.scatter(matrix_to_plot[:,0], matrix_to_plot[:,1], c=colors, alpha=0.25)
-            plot.set_title(plot_title)
+            plot.set_title(sub_plot_title)
             plot.set_xlabel('Dim 1')
             plot.set_ylabel('Dim 2')
             plot.grid(True)
