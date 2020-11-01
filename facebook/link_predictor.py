@@ -185,6 +185,7 @@ class LinkPredictor(pl.LightningModule):
             os.makedirs(checkpoint_directory)
        
         self.saved_noded2vec_model_location = os.path.join(checkpoint_directory, NODE2VEC_MODEL_FILE_BASENAME)
+        self.embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VISUALIZATION_FILE_BASENAME)
        
         if os.path.isfile(self.saved_noded2vec_model_location):
             with open(self.saved_noded2vec_model_location, 'rb') as f:
@@ -205,8 +206,6 @@ class LinkPredictor(pl.LightningModule):
             assert tuple(embedding_matrix.shape) == (len(graph.nodes), self.hparams.embedding_size)
             with open(self.saved_noded2vec_model_location, 'wb') as f:
                 np.save(f, embedding_matrix)
-
-            self.embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VISUALIZATION_FILE_BASENAME)
             visualize_vectors(embedding_matrix, np.zeros(len(graph.nodes)), self.embedding_visualization_location, 'Embedding Visualization via PCA')
 
         embedding_matrix: torch.Tensor = torch.from_numpy(embedding_matrix)
