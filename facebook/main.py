@@ -201,7 +201,7 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
 # Hyperparameter Search Result Analysis #
 #########################################
 
-def analyze_hyperparameter_search_results() -> None:
+def analyze_hyperparameter_search_results() -> None: # @todo finish this
     df = hyperparameter_search_study_df()
     df = df.loc[df.state=='COMPLETE']
     params_prefix = 'params_'
