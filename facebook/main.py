@@ -33,7 +33,7 @@ from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 # Globals #
 ###########
 
-GPU_IDS = eager_map(int, nvgpu.available_gpus())
+GPU_IDS = [3] # eager_map(int, nvgpu.available_gpus()) # @todo fix this
 
 STUDY_NAME = 'study-link-predictor'
 DB_URL = 'sqlite:///study-link-predictor.db'
