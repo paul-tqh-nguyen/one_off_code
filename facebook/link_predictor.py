@@ -206,8 +206,8 @@ class LinkPredictor(pl.LightningModule):
             with open(self.saved_noded2vec_model_location, 'wb') as f:
                 np.save(f, embedding_matrix)
 
-            embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VISUALIZATION_FILE_BASENAME)
-            visualize_vectors(embedding_matrix, np.zeros(len(graph.nodes)), embedding_visualization_location, 'Embedding Visualization via PCA')
+            self.embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VISUALIZATION_FILE_BASENAME)
+            visualize_vectors(embedding_matrix, np.zeros(len(graph.nodes)), self.embedding_visualization_location, 'Embedding Visualization via PCA')
 
         embedding_matrix: torch.Tensor = torch.from_numpy(embedding_matrix)
         self.embedding_layer = nn.Embedding(embedding_matrix.size(0), embedding_matrix.size(1))
@@ -470,7 +470,7 @@ class LinkPredictor(pl.LightningModule):
             result_summary_dict['validation_portion'] = VALIDATION_PORTION
             result_summary_dict['testing_portion'] = TESTING_PORTION
             result_summary_dict['noded2vec_model_location'] = model.saved_noded2vec_model_location
-            result_summary_dict[''] = 
+            result_summary_dict['embedding_visualization_location'] = model.embedding_visualization_location
             result_summary_dict[''] = 
             result_summary_dict[''] = 
             result_summary_dict[''] = 
