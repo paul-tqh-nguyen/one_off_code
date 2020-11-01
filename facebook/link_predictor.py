@@ -222,6 +222,8 @@ class LinkPredictor(pl.LightningModule):
         assert tuple(embedded_batch.shape) == (batch_size, 2, self.hparams.embedding_size)
 
         hadamard_product_batch = torch.squeeze(embedded_batch[:,0,:] * embedded_batch[:,1,:])
+        with open('/tmp/test.py', 'w') as f: # @todo update this
+            
         LOGGER.info(f"hadamard_product_batch.shape {repr(hadamard_product_batch.shape)}")
         LOGGER.info(f"batch_size {repr(batch_size)}")
         LOGGER.info(f"self.hparams.embedding_size {repr(self.hparams.embedding_size)}")
