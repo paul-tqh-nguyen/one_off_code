@@ -35,6 +35,8 @@ from misc_utilities import *
 # Globals #
 ###########
 
+RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
+
 TRAINING_PORTION = 0.30
 VALIDATION_PORTION = 0.10
 TESTING_PORTION = 1 - TRAINING_PORTION - VALIDATION_PORTION
