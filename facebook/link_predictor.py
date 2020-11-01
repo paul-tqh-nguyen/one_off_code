@@ -470,6 +470,10 @@ class LinkPredictor(pl.LightningModule):
             result_summary_dict['validation_portion'] = VALIDATION_PORTION
             result_summary_dict['testing_portion'] = TESTING_PORTION
             result_summary_dict[''] = 
+            result_summary_dict[''] = 
+            result_summary_dict[''] = 
+            result_summary_dict[''] = 
+            result_summary_dict[''] = 
 
             json.dump(result_summary_dict, f, indent=4)
         
