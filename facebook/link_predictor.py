@@ -184,10 +184,10 @@ class LinkPredictor(pl.LightningModule):
         if not os.path.isdir(checkpoint_directory):
             os.makedirs(checkpoint_directory)
        
-        saved_model_location = os.path.join(checkpoint_directory, NODE2VEC_MODEL_FILE_BASENAME)
+        self.saved_noded2vec_model_location = os.path.join(checkpoint_directory, NODE2VEC_MODEL_FILE_BASENAME)
        
-        if os.path.isfile(saved_model_location):
-            with open(saved_model_location, 'rb') as f:
+        if os.path.isfile(self.saved_noded2vec_model_location):
+            with open(self.saved_noded2vec_model_location, 'rb') as f:
                 embedding_matrix: np.ndarray = np.load(f)
         else:
             trainer = karateclub.Node2Vec(
@@ -203,7 +203,7 @@ class LinkPredictor(pl.LightningModule):
             trainer.fit(graph)
             embedding_matrix: np.ndarray = trainer.get_embedding()
             assert tuple(embedding_matrix.shape) == (len(graph.nodes), self.hparams.embedding_size)
-            with open(saved_model_location, 'wb') as f:
+            with open(self.saved_noded2vec_model_location, 'wb') as f:
                 np.save(f, embedding_matrix)
 
             embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VISUALIZATION_FILE_BASENAME)
