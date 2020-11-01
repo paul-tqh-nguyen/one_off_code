@@ -134,7 +134,7 @@ class LinkPredictorHyperParameterSearchObjective:
             'q': trial.suggest_uniform('q', 0.25, 4),
             'walks_per_node': int(trial.suggest_int('walks_per_node', 6, 20)),
             'walk_length': int(trial.suggest_int('walk_length', 6, 20)),
-            'node2vec_epochs': int(trial.suggest_int('node2vec_epochs', 10, 100)),
+            'node2vec_epochs': int(trial.suggest_int('node2vec_epochs', 10, 1024)),
             'node2vec_learning_rate': trial.suggest_uniform('node2vec_learning_rate', 1e-6, 1e-2),
             # Link Predictor Hyperparameters
             'link_predictor_learning_rate': trial.suggest_uniform('link_predictor_learning_rate', 1e-6, 1e-2),
