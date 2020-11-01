@@ -17,7 +17,7 @@ import multiprocessing as mp
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 import matplotlib.cm
-import pytorch_lightning.metrics
+import pytorch_lightning.metrics.functional
 import pytorch_lightning as pl
 import torch
 from torch import nn
