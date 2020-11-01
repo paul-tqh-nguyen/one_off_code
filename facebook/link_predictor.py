@@ -466,9 +466,10 @@ class LinkPredictor(pl.LightningModule):
             result_summary_dict['testing_correctness_count'] = testing_correctness_count
             result_summary_dict['testing_accuracy'] = testing_accuracy
             result_summary_dict['testing_loss'] = test_results['testing_loss']
-TRAINING_PORTION = 0.30
-VALIDATION_PORTION = 0.10
-TESTING_PORTION = 1 - TRAINING_PORTION - VALIDATION_PORTION
+            result_summary_dict['training_portion'] = TRAINING_PORTION
+            result_summary_dict['validation_portion'] = VALIDATION_PORTION
+            result_summary_dict['testing_portion'] = TESTING_PORTION
+            result_summary_dict[''] = 
 
             json.dump(result_summary_dict, f, indent=4)
         
