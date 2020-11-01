@@ -221,7 +221,7 @@ class LinkPredictor(pl.LightningModule):
         assert tuple(embedded_batch.shape) == (batch_size, 2, self.hparams.embedding_size)
 
         hadamard_product_batch = torch.squeeze(embedded_batch[:,0,:] * embedded_batch[:,1,:])
-        assert tuple(hadamard_product_batch.shape) == (batch_size, self.hparams.embedding_size)
+        assert tuple(hadamard_product_batch.shape) == (batch_size, self.hparams.embedding_size), f'{tuple(hadamard_product_batch.shape)} != {(batch_size, self.hparams.embedding_size)}'
 
         prediction_batch = self.logistic_regression_layers(hadamard_product_batch).squeeze()
         assert only_one(prediction_batch.shape) == batch_size
