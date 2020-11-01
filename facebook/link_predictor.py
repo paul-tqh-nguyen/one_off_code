@@ -80,7 +80,7 @@ class FBDataset(data.Dataset):
         assert len(positive_edges) == len(negative_edges)
         self.positive_edges = positive_edges
         self.negative_edges = negative_edges
-    
+   
     def __getitem__(self, index: int):
         edge_is_positive = bool(index < len(self.positive_edges))
         edge = self.positive_edges[index] if edge_is_positive else self.negative_edges[index - len(self.positive_edges)]
@@ -88,7 +88,7 @@ class FBDataset(data.Dataset):
             'edge': torch.tensor(edge, dtype=int),
             'target': torch.tensor(edge_is_positive, dtype=torch.float32)
         }
-    
+   
     def __len__(self):
         return len(self.positive_edges)+len(self.negative_edges)
 
@@ -99,16 +99,16 @@ class FBDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.positive_edges = positive_edges
         self.negative_edges = negative_edges
-        
+       
     def prepare_data(self) -> None:
         return
-    
+   
     def setup(self) -> None:
 
         edge_indices = list(range(len(self.positive_edges)))
         training_edge_indices, testing_edge_indices = train_test_split(edge_indices, test_size=1-TRAINING_PORTION, random_state=RANDOM_SEED)
         validation_edge_indices, testing_edge_indices = train_test_split(testing_edge_indices, test_size=0.5, random_state=RANDOM_SEED)
-        
+       
         training_dataset = FBDataset(self.positive_edges[training_edge_indices], self.negative_edges[training_edge_indices])
         validation_dataset = FBDataset(self.positive_edges[validation_edge_indices], self.negative_edges[validation_edge_indices])
         testing_dataset = FBDataset(self.positive_edges[testing_edge_indices], self.negative_edges[testing_edge_indices])
@@ -117,19 +117,19 @@ class FBDataModule(pl.LightningDataModule):
         self.training_dataloader = data.DataLoader(training_dataset, batch_size=self.batch_size, num_workers=0, shuffle=True, drop_last=True)
         self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=len(validation_dataset)//4, num_workers=0, shuffle=False, drop_last=True)
         self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=len(testing_dataset)//4, num_workers=0, shuffle=False, drop_last=True)
-        
+       
         assert 0 < len(self.training_dataloader.dataset) == len(training_edge_indices) * 2
         assert 0 < len(self.validation_dataloader.dataset) == len(validation_edge_indices) * 2
         assert 0 < len(self.testing_dataloader.dataset) == len(testing_edge_indices) * 2
-        
-        assert len(self.testing_dataloader) == len(self.validation_dataloader) == 4 
-        
+       
+        assert len(self.testing_dataloader) == len(self.validation_dataloader) == 4
+       
         assert round((len(self.training_dataloader.dataset) / 2) / (88234 / 2), 2) == 0.6
         assert round((len(self.validation_dataloader.dataset) / 2) / (88234 / 2), 2) == 0.2
         assert round((len(self.testing_dataloader.dataset) / 2) / (88234 / 2), 2) == 0.2
-        
+       
         return
-    
+   
     def train_dataloader(self) -> data.DataLoader:
         return self.training_dataloader
 
@@ -157,13 +157,13 @@ class LinkPredictor(pl.LightningModule):
         # Link Predictor Hyperparameters
         'link_predictor_learning_rate',
         'link_predictor_batch_size',
-        'link_predictor_gradient_clip_val', 
+        'link_predictor_gradient_clip_val',
     )
-    
-    def __init__(self, graph: nx.Graph, embedding_size: int, p: float, q: float, walks_per_node: int, walk_length: int, node2vec_epochs: int, node2vec_learning_rate: float, link_predictor_learning_rate: float, link_predictor_batch_size: int, link_predictor_gradient_clip_val: float): 
+   
+    def __init__(self, graph: nx.Graph, embedding_size: int, p: float, q: float, walks_per_node: int, walk_length: int, node2vec_epochs: int, node2vec_learning_rate: float, link_predictor_learning_rate: float, link_predictor_batch_size: int, link_predictor_gradient_clip_val: float):
         super().__init__()
         self.save_hyperparameters(*(self.__class__.hyperparameter_names))
-        
+       
         self.logistic_regression_layers = nn.Sequential(
             OrderedDict([
                 (f'linear_layer', nn.Linear(self.hparams.embedding_size, 1)),
@@ -176,9 +176,9 @@ class LinkPredictor(pl.LightningModule):
         checkpoint_directory = self.__class__.checkpoint_directory_from_hyperparameters(**{hyperparameter_name: getattr(self.hparams, hyperparameter_name) for hyperparameter_name in self.__class__.hyperparameter_names})
         if not os.path.isdir(checkpoint_directory):
             os.makedirs(checkpoint_directory)
-        
+       
         saved_model_location = os.path.join(checkpoint_directory, NODE2VEC_MODEL_FILE_BASENAME)
-        
+       
         if os.path.isfile(saved_model_location):
             with open(saved_model_location, 'rb') as f:
                 embedding_matrix: np.ndarray = np.load(f)
@@ -219,14 +219,14 @@ class LinkPredictor(pl.LightningModule):
 
         prediction_batch = self.logistic_regression_layers(hadamard_product_batch).squeeze()
         assert only_one(prediction_batch.shape) == batch_size
-        
+       
         return prediction_batch
-    
+   
     def backward(self, loss: torch.Tensor , _optimizer: torch.optim.Optimizer, _opt_idx: int) -> None:
         del _optimizer, _opt_idx
         loss.backward()
         return
-    
+   
     def configure_optimizers(self) -> Dict[str, torch.optim.Optimizer]:
         optimizer: torch.optim.Optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.link_predictor_learning_rate)
         return {'optimizer': optimizer}
@@ -241,18 +241,18 @@ class LinkPredictor(pl.LightningModule):
         batch_size = only_one(target_predictions.shape)
         assert tuple(batch.shape) == (batch_size, 2)
         assert tuple(target_predictions.shape) == (batch_size,)
-        
+       
         predictions = self(batch)
         assert only_one(predictions.shape) == batch_size
         bce_loss = BCE_LOSS(predictions, target_predictions)
         batch_results = {'loss': bce_loss, 'predictions': predictions}
-        
+       
         assert len(bce_loss.shape) == 1
         self.log(f'{eval_type}_loss', bce_loss.mean())
-        
+       
         return batch_results
 
-    def _aggregate_loss(self, batch_parts_outputs: torch.Tensor, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor: 
+    def _aggregate_loss(self, batch_parts_outputs: torch.Tensor, eval_type: Literal['training', 'validation', 'testing']) -> torch.Tensor:
         assert len(batch_parts_outputs.shape) == 1
         loss = batch_parts_outputs.mean()
         self.log(f'{eval_type}_loss', loss)
@@ -281,7 +281,7 @@ class LinkPredictor(pl.LightningModule):
         batch_results = self._step(batch_dict, 'testing')
         batch_results['target'] = batch_dict['target']
         return batch_results
-    
+   
     def test_epoch_end(self, batch_parts_outputs: List[Dict[str, torch.Tensor]]) -> torch.Tensor:
         assert isinstance(batch_parts_outputs, list)
         assert all(
@@ -298,19 +298,19 @@ class LinkPredictor(pl.LightningModule):
                 self.test_results[test_results_key] = torch.cat([self.test_results[test_results_key], batch_parts_output[test_results_key]])
         assert len(set(map(len, self.test_results.values()))) == 1
         return self._aggregate_loss(self.test_results['loss'], 'testing')
-    
+   
     class PrintingCallback(pl.Callback):
-    
+   
         def __init__(self, checkpoint_callback: pl.callbacks.ModelCheckpoint):
             super().__init__()
             self.checkpoint_callback = checkpoint_callback
-        
+       
         def on_init_start(self, trainer: pl.Trainer) -> None:
             LOGGER.info('')
             LOGGER.info('Initializing trainer.')
             LOGGER.info('')
             return
-        
+       
         def on_train_start(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
             LOGGER.info('')
             LOGGER.info('Model: ')
@@ -334,13 +334,13 @@ class LinkPredictor(pl.LightningModule):
             LOGGER.info('Starting training.')
             LOGGER.info('')
             return
-        
+       
         def on_train_end(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
             LOGGER.info('')
             LOGGER.info('Training complete.')
             LOGGER.info('')
             return
-    
+   
         def on_test_start(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
             LOGGER.info('')
             LOGGER.info('Starting testing.')
@@ -350,7 +350,7 @@ class LinkPredictor(pl.LightningModule):
             LOGGER.info(f'Testing Batch Count: {len(only_one(trainer.test_dataloaders)):,}')
             LOGGER.info('')
             return
-        
+       
         def on_test_end(self, trainer: pl.Trainer, model: pl.LightningDataModule) -> None:
             LOGGER.info('')
             LOGGER.info('Testing complete.')
@@ -358,7 +358,7 @@ class LinkPredictor(pl.LightningModule):
             LOGGER.info(f'Best validation model checkpoint saved to {self.checkpoint_callback.best_model_path} .')
             LOGGER.info('')
             return
-    
+   
     @staticmethod
     def checkpoint_directory_from_hyperparameters(
             embedding_size: int,
@@ -386,7 +386,7 @@ class LinkPredictor(pl.LightningModule):
             f'link_grad_clip_{link_predictor_gradient_clip_val:.5g}'
         )
         return checkpoint_directory
-    
+   
     @classmethod
     def train_model(cls, gpus: List[int], positive_edges: np.ndarray, negative_edges: np.ndarray, **model_initialization_args) -> float:
 
@@ -395,7 +395,7 @@ class LinkPredictor(pl.LightningModule):
             for hyperparameter_name, hyperparameter_value in model_initialization_args.items()
             if hyperparameter_name in cls.hyperparameter_names
         }
-        
+       
         checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir)
@@ -416,7 +416,7 @@ class LinkPredictor(pl.LightningModule):
             mode='min',
             strict=True,
         )
-        
+       
         trainer = pl.Trainer(
             callbacks=[cls.PrintingCallback(checkpoint_callback), early_stop_callback],
             # auto_lr_find=True,
@@ -431,26 +431,26 @@ class LinkPredictor(pl.LightningModule):
             default_root_dir=checkpoint_dir,
             checkpoint_callback=checkpoint_callback,
         )
-        
+       
         model = cls(**model_initialization_args)
-        
+       
         data_module = FBDataModule(hyperparameter_dict['link_predictor_batch_size'], positive_edges, negative_edges)
         data_module.prepare_data()
         data_module.setup()
-                
+               
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
-        
+       
         assert only_one(set(map(len, model.test_results.values()))) == len(data_module.testing_dataloader.dataset)
         assert int(abs(100*(test_results["testing_loss"] - model.test_results['loss'].mean().item()))) in (0, 1, 2)
 
         testing_auroc = pl.metrics.functional.classification.auroc(model.test_results['predictions'], model.test_results['target'])
         testing_correctness_count = torch.sum(model.test_results['target'].int() == model.test_results['predictions'].round().int()).item()
         testing_accuracy = testing_correctness_count / len(model.test_results['predictions'])
-        
+       
         LOGGER.info(f'Testing Loss: {test_results["testing_loss"]}')
         LOGGER.info(f'Testing Accuracy: {testing_correctness_count}/{len(model.test_results["predictions"])} ({testing_accuracy*100:.5g}%)')
         LOGGER.info(f'Testing AUROC: {testing_auroc}')
-        
+       
         return best_validation_loss
