@@ -462,7 +462,7 @@ class LinkPredictor(pl.LightningModule):
         LOGGER.info(f'Testing AUROC: {testing_auroc}')
 
         with open(os.path.join(checkpoint_dir, RESULT_SUMMARY_JSON_FILE_BASENAME), 'w') as f:
-            result_summary_dict = hyperparameter_dict
+            result_summary_dict = hyperparameter_dict.copy()
             json.dump(result_summary_dict, f, indent=4)
         
         return best_validation_loss
