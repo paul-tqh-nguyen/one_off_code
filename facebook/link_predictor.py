@@ -11,7 +11,6 @@
 
 import os
 import karateclub
-import sklearn
 import numpy as np
 import networkx as nx
 import multiprocessing as mp
