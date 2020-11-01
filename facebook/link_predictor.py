@@ -10,6 +10,7 @@
 ###########
 
 import os
+import json
 import karateclub
 import numpy as np
 import networkx as nx
