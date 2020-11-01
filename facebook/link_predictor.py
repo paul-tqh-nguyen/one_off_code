@@ -459,7 +459,8 @@ class LinkPredictor(pl.LightningModule):
         LOGGER.info(f'Testing Loss: {test_results["testing_loss"]}')
         LOGGER.info(f'Testing Accuracy: {testing_correctness_count}/{len(model.test_results["predictions"])} ({testing_accuracy*100:.5g}%)')
         LOGGER.info(f'Testing AUROC: {testing_auroc}')
-        
-        RESULT_SUMMARY_JSON_FILE_BASENAME
+
+        with open(os.path.join(checkpoint_dir, RESULT_SUMMARY_JSON_FILE_BASENAME), 'w') as f:
+            
         
         return best_validation_loss
