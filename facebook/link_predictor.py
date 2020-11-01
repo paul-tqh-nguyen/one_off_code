@@ -130,9 +130,9 @@ class FBDataModule(pl.LightningDataModule):
         assert round((len(self.validation_dataloader.dataset) / 2) / (88234 / 2), 2) == VALIDATION_PORTION
         assert round((len(self.testing_dataloader.dataset) / 2) / (88234 / 2), 2) == TESTING_PORTION
         
-        LOGGER.info(f"Data Module Training Portion: {TRAINING_PORTION}")
-        LOGGER.info(f"Data Module Validation Portion: {VALIDATION_PORTION}")
-        LOGGER.info(f"Data Module Testing Portion: {TESTING_PORTION}")
+        LOGGER.info(f'Data Module Training Portion: {TRAINING_PORTION}')
+        LOGGER.info(f'Data Module Validation Portion: {VALIDATION_PORTION}')
+        LOGGER.info(f'Data Module Testing Portion: {TESTING_PORTION}')
         
         return
    
@@ -449,7 +449,7 @@ class LinkPredictor(pl.LightningModule):
         best_validation_loss = checkpoint_callback.best_model_score.item()
        
         assert only_one(set(map(len, model.test_results.values()))) == len(data_module.testing_dataloader.dataset)
-        assert int(abs(100*(test_results["testing_loss"] - model.test_results['loss'].mean().item()))) in (0, 1, 2)
+        assert int(abs(100*(test_results['testing_loss'] - model.test_results['loss'].mean().item()))) in (0, 1, 2)
 
         testing_auroc = pl.metrics.functional.classification.auroc(model.test_results['predictions'], model.test_results['target'])
         testing_correctness_count = torch.sum(model.test_results['target'].int() == model.test_results['predictions'].round().int()).item()
