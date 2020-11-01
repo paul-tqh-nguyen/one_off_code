@@ -138,7 +138,7 @@ class LinkPredictorHyperParameterSearchObjective:
             'node2vec_learning_rate': trial.suggest_uniform('node2vec_learning_rate', 1e-6, 1e-2),
             # Link Predictor Hyperparameters
             'link_predictor_learning_rate': trial.suggest_uniform('link_predictor_learning_rate', 1e-6, 1e-2),
-            'link_predictor_batch_size': int(trial.suggest_int('link_predictor_batch_size', 1, 2048)),
+            'link_predictor_batch_size': int(trial.suggest_int('link_predictor_batch_size', 1, 1)),
             'link_predictor_gradient_clip_val': int(trial.suggest_int('link_predictor_gradient_clip_val', 1, 1)),
         }
         assert set(hyperparameters.keys()) == set(LinkPredictor.hyperparameter_names)
