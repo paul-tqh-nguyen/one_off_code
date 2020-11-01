@@ -47,7 +47,6 @@ def training_logging_suppressed() -> Generator:
         logger.setLevel(original_level)
     return
 
-
 # Manual tqdm
 
 from typing import Generator
