@@ -31,6 +31,23 @@ def _initialize_logger() -> None:
 
 _initialize_logger()
 
+@contextmanager
+def training_logging_suppressed() -> Generator:
+    logger_to_original_level = {}
+    for name, logger in logging.root.manager.loggerDict.items():
+        if isinstance(logger, logging.Logger) and 'lightning' == name:
+            logger_to_original_level[logger] = logger.level
+            logger.setLevel(logging.ERROR)
+    with open(os.devnull, 'w') as dev_null:
+        orignal_stream = LOGGER_STREAM_HANDLER.stream
+        LOGGER_STREAM_HANDLER.setStream(dev_null)
+        yield
+        LOGGER_STREAM_HANDLER.setStream(orignal_stream)
+    for logger, original_level in logger_to_original_level.items():
+        logger.setLevel(original_level)
+    return
+
+
 # Manual tqdm
 
 from typing import Generator
