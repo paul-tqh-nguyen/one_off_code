@@ -123,6 +123,9 @@ class LinkPredictorHyperParameterSearchObjective:
     def __init__(self, graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray, gpu_id_queue: object):
         # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dynamically
         self.gpu_id_queue = gpu_id_queue
+        self.graph = graph
+        self.positive_edges = positive_edges
+        self.negative_edges = negative_edges
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
         hyperparameters = {
