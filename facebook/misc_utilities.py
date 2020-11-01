@@ -31,6 +31,7 @@ def _initialize_logger() -> None:
 
 _initialize_logger()
 
+from contextlib import contextmanager
 @contextmanager
 def training_logging_suppressed() -> Generator:
     logger_to_original_level = {}
