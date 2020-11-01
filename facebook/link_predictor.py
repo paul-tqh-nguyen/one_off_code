@@ -109,9 +109,7 @@ class FBDataModule(pl.LightningDataModule):
 
         edge_indices = list(range(len(self.positive_edges)))
         training_edge_indices, testing_edge_indices = train_test_split(edge_indices, test_size=1-TRAINING_PORTION, random_state=RANDOM_SEED)
-        validation_edge_indices, testing_edge_indices = train_test_split(testing_edge_indices, test_size=
-                                                                         0.5
-                                                                         , random_state=RANDOM_SEED)
+        validation_edge_indices, testing_edge_indices = train_test_split(testing_edge_indices, test_size=TESTING_PORTION/(1-TRAINING_PORTION), random_state=RANDOM_SEED)
        
         training_dataset = FBDataset(self.positive_edges[training_edge_indices], self.negative_edges[training_edge_indices])
         validation_dataset = FBDataset(self.positive_edges[validation_edge_indices], self.negative_edges[validation_edge_indices])
