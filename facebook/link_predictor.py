@@ -439,7 +439,7 @@ class LinkPredictor(pl.LightningModule):
         best_validation_loss = checkpoint_callback.best_model_score.item()
         
         assert only_one(set(map(len, model.test_results.values()))) == len(data_module.testing_dataloader.dataset)
-        assert int(abs(100*(test_results["testing_loss"] - model.test_results['loss'].mean().item()))) == 0
+        assert int(abs(100*(test_results["testing_loss"] - model.test_results['loss'].mean().item()))) in [0,1]
         
         testing_auroc = sklearn.metrics.roc_auc_score(model.test_results['target'], model.test_results['predictions'])
         testing_correctness_count = torch.sum(model.test_results['target'].int() == model.test_results['predictions'].round().int()).item()
