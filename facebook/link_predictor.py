@@ -36,7 +36,7 @@ from misc_utilities import *
 
 RANDOM_SEED = 1234
 
-TRAINING_PORTION = 0.60
+TRAINING_PORTION = 0.50
 
 BCE_LOSS = nn.BCELoss(reduction='none')
 
