@@ -463,6 +463,5 @@ class LinkPredictor(pl.LightningModule):
 
         with open(os.path.join(checkpoint_dir, RESULT_SUMMARY_JSON_FILE_BASENAME), 'w') as f:
             json.dump(all_graph_data, f, indent=4)
-            
         
         return best_validation_loss
