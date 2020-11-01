@@ -114,10 +114,10 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
         assert len(positive_edges) == len(negative_edges) == number_of_edges_to_sample
     assert nx.is_connected(remaining_graph)
     
-    LOGGER.info(f'Remaining Graph Node Count: {repr(len(remaining_graph.nodes))}')
-    LOGGER.info(f'Remaining Graph Edge Count: {repr(len(remaining_graph.edges))}')
-    LOGGER.info(f'Positive Edge Count: {repr(len(positive_edges))}')
-    LOGGER.info(f'Negative Edge Count: {repr(len(negative_edges))}')
+    LOGGER.info(f'Remaining Graph Node Count: {len(remaining_graph.nodes)}')
+    LOGGER.info(f'Remaining Graph Edge Count: {len(remaining_graph.edges)}')
+    LOGGER.info(f'Positive Edge Count: {len(positive_edges)}')
+    LOGGER.info(f'Negative Edge Count: {len(negative_edges)}')
     LOGGER.info('Data processing complete.')
     
     return remaining_graph, positive_edges, negative_edges
