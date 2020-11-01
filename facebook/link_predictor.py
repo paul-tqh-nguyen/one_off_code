@@ -113,9 +113,15 @@ class FBDataModule(pl.LightningDataModule):
         self.validation_dataloader = data.DataLoader(validation_dataset, batch_size=len(validation_dataset)//4, num_workers=0, shuffle=False, drop_last=True)
         self.testing_dataloader = data.DataLoader(testing_dataset, batch_size=len(testing_dataset)//4, num_workers=0, shuffle=False, drop_last=True)
         
-        assert 0 < len(self.training_dataloader) <= len(training_edge_indices)*2
-        assert 0 < len(self.validation_dataloader) <= len(validation_edge_indices)*2
-        assert 0 < len(self.testing_dataloader) <= len(testing_edge_indices)*2
+        assert 0 < len(self.training_dataloader.dataset) == len(training_edge_indices) * 2
+        assert 0 < len(self.validation_dataloader.dataset) == len(validation_edge_indices) * 2
+        assert 0 < len(self.testing_dataloader.dataset) == len(testing_edge_indices) * 2
+        
+        assert len(self.testing_dataloader) == len(self.validation_dataloader) == 4 
+        
+        assert round((len(self.training_dataloader.dataset) / 2) / (88234 / 2), 2) == 0.6
+        assert round((len(self.validation_dataloader.dataset) / 2) / (88234 / 2), 2) == 0.2
+        assert round((len(self.testing_dataloader.dataset) / 2) / (88234 / 2), 2) == 0.2
         
         return
     
@@ -276,7 +282,7 @@ class LinkPredictor(pl.LightningModule):
         assert all(
             isinstance(batch_parts_output, dict)
             and all(isinstance(key, str) for key in batch_parts_output.keys())
-            and all(isinstance(value, torch.Tensor) for value in batch_parts_output.values())
+            and all(isinstance(value, torch.Tensor) and len(value.shape) == 1 for value in batch_parts_output.values())
             for batch_parts_output in batch_parts_outputs
         )
         test_results_keys = {'loss', 'predictions', 'target'}
@@ -284,7 +290,8 @@ class LinkPredictor(pl.LightningModule):
         for batch_parts_output in batch_parts_outputs:
             assert set(batch_parts_output.keys()) == set(self.test_results.keys()) == test_results_keys
             for test_results_key in test_results_keys:
-                self.test_results[test_results_key] = torch.stack([self.test_results[test_results_key], batch_parts_output[test_results_key]])
+                self.test_results[test_results_key] = torch.cat([self.test_results[test_results_key], batch_parts_output[test_results_key]])
+        assert len(set(map(len, self.test_results.values()))) == 1
         return self._aggregate_loss(self.test_results['loss'], 'testing')
     
     class PrintingCallback(pl.Callback):
