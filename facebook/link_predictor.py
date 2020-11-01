@@ -47,7 +47,7 @@ LINK_PREDICTOR_CHECKPOINT_DIR = './checkpoints'
 # Visualization #
 #################
 
-def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_location: str, plot_title: str) -> None:
+def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_location: str, plot_title: str) -> None: # @todo update with TSNE
     assert matrix.shape[0] == len(labels)
     pca = PCA(n_components=2, copy=False)
     pca.fit(matrix)
