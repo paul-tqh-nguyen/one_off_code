@@ -11,6 +11,7 @@
 
 import os
 import karateclub
+import sklearn
 import numpy as np
 import networkx as nx
 import multiprocessing as mp
@@ -436,8 +437,16 @@ class LinkPredictor(pl.LightningModule):
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
+        
+        assert only_one(set(map(len, model.test_results.values()))) == len(data_module.testing_dataloader.dataset)
+        assert test_results["testing_loss"] == model.test_results['loss'].mean().item()
+        
+        testing_auroc = sklearn.metrics.roc_auc_score(model.test_results['target'], model.test_results['predictions'])
+        testing_correctness_count = torch.sum(model.test_results['target'].int() == model.test_results['predictions'].round().int()).item()
+        testing_accuracy = testing_correctness_count / len(model.test_results['predictions'])
+        
         LOGGER.info(f'Testing Loss: {test_results["testing_loss"]}')
-        breakpoint() # @todo remove this
-        LOGGER.info(f'Testing Accuracy: {model.testing_epoch_accuracy}')
+        LOGGER.info(f'Testing Accuracy: {testing_correctness_count}/{len(model.test_results["predictions"])} ({testing_accuracy*100:.5g}%)')
+        LOGGER.info(f'Testing AUROC: {testing_auroc}')
         
         return best_validation_loss
