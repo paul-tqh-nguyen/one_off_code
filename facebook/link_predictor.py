@@ -49,20 +49,8 @@ LINK_PREDICTOR_CHECKPOINT_DIR = './checkpoints'
 #################
 
 def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_location: str, plot_title: str) -> None:
-    import numpy as np
-    import matplotlib
-    import matplotlib.cm
     from sklearn.decomposition import PCA
     from sklearn.manifold import TSNE
-    from typing import Generator
-    from contextlib import contextmanager
-    @contextmanager
-    def temp_plt_figure(*args, **kwargs) -> Generator:
-        import matplotlib.pyplot as plt
-        figure = plt.figure(*args, **kwargs)
-        yield figure
-        plt.close(figure)
-        return
     assert matrix.shape[0] == len(labels)
     matrix_pca = PCA(n_components=2, copy=False).fit_transform(matrix)
     matrix_tsne = TSNE(n_components=2, init='pca').fit_transform(matrix)
