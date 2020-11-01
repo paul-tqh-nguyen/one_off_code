@@ -66,8 +66,8 @@ def visualize_vectors(matrix: np.ndarray, labels: np.ndarray, output_file_locati
             plot.set_xlabel('Dim 1')
             plot.set_ylabel('Dim 2')
             plot.grid(True)
-        add_plot(121, matrix_pca, 'PCA')
-        add_plot(122, matrix_tsne, 'TSNE')
+        add_plot(121, matrix_pca, f'{plot_title} (PCA)')
+        add_plot(122, matrix_tsne, f'{plot_title} (TSNE)')
         figure.savefig(output_file_location)
     LOGGER.info(f'Visualization for "{plot_title}" saved at {output_file_location}')
 
