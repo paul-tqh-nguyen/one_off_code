@@ -448,7 +448,7 @@ class LinkPredictor(pl.LightningModule):
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
         best_validation_loss = checkpoint_callback.best_model_score.item()
        
-        assert only_one(set(map(len, model.test_results.values()))) == len(data_module.testing_dataloader.dataset)
+        assert len(data_module.testing_dataloader.dataset) - only_one(set(map(len, model.test_results.values()))) < 4
         assert int(abs(100*(test_results['testing_loss'] - model.test_results['loss'].mean().item()))) in (0, 1, 2)
 
         testing_auroc = pl.metrics.functional.classification.auroc(model.test_results['predictions'], model.test_results['target'])
