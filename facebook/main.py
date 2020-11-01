@@ -155,7 +155,7 @@ class LinkPredictorHyperParameterSearchObjective:
         try:
             with suppressed_output():
                 with warnings_suppressed():
-                    best_validation_loss = LinkPredictor.train_model(gpus=[gpu_id], graph=graph, positive_edges=positive_edges, negative_edges=negative_edges, **hyperparameters)
+                    best_validation_loss = LinkPredictor.train_model(gpus=[gpu_id], graph=self.graph, positive_edges=self.positive_edges, negative_edges=self.negative_edges, **hyperparameters)
         except Exception as exception:
             if self.gpu_id_queue is not None:
                 self.gpu_id_queue.put(gpu_id)
