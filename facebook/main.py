@@ -25,7 +25,7 @@ import networkx as nx
 from typing import Dict, Tuple, Set
 
 from misc_utilities import *
-from link_predictor import LinkPredictor
+from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 
 # @todo make sure these imports are used
 
@@ -40,7 +40,6 @@ DB_URL = 'sqlite:///link-predictor.db'
 
 HYPERPARAMETER_ANALYSIS_JSON_FILE_LOCATION = './docs/hyperparameter_search_results.json'
 NUMBER_OF_LINK_PREDICTOR_HYPERPARAMETER_TRIALS = 10_000
-RESULT_SUMMARY_JSON_FILE_BASENAME = 'result_summary.json'
 
 PREPROCESSED_DATA_FILE_LOCATION = './preprocessed_data.pickle'
 
