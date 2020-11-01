@@ -17,6 +17,7 @@ import multiprocessing as mp
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
 import matplotlib.cm
+import pytorch_lightning.metrics
 import pytorch_lightning as pl
 import torch
 from torch import nn
@@ -439,7 +440,8 @@ class LinkPredictor(pl.LightningModule):
         
         assert only_one(set(map(len, model.test_results.values()))) == len(data_module.testing_dataloader.dataset)
         assert int(abs(100*(test_results["testing_loss"] - model.test_results['loss'].mean().item()))) in (0,1)
-        
+
+        pytorch_lightning.metrics.functional.classification.auroc
         testing_auroc = sklearn.metrics.roc_auc_score(model.test_results['target'], model.test_results['predictions'])
         testing_correctness_count = torch.sum(model.test_results['target'].int() == model.test_results['predictions'].round().int()).item()
         testing_accuracy = testing_correctness_count / len(model.test_results['predictions'])
