@@ -439,9 +439,9 @@ class LinkPredictor(pl.LightningModule):
             default_root_dir=checkpoint_dir,
             checkpoint_callback=checkpoint_callback,
         )
-       
+        
         model = cls(**model_initialization_args)
-       
+        
         data_module = FBDataModule(hyperparameter_dict['link_predictor_batch_size'], positive_edges, negative_edges)
         data_module.prepare_data()
         data_module.setup()
