@@ -263,6 +263,7 @@ def main() -> None:
     elif number_of_args_specified > 1:
         print('Please specify exactly one action.')
     elif args.train_default_model:
+        from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
         graph, positive_edges, negative_edges = process_data()
         train_default_model(graph, positive_edges, negative_edges)
     elif args.hyperparameter_search:
