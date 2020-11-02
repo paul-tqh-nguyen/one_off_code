@@ -192,6 +192,7 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
     )
     with mp.Manager() as manager:
         gpu_id_queue = manager.Queue()
+        LOGGER.info('-5') # @todo remove this
         more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in (GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU))) # @todo update this
         LOGGER.info('-4') # @todo remove this
         optimize_kwargs['func'] = LinkPredictorHyperParameterSearchObjective(graph, positive_edges, negative_edges, gpu_id_queue)
