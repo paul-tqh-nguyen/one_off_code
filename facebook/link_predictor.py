@@ -476,5 +476,5 @@ class LinkPredictor(pl.LightningModule):
             result_summary_dict['best_validation_model_path'] = checkpoint_callback.best_model_path
             result_summary_dict['best_validation_loss'] = best_validation_loss
             json.dump(result_summary_dict, f, indent=4)
-        
+        breakpoint() # @todo remove this
         return best_validation_loss
