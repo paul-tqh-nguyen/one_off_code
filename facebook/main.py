@@ -236,7 +236,7 @@ def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_ed
         q=3.5,
         walks_per_node=12,
         walk_length=18,
-        node2vec_epochs=65,
+        node2vec_epochs=65, # @todo make this 65
         node2vec_learning_rate=2e-3,
         embedding_size=360,
         link_predictor_learning_rate=2e-4,
