@@ -268,7 +268,6 @@ class LinkPredictor(pl.LightningModule):
         return loss
 
     def training_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
-        LOGGER.info('6 training_step batch_index: {batch_index}') # @todo remove this
         del batch_index
         return self._step(batch_dict, 'training')['loss']
 
@@ -400,16 +399,12 @@ class LinkPredictor(pl.LightningModule):
     @classmethod
     def train_model(cls, gpus: List[int], positive_edges: np.ndarray, negative_edges: np.ndarray, **model_initialization_args) -> float:
         
-        LOGGER.info('1') # @todo remove this
-        
         hyperparameter_dict = {
             hyperparameter_name: hyperparameter_value
             for hyperparameter_name, hyperparameter_value in model_initialization_args.items()
             if hyperparameter_name in cls.hyperparameter_names
         }
         assert set(cls.hyperparameter_names) == set(hyperparameter_dict.keys())
-
-        LOGGER.info('2') # @todo remove this
 
         checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
         if not os.path.isdir(checkpoint_dir):
@@ -423,8 +418,6 @@ class LinkPredictor(pl.LightningModule):
             mode='min',
         )
 
-        LOGGER.info('3') # @todo remove this
-
         early_stop_callback = pl.callbacks.EarlyStopping(
             monitor='validation_loss',
             min_delta=0.001,
@@ -433,8 +426,6 @@ class LinkPredictor(pl.LightningModule):
             mode='min',
             strict=True,
         )
-
-        LOGGER.info('4') # @todo remove this
         
         trainer = pl.Trainer(
             callbacks=[cls.PrintingCallback(checkpoint_callback), early_stop_callback],
@@ -456,8 +447,6 @@ class LinkPredictor(pl.LightningModule):
         data_module = FBDataModule(hyperparameter_dict['link_predictor_batch_size'], positive_edges, negative_edges)
         data_module.prepare_data()
         data_module.setup()
-
-        LOGGER.info('5') # @todo remove this
         
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
