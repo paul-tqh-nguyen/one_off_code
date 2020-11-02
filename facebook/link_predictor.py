@@ -422,6 +422,8 @@ class LinkPredictor(pl.LightningModule):
             mode='min',
         )
 
+        LOGGER.info('3') # @todo remove this
+
         early_stop_callback = pl.callbacks.EarlyStopping(
             monitor='validation_loss',
             min_delta=0.001,
@@ -430,6 +432,8 @@ class LinkPredictor(pl.LightningModule):
             mode='min',
             strict=True,
         )
+
+        LOGGER.info('4') # @todo remove this
         
         trainer = pl.Trainer(
             callbacks=[cls.PrintingCallback(checkpoint_callback), early_stop_callback],
