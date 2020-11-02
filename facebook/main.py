@@ -149,6 +149,7 @@ class LinkPredictorHyperParameterSearchObjective:
     
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get()
+        LOGGER.info('0') # @todo remove this
 
         hyperparameters = self.get_trial_hyperparameters(trial)
         checkpoint_dir = LinkPredictor.checkpoint_directory_from_hyperparameters(**hyperparameters)
