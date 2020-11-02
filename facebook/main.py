@@ -187,6 +187,7 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
         gc_after_trial=True,
         catch=(Exception,),
     )
+    assert len(GPU_IDS) > 0, "No GPUs available."
     hyperparameter_trials_per_gpu = min(16, mp.cpu_count() // len(GPU_IDS))
     with mp.Manager() as manager:
         gpu_id_queue = manager.Queue()
