@@ -195,8 +195,11 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
         more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in (GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU))) # @todo update this
         optimize_kwargs['func'] = LinkPredictorHyperParameterSearchObjective(graph, positive_edges, negative_edges, gpu_id_queue)
         optimize_kwargs['n_jobs'] = len(GPU_IDS) * HYPERPARAMETER_TRIALS_PER_GPU # @todo update this
+        LOGGER.info('-3') # @todo remove this
         with joblib.parallel_backend('multiprocessing', n_jobs=optimize_kwargs['n_jobs']):
+            LOGGER.info('-2') # @todo remove this
             with training_logging_suppressed():
+                LOGGER.info('-1') # @todo remove this
                 study.optimize(**optimize_kwargs)
     return
 
