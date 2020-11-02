@@ -35,6 +35,8 @@ from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
+HYPERPARAMETER_TRIALS_PER_GPU = 17
+
 STUDY_NAME = 'study-link-predictor'
 DB_URL = 'sqlite:///study-link-predictor.db'
 
@@ -188,7 +190,7 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
     )
     with mp.Manager() as manager:
         gpu_id_queue = manager.Queue()
-        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS))
+        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU))
         optimize_kawrgs['func'] = LinkPredictorHyperParameterSearchObjective(graph, positive_edges, negative_edges, gpu_id_queue)
         optimize_kawrgs['n_jobs'] = len(GPU_IDS)
         with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
@@ -200,7 +202,7 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
 # Hyperparameter Search Result Analysis #
 #########################################
 
-def analyze_hyperparameter_search_results() -> None: # @todo finish this
+def analyze_hyperparameter_search_results() -> None:
     df = hyperparameter_search_study_df()
     df = df.loc[df.state=='COMPLETE']
     params_prefix = 'params_'
