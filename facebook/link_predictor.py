@@ -475,7 +475,9 @@ class LinkPredictor(pl.LightningModule):
             result_summary_dict['embedding_visualization_location'] = model.embedding_visualization_location
             result_summary_dict['best_validation_model_path'] = checkpoint_callback.best_model_path
             result_summary_dict['best_validation_loss'] = best_validation_loss
-            len(self.training_dataloader.dataset)
+            len(data_module.train_dataloader().dataset)
+            len(data_module.val_dataloader().dataset)
+            len(data_module.test_dataloader().dataset)
             json.dump(result_summary_dict, f, indent=4)
         
         return best_validation_loss
