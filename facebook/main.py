@@ -26,6 +26,7 @@ import networkx as nx
 from typing import Dict, Tuple, Set
 
 from misc_utilities import *
+from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 
 # @todo make sure these imports are used
 
@@ -122,6 +123,8 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
 ########################################
 
 class LinkPredictorHyperParameterSearchObjective:
+
+    from link_predictor import LinkPredictor
     
     def __init__(self, graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray, gpu_id_queue: object):
         # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dynamically
@@ -205,6 +208,7 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
 #########################################
 
 def analyze_hyperparameter_search_results() -> None:
+    from link_predictor import LinkPredictor
     df = hyperparameter_search_study_df()
     df = df.loc[df.state=='COMPLETE']
     params_prefix = 'params_'
