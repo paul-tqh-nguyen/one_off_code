@@ -455,6 +455,8 @@ class LinkPredictor(pl.LightningModule):
         data_module = FBDataModule(hyperparameter_dict['link_predictor_batch_size'], positive_edges, negative_edges)
         data_module.prepare_data()
         data_module.setup()
+
+        LOGGER.info('5') # @todo remove this
         
         trainer.fit(model, data_module)
         test_results = only_one(trainer.test(model, datamodule=data_module, verbose=False, ckpt_path=checkpoint_callback.best_model_path))
