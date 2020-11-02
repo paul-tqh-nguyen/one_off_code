@@ -152,7 +152,7 @@ class LinkPredictorHyperParameterSearchObjective:
 
         hyperparameters = self.get_trial_hyperparameters(trial)
         checkpoint_dir = LinkPredictor.checkpoint_directory_from_hyperparameters(**hyperparameters)
-        LOGGER.info(f'Starting link predictor training for trial {trial.number} {checkpoint_dir} on GPU {gpu_id}.')
+        LOGGER.info(f'Starting link predictor training for trial {trial.number} via {checkpoint_dir} on GPU {gpu_id}.')
         
         try:
             with suppressed_output():
