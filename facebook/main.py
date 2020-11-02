@@ -26,6 +26,7 @@ import networkx as nx
 from typing import Dict, Tuple, Set
 
 from misc_utilities import *
+from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 
 # @todo make sure these imports are used
 
@@ -35,7 +36,6 @@ from misc_utilities import *
 
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
-print(f"nvgpu.available_gpus() {repr(nvgpu.available_gpus())}")
 HYPERPARAMETER_TRIALS_PER_GPU = min(16, mp.cpu_count() // len(GPU_IDS))
 
 STUDY_NAME = 'study-link-predictor'
@@ -122,7 +122,6 @@ def process_data() -> Tuple[nx.Graph, np.ndarray, np.ndarray]:
 ########################################
 
 class LinkPredictorHyperParameterSearchObjective:
-    
     def __init__(self, graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray, gpu_id_queue: object):
         # gpu_id_queue is an mp.managers.AutoProxy[Queue] and an mp.managers.BaseProxy ; can't declare statically since the classes are generated dynamically
         self.gpu_id_queue = gpu_id_queue
@@ -131,7 +130,6 @@ class LinkPredictorHyperParameterSearchObjective:
         self.negative_edges = negative_edges
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
-        from link_predictor import LinkPredictor
         hyperparameters = {
             'embedding_size': int(trial.suggest_int('embedding_size', 100, 500)),
             # node2vec Hyperparameters
@@ -150,7 +148,6 @@ class LinkPredictorHyperParameterSearchObjective:
         return hyperparameters
     
     def __call__(self, trial: optuna.Trial) -> float:
-        from link_predictor import LinkPredictor
         gpu_id = self.gpu_id_queue.get()
 
         hyperparameters = self.get_trial_hyperparameters(trial)
@@ -207,7 +204,6 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
 #########################################
 
 def analyze_hyperparameter_search_results() -> None:
-    from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
     df = hyperparameter_search_study_df()
     df = df.loc[df.state=='COMPLETE']
     params_prefix = 'params_'
@@ -231,7 +227,6 @@ def analyze_hyperparameter_search_results() -> None:
 #################
 
 def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray) -> None:
-    from link_predictor import LinkPredictor
     LinkPredictor.train_model(
         gpus=GPU_IDS,
         positive_edges=positive_edges,
