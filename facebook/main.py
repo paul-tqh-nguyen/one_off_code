@@ -36,7 +36,6 @@ from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
-print(f"nvgpu.available_gpus() {repr(nvgpu.available_gpus())}")
 HYPERPARAMETER_TRIALS_PER_GPU = min(16, mp.cpu_count() // len(GPU_IDS))
 
 STUDY_NAME = 'study-link-predictor'
