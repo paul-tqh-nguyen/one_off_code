@@ -232,7 +232,7 @@ def analyze_hyperparameter_search_results() -> None:
 #################
 
 def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray) -> None:
-    from link_predictor import 
+    from link_predictor import LinkPredictor
     LinkPredictor.train_model(
         gpus=GPU_IDS,
         positive_edges=positive_edges,
