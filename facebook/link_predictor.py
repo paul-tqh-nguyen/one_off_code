@@ -429,7 +429,6 @@ class LinkPredictor(pl.LightningModule):
         
         trainer = pl.Trainer(
             callbacks=[cls.PrintingCallback(checkpoint_callback), early_stop_callback],
-            # auto_lr_find=True,
             min_epochs=10,
             gradient_clip_val=model_initialization_args['link_predictor_gradient_clip_val'],
             terminate_on_nan=True,
