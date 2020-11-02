@@ -36,7 +36,7 @@ from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
-HYPERPARAMETER_TRIALS_PER_GPU = 17 # @todo update this
+HYPERPARAMETER_TRIALS_PER_GPU = 17
 
 STUDY_NAME = 'study-link-predictor'
 DB_URL = 'sqlite:///study-link-predictor.db'
@@ -149,7 +149,6 @@ class LinkPredictorHyperParameterSearchObjective:
     
     def __call__(self, trial: optuna.Trial) -> float:
         gpu_id = self.gpu_id_queue.get()
-        LOGGER.info('0') # @todo remove this
 
         hyperparameters = self.get_trial_hyperparameters(trial)
         checkpoint_dir = LinkPredictor.checkpoint_directory_from_hyperparameters(**hyperparameters)
@@ -192,16 +191,11 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
     )
     with mp.Manager() as manager:
         gpu_id_queue = manager.Queue()
-        LOGGER.info('-5') # @todo remove this
-        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in (GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU))) # @todo update this
-        LOGGER.info('-4') # @todo remove this
+        more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in (GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU)))
         optimize_kwargs['func'] = LinkPredictorHyperParameterSearchObjective(graph, positive_edges, negative_edges, gpu_id_queue)
-        optimize_kwargs['n_jobs'] = len(GPU_IDS) * HYPERPARAMETER_TRIALS_PER_GPU # @todo update this
-        LOGGER.info('-3') # @todo remove this
+        optimize_kwargs['n_jobs'] = len(GPU_IDS) * HYPERPARAMETER_TRIALS_PER_GPU
         with joblib.parallel_backend('multiprocessing', n_jobs=optimize_kwargs['n_jobs']):
-            LOGGER.info('-2') # @todo remove this
             with training_logging_suppressed():
-                LOGGER.info('-1') # @todo remove this
                 study.optimize(**optimize_kwargs)
     return
 
