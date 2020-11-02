@@ -150,6 +150,7 @@ class LinkPredictorHyperParameterSearchObjective:
         return hyperparameters
     
     def __call__(self, trial: optuna.Trial) -> float:
+        from link_predictor import LinkPredictor
         gpu_id = self.gpu_id_queue.get()
 
         hyperparameters = self.get_trial_hyperparameters(trial)
