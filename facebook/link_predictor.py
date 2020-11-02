@@ -440,6 +440,7 @@ class LinkPredictor(pl.LightningModule):
             logger=pl.loggers.TensorBoardLogger(checkpoint_dir, name='checkpoint_model'),
             default_root_dir=checkpoint_dir,
             checkpoint_callback=checkpoint_callback,
+            max_epochs=2, # @todo remove this
         )
         
         model = cls(**model_initialization_args)
