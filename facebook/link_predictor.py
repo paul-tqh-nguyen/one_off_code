@@ -268,6 +268,7 @@ class LinkPredictor(pl.LightningModule):
         return loss
 
     def training_step(self, batch_dict: dict, batch_index: int) -> torch.Tensor:
+        LOGGER.info('6 training_step batch_index: {batch_index}') # @todo remove this
         del batch_index
         return self._step(batch_dict, 'training')['loss']
 
