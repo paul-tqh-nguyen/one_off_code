@@ -191,11 +191,10 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
     )
     with mp.Manager() as manager:
         gpu_id_queue = manager.Queue()
-        LOGGER.info(f"[gpu_id for gpu_id in (GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU)] {repr([gpu_id for gpu_id in (GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU)])}")
         more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in (GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU)))
         optimize_kawrgs['func'] = LinkPredictorHyperParameterSearchObjective(graph, positive_edges, negative_edges, gpu_id_queue)
         optimize_kawrgs['n_jobs'] = len(GPU_IDS)
-        with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS)):
+        with joblib.parallel_backend('multiprocessing', n_jobs=len(GPU_IDS) * HYPERPARAMETER_TRIALS_PER_GPU):
             with training_logging_suppressed():
                 study.optimize(**optimize_kawrgs)
     return
