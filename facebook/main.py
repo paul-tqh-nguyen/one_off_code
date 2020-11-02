@@ -131,6 +131,7 @@ class LinkPredictorHyperParameterSearchObjective:
         self.negative_edges = negative_edges
 
     def get_trial_hyperparameters(self, trial: optuna.Trial) -> dict:
+        from link_predictor import LinkPredictor
         hyperparameters = {
             'embedding_size': int(trial.suggest_int('embedding_size', 100, 500)),
             # node2vec Hyperparameters
