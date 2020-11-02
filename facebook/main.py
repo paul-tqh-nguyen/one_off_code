@@ -184,7 +184,7 @@ def hyperparameter_search_study_df() -> pd.DataFrame:
 def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.ndarray, negative_edges: np.ndarray) -> None:
     study = load_hyperparameter_search_study()
     number_of_trials = get_number_of_link_predictor_hyperparameter_search_trials(study)
-    optimize_kawrgs = dict(
+    optimize_kwargs = dict(
         n_trials=number_of_trials,
         gc_after_trial=True,
         catch=(Exception,),
@@ -192,11 +192,11 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
     with mp.Manager() as manager:
         gpu_id_queue = manager.Queue()
         more_itertools.consume((gpu_id_queue.put(gpu_id) for gpu_id in (GPU_IDS * HYPERPARAMETER_TRIALS_PER_GPU)))
-        optimize_kawrgs['func'] = LinkPredictorHyperParameterSearchObjective(graph, positive_edges, negative_edges, gpu_id_queue)
-        optimize_kawrgs['n_jobs'] = len(GPU_IDS) * HYPERPARAMETER_TRIALS_PER_GPU
-        with joblib.parallel_backend('multiprocessing', n_jobs=optimize_kawrgs['n_jobs']):
+        optimize_kwargs['func'] = LinkPredictorHyperParameterSearchObjective(graph, positive_edges, negative_edges, gpu_id_queue)
+        optimize_kwargs['n_jobs'] = len(GPU_IDS) * HYPERPARAMETER_TRIALS_PER_GPU
+        with joblib.parallel_backend('multiprocessing', n_jobs=optimize_kwargs['n_jobs']):
             # with training_logging_suppressed():
-                study.optimize(**optimize_kawrgs)
+                study.optimize(**optimize_kwargs)
     return
 
 #########################################
