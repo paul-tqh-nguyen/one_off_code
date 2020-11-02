@@ -400,7 +400,7 @@ class LinkPredictor(pl.LightningModule):
     def train_model(cls, gpus: List[int], positive_edges: np.ndarray, negative_edges: np.ndarray, **model_initialization_args) -> float:
         
         with open('/tmp/test.py', 'a') as f:
-            f.write(f'\n gpus {gpus}')
+            f.write(f'gpus {gpus} \n')
         
         hyperparameter_dict = {
             hyperparameter_name: hyperparameter_value
