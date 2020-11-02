@@ -36,7 +36,7 @@ from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 
 GPU_IDS = eager_map(int, nvgpu.available_gpus())
 
-HYPERPARAMETER_TRIALS_PER_GPU = 1 # 17 # @todo update this
+HYPERPARAMETER_TRIALS_PER_GPU = 17 # @todo update this
 
 STUDY_NAME = 'study-link-predictor'
 DB_URL = 'sqlite:///study-link-predictor.db'
