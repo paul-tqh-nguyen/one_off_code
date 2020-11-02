@@ -26,7 +26,6 @@ import networkx as nx
 from typing import Dict, Tuple, Set
 
 from misc_utilities import *
-from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
 
 # @todo make sure these imports are used
 
@@ -208,7 +207,7 @@ def link_predictor_hyperparameter_search(graph: nx.Graph, positive_edges: np.nda
 #########################################
 
 def analyze_hyperparameter_search_results() -> None:
-    from link_predictor import LinkPredictor
+    from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
     df = hyperparameter_search_study_df()
     df = df.loc[df.state=='COMPLETE']
     params_prefix = 'params_'
