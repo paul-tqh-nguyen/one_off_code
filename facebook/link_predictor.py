@@ -186,7 +186,7 @@ class LinkPredictor(pl.LightningModule):
        
         self.saved_noded2vec_model_location = os.path.join(checkpoint_directory, NODE2VEC_MODEL_FILE_BASENAME)
         self.embedding_visualization_location = os.path.join(checkpoint_directory, EMBEDDING_VISUALIZATION_FILE_BASENAME)
-       
+        
         if os.path.isfile(self.saved_noded2vec_model_location):
             with open(self.saved_noded2vec_model_location, 'rb') as f:
                 embedding_matrix: np.ndarray = np.load(f)
