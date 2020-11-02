@@ -480,5 +480,5 @@ class LinkPredictor(pl.LightningModule):
             result_summary_dict['validation_set_size'] = len(data_module.val_dataloader().dataset)
             result_summary_dict['testing_set_size'] = len(data_module.test_dataloader().dataset)
             json.dump(result_summary_dict, f, indent=4)
-        breakpoint()
+        breakpoint() # @todo remove this
         return best_validation_loss
