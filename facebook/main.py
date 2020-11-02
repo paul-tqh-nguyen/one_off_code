@@ -239,7 +239,7 @@ def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_ed
         node2vec_epochs=65,
         node2vec_learning_rate=2e-3,
         embedding_size=360,
-        link_predictor_learning_rate=1e-3,
+        link_predictor_learning_rate=2e-4,
         link_predictor_batch_size=256,
         link_predictor_gradient_clip_val=1.0,
     )
