@@ -267,6 +267,7 @@ def main() -> None:
         graph, positive_edges, negative_edges = process_data()
         train_default_model(graph, positive_edges, negative_edges)
     elif args.hyperparameter_search:
+        from link_predictor import LinkPredictor, RESULT_SUMMARY_JSON_FILE_BASENAME
         graph, positive_edges, negative_edges = process_data()
         link_predictor_hyperparameter_search(graph, positive_edges, negative_edges)
     elif args.analyze_hyperparameter_search_results:
