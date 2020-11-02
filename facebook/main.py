@@ -232,7 +232,7 @@ def train_default_model(graph: nx.Graph, positive_edges: np.ndarray, negative_ed
         positive_edges=positive_edges,
         negative_edges=negative_edges,
         graph=graph,
-        p=1.76,
+        p=1.75,
         q=3.5,
         walks_per_node=12,
         walk_length=18,
