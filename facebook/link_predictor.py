@@ -408,6 +408,8 @@ class LinkPredictor(pl.LightningModule):
         }
         assert set(cls.hyperparameter_names) == set(hyperparameter_dict.keys())
 
+        LOGGER.info('2') # @todo remove this
+
         checkpoint_dir = cls.checkpoint_directory_from_hyperparameters(**hyperparameter_dict)
         if not os.path.isdir(checkpoint_dir):
             os.makedirs(checkpoint_dir)
