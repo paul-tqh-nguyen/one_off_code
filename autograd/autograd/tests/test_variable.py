@@ -57,7 +57,7 @@ def test_basic_numpy_replacement():
         var = Variable(np.arange(8).reshape([2,2,2]))
         assert np.all(np.mult_ten(var).data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
-def test_numpy_replacement_fails_on_multiple_replacement_names():
+def test_numpy_replacement_fails_on_multiple_inputs():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     with temp_numpy_func(mult_ten):
