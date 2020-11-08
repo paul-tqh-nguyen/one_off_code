@@ -29,6 +29,6 @@ def test_basic_numpy_replacement():
         return array*10
     with temp_numpy_func(mult_ten):
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
-        @Variable.numpy_replacement(np_dot='np.dot') # @todo test these numpy methods
+        @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
         def new_mult_ten(array: np.ndarray) -> np.ndarray:
             return array*10
