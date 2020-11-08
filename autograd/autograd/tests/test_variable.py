@@ -78,5 +78,24 @@ def test_numpy_replacement_fails_on_multiple_inputs():
                     return Variable(np_mult_ten(operand.data))
                 else:
                     return np_mult_ten(operand)
+
+def test_numpy_replacement_fails_on_multiple_inputs():
+    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
+    
+    def mult_five(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
+    
+    with temp_numpy_funcs(mult_ten, mult_five):
+        
+        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+
+        with pytest.raises(ValueError, match="Only one numpy callable can be replaced."):
+            @Variable.numpy_replacement(np_mult_ten='np.mult_ten', np_mult_five='np.mult_five')
+            def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
+                if isinstance(operand, Variable):
+                    return Variable(np_mult_ten(operand.data))
+                else:
+                    return np_mult_ten(operand)
             
     
