@@ -9,11 +9,7 @@ from autograd import Variable
 
 @contextmanager
 def dummy_numpy_operation(dummy_func_name: str) -> Generator:
-    import sys
-    original_std_out = sys.stdout
-    sys.stdout = stream
     yield
-    sys.stdout = original_std_out
     return
 
 def test_differentiable_method():
