@@ -57,7 +57,7 @@ class Variable:
 
         replaced_callable = getattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1])
 
-        return (internally_used_name, replaced_callable)
+        return internally_used_name, replaced_callable
     
     @classmethod
     def numpy_replacement(cls, **internally_used_name_to_np_path: Dict[str, str]) -> Callable:
@@ -114,7 +114,7 @@ class Variable:
     def directly_depended_on_variables(self):
         return self.directly_depended_on_variable_to_backward_propagation_function.keys()
     
-    def depended_on_variables(self) -> Generator: # @todo test just this iterator (both cases)
+    def depended_on_variables(self) -> Generator: # @todo test this iterator directly
         '''Yields all variables that self directly or indirectly relies on in topological order.'''
         visited_variables: Set[Variable] = set()
         def _traverse(var: Variable) -> Generator:
@@ -133,8 +133,8 @@ class Variable:
             Each entry's value is gradient for var (i.e. d_minimization_target_variable_over_d_var).
         '''
         directly_depended_on_variable_to_gradient = {}
-        for depended_on_variable, get_depended_on_variable_gradient in self.directly_depended_on_variable_to_backward_propagation_function.items():
-            gradient = get_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
+        for depended_on_variable, calculate_depended_on_variable_gradient in self.directly_depended_on_variable_to_backward_propagation_function.items():
+            gradient = calculate_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
             directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
             # @todo add shape assertions here
         return directly_depended_on_variable_to_gradient
@@ -143,21 +143,23 @@ class Variable:
 # Variable Operations #
 #######################
 
+# @todo lots of boiler plate here; can we abstract it out?
+
 VariableOperand = Union[int, float, np.number, np.ndarray, Variable]
 
 # @todo test this with all combinations of types
 @Variable.differentiable_method() # @todo test this method
 @Variable.numpy_replacement(np_dot='np.dot') # @todo test these numpy methods
-def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, out: Optional[np.ndarray]=None) -> VariableOperand:
+def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
-    dot_product = np_dot(a_data, b_data, out)
+    dot_product = np_dot(a_data, b_data, **kwargs)
     if not a_is_variable and not b_is_variable:
         return dot_product
-    if out is not None:
-        raise ValueError(f'"out" parameter not supported for {Variable.__qualname__}')
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
     variable_depended_on_by_dot_product_to_backward_propagation_function = {}
     if a_is_variable:
         variable_depended_on_by_dot_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data
