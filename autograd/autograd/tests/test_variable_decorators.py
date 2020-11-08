@@ -165,7 +165,7 @@ def test_differentiable_method_unary_one_name():
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
-        @Variable.differentiable_method()
+        @Variable.differentiable_method('special_name')
         def mult_ten(operand: VariableOperand) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(np.mult_ten(operand.data))
