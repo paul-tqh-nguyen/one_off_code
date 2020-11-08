@@ -37,7 +37,7 @@ class Variable:
         
         internally_used_name, np_path = only_one(internally_used_name_to_np_path.items())
         
-        if not internally_used_name.isidentifier(): # @todo test this
+        if not internally_used_name.isidentifier():
             raise ValueError(f'"{internally_used_name}" is not a vaild identifier name.')
         
         replaced_callable_parent_attribute = np
