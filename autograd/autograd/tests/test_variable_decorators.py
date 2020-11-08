@@ -150,7 +150,7 @@ def test_differentiable_method_unary_no_name():
         @Variable.differentiable_method()
         def mult_ten(operand: VariableOperand) -> np.ndarray:
             if isinstance(operand, Variable):
-                return Variable(np.mult_ten(operand.data))
+                return Variable(mult_ten(operand.data))
             else:
                 return np.mult_ten(operand)
         
