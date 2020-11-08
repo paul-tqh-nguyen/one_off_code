@@ -6,7 +6,7 @@ import sys ; sys.path.append("..")
 import autograd
 from autograd import Variable
 
-def test_():
+def test_differentiable_method():
     unique_operation_name = f'dummy_func'
     assert not hasattr(np, unique_operation_name)
 
