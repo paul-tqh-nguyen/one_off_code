@@ -25,8 +25,8 @@ def temp_numpy_func(temp_func: Callable) -> Generator:
 #########
 
 def test_basic_numpy_replacement():
-    def mult_ten(array: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
-        return array*10
+    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
     with temp_numpy_func(mult_ten):
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
