@@ -12,6 +12,8 @@ def test_():
 
     def dummy_func(array: np.ndarray) -> np.ndarray:
         return array*10
+    assert dummy_func.__qualname__ == unique_operation_name
+    
     setattr(np, unique_operation_name, dummy_func)
     assert np.dummy_func(np.
     
