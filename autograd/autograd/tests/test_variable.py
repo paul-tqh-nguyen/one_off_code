@@ -96,7 +96,7 @@ def test_numpy_replacement_fails_on_bogus_internally_used_name():
                 else:
                     return np_mult_ten(operand)
  
-def test_numpy_replacement_fails_on_bogus_internally_used_name():
+def test_numpy_replacement_fails_on_bogus_numpy_names():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
         
