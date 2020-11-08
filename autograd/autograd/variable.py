@@ -75,7 +75,7 @@ class Variable:
                 kwargs[internally_used_name] = replaced_callable
                 return func(*args, **kwargs)
             decorated_function.__name__ = func.__name__ # @todo test invariant holds
-            cls._replace_numpy_method()
+            cls._replace_numpy_method(np_path, decorated_function)
             return decorated_function
         return decorator
     
