@@ -15,8 +15,8 @@ from autograd import Variable
 def dummy_numpy_func_name_checking(dummy_func_name: str) -> Generator:
     assert not hasattr(np, dummy_func_name)
     yield
-    delattr(np, dummy_func)
-    assert not hasattr(np, dummy_func)
+    delattr(np, dummy_func_name)
+    assert not hasattr(np, dummy_func_name)
     return
 
 #########
