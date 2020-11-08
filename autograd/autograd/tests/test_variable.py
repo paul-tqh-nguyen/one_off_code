@@ -9,12 +9,11 @@ from autograd import Variable
 
 @contextmanager
 def dummy_numpy_operation(dummy_func_name: str) -> Generator:
+    assert not hasattr(np, dummy_func)
     yield
     return
 
 def test_differentiable_method():
-    dummy_func = f'dummy_func'
-    assert not hasattr(np, dummy_func)
 
     def dummy_func(array: np.ndarray) -> np.ndarray:
         return array*10    
