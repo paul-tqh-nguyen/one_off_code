@@ -136,7 +136,7 @@ def test_basic_differentiable_method():
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
-        @Variable.numpy_replacement(np_mult_ten='np.mult_ten')
+        @Variable.differentiable_method(np_mult_ten='np.mult_ten')
         def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(np_mult_ten(operand.data))
