@@ -36,7 +36,7 @@ def test_basic_numpy_replacement():
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
-        @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
+        @Variable.numpy_replacement(np_mult_ten='np.mult_ten')
         def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(np_mult_ten(operand.data))
@@ -72,7 +72,7 @@ def test_numpy_replacement_fails_on_multiple_inputs():
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
 
         with pytest.raises(ValueError, match="Only one numpy callable can be replaced."):
-            @Variable.numpy_replacement(np_mult_ten='np.mult_ten', np_mult_ten='np.mult_ten') # @todo test these numpy methods
+            @Variable.numpy_replacement(np_mult_ten='np.mult_ten', np_mult_five='np.mult_five')
             def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
                 if isinstance(operand, Variable):
                     return Variable(np_mult_ten(operand.data))
