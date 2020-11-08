@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from uuid import uuid4
 from contextlib import contextmanager
+from typing import Callable
 
 import sys ; sys.path.append("..")
 import autograd
@@ -12,7 +13,7 @@ from autograd import Variable
 ################
 
 @contextmanager
-def dummy_numpy_func(dummy_func_name: str) -> Generator:
+def dummy_numpy_func(dummy_func: str) -> Generator:
     assert not hasattr(np, dummy_func_name)
     yield
     if hasattr(np, dummy_func_name):
