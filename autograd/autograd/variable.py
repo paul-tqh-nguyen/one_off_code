@@ -73,7 +73,7 @@ class Variable:
             decorated_function.__name__ = func.__name__ # @todo test invariant holds
             return decorated_function
         return decorator
-
+    
     # differentiable_method Decorator
     
     class _DifferentiableMethodDecorator:
