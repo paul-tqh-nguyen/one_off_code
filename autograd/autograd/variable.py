@@ -46,7 +46,7 @@ class Variable:
         if globals().get(np_path_sub_attributes[0]) != np:
             raise ValueError(f'"{np_path}" does not specify a numpy function.')
         
-        # @todo test this with simple names, and "invalid variable name" names passed into np_path; make sure we get errors in the right cases
+        # @todo test this with  "invalid variable name" names passed into np_path; make sure we get errors in the right cases
         for np_path_sub_attribute_index, np_path_sub_attribute in enumerate(np_path_sub_attributes[1:-1], start=1):
             if not hasattr(replaced_callable_parent_attribute, np_path_sub_attribute):
                 raise ValueError(f'"{".".join(np_path_sub_attributes[:np_path_sub_attribute_index])}" does not specify a numpy function.')
