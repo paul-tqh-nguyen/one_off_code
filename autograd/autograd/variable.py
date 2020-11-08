@@ -9,6 +9,7 @@
 # Imports #
 ###########
 
+from itertools import chain
 from collections import defaultdict
 import numpy as np
 from typing import List, Set, Tuple, DefaultDict, Dict, Callable, Union, Generator, Optional
@@ -108,24 +109,19 @@ class Variable:
         self.data = data
         self.directly_depended_on_variable_to_backward_propagation_function = directly_depended_on_variable_to_backward_propagation_function
         return
+
+    @property
+    def directly_depended_on_variables(self):
+        return self.directly_depended_on_variable_to_backward_propagation_function.keys()
     
     def depended_on_variables(self) -> Generator: # @todo test just this iterator (both cases)
-        '''Yields all variables that sef directly or indirectly relies on.'''
-        yield from self._depended_on_variables(set())
-        
-    def _depended_on_variables(self, visited_variables: Set['Variable']) -> Generator:
-        '''Yields variables in topological order.'''
-        # @todo make this easier to read
-        yield self
-        visited_variables.add(self)
-        for variable_directly_depended_on_by_self in self.directly_depended_on_variable_to_backward_propagation_function.keys():
-            if variable_directly_depended_on_by_self not in visited_variables:
-                yield variable_directly_depended_on_by_self
-                visited_variables.add(variable_directly_depended_on_by_self)
-                for variable_indirectly_depended_on_by_self in variable_directly_depended_on_by_self._depended_on_variables(visited_variables):
-                    if variable_indirectly_depended_on_by_self not in visited_variables:
-                        yield variable_indirectly_depended_on_by_self
-                        visited_variables.add(variable_indirectly_depended_on_by_self)
+        '''Yields all variables that self directly or indirectly relies on in topological order.'''
+        visited_variables: Set[Variable] = set()
+        def _traverse(var: Variable) -> Generator:
+            yield var
+            visited_variables.add(var)
+            yield from chain(*map(_traverse, filter(lambda next_var: next_var not in visited_variables, var.directly_depended_on_variables)))
+        yield from _traverse(self)
     
     def calculate_gradient(self, d_minimization_target_variable_over_d_self: Union[int, float, np.number, np.ndarray]) -> Dict['Variable', Union[int, float, np.number, np.ndarray]]:
         '''
@@ -141,7 +137,7 @@ class Variable:
             gradient = get_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
             directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
             # @todo add shape assertions here
-        return depended_on_variable_to_gradient
+        return directly_depended_on_variable_to_gradient
 
 #######################
 # Variable Operations #

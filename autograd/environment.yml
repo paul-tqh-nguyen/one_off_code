@@ -3,4 +3,4 @@ name: autograd
 dependencies:
   - python=3.7
   - numpy
-  - networkx
+  - more-itertools

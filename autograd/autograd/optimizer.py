@@ -45,7 +45,7 @@ class Optimizer(ABC):
         d_dependent_variable_over_d_dependent_variable = np.ones(dependent_variable.data.shape)
         variable_to_gradient[dependent_variable] = d_dependent_variable_over_d_dependent_variable
         # iterate over variables depended on by dependent_variable (directly or indirectly) in topologically sorted order (i.e. DFS ordedr with no repeats)
-        for var in dependent_variable.depended_on_variables_iterator():
+        for var in dependent_variable.depended_on_variables():
             assert var in variable_to_gradient
             d_dependent_variable_over_d_var = variable_to_gradient[var]
             # backpropagate one step gradient from var to variables it directly relies on
