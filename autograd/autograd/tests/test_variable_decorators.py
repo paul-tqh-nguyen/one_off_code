@@ -274,29 +274,29 @@ def test_differentiable_method_binary_one_name():
         assert np.all(var_a.mth(var_b).data == 25)
         assert 'multiply_then_halve' not in dir(var_a)
         
-# def test_differentiable_method_binary_two_names():
-#     def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
-#         return (a*b)/2
+def test_differentiable_method_binary_two_names():
+    def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return (a*b)/2
     
-#     with temp_numpy_funcs(multiply_then_halve):
+    with temp_numpy_funcs(multiply_then_halve):
         
-#         assert np.all(np.multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
+        assert np.all(np.multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
         
-#         @Variable.differentiable_method('mth', 'times_then_take_half')
-#         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
-#             a_is_var = isinstance(a, Variable)
-#             b_is_var = isinstance(b, Variable)
-#             if a_is_var and b_is_var:
-#                 return Variable(np.multiply_then_halve(a.data, b.data))
-#             elif a_is_var:
-#                 return Variable(np.multiply_then_halve(a.data, b))
-#             elif b_is_var:
-#                 return Variable(np.multiply_then_halve(a, b.data))
-#             else:
-#                 return np.multiply_then_halve(a, b)
+        @Variable.differentiable_method('mth', 'times_then_take_half')
+        def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
+            a_is_var = isinstance(a, Variable)
+            b_is_var = isinstance(b, Variable)
+            if a_is_var and b_is_var:
+                return Variable(np.multiply_then_halve(a.data, b.data))
+            elif a_is_var:
+                return Variable(np.multiply_then_halve(a.data, b))
+            elif b_is_var:
+                return Variable(np.multiply_then_halve(a, b.data))
+            else:
+                return np.multiply_then_halve(a, b)
         
-#         var_a = Variable(10)
-#         var_b = Variable(5)
-#         assert np.all(var_a.mth(var_b).data == 25)
-#         assert np.all(var_a.times_then_take_half(var_b).data == 25)
-#         assert 'multiply_then_halve' not in dir(var_a)
+        var_a = Variable(10)
+        var_b = Variable(5)
+        assert np.all(var_a.mth(var_b).data == 25)
+        assert np.all(var_a.times_then_take_half(var_b).data == 25)
+        assert 'multiply_then_halve' not in dir(var_a)
