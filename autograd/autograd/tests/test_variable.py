@@ -79,7 +79,7 @@ def test_numpy_replacement_fails_on_multiple_inputs():
                 else:
                     return np_mult_ten(operand)
 
-def test_numpy_replacement_fails_on_multiple_inputs():
+def test_numpy_replacement_fails_on_bogus_internally_used_name():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     
