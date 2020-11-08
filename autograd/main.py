@@ -269,7 +269,7 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
 # Backpropagation Execution #
 #############################
 
-def execute_backpropagation(dependent_variable: Variable):
+def execute_backpropagation(dependent_variable: Variable): # @todo make this a method of the optimizer abstract class
     '''
     Makes it so that all the variables that dependent_variable depends on has an entry 
     (dependent_variable, d_dependent_variable_over_d_depended_on_variable)
@@ -307,23 +307,29 @@ class SGD:
 @debug_on_error
 def main() -> None:
     # Variables
-    x = Variable(np.random.rand(3))
+    x = Variable(np.random.rand(2))
 
     # Optimizer
-    learning_rate = 1e-3
+    learning_rate = 1e-4
     sgd = SGD(learning_rate)
     
     # Training
-    for training_step_index in range(100):
-        y = x.dot(np.array([10, 20, 30]))
-        y_hat = np.array([100, 200, 300])
-        loss = (y - y_hat) ** 2
-        sgd.take_training_step(loss)
+    for training_step_index in range(10):
+        y = x.dot(np.array([-10, 50]))
+        y_hat = 0
+        diff = (y - y_hat)
+        loss = diff ** 2
         print(f"training_step_index {repr(training_step_index)}")
+        print(f"x.data {repr(x.data)}")
+        print(f"y.data {repr(y.data)}")
+        print(f"diff.data {repr(diff.data)}")
         print(f"loss.data {repr(loss.data)}")
+        print()
+        sgd.take_training_step(loss)
+    raise Exception
     
     # Verify Results
-    assert np.allclose(x.data, np.array([100, 200, 300]) < 1e-3)
+    # assert np.allclose(x.data, np.array([100, 200, 300]) < 1e-3)
     
     return
 
