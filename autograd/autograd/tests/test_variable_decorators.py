@@ -24,9 +24,7 @@ def temp_numpy_funcs(*temp_funcs: List[Callable]) -> Generator:
         assert not hasattr(np, temp_func.__name__)
     return
 
-###############################
-# Tests for numpy_replacement #
-###############################
+# numpy_replacement
 
 def test_basic_numpy_replacement():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
