@@ -235,7 +235,7 @@ def test_differentiable_method_binary_no_name():
         
         var_a = Variable(10)
         var_b = Variable(5)
-        assert np.all(var_a.multiply_then_halve(var_b).data == np.array([00, 10, 20]))
+        assert np.all(var_a.multiply_then_halve(var_b).data == 25)
 
 def test_differentiable_method_binary_one_name():
     def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
