@@ -231,7 +231,7 @@ def test_differentiable_method_binary_no_name():
             elif b_is_var:
                 return Variable(np.multiply_then_halve(a, b.data))
             else:
-                return np.multiply_then_halve(operand)
+                return np.multiply_then_halve(a, b)
         
         var = Variable(np.arange(3))
         assert np.all(var.multiply_then_halve().data == np.array([00, 10, 20]))
