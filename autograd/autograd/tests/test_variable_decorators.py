@@ -152,7 +152,7 @@ def test_differentiable_method_unary_no_name():
             if isinstance(operand, Variable):
                 return Variable(mult_ten(operand.data))
             else:
-                return np.mult_ten(operand)
+                return mult_ten(operand)
         
         # Verify 1-D arrays
         var = Variable(np.arange(3))
