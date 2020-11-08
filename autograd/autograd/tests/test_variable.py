@@ -62,6 +62,9 @@ def test_numpy_replacement_fails_on_multiple_inputs():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     
+    def mult_five(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
+    
     with temp_numpy_func(mult_ten):
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
