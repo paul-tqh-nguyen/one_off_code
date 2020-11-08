@@ -59,8 +59,8 @@ class Variable:
 
         return internally_used_name, np_path, replaced_callable
     
-    @classmethod
-    def _replace_numpy_method(cls, **internally_used_name_to_np_path: Dict[str, str]) -> None:
+    @staticmethod
+    def _replace_numpy_method(np_path, decorated_function) -> None:
         np_path_sub_attributes = np_path.split('.')
         return
     
