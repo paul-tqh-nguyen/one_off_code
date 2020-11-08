@@ -55,7 +55,7 @@ class Optimizer(ABC):
     def take_training_step(self, minimization_variable: Variable) -> None:
         raise NotImplementedError
 
-class SGD(Optimizer): # @todo test this with a basic test
+class SGD(Optimizer):
     
     def __init__(self, learning_rate: float):
         self.learning_rate = learning_rate
