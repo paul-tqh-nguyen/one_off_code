@@ -40,6 +40,8 @@ def test_basic_numpy_replacement():
             else:
                 return np_mult_ten(operand)
 
+        assert np.mult_ten.__name__ == 'mult_ten'
+
         # Verify numpy still works
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
 
