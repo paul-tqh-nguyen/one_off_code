@@ -60,12 +60,12 @@ class Variable:
         return internally_used_name, np_path, replaced_callable
     
     @staticmethod
-    def _replace_numpy_method(np_path: str, decorated_function: Callable) -> None:
+    def _replace_numpy_method(np_path: str, replacement_function: Callable) -> None:
         np_path_sub_attributes = np_path.split('.')
         module = np
         for np_path_sub_attribute in np_path_sub_attributes[1:-1]:
             module = getattr(module, np_path_sub_attribute)
-        setattr(module, np_path_sub_attributes[-1], 
+        setattr(module, np_path_sub_attributes[-1], replacement_function)
         return
     
     @classmethod
