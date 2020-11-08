@@ -139,9 +139,9 @@ def test_basic_differentiable_method_unary(): # @todo test binary case as well
         @Variable.differentiable_method('mult_ten')
         def mult_ten(operand: VariableOperand) -> np.ndarray:
             if isinstance(operand, Variable):
-                return Variable(np_mult_ten(operand.data))
+                return Variable(np.mult_ten(operand.data))
             else:
-                return np_mult_ten(operand)
+                return np.mult_ten(operand)
         
         # Verify 1-D arrays
         var = Variable(np.arange(3))
