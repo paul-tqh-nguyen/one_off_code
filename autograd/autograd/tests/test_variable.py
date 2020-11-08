@@ -34,9 +34,9 @@ def test_basic_numpy_replacement():
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
         @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
-        def mult_ten(data: VariableOperand) -> np.ndarray:
+        def mult_ten(array: VariableOperand) -> np.ndarray:
             if isinstance(array, Variable):
-                data = array*10
+                data = array.data*10
                 return Variable()
             return 
 
