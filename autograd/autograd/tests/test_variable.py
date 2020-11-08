@@ -15,6 +15,7 @@ from autograd import Variable, VariableOperand
 @contextmanager
 def temp_numpy_func(temp_func: Callable) -> Generator:
     assert not hasattr(np, temp_func.__qualname__)
+    setattr(np, temp_func.__qualname__, temp_func)
     yield
     delattr(np, temp_func.__qualname__)
     assert not hasattr(np, temp_func.__qualname__)
