@@ -128,8 +128,6 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
 # Tests for differentiable_method #
 ###################################
 
-# @todo test binary case as well
-
 def test_differentiable_method_unary_no_name():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
@@ -185,6 +183,90 @@ def test_differentiable_method_unary_one_name():
         assert np.all(var.mult_ten_special_name().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
 def test_differentiable_method_unary_two_names():
+    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
+    
+    with temp_numpy_funcs(mult_ten):
+        
+        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+        
+        @Variable.differentiable_method('mult_ten_first', 'mult_ten_second')
+        def mult_ten(operand: VariableOperand) -> np.ndarray:
+            if isinstance(operand, Variable):
+                return Variable(np.mult_ten(operand.data))
+            else:
+                return np.mult_ten(operand)
+        
+        # Verify 1-D arrays
+        var = Variable(np.arange(3))
+        assert np.all(var.mult_ten_first().data == np.array([00, 10, 20]))
+        assert np.all(var.mult_ten_second().data == np.array([00, 10, 20]))
+
+        # Verify 2-D arrays
+        var = Variable(np.arange(4).reshape([2,2]))
+        assert np.all(var.mult_ten_first().data == np.array([[00, 10], [20, 30]]))
+        assert np.all(var.mult_ten_second().data == np.array([[00, 10], [20, 30]]))
+
+        # Verify 3-D arrays
+        var = Variable(np.arange(8).reshape([2,2,2]))
+        assert np.all(var.mult_ten_first().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
+        assert np.all(var.mult_ten_second().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
+
+def test_differentiable_method_binary_no_name():
+    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
+    
+    with temp_numpy_funcs(mult_ten):
+        
+        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+        
+        @Variable.differentiable_method()
+        def mult_ten(operand: VariableOperand) -> np.ndarray:
+            if isinstance(operand, Variable):
+                return Variable(np.mult_ten(operand.data))
+            else:
+                return np.mult_ten(operand)
+        
+        # Verify 1-D arrays
+        var = Variable(np.arange(3))
+        assert np.all(var.mult_ten().data == np.array([00, 10, 20]))
+
+        # Verify 2-D arrays
+        var = Variable(np.arange(4).reshape([2,2]))
+        assert np.all(var.mult_ten().data == np.array([[00, 10], [20, 30]]))
+
+        # Verify 3-D arrays
+        var = Variable(np.arange(8).reshape([2,2,2]))
+        assert np.all(var.mult_ten().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
+
+def test_differentiable_method_binary_one_name():
+    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
+    
+    with temp_numpy_funcs(mult_ten):
+        
+        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+        
+        @Variable.differentiable_method('mult_ten_special_name')
+        def mult_ten(operand: VariableOperand) -> np.ndarray:
+            if isinstance(operand, Variable):
+                return Variable(np.mult_ten(operand.data))
+            else:
+                return np.mult_ten(operand)
+        
+        # Verify 1-D arrays
+        var = Variable(np.arange(3))
+        assert np.all(var.mult_ten_special_name().data == np.array([00, 10, 20]))
+
+        # Verify 2-D arrays
+        var = Variable(np.arange(4).reshape([2,2]))
+        assert np.all(var.mult_ten_special_name().data == np.array([[00, 10], [20, 30]]))
+
+        # Verify 3-D arrays
+        var = Variable(np.arange(8).reshape([2,2,2]))
+        assert np.all(var.mult_ten_special_name().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
+
+def test_differentiable_method_binary_two_names():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     
