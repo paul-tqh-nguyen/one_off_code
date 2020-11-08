@@ -216,7 +216,7 @@ def test_differentiable_method_binary_no_name():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
-        return operand*10
+        return a*b/2
     
     with temp_numpy_funcs(mult_ten):
         
