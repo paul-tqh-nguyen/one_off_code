@@ -12,7 +12,7 @@ from autograd import Variable
 ################
 
 @contextmanager
-def dummy_numpy_func(dummy_func_name: str) -> Generator:
+def dummy_numpy_func_name_checking(dummy_func_name: str) -> Generator:
     assert not hasattr(np, dummy_func_name)
     yield
     return
