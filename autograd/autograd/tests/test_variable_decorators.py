@@ -288,3 +288,4 @@ def test_differentiable_method_binary_two_names():
         var_b = Variable(5)
         assert np.all(var_a.mth(var_b).data == 25)
         assert np.all(var_a.times_then_take_half(var_b).data == 25)
+        assert 'multiply_then_halve' not in dir(var_a)
