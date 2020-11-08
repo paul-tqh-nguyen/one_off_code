@@ -40,5 +40,8 @@ def test_basic_numpy_replacement():
             else:
                 return np_mult_ten(operand)
 
+        # Verify that numpy still works
+        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+        
         var = Variable(np.arange(3))
         assert np.all(np.mult_ten(var).data == np.array([00, 10, 20]))
