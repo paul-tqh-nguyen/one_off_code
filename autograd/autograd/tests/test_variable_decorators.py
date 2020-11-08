@@ -201,12 +201,15 @@ def test_differentiable_method_unary_two_names():
         
         # Verify 1-D arrays
         var = Variable(np.arange(3))
-        assert np.all(var.mult_ten().data == np.array([00, 10, 20]))
+        assert np.all(var.mult_ten_first().data == np.array([00, 10, 20]))
+        assert np.all(var.mult_ten_second().data == np.array([00, 10, 20]))
 
         # Verify 2-D arrays
         var = Variable(np.arange(4).reshape([2,2]))
-        assert np.all(var.mult_ten().data == np.array([[00, 10], [20, 30]]))
+        assert np.all(var.mult_ten_first().data == np.array([[00, 10], [20, 30]]))
+        assert np.all(var.mult_ten_second().data == np.array([[00, 10], [20, 30]]))
 
         # Verify 3-D arrays
         var = Variable(np.arange(8).reshape([2,2,2]))
-        assert np.all(var.mult_ten().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
+        assert np.all(var.mult_ten_first().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
+        assert np.all(var.mult_ten_second().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
