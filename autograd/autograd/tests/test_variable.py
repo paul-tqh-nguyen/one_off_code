@@ -25,7 +25,7 @@ def temp_numpy_func(temp_func: Callable) -> Generator:
 #########
 
 def test_differentiable_method():
-    def dummy_func(array: np.ndarray) -> np.ndarray:
+    def mult_ten(array: np.ndarray) -> np.ndarray:
         return array*10
-    with temp_numpy_func(dummy_func):
-        
+    with temp_numpy_func(mult_ten):
+        np.mult_ten(np.ones(4)) == np.full([4], 10)
