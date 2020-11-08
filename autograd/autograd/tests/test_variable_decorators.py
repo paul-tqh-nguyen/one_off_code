@@ -270,7 +270,7 @@ def test_differentiable_method_binary_two_names():
         
         assert np.all(np.multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
         
-        @Variable.differentiable_method()
+        @Variable.differentiable_method('mth', 'times_then_take_half')
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
             a_is_var = isinstance(a, Variable)
             b_is_var = isinstance(b, Variable)
