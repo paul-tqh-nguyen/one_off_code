@@ -280,9 +280,9 @@ def test_differentiable_method_binary_two_names():
         
     assert np.all(_multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
     
-    with temp_variable_method_names('mth', 'times_then_take_half'):
+    with temp_variable_method_names('mth', 'multiple_and_then_take_half_after'):
         
-        @Variable.differentiable_method('mth', 'times_then_take_half')
+        @Variable.differentiable_method('mth', 'multiple_and_then_take_half_after')
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
             a_is_var = isinstance(a, Variable)
             b_is_var = isinstance(b, Variable)
@@ -298,5 +298,5 @@ def test_differentiable_method_binary_two_names():
         var_a = Variable(10)
         var_b = Variable(5)
         assert np.all(var_a.mth(var_b).data == 25)
-        assert np.all(var_a.times_then_take_half(var_b).data == 25)
+        assert np.all(var_a.multiple_and_then_take_half_after(var_b).data == 25)
         assert 'multiply_then_halve' not in dir(var_a)
