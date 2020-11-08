@@ -12,7 +12,7 @@ from autograd import Variable
 ################
 
 @contextmanager
-def dummy_numpy_func_name_checking(dummy_func_name: str) -> Generator:
+def dummy_numpy_func_name(dummy_func_name: str) -> Generator:
     '''Only does checking and removal ; does not do any adding.'''
     assert not hasattr(np, dummy_func_name)
     yield
@@ -26,7 +26,7 @@ def dummy_numpy_func_name_checking(dummy_func_name: str) -> Generator:
 #########
 
 def test_differentiable_method():
-    with dummy_numpy_func_name_checking('dummy_func') as dummy_func_name:
+    with dummy_numpy_func_name('dummy_func') as dummy_func_name:
         def dummy_func(array: np.ndarray) -> np.ndarray:
             return array*10
         assert dummy_func.__qualname__ == dummy_func_name
