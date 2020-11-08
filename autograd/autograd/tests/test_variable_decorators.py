@@ -197,7 +197,7 @@ def test_differentiable_method_unary_two_names():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     
-    with temp_variable_method_names('mult_ten_special_name'):
+    with temp_variable_method_names('mult_ten_first', 'mult_ten_second'):
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
