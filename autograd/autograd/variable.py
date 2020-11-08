@@ -92,9 +92,11 @@ class Variable:
             return
         
         def __call__(self, func: Callable) -> Callable:
+            print(f"dir(Variable) {repr(dir(Variable))}")
             print(f"self.method_names {repr(self.method_names)}")
             if len(self.method_names) == 0: # @todo test single, zero, and multiple method name cases
                 self.method_names = [func.__name__]
+            print(f"dir(Variable) {repr(dir(Variable))}")
             print(f"self.method_names {repr(self.method_names)}")
             for method_name in self.method_names:
                 setattr(Variable, method_name, func)
