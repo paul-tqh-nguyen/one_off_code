@@ -6,7 +6,7 @@ from typing import Generator, Callable
 
 import sys ; sys.path.append("..")
 import autograd
-from autograd import Variable
+from autograd import Variable, VariableOperand
 
 ################
 # Test Helpers #
@@ -31,4 +31,5 @@ def test_basic_numpy_replacement():
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
         def new_mult_ten(array: np.ndarray) -> np.ndarray:
+            
             return array*10
