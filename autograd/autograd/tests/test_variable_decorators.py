@@ -25,7 +25,7 @@ def temp_numpy_funcs(*temp_funcs: List[Callable]) -> Generator:
     return
 
 @contextmanager
-def temp_variable_method_names(*method_names: List[Callable]) -> Generator:
+def temp_variable_method_names(*method_names: List[str]) -> Generator:
     for temp_func in temp_funcs:
         assert not hasattr(np, temp_func.__name__)
         setattr(np, temp_func.__name__, temp_func)
