@@ -24,7 +24,7 @@ def temp_numpy_func(temp_func: Callable) -> Generator:
 # Tests #
 #########
 
-def test_differentiable_method():
+def test_numpy_replacement():
     def mult_ten(array: np.ndarray) -> np.ndarray:
         return array*10
     with temp_numpy_func(mult_ten):
