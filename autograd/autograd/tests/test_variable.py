@@ -70,6 +70,7 @@ def test_numpy_replacement_fails_on_multiple_inputs():
     with temp_numpy_funcs(mult_ten, mult_five):
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+        assert np.all(np.mult_five(np.ones(8)) == np.full([8], 5))
 
         with pytest.raises(ValueError, match="Only one numpy callable can be replaced."):
             @Variable.numpy_replacement(np_mult_ten='np.mult_ten', np_mult_five='np.mult_five')
