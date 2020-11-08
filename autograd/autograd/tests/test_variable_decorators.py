@@ -149,8 +149,8 @@ def test_basic_differentiable_method_unary(): # @todo test binary case as well
 
         # Verify 2-D arrays
         var = Variable(np.arange(4).reshape([2,2]))
-        assert np.all(np.mult_ten(var).data == np.array([[00, 10], [20, 30]]))
+        assert np.all(var.mult_ten().data == np.array([[00, 10], [20, 30]]))
 
         # Verify 3-D arrays
         var = Variable(np.arange(8).reshape([2,2,2]))
-        assert np.all(np.mult_ten(var).data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
+        assert np.all(var.mult_ten().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
