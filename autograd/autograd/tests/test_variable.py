@@ -104,19 +104,13 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
         with pytest.raises(ValueError, match='does not specify a numpy function.'):
             @Variable.numpy_replacement(np_mult_ten='np.non.existent.path.mult_ten')
             def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
-                if isinstance(operand, Variable):
-                    return Variable(np_mult_ten(operand.data))
-                else:
-                    return np_mult_ten(operand)
+                pass
     
     with temp_numpy_funcs(mult_ten):
         with pytest.raises(ValueError, match='does not specify a numpy function.'):
             @Variable.numpy_replacement(np_mult_ten='np.non.existent.path.mult_ten')
             def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
-                if isinstance(operand, Variable):
-                    return Variable(np_mult_ten(operand.data))
-                else:
-                    return np_mult_ten(operand)
+                pass
             
     
  
