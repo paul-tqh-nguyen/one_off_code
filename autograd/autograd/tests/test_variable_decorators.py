@@ -224,8 +224,10 @@ def test_differentiable_method_binary_no_name():
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
             a_is_var = isinstance(a, Variable)
             b_is_var = isinstance(b, Variable)
-            if isinstance(a, Variable):
+            if a_is_var and b_is_var:
                 return Variable(np.multiply_then_halve(operand.data))
+            elif:
+                pass
             else:
                 return np.multiply_then_halve(operand)
         
