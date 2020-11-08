@@ -12,5 +12,6 @@ def test_():
     def dummy_func(array: np.ndarray) -> np.ndarray:
         return array*10
     setattr(np, unique_operation_name, dummy_func)
-    delattr(np, unique_operation_name, dummy_func)
+    delattr(np, unique_operation_name)
+    assert not hasattr(np, unique_operation_name)
     
