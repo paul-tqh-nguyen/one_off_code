@@ -19,10 +19,6 @@ from .misc_utilities import *
 
 # @todo verify these imports are used
 
-#############################
-# Backpropagation Execution #
-#############################
-
 ##############
 # Optimizers #
 ##############
