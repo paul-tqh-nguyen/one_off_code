@@ -60,6 +60,11 @@ class Variable:
         return internally_used_name, np_path, replaced_callable
     
     @classmethod
+    def _replace_numpy_method(cls, **internally_used_name_to_np_path: Dict[str, str]) -> None:
+        np_path_sub_attributes = np_path.split('.')
+        return
+    
+    @classmethod
     def numpy_replacement(cls, **internally_used_name_to_np_path: Dict[str, str]) -> Callable:
         '''Replaces numpy methods via monkey patching.'''
         internally_used_name, np_path, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path)
@@ -70,8 +75,8 @@ class Variable:
                 kwargs[internally_used_name] = replaced_callable
                 return func(*args, **kwargs)
             decorated_function.__name__ = func.__name__ # @todo test invariant holds
-            np_path_sub_attributes = np_path.split('.')
-            for 
+            
+            _replace_numpy_method()
             return decorated_function
         return decorator
     
