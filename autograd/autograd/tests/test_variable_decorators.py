@@ -142,9 +142,7 @@ def test_basic_differentiable_method(): # @todo test binary case as well
                 return Variable(np_mult_ten(operand.data))
             else:
                 return np_mult_ten(operand)
-
-        assert np.mult_ten.__name__ == 'mult_ten'
-
+        
         # Verify 1-D arrays
         var = Variable(np.arange(3))
         assert np.all(np.mult_ten(var).data == np.array([00, 10, 20]))
