@@ -24,6 +24,18 @@ def temp_numpy_funcs(*temp_funcs: List[Callable]) -> Generator:
         assert not hasattr(np, temp_func.__name__)
     return
 
+@contextmanager
+def temp_variable_method_names(*temp_funcs: List[Callable]) -> Generator:
+    for temp_func in temp_funcs:
+        assert not hasattr(np, temp_func.__name__)
+        setattr(np, temp_func.__name__, temp_func)
+        assert hasattr(np, temp_func.__name__)
+    yield
+    for temp_func in temp_funcs:
+        delattr(np, temp_func.__name__)
+        assert not hasattr(np, temp_func.__name__)
+    return
+
 ###############################
 # Tests for numpy_replacement #
 ###############################
