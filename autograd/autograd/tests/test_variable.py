@@ -40,6 +40,6 @@ def test_basic_numpy_replacement():
             else:
                 return np_mult_ten(operand)
 
-        x = Variable(np.arange(3))
+        var = Variable(np.arange(3))
         
-        assert np.all(np.mult_ten(x).data == np.array([00, 10, 20]))
+        assert np.all(np.mult_ten(var).data == np.array([00, 10, 20]))
