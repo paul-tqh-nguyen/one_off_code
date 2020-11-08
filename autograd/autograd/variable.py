@@ -219,6 +219,9 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
     power_variable = Variable(power, variable_depended_on_by_power_to_backward_propagation_function)
     return power_variable
 
+# @todo support np.power
+# @todo support __eq__ and other comparators
+
 ##########
 # Driver #
 ##########
