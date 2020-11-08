@@ -9,5 +9,7 @@ from autograd import Variable
 def test_():
     unique_operation_name = f'dummy_func_{uuid4().int}'
     assert not hasattr(np, unique_operation_name)
-    setattr
+    def dummy_func(array: np.ndarray) -> np.ndarray:
+        return array*10
+    setattr(np, unique_operation_name, 
     
