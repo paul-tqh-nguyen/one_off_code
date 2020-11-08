@@ -17,6 +17,10 @@ def dummy_numpy_func(dummy_func_name: str) -> Generator:
     yield
     return
 
+#########
+# Tests #
+#########
+
 def test_differentiable_method():
     with dummy_numpy_func
     def dummy_func(array: np.ndarray) -> np.ndarray:
