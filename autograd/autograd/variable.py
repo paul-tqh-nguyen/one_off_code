@@ -44,7 +44,7 @@ class Variable:
         np_path_sub_attributes = np_path.split('.')
 
         if globals()[np_path_sub_attributes[0]] != np:
-            raise ValueError(f'"{np_path}" does not specify a numpy function')
+            raise ValueError(f'"{np_path}" does not specify a numpy function.')
         
         # @todo test this with simple names, not present names, empty string names, and "invalid variable name" names passed into np_path; make sure we get errors in the right cases
         for np_path_sub_attribute_index, np_path_sub_attribute in enumerate(np_path_sub_attributes[1:-1], start=1):
@@ -53,7 +53,7 @@ class Variable:
             replaced_callable_parent_attribute = getattr(replaced_callable_parent_attribute, np_path_sub_attribute)
 
         if not hasattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1]):
-            raise ValueError(f'"{np_path}" does not specify a numpy function')
+            raise ValueError(f'"{np_path}" does not specify a numpy function.')
 
         replaced_callable = getattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1])
 
@@ -167,7 +167,7 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
     if not a_is_variable and not b_is_variable:
         return dot_product
     if len(kwargs) > 0:
-        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_dot_product_to_backward_propagation_function = {}
     if a_is_variable:
         variable_depended_on_by_dot_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data
@@ -188,7 +188,7 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     if not minuend_is_variable and not subtrahend_is_variable:
         return difference
     if len(kwargs) > 0:
-        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_difference_to_backward_propagation_function = {}
     if minuend_is_variable:
         variable_depended_on_by_difference_to_backward_propagation_function[minuend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
@@ -209,7 +209,7 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
     if not base_is_variable and not exponent_is_variable:
         return power
     if len(kwargs) > 0:
-        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_power_to_backward_propagation_function = {}
     if base_is_variable:
         variable_depended_on_by_power_to_backward_propagation_function[base] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1)
