@@ -180,10 +180,10 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
 # @todo test this with all combinations of types
 @Variable.differentiable_method('subtract', '__sub__') # @todo test these methods
 @Variable.numpy_replacement(np_subtract='np.subtract') # @todo test these numpy methods
-def subtract(a: VariableOperand, b: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
-    a_is_variable = isinstance(a, Variable)
+def subtract(minuend: VariableOperand, b: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
+    minuend_is_variable = isinstance(minuend, Variable)
     b_is_variable = isinstance(b, Variable)
-    a_data = a.data if a_is_variable else a
+    minuend_data = minuend.data if minuend_is_variable else minuend
     b_data = b.data if b_is_variable else b
     difference = np_subtract(a_data, b_data, **kwargs)
     if not a_is_variable and not b_is_variable:
