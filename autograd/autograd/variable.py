@@ -49,7 +49,7 @@ class Variable:
         # @todo test this with simple names, not present names, empty string names, and "invalid variable name" names passed into np_path; make sure we get errors in the right cases
         for np_path_sub_attribute_index, np_path_sub_attribute in enumerate(np_path_sub_attributes[1:-1], start=1):
             if not hasattr(replaced_callable_parent_attribute, np_path_sub_attribute):
-                raise ValueError(f'"{".".join(np_path_sub_attributes[:np_path_sub_attribute_index])}" does not specify a numpy function')
+                raise ValueError(f'"{".".join(np_path_sub_attributes[:np_path_sub_attribute_index])}" does not specify a numpy function.')
             replaced_callable_parent_attribute = getattr(replaced_callable_parent_attribute, np_path_sub_attribute)
 
         if not hasattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1]):
