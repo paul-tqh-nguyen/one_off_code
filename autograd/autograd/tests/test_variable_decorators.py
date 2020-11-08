@@ -227,17 +227,8 @@ def test_differentiable_method_binary_no_name():
             else:
                 return np.multiply_then_halve(operand)
         
-        # Verify 1-D arrays
         var = Variable(np.arange(3))
         assert np.all(var.multiply_then_halve().data == np.array([00, 10, 20]))
-
-        # Verify 2-D arrays
-        var = Variable(np.arange(4).reshape([2,2]))
-        assert np.all(var.multiply_then_halve().data == np.array([[00, 10], [20, 30]]))
-
-        # Verify 3-D arrays
-        var = Variable(np.arange(8).reshape([2,2,2]))
-        assert np.all(var.multiply_then_halve().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
 def test_differentiable_method_binary_one_name():
     def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
