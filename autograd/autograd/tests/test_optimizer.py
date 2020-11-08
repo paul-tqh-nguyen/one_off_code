@@ -1,9 +1,9 @@
 import pytest
-
 import numpy as np
 
-import ..autograd
-from ..autograd import Variable
+import sys ; sys.path.append("..")
+import autograd
+from autograd import Variable
 
 def test_sgd():
     # Variables
@@ -14,12 +14,14 @@ def test_sgd():
     sgd = autograd.optimizer.SGD(learning_rate)
     
     # Training
-    for training_step_index in range(100):
+    for _ in range(50):
         y = x.dot(np.array([-10, 50]))
         y_hat = 0
         diff = (y - y_hat)
         loss = diff ** 2
         sgd.take_training_step(loss)
+        if np.abs(loss.data) < 1e-3:
+            break
     
     # Verify Results
     assert np.abs(loss.data) < 1e-3
