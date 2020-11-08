@@ -8,13 +8,13 @@ import autograd
 from autograd import Variable
 
 @contextmanager
-def dummy_numpy_operation(dummy_func_name: str) -> Generator:
+def dummy_numpy_func(dummy_func_name: str) -> Generator:
     assert not hasattr(np, dummy_func)
     yield
     return
 
 def test_differentiable_method():
-    with dummy_func
+    with dummy_numpy_func
     def dummy_func(array: np.ndarray) -> np.ndarray:
         return array*10    
     assert dummy_func.__qualname__ == dummy_func
