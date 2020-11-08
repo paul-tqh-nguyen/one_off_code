@@ -57,12 +57,12 @@ class Variable:
 
         replaced_callable = getattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1])
 
-        return internally_used_name, np_path replaced_callable
+        return internally_used_name, np_path, replaced_callable
     
     @classmethod
     def numpy_replacement(cls, **internally_used_name_to_np_path: Dict[str, str]) -> Callable:
         '''Replaces numpy methods via monkey patching.'''
-        internally_used_name, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path)
+        internally_used_name, np_path, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path)
         # @todo inspect the signature of replaced_callable to make sure internally_used_name is not a parameter name
         def decorator(func: Callable):
             def decorated_function(*args, **kwargs):
