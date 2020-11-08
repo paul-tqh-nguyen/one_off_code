@@ -38,8 +38,7 @@ def test_basic_numpy_replacement():
             if isinstance(array, Variable):
                 return Variable(np_mult_ten(array.data))
             else:
-                return 
-            return 
+                return np_mult_ten(array)
 
         x = Variable(np.arange(3))
         assert np.all(np.mult_ten(x) == np.array([10, 20, 30]))
