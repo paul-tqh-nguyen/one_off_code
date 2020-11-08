@@ -29,7 +29,4 @@ def test_differentiable_method():
         def dummy_func(array: np.ndarray) -> np.ndarray:
             return array*10
         assert dummy_func.__qualname__ == dummy_func_name
-    
-    setattr(np, dummy_func, dummy_func)
-    assert np.dummy_func(np.
         
