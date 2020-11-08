@@ -69,7 +69,6 @@ class Variable:
                 assert internally_used_name not in kwargs.keys()
                 kwargs[internally_used_name] = replaced_callable
                 return func(*args, **kwargs)
-            decorated_function.__qualname__ = func.__qualname__ # @todo test invariant holds
             decorated_function.__name__ = func.__name__ # @todo test invariant holds
             return decorated_function
         return decorator
@@ -86,7 +85,7 @@ class Variable:
         
         def __call__(self, func: Callable) -> Callable:
             if len(self.method_names) == 0: # @todo test single, zero, and multiple method name cases
-                self.method_names = [func.__qualname__]
+                self.method_names = [func.__name__]
             for method_name in self.method_names:
                 setattr(Variable, method_name, func)
             return func
