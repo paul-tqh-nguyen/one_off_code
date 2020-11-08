@@ -43,7 +43,7 @@ class Variable:
         replaced_callable_parent_attribute = np
         np_path_sub_attributes = np_path.split('.')
 
-        if globals().get(np_path_sub_attributes[0], None) != np:
+        if globals().get(np_path_sub_attributes[0]) != np:
             raise ValueError(f'"{np_path}" does not specify a numpy function.')
         
         # @todo test this with simple names, not present names, empty string names, and "invalid variable name" names passed into np_path; make sure we get errors in the right cases
