@@ -22,9 +22,9 @@ def dummy_numpy_func_name_checking(dummy_func_name: str) -> Generator:
 #########
 
 def test_differentiable_method():
-    with dummy_numpy_func('dummy_func') as dummy_func_name:
-    def dummy_func(array: np.ndarray) -> np.ndarray:
-        return array*10    
+    with dummy_numpy_func('dummy_func') as dummy_numpy_func_name_checking:
+        def dummy_func(array: np.ndarray) -> np.ndarray:
+            return array*10
     assert dummy_func.__qualname__ == dummy_func
     
     setattr(np, dummy_func, dummy_func)
