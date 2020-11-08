@@ -12,7 +12,7 @@ from autograd import Variable
 ################
 
 @contextmanager
-def dummy_numpy_func_name(dummy_func_name: str) -> Generator:
+def dummy_numpy_func(dummy_func_name: str) -> Generator:
     '''Only does checking and removal ; does not do any adding.'''
     assert not hasattr(np, dummy_func_name)
     yield
