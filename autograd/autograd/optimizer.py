@@ -62,7 +62,7 @@ class SGD(Optimizer):
         return
 
     def take_training_step(self, minimization_variable: Variable) -> None:
-        variable_to_gradient = self.__class__.execute_backpropagation(minimization_variable)
+        variable_to_gradient = self.execute_backpropagation(minimization_variable)
         for variable, d_minimization_variable_over_d_variable in variable_to_gradient.items():
             variable.data -= self.learning_rate * d_minimization_variable_over_d_variable
         return
