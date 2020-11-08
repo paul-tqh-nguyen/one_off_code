@@ -25,8 +25,8 @@ def temp_numpy_func(temp_func: Callable) -> Generator:
 #########
 
 def test_differentiable_method():
-    with dummy_numpy_func_name('dummy_func'):
+    def dummy_func(array: np.ndarray) -> np.ndarray:
+        return array*10
+    with temp_numpy_func(dummy_func):
         
-        def dummy_func(array: np.ndarray) -> np.ndarray:
-            return array*10
         assert dummy_func.__qualname__ == dummy_func_name
