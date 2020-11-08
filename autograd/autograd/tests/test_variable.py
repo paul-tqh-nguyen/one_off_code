@@ -105,7 +105,7 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
 
         with pytest.raises(ValueError, match='does not specify a numpy function.'):
-            @Variable.numpy_replacement(**{'np.non.existent.path.mult_ten': 'np.mult_ten'})
+            @Variable.numpy_replacement(np.non.existent.path.mult_ten='np.mult_ten')
             def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
                 if isinstance(operand, Variable):
                     return Variable(np_mult_ten(operand.data))
