@@ -64,7 +64,7 @@ class Variable:
         np_path_sub_attributes = np_path.split('.')
         module = np
         for np_path_sub_attribute in np_path_sub_attributes[1:-1]:
-            
+            module = getattr(module, np_path_sub_attribute)
         return
     
     @classmethod
