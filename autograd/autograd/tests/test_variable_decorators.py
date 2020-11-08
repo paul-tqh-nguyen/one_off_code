@@ -142,10 +142,10 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
 def test_differentiable_method_unary_no_name():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
+        
+    assert np.all(mult_ten(np.ones(4)) == np.full([4], 10))
     
     with temp_variable_method_names('mult_ten'):
-        
-        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
         @Variable.differentiable_method()
         def mult_ten(operand: VariableOperand) -> np.ndarray:
