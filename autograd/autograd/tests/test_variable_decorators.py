@@ -122,7 +122,8 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
         with pytest.raises(ValueError, match='does not specify a numpy function.'):
             @Variable.numpy_replacement(np_mult_ten='np.bogus\name\with\slashes')
             def mult_ten(*args, **kwargs) -> None:
-                pass
-            
-    
- 
+                pass 
+
+###################################
+# Tests for differentiable_method #
+###################################
