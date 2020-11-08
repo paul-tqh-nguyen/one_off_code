@@ -4,7 +4,7 @@ from uuid import uuid4
 from contextlib import contextmanager
 from typing import List, Union, Generator, Callable
 
-import sys ; sys.path.append("..")
+import sys ; sys.path.append('..')
 import autograd
 from autograd import Variable, VariableOperand
 
@@ -72,7 +72,7 @@ def test_numpy_replacement_fails_on_multiple_inputs():
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         assert np.all(np.mult_five(np.ones(8)) == np.full([8], 5))
 
-        with pytest.raises(ValueError, match="Only one numpy callable can be replaced."):
+        with pytest.raises(ValueError, match='Only one numpy callable can be replaced.'):
             @Variable.numpy_replacement(np_mult_ten='np.mult_ten', np_mult_five='np.mult_five')
             def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
                 if isinstance(operand, Variable):
@@ -88,7 +88,7 @@ def test_numpy_replacement_fails_on_bogus_internally_used_name():
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
 
-        with pytest.raises(ValueError, match="is not a vaild identifier name."):
+        with pytest.raises(ValueError, match='is not a vaild identifier name.'):
             @Variable.numpy_replacement(np_mult_ten='np.mult_ten', np_mult_five='np.mult_five')
             def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
                 if isinstance(operand, Variable):
