@@ -35,8 +35,6 @@ def test_basic_numpy_replacement():
         
         @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
         def mult_ten(operand: VariableOperand) -> np.ndarray:
-            print(f"operand {repr(operand)}")
-            print(f"isinstance(operand, Variable) {repr(isinstance(operand, Variable))}")
             if isinstance(operand, Variable):
                 return Variable(np_mult_ten(operand.data))
             else:
