@@ -98,43 +98,50 @@ class Variable:
     # Methods #
     ###########
 
-    def __init__(self, data: np.ndarray, variable_depended_upon_by_self_to_backward_propagation_function: Dict['Variable', Callable] = dict()):
+    def __init__(self, data: np.ndarray, directly_depended_on_variable_to_backward_propagation_function: Dict['Variable', Callable] = dict()):
+        '''
+        For self.directly_depended_on_variable_to_backward_propagation_function, 
+            - Each key is a variable (let's call it var)
+            - Each value is a function that takes in d_minimization_target_variable_over_d_self (i.e. the gradient for self) and returns d_minimization_target_variable_over_d_var (i.e. the gradient for var).
+                - This function performs one step of backward propagation along one edge in the computation graph.
+        '''
         self.data = data
-        # @todo make this be handled by a context manager that clears out gradients inside the optimizer
-        self.minimization_target_variable_to_d_minimization_target_variable_over_d_self: Dict[Variable, np.ndarray] = defaultdict(lambda: 0) # values are conventionally referred to as "the accumulated gradient"
-        self.variable_depended_upon_by_self_to_backward_propagation_function = variable_depended_upon_by_self_to_backward_propagation_function
+        self.directly_depended_on_variable_to_backward_propagation_function = directly_depended_on_variable_to_backward_propagation_function
         return
     
-    def depended_upon_variables_iterator(self) -> Generator: # @todo test just this iterator (both cases)
+    def depended_on_variables(self) -> Generator: # @todo test just this iterator (both cases)
         '''Yields all variables that sef directly or indirectly relies on.'''
-        yield from self._depended_upon_variables_iterator(set())
+        yield from self._depended_on_variables(set())
         
-    def _depended_upon_variables_iterator(self, visited_variables: Set['Variable']) -> Generator:
+    def _depended_on_variables(self, visited_variables: Set['Variable']) -> Generator:
         '''Yields variables in topological order.'''
+        # @todo make this easier to read
         yield self
         visited_variables.add(self)
-        for variable_directly_depended_upon_by_self in self.variable_depended_upon_by_self_to_backward_propagation_function.keys():
-            if variable_directly_depended_upon_by_self not in visited_variables:
-                yield variable_directly_depended_upon_by_self
-                visited_variables.add(variable_directly_depended_upon_by_self)
-                for variable_indirectly_depended_upon_by_self in variable_directly_depended_upon_by_self._depended_upon_variables_iterator(visited_variables):
-                    if variable_indirectly_depended_upon_by_self not in visited_variables:
-                        yield variable_indirectly_depended_upon_by_self
-                        visited_variables.add(variable_indirectly_depended_upon_by_self)
+        for variable_directly_depended_on_by_self in self.directly_depended_on_variable_to_backward_propagation_function.keys():
+            if variable_directly_depended_on_by_self not in visited_variables:
+                yield variable_directly_depended_on_by_self
+                visited_variables.add(variable_directly_depended_on_by_self)
+                for variable_indirectly_depended_on_by_self in variable_directly_depended_on_by_self._depended_on_variables(visited_variables):
+                    if variable_indirectly_depended_on_by_self not in visited_variables:
+                        yield variable_indirectly_depended_on_by_self
+                        visited_variables.add(variable_indirectly_depended_on_by_self)
     
-    def zero_out_gradients(self, *minimization_target_variables: List['Variable']): # @todo test this with single, zero, and many minimization_target_variables
-        '''Clears gradients of minimization_target_variables w.r.t self and w.r.t all the variables that self depends on (directly or indirectly).'''
-        for minimization_target_variable in minimization_target_variables:
-            for depended_upon_variable in self.depended_upon_variables_iterator():
-                del depended_upon_variable.variable_depended_upon_by_self_to_backward_propagation_function[minimization_target_variable]
-    
-    def backward_propagate_gradient(self, d_minimization_target_variable_over_d_self: Union[int, float, np.number, np.ndarray]) -> Dict['Variable', Union[int, float, np.number, np.ndarray]]:
-        variable_depended_upon_by_self_to_gradient = {} # gradient here means d_minimization_target_variable_over_variable_depended_upon_by_self_over
-        for variable_depended_upon_by_self, backward_propagation_function in self.variable_depended_upon_by_self_to_backward_propagation_function.items():
-            gradient = backward_propagation_function(d_minimization_target_variable_over_d_self) # @todo combine these two linles after backward_propagation_function is renamed
-            variable_depended_upon_by_self_to_gradient[variable_depended_upon_by_self] = gradient
+    def calculate_gradient(self, d_minimization_target_variable_over_d_self: Union[int, float, np.number, np.ndarray]) -> Dict['Variable', Union[int, float, np.number, np.ndarray]]:
+        '''
+        Backward propagates the gradient (i.e. d_minimization_target_variable_over_d_self) to variables that self directly 
+        relies on, i.e. is a direct function of (does not include variables it is transitively or indirectly dependent on).
+        
+        Returns a dictionary mapping where:
+            Each entry's key is a variable (let's call it var) that self directly relies on.
+            Each entry's value is gradient for var (i.e. d_minimization_target_variable_over_d_var).
+        '''
+        directly_depended_on_variable_to_gradient = {}
+        for depended_on_variable, get_depended_on_variable_gradient in self.directly_depended_on_variable_to_backward_propagation_function.items():
+            gradient = get_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
+            directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
             # @todo add shape assertions here
-        return variable_depended_upon_by_self_to_gradient
+        return depended_on_variable_to_gradient
 
 #######################
 # Variable Operations #
@@ -155,16 +162,12 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, out: Optional[
         return dot_product
     if out is not None:
         raise ValueError(f'"out" parameter not supported for {Variable.__qualname__}')
-    variable_depended_upon_by_dot_product_to_backward_propagation_function = {}
+    variable_depended_on_by_dot_product_to_backward_propagation_function = {}
     if a_is_variable:
-        def propagate_gadient_to_a(d_minimization_target_over_d_dot_product: np.ndarray) -> Union[int, float, np.number, np.ndarray]:
-            return d_minimization_target_over_d_dot_product * b_data
-        variable_depended_upon_by_dot_product_to_backward_propagation_function[a] = propagate_gadient_to_a
+        variable_depended_on_by_dot_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data
     if b_is_variable:
-        def propagate_gadient_to_b(d_minimization_target_over_d_dot_product: np.ndarray) -> Union[int, float, np.number, np.ndarray]:
-            return d_minimization_target_over_d_dot_product * a_data
-        variable_depended_upon_by_dot_product_to_backward_propagation_function[b] = propagate_gadient_to_b
-    dot_product_variable = Variable(dot_product, variable_depended_upon_by_dot_product_to_backward_propagation_function)
+        variable_depended_on_by_dot_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * a_data
+    dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_function)
     return dot_product_variable
 
 # @todo test this with all combinations of types
@@ -180,16 +183,12 @@ def subtract(a: VariableOperand, b: VariableOperand, np_subtract: Callable, **kw
         return difference
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
-    variable_depended_upon_by_difference_to_backward_propagation_function = {}
+    variable_depended_on_by_difference_to_backward_propagation_function = {}
     if a_is_variable:
-        def propagate_gadient_to_a(d_minimization_target_over_d_difference: np.ndarray) -> Union[int, float, np.number, np.ndarray]:
-            return d_minimization_target_over_d_difference
-        variable_depended_upon_by_difference_to_backward_propagation_function[a] = propagate_gadient_to_a
+        variable_depended_on_by_difference_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
     if b_is_variable:
-        def propagate_gadient_to_b(d_minimization_target_over_d_difference: np.ndarray) -> Union[int, float, np.number, np.ndarray]:
-            return d_minimization_target_over_d_difference
-        variable_depended_upon_by_difference_to_backward_propagation_function[b] = propagate_gadient_to_b
-    difference_variable = Variable(difference, variable_depended_upon_by_difference_to_backward_propagation_function)
+        variable_depended_on_by_difference_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
+    difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_function)
     return difference_variable
 
 # @todo test this with all combinations of types
@@ -205,16 +204,12 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
         return power
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
-    variable_depended_upon_by_power_to_backward_propagation_function = {}
+    variable_depended_on_by_power_to_backward_propagation_function = {}
     if base_is_variable:
-        def propagate_gadient_to_base(d_minimization_target_over_d_power: np.ndarray) -> Union[int, float, np.number, np.ndarray]:
-            return d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1)
-        variable_depended_upon_by_power_to_backward_propagation_function[base] = propagate_gadient_to_base
+        variable_depended_on_by_power_to_backward_propagation_function[base] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1)
     if exponent_is_variable:
-        def propagate_gadient_to_b(d_minimization_target_over_d_power: np.ndarray) -> Union[int, float, np.number, np.ndarray]:
-            return d_minimization_target_over_d_power * power.data*np.log(base_data)
-        variable_depended_upon_by_power_to_backward_propagation_function[b] = propagate_gadient_to_exponent
-    power_variable = Variable(power, variable_depended_upon_by_power_to_backward_propagation_function)
+        variable_depended_on_by_power_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data)
+    power_variable = Variable(power, variable_depended_on_by_power_to_backward_propagation_function)
     return power_variable
 
 ##########

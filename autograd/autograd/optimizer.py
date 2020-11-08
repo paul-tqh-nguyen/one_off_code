@@ -34,18 +34,25 @@ class Optimizer(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def execute_backpropagation(dependent_variable: Variable) -> DefaultDict[Variable, Union[int, float, np.number, np.ndarray]]:
-        '''Returns a mapping from Variable instances to their gradients, i.e. d_dependent_variable_over_d_variable .'''
+    def execute_backpropagation(dependent_variable: Variable) -> Dict[Variable, Union[int, float, np.number, np.ndarray]]:
+        '''
+        Executes the backpropagation algorithm.
+        dependent_variable is a variable that relies on (i.e. is a function of) other variables (directly or indirectly).
+        This method returns a mapping (dictionary) from each relied upon variable (let's call it var) to d_dependent_variable_over_d_var (conventionally referred to as the gradient).
+        In other words, this function accumulates the gradients of all variables that dependent_variable directly or indirectly is a function of.
+        '''
         variable_to_gradient = defaultdict(lambda: 0)
         d_dependent_variable_over_d_dependent_variable = np.ones(dependent_variable.data.shape)
         variable_to_gradient[dependent_variable] = d_dependent_variable_over_d_dependent_variable
-        for depended_upon_variable in dependent_variable.depended_upon_variables_iterator():
-            assert depended_upon_variable in variable_to_gradient
-            depended_upon_variable_gradient = variable_to_gradient[depended_upon_variable]
-            # @todo rename these variables
-            variable_depended_upon_by_depended_upon_variable_to_gradient = depended_upon_variable.backward_propagate_gradient(depended_upon_variable_gradient)
-            for variable_depended_upon_by_depended_upon_variable, gradient in variable_depended_upon_by_depended_upon_variable_to_gradient.items():
-                variable_to_gradient[variable_depended_upon_by_depended_upon_variable] += gradient
+        # iterate over variables depended on by dependent_variable (directly or indirectly) in topologically sorted order (i.e. DFS ordedr with no repeats)
+        for var in dependent_variable.depended_on_variables_iterator():
+            assert var in variable_to_gradient
+            d_dependent_variable_over_d_var = variable_to_gradient[var]
+            # backpropagate one step gradient from var to variables it directly relies on
+            variable_depended_on_by_var_to_gradient = var.calculate_gradient(d_dependent_variable_over_d_var)
+            for variable_depended_on_by_var, gradient in variable_depended_on_by_var_to_gradient.items():
+                variable_to_gradient[variable_depended_on_by_var] += gradient
+        variable_to_gradient = dict(variable_to_gradient)
         return variable_to_gradient
 
     @abstractmethod
@@ -59,9 +66,8 @@ class SGD(Optimizer): # @todo test this with a basic test
         return
 
     def take_training_step(self, minimization_variable: Variable) -> None:
-        minimization_variable.zero_out_gradients() # @todo consider making this a context manager
         variable_to_gradient = self.__class__.execute_backpropagation(minimization_variable)
-        for variable, d_minimization_variable_over_d_variable in variable_to_gradient.items(): # @todo consider renaming d_minimization_variable_over_d_variable to gradient or adding a comment somewhere
+        for variable, d_minimization_variable_over_d_variable in variable_to_gradient.items():
             variable.data -= self.learning_rate * d_minimization_variable_over_d_variable
         return
 
