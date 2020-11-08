@@ -63,9 +63,8 @@ def test_numpy_replacement_fails_on_multiple_inputs():
         return operand*10
     
     with temp_numpy_func(mult_ten):
-        
-        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
-        
+
+        with pytest.raises(AttributeError, match="does_not_exist"):
         @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
         def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
             if isinstance(operand, Variable):
