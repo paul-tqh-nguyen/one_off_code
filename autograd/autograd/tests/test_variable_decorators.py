@@ -137,7 +137,7 @@ def test_basic_differentiable_method_unary(): # @todo test binary case as well
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
         @Variable.differentiable_method('mult_ten')
-        def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
+        def mult_ten(operand: VariableOperand) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(np_mult_ten(operand.data))
             else:
