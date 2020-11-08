@@ -98,3 +98,22 @@ def test_numpy_replacement_fails_on_bogus_internally_used_name():
             
     
  
+
+def test_numpy_replacement_fails_on_bogus_internally_used_name():
+    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
+        
+    with temp_numpy_funcs(mult_ten):
+        
+        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+
+        with pytest.raises(ValueError, match='is not a vaild identifier name.'):
+            @Variable.numpy_replacement(**{'np\mult/ten': 'np.mult_ten'})
+            def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
+                if isinstance(operand, Variable):
+                    return Variable(np_mult_ten(operand.data))
+                else:
+                    return np_mult_ten(operand)
+            
+    
+ 
