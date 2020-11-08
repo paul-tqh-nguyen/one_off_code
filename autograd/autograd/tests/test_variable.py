@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from uuid import uuid4
 from contextlib import contextmanager
-from typing import Union, Generator, Callable
+from typing import List, Union, Generator, Callable
 
 import sys ; sys.path.append("..")
 import autograd
@@ -13,7 +13,7 @@ from autograd import Variable, VariableOperand
 ################
 
 @contextmanager
-def temp_numpy_func(temp_func: Callable) -> Generator:
+def temp_numpy_funcs(**temp_funcs: List[Callable]) -> Generator:
     assert not hasattr(np, temp_func.__name__)
     setattr(np, temp_func.__name__, temp_func)
     assert hasattr(np, temp_func.__name__)
@@ -30,7 +30,7 @@ def test_basic_numpy_replacement():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     
-    with temp_numpy_func(mult_ten):
+    with temp_numpy_funcs(mult_ten):
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
@@ -65,7 +65,7 @@ def test_numpy_replacement_fails_on_multiple_inputs():
     def mult_five(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     
-    with temp_numpy_func(mult_ten):
+    with temp_numpy_funcs(mult_ten):
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
 
