@@ -261,6 +261,7 @@ def test_differentiable_method_binary_one_name():
         var_a = Variable(10)
         var_b = Variable(5)
         assert np.all(var_a.mth(var_b).data == 25)
+        print(f"dir(var_a) {repr(dir(var_a))}")
         assert 'multiply_then_halve' not in dir(var_a)
         
 # def test_differentiable_method_binary_two_names():
