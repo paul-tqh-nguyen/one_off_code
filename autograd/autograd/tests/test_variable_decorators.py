@@ -143,7 +143,7 @@ def test_differentiable_method_unary_no_name():
     def _mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
         
-    assert np.all(mult_ten(np.ones(4)) == np.full([4], 10))
+    assert np.all(_mult_ten(np.ones(4)) == np.full([4], 10))
     
     with temp_variable_method_names('mult_ten'):
         
@@ -167,10 +167,10 @@ def test_differentiable_method_unary_no_name():
         assert np.all(var.mult_ten().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
 def test_differentiable_method_unary_one_name():
-    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+    def _mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
         
-    assert np.all(mult_ten(np.ones(4)) == np.full([4], 10))
+    assert np.all(_mult_ten(np.ones(4)) == np.full([4], 10))
     
     with temp_variable_method_names('mult_ten_special_name'):
         
@@ -194,10 +194,10 @@ def test_differentiable_method_unary_one_name():
         assert np.all(var.mult_ten_special_name().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
 def test_differentiable_method_unary_two_names():
-    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+    def _mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
         
-    assert np.all(mult_ten(np.ones(4)) == np.full([4], 10))
+    assert np.all(_mult_ten(np.ones(4)) == np.full([4], 10))
     
     with temp_variable_method_names('mult_ten_first', 'mult_ten_second'):
         
