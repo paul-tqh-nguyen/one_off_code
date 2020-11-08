@@ -29,4 +29,3 @@ def test_differentiable_method():
         return array*10
     with temp_numpy_func(dummy_func):
         
-        assert dummy_func.__qualname__ == dummy_func_name
