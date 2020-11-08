@@ -74,18 +74,3 @@ def test_numpy_replacement_fails_on_multiple_inputs():
                 return np_mult_ten(operand)
 
         assert np.mult_ten.__name__ == 'mult_ten'
-
-        # Verify numpy still works
-        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
-
-        # Verify 1-D arrays
-        var = Variable(np.arange(3))
-        assert np.all(np.mult_ten(var).data == np.array([00, 10, 20]))
-
-        # Verify 2-D arrays
-        var = Variable(np.arange(4).reshape([2,2]))
-        assert np.all(np.mult_ten(var).data == np.array([[00, 10], [20, 30]]))
-
-        # Verify 3-D arrays
-        var = Variable(np.arange(8).reshape([2,2,2]))
-        assert np.all(np.mult_ten(var).data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
