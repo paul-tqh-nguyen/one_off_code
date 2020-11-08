@@ -66,9 +66,5 @@ def test_numpy_replacement_fails_on_multiple_inputs():
 
         with pytest.raises(AttributeError, match="does_not_exist"):
         @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
-        def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
-            if isinstance(operand, Variable):
-                return Variable(np_mult_ten(operand.data))
-            else:
-                return np_mult_ten(operand)
-        
+        def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> str:
+            return 'bogus output'
