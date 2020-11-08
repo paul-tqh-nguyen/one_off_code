@@ -23,7 +23,7 @@ In this module, "var is indirectly relied upon mv" means that the Variable mv di
 # Imports #
 ###########
 
-from .variable import Variable
+from .variable import Variable, VariableOperand
 from . import optimizer
 
 ##########
