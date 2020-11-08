@@ -226,7 +226,9 @@ def test_differentiable_method_binary_no_name():
             b_is_var = isinstance(b, Variable)
             if a_is_var and b_is_var:
                 return Variable(np.multiply_then_halve(operand.data))
-            elif:
+            elif a_is_var:
+                pass
+            elif b_is_var:
                 pass
             else:
                 return np.multiply_then_halve(operand)
