@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from uuid import uuid4
 from contextlib import contextmanager
-from typing import Generator, Callable
+from typing import Union, Generator, Callable
 
 import sys ; sys.path.append("..")
 import autograd
