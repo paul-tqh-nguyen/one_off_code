@@ -218,7 +218,7 @@ def test_differentiable_method_binary_no_name():
     
     with temp_numpy_funcs(multiply_then_halve):
         
-        assert np.all(np.multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 2, 1.5]))
+        assert np.all(np.multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
         
         @Variable.differentiable_method()
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
