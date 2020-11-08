@@ -120,7 +120,7 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
     
     with temp_numpy_funcs(mult_ten):
         with pytest.raises(ValueError, match='does not specify a numpy function.'):
-            @Variable.numpy_replacement(np_mult_ten='np.bogus\name')
+            @Variable.numpy_replacement(np_mult_ten='np.bogus\name\with\slashes')
             def mult_ten(*args, **kwargs) -> None:
                 pass
             
