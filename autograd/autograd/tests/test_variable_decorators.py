@@ -30,6 +30,7 @@ def temp_variable_method_names(*method_names: List[str]) -> Generator:
         assert not hasattr(Variable, method_name)
     yield
     for method_name in method_names:
+        assert hasattr(Variable, method_name)
         delattr(np, method_name.__name__)
         assert not hasattr(Variable, method_name)
     return
