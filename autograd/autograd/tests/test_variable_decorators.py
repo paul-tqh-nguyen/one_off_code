@@ -236,13 +236,13 @@ def test_differentiable_method_binary_no_name():
             a_is_var = isinstance(a, Variable)
             b_is_var = isinstance(b, Variable)
             if a_is_var and b_is_var:
-                return Variable(np.multiply_then_halve(a.data, b.data))
+                return Variable(multiply_then_halve(a.data, b.data))
             elif a_is_var:
-                return Variable(np.multiply_then_halve(a.data, b))
+                return Variable(multiply_then_halve(a.data, b))
             elif b_is_var:
-                return Variable(np.multiply_then_halve(a, b.data))
+                return Variable(multiply_then_halve(a, b.data))
             else:
-                return np.multiply_then_halve(a, b)
+                return multiply_then_halve(a, b)
         
         var_a = Variable(10)
         var_b = Variable(5)
@@ -261,13 +261,13 @@ def test_differentiable_method_binary_one_name():
             a_is_var = isinstance(a, Variable)
             b_is_var = isinstance(b, Variable)
             if a_is_var and b_is_var:
-                return Variable(np.multiply_then_halve(a.data, b.data))
+                return Variable(multiply_then_halve(a.data, b.data))
             elif a_is_var:
-                return Variable(np.multiply_then_halve(a.data, b))
+                return Variable(multiply_then_halve(a.data, b))
             elif b_is_var:
-                return Variable(np.multiply_then_halve(a, b.data))
+                return Variable(multiply_then_halve(a, b.data))
             else:
-                return np.multiply_then_halve(a, b)
+                return multiply_then_halve(a, b)
         
         var_a = Variable(10)
         var_b = Variable(5)
