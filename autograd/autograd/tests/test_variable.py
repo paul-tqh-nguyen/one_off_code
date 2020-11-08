@@ -72,5 +72,4 @@ def test_numpy_replacement_fails_on_multiple_inputs():
                 return Variable(np_mult_ten(operand.data))
             else:
                 return np_mult_ten(operand)
-
-        assert np.mult_ten.__name__ == 'mult_ten'
+        
