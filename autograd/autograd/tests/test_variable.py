@@ -28,4 +28,4 @@ def test_differentiable_method():
     def mult_ten(array: np.ndarray) -> np.ndarray:
         return array*10
     with temp_numpy_func(mult_ten):
-        np.mult_ten(np.ones(4)) == np.full([4], 10)
+        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
