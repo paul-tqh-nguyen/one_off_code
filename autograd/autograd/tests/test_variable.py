@@ -89,7 +89,7 @@ def test_numpy_replacement_fails_on_bogus_internally_used_name():
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
 
         with pytest.raises(ValueError, match='is not a vaild identifier name.'):
-            @Variable.numpy_replacement(**{'np\mult\ten': 'np.mult_ten'})
+            @Variable.numpy_replacement(**{'np\mult/ten': 'np.mult_ten'})
             def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
                 if isinstance(operand, Variable):
                     return Variable(np_mult_ten(operand.data))
