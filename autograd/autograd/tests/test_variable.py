@@ -7,4 +7,6 @@ import autograd
 from autograd import Variable
 
 def test_():
-    numpy_replacement
+    unique_operation_name = f'dummy_func_{}'
+    setattr
+    
