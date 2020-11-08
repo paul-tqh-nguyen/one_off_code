@@ -244,7 +244,8 @@ def test_differentiable_method_binary_one_name():
         return (a*b)/2
     
     with temp_numpy_funcs(multiply_then_halve):
-
+        
+        
 def test_differentiable_method_binary_two_names():
     def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
