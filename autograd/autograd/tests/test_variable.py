@@ -7,6 +7,10 @@ import sys ; sys.path.append("..")
 import autograd
 from autograd import Variable
 
+################
+# Test Helpers #
+################
+
 @contextmanager
 def dummy_numpy_func(dummy_func_name: str) -> Generator:
     assert not hasattr(np, dummy_func)
