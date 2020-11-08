@@ -34,11 +34,13 @@ def test_basic_numpy_replacement():
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
         @Variable.numpy_replacement(np_mult_ten='np.mult_ten') # @todo test these numpy methods
-        def mult_ten(array: VariableOperand) -> np.ndarray:
-            if isinstance(array, Variable):
-                return Variable(np_mult_ten(array.data))
+        def mult_ten(operand: VariableOperand) -> np.ndarray:
+            print(f"operand {repr(operand)}")
+            print(f"isinstance(operand, Variable) {repr(isinstance(operand, Variable))}")
+            if isinstance(operand, Variable):
+                return Variable(np_mult_ten(operand.data))
             else:
-                return np_mult_ten(array)
+                return np_mult_ten(operand)
 
         x = Variable(np.arange(3))
         assert np.all(np.mult_ten(x) == np.array([10, 20, 30]))
