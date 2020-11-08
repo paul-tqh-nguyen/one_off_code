@@ -14,5 +14,5 @@ def test_():
     setattr(np, unique_operation_name, dummy_func)
     assert np.dummy_func(np.
     
-    delattr(np, unique_operation_name)
+    delattr(np, dummy_func.__qualname__)
     assert not hasattr(np, dummy_func.__qualname__)
