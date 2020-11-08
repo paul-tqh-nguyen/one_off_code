@@ -7,6 +7,6 @@ import autograd
 from autograd import Variable
 
 def test_():
-    unique_operation_name = f'dummy_func_{}'
+    unique_operation_name = f'dummy_func_{uuid4().int}'
     setattr
     
