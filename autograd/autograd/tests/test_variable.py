@@ -48,5 +48,5 @@ def test_basic_numpy_replacement():
         assert np.all(np.mult_ten(var).data == np.array([00, 10, 20]))
 
         # Verify 2-D arrays
-        var = Variable(np.arange(3))
+        var = Variable(np.arange(4).reshape([2,2]))
         assert np.all(np.mult_ten(var).data == np.array([00, 10, 20]))
