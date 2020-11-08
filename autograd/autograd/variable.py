@@ -180,7 +180,7 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
 # @todo test this with all combinations of types
 @Variable.differentiable_method('subtract', '__sub__') # @todo test these methods
 @Variable.numpy_replacement(np_subtract='np.subtract') # @todo test these numpy methods
-def subtract(minuend: VariableOperand, b: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
+def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
     minuend_is_variable = isinstance(minuend, Variable)
     b_is_variable = isinstance(b, Variable)
     minuend_data = minuend.data if minuend_is_variable else minuend
@@ -192,7 +192,7 @@ def subtract(minuend: VariableOperand, b: VariableOperand, np_subtract: Callable
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
     variable_depended_on_by_difference_to_backward_propagation_function = {}
     if minuend_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
+        variable_depended_on_by_difference_to_backward_propagation_function[minuend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
     if b_is_variable:
         variable_depended_on_by_difference_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
     difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_function)
