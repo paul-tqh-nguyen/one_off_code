@@ -1,4 +1,9 @@
 import pytest
+import numpy as np
 
-def test_sgd():
+import sys ; sys.path.append("..")
+import autograd
+from autograd import Variable
+
+def test_():
     
