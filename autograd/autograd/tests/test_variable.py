@@ -14,7 +14,7 @@ def dummy_numpy_operation(dummy_func_name: str) -> Generator:
     return
 
 def test_differentiable_method():
-
+    with dummy_func
     def dummy_func(array: np.ndarray) -> np.ndarray:
         return array*10    
     assert dummy_func.__qualname__ == dummy_func
