@@ -226,10 +226,10 @@ def test_differentiable_method_unary_two_names():
 def test_differentiable_method_binary_no_name():
     def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
+        
+    assert np.all(multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
     
     with temp_variable_method_names('multiply_then_halve'):
-        
-        assert np.all(np.multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
         
         @Variable.differentiable_method()
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
@@ -251,10 +251,10 @@ def test_differentiable_method_binary_no_name():
 def test_differentiable_method_binary_one_name():
     def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
+        
+    assert np.all(multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
     
     with temp_variable_method_names('mth'):
-        
-        assert np.all(np.multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
         
         @Variable.differentiable_method('mth')
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
