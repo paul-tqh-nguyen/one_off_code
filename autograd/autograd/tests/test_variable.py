@@ -13,11 +13,11 @@ from autograd import Variable
 ################
 
 @contextmanager
-def temporary_numpy_func(temporary_func: Callable) -> Generator:
-    assert not hasattr(np, temporary_func.__qualname__)
+def temp_numpy_func(temp_func: Callable) -> Generator:
+    assert not hasattr(np, temp_func.__qualname__)
     yield
-    delattr(np, temporary_func.__qualname__)
-    assert not hasattr(np, temporary_func.__qualname__)
+    delattr(np, temp_func.__qualname__)
+    assert not hasattr(np, temp_func.__qualname__)
     return
 
 #########
