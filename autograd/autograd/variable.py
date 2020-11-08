@@ -182,9 +182,9 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
 @Variable.numpy_replacement(np_subtract='np.subtract') # @todo test these numpy methods
 def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
     minuend_is_variable = isinstance(minuend, Variable)
-    b_is_variable = isinstance(b, Variable)
+    subtrahend_is_variable = isinstance(subtrahend, Variable)
     minuend_data = minuend.data if minuend_is_variable else minuend
-    b_data = b.data if b_is_variable else b
+    subtrahend_data = subtrahend.data if subtrahend_is_variable else subtrahend
     difference = np_subtract(minuend_data, b_data, **kwargs)
     if not minuend_is_variable and not b_is_variable:
         return difference
