@@ -70,7 +70,8 @@ class Variable:
                 kwargs[internally_used_name] = replaced_callable
                 return func(*args, **kwargs)
             decorated_function.__name__ = func.__name__ # @todo test invariant holds
-            for
+            np_path_sub_attributes = np_path.split('.')
+            for 
             return decorated_function
         return decorator
     
