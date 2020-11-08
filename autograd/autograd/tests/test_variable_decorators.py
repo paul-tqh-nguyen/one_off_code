@@ -224,10 +224,10 @@ def test_differentiable_method_unary_two_names():
         assert np.all(var.mult_ten_second().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
 def test_differentiable_method_binary_no_name():
-    def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+    def _multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
         
-    assert np.all(multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
+    assert np.all(_multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
     
     with temp_variable_method_names('multiply_then_halve'):
         
@@ -249,10 +249,10 @@ def test_differentiable_method_binary_no_name():
         assert np.all(var_a.multiply_then_halve(var_b).data == 25)
 
 def test_differentiable_method_binary_one_name():
-    def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+    def _multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
         
-    assert np.all(multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
+    assert np.all(_multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
     
     with temp_variable_method_names('mth'):
         
@@ -275,10 +275,10 @@ def test_differentiable_method_binary_one_name():
         assert 'multiply_then_halve' not in dir(var_a)
         
 def test_differentiable_method_binary_two_names():
-    def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+    def _multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
         
-    assert np.all(multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
+    assert np.all(_multiply_then_halve(np.ones(4), np.arange(4)) == np.array([0, 0.5, 1, 1.5]))
     
     with temp_variable_method_names('mth', 'times_then_take_half'):
         
