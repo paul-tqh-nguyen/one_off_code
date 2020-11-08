@@ -128,7 +128,9 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
 # Tests for differentiable_method #
 ###################################
 
-def test_basic_differentiable_method_unary(): # @todo test binary case as well
+# @todo test binary case as well
+
+def test_differentiable_method_unary():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
     
