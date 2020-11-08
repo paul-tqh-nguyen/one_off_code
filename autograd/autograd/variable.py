@@ -72,7 +72,6 @@ class Variable:
     def numpy_replacement(cls, **internally_used_name_to_np_path: Dict[str, str]) -> Callable:
         '''Replaces numpy methods via monkey patching.'''
         internally_used_name, np_path, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path)
-        # @todo inspect the signature of replaced_callable to make sure internally_used_name is not a parameter name
         def decorator(func: Callable):
             def decorated_function(*args, **kwargs):
                 assert internally_used_name not in kwargs.keys()
