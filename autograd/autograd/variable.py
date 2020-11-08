@@ -31,7 +31,7 @@ class Variable:
     # numpy_replacement Decorator
     
     @staticmethod
-    def _numpy_replacement_extract_inputs(internally_used_name_to_np_path: Dict[str, str]) -> Tuple[str, Callable]:
+    def _numpy_replacement_extract_inputs(internally_used_name_to_np_path: Dict[str, str]) -> Tuple[str, str, Callable]:
         if len(internally_used_name_to_np_path) != 1:
             raise ValueError(f'Only one numpy callable can be replaced. {len(internally_used_name_to_np_path)} were specified.') # @todo test this
         
@@ -57,7 +57,7 @@ class Variable:
 
         replaced_callable = getattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1])
 
-        return internally_used_name, replaced_callable
+        return internally_used_name, np_path replaced_callable
     
     @classmethod
     def numpy_replacement(cls, **internally_used_name_to_np_path: Dict[str, str]) -> Callable:
@@ -70,7 +70,7 @@ class Variable:
                 kwargs[internally_used_name] = replaced_callable
                 return func(*args, **kwargs)
             decorated_function.__name__ = func.__name__ # @todo test invariant holds
-            
+            for
             return decorated_function
         return decorator
     
