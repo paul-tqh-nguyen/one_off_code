@@ -65,7 +65,7 @@ def test_numpy_replacement_fails_on_multiple_inputs():
         return operand*10
     
     def mult_five(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
-        return operand*10
+        return operand*5
     
     with temp_numpy_funcs(mult_ten, mult_five):
         
