@@ -27,6 +27,8 @@ class Variable:
     ##############
     # Decorators #
     ##############
+
+    # numpy_replacement Decorator
     
     @staticmethod
     def _numpy_replacement_extract_inputs(internally_used_name_to_np_path: Dict[str, str]) -> Tuple[str, Callable]:
@@ -57,9 +59,10 @@ class Variable:
 
         return (internally_used_name, replaced_callable)
     
-    @staticmethod
-    def numpy_replacement(**internally_used_name_to_np_path: Dict[str, str]) -> Callable:
-        internally_used_name, replaced_callable = Variable._numpy_replacement_extract_inputs(internally_used_name_to_np_path)
+    @classmethod
+    def numpy_replacement(cls, **internally_used_name_to_np_path: Dict[str, str]) -> Callable:
+        '''Replaces numpy methods via monkey patching.'''
+        internally_used_name, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path)
         # @todo inspect the signature of replaced_callable to make sure internally_used_name is not a parameter name
         def decorator(func: Callable):
             def decorated_function(*args, **kwargs):
@@ -70,18 +73,27 @@ class Variable:
             decorated_function.__name__ = func.__name__ # @todo test invariant holds
             return decorated_function
         return decorator
+
+    # differentiable_method Decorator
     
-    @staticmethod
-    def differentiable_method(*method_names: List[str]) -> Callable: 
-        def decorator(func: Callable) -> Callable:
-            if len(method_names) == 0: # @todo test single, zero, and multiple method name cases
-                method_names = [func.__qualname__]
+    class _DifferentiableMethodDecorator:
+        def __init__(self, method_names: List[str]):
             for method_name in method_names:
                 if not method_name.isidentifier():
                     raise ValueError(f'"{method_name}" is not a valid method name.') # @todo test this
+            self.method_names = method_names
+            return
+        
+        def __call__(self, func: Callable) -> Callable:
+            if len(self.method_names) == 0: # @todo test single, zero, and multiple method name cases
+                self.method_names = [func.__qualname__]
+            for method_name in self.method_names:
                 setattr(Variable, method_name, func)
             return func
-        return decorator
+    
+    @classmethod
+    def differentiable_method(cls, *method_names: List[str]) -> Callable:
+        return cls._DifferentiableMethodDecorator(method_names)
 
     ###########
     # Methods #
@@ -152,6 +164,14 @@ class Variable:
         '''
         d_minimization_target_variable_over_d_self = self.minimization_target_variable_to_d_minimization_target_variable_over_d_self[minimization_target_variable]
         for variable_depended_upon_by_self, backward_propagation_function in self.variable_depended_upon_by_self_to_backward_propagation_function.items():
+            '''
+            backward_propagation_function updates d_minimization_target_variable_over_d_variable_depended_upon_by_self
+            self is a function of variable_depended_upon_by_self
+            self passes d_minimization_target_variable_over_d_self to variable_depended_upon_by_self
+            variable_depended_upon_by_self calculates d_self_over_variable_depended_upon_by_self
+            variable_depended_upon_by_self can then calculate d_minimization_target_variable_over_d_variable_depended_upon_by_self = d_minimization_target_variable_over_d_self * d_self_over_variable_depended_upon_by_self
+            This is what backward_propagation_function does.
+            '''
             backward_propagation_function(d_minimization_target_variable_over_d_self)
         return
     
@@ -159,34 +179,88 @@ class Variable:
 # Variable Operations #
 #######################
 
+VariableOperand = Union[int, float, np.number, np.ndarray, Variable]
+
 # @todo test this with all combinations of types
 @Variable.differentiable_method() # @todo test this method
 @Variable.numpy_replacement(np_dot='np.dot') # @todo test these numpy methods
-def dot(np_dot: Callable, a: Union[int, float, np.number, np.ndarray, Variable], b: Union[int, float, np.number, np.ndarray, Variable], out: Optional[np.ndarray]=None) -> Union[np.ndarray, Variable]:
-    a_is_array = isinstance(a, nd.array) # @todo change this to check if it is a variable instead
-    b_is_array = isinstance(b, nd.array)
-    a_data = a if a_is_array else a.data
-    b_data = b if b_is_array else b.data
+def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, out: Optional[np.ndarray]=None) -> VariableOperand:
+    a_is_variable = isinstance(a, Variable)
+    b_is_variable = isinstance(b, Variable)
+    a_data = a.data if a_is_variable else a
+    b_data = b.data if b_is_variable else b
     dot_product = np_dot(a_data, b_data, out)
-    if a_is_array and b_is_array:
+    if not a_is_variable and not b_is_variable:
         return dot_product
-    assert out is None, f'"out" parameter not supported for {Variable.__qualname__}'
+    if out is not None:
+        raise ValueError(f'"out" parameter not supported for {Variable.__qualname__}')
     variable_depended_upon_by_dot_product_to_backward_propagation_function = {}
-    if not a_is_array:
+    if a_is_variable:
         def propagate_gadient_to_a(d_minimization_target_over_d_dot_product: np.ndarray) -> None:
-            a.d_minimization_target_over_d_self += b.data
+            a.d_minimization_target_over_d_self += b_data
             return
         variable_depended_upon_by_dot_product_to_backward_propagation_function[a] = propagate_gadient_to_a
-    if not b_is_array:
+    if b_is_variable:
         def propagate_gadient_to_b(d_minimization_target_over_d_dot_product: np.ndarray) -> None:
-            b.d_minimization_target_over_d_self += a.data
+            b.d_minimization_target_over_d_self += a_data
             return
         variable_depended_upon_by_dot_product_to_backward_propagation_function[b] = propagate_gadient_to_b
     dot_product_variable = Variable(dot_product, variable_depended_upon_by_dot_product_to_backward_propagation_function)
     return dot_product_variable
 
-# @todo support np.float_power as Variable method named float_power
-# @todo support np.power as Variable methods named __pow__ and pow and power
+# @todo test this with all combinations of types
+@Variable.differentiable_method('subtract', '__sub__') # @todo test these methods
+@Variable.numpy_replacement(np_subtract='np.subtract') # @todo test these numpy methods
+def subtract(a: VariableOperand, b: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
+    a_is_variable = isinstance(a, Variable)
+    b_is_variable = isinstance(b, Variable)
+    a_data = a.data if a_is_variable else a
+    b_data = b.data if b_is_variable else b
+    difference = np_subtract(a_data, b_data, **kwargs)
+    if not a_is_variable and not b_is_variable:
+        return difference
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
+    variable_depended_upon_by_difference_to_backward_propagation_function = {}
+    if a_is_variable:
+        def propagate_gadient_to_a(d_minimization_target_over_d_difference: np.ndarray) -> None:
+            a.d_minimization_target_over_d_self += 1
+            return
+        variable_depended_upon_by_difference_to_backward_propagation_function[a] = propagate_gadient_to_a
+    if b_is_variable:
+        def propagate_gadient_to_b(d_minimization_target_over_d_difference: np.ndarray) -> None:
+            b.d_minimization_target_over_d_self += 1
+            return
+        variable_depended_upon_by_difference_to_backward_propagation_function[b] = propagate_gadient_to_b
+    difference_variable = Variable(difference, variable_depended_upon_by_difference_to_backward_propagation_function)
+    return difference_variable
+
+# @todo test this with all combinations of types
+@Variable.differentiable_method('power', 'pow', '__pow__') # @todo test these methods
+@Variable.numpy_replacement(np_float_power='np.float_power') # @todo test these numpy methods
+def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power: Callable, **kwargs) -> VariableOperand:
+    base_is_variable = isinstance(base, Variable)
+    exponent_is_variable = isinstance(exponent, Variable)
+    base_data = base.data if base_is_variable else base
+    exponent_data = exponent.data if exponent_is_variable else exponent
+    power = np_float_power(base_data, exponent_data, **kwargs)
+    if not base_is_variable and not exponent_is_variable:
+        return power
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}')
+    variable_depended_upon_by_power_to_backward_propagation_function = {}
+    if base_is_variable:
+        def propagate_gadient_to_base(d_minimization_target_over_d_power: np.ndarray) -> None:
+            base.d_minimization_target_over_d_self += exponent_data * np_float_power(base_data, exponent_data-1)
+            return
+        variable_depended_upon_by_power_to_backward_propagation_function[base] = propagate_gadient_to_base
+    if exponent_is_variable:
+        def propagate_gadient_to_b(d_minimization_target_over_d_power: np.ndarray) -> None:
+            exponent.d_minimization_target_over_d_self += power.data*np.log(base_data)
+            return
+        variable_depended_upon_by_power_to_backward_propagation_function[b] = propagate_gadient_to_exponent
+    power_variable = Variable(power, variable_depended_upon_by_power_to_backward_propagation_function)
+    return power_variable
 
 #############################
 # Backpropagation Execution #
