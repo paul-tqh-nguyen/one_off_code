@@ -221,7 +221,7 @@ def test_differentiable_method_binary_no_name():
         assert np.all(np.multiply_then_halve(np.ones(4)) == np.full([4], 10))
         
         @Variable.differentiable_method()
-        def multiply_then_halve(operand: VariableOperand) -> np.ndarray:
+        def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(np.multiply_then_halve(operand.data))
             else:
@@ -244,27 +244,6 @@ def test_differentiable_method_binary_one_name():
         return (a*b)/2
     
     with temp_numpy_funcs(multiply_then_halve):
-        
-        assert np.all(np.multiply_then_halve(np.ones(4)) == np.full([4], 10))
-        
-        @Variable.differentiable_method('multiply_then_halve_special_name')
-        def multiply_then_halve(operand: VariableOperand) -> np.ndarray:
-            if isinstance(operand, Variable):
-                return Variable(np.multiply_then_halve(operand.data))
-            else:
-                return np.multiply_then_halve(operand)
-        
-        # Verify 1-D arrays
-        var = Variable(np.arange(3))
-        assert np.all(var.multiply_then_halve_special_name().data == np.array([00, 10, 20]))
-
-        # Verify 2-D arrays
-        var = Variable(np.arange(4).reshape([2,2]))
-        assert np.all(var.multiply_then_halve_special_name().data == np.array([[00, 10], [20, 30]]))
-
-        # Verify 3-D arrays
-        var = Variable(np.arange(8).reshape([2,2,2]))
-        assert np.all(var.multiply_then_halve_special_name().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
 def test_differentiable_method_binary_two_names():
     def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
@@ -272,26 +251,3 @@ def test_differentiable_method_binary_two_names():
     
     with temp_numpy_funcs(multiply_then_halve):
         
-        assert np.all(np.multiply_then_halve(np.ones(4)) == np.full([4], 10))
-        
-        @Variable.differentiable_method('multiply_then_halve_first', 'multiply_then_halve_second')
-        def multiply_then_halve(operand: VariableOperand) -> np.ndarray:
-            if isinstance(operand, Variable):
-                return Variable(np.multiply_then_halve(operand.data))
-            else:
-                return np.multiply_then_halve(operand)
-        
-        # Verify 1-D arrays
-        var = Variable(np.arange(3))
-        assert np.all(var.multiply_then_halve_first().data == np.array([00, 10, 20]))
-        assert np.all(var.multiply_then_halve_second().data == np.array([00, 10, 20]))
-
-        # Verify 2-D arrays
-        var = Variable(np.arange(4).reshape([2,2]))
-        assert np.all(var.multiply_then_halve_first().data == np.array([[00, 10], [20, 30]]))
-        assert np.all(var.multiply_then_halve_second().data == np.array([[00, 10], [20, 30]]))
-
-        # Verify 3-D arrays
-        var = Variable(np.arange(8).reshape([2,2,2]))
-        assert np.all(var.multiply_then_halve_first().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
-        assert np.all(var.multiply_then_halve_second().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
