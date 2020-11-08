@@ -13,16 +13,16 @@ def dummy_numpy_operation(dummy_func_name: str) -> Generator:
     return
 
 def test_differentiable_method():
-    unique_operation_name = f'dummy_func'
-    assert not hasattr(np, unique_operation_name)
+    dummy_func = f'dummy_func'
+    assert not hasattr(np, dummy_func)
 
     def dummy_func(array: np.ndarray) -> np.ndarray:
         return array*10    
-    assert dummy_func.__qualname__ == unique_operation_name
+    assert dummy_func.__qualname__ == dummy_func
     
-    setattr(np, unique_operation_name, dummy_func)
+    setattr(np, dummy_func, dummy_func)
     assert np.dummy_func(np.
     
-    delattr(np, unique_operation_name)
-    assert not hasattr(np, unique_operation_name)
+    delattr(np, dummy_func)
+    assert not hasattr(np, dummy_func)
     
