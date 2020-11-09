@@ -87,7 +87,7 @@ class Variable:
         def __init__(self, method_names: List[str]):
             for method_name in method_names:
                 if not method_name.isidentifier():
-                    raise ValueError(f'"{method_name}" is not a valid method name.') # @todo test this
+                    raise ValueError(f'"{method_name}" is not a valid method name.')
             self.method_names = method_names
             return
         
