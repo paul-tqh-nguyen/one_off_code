@@ -34,9 +34,9 @@ def temp_variable_method_names(*method_names: List[str]) -> Generator:
         assert not hasattr(Variable, method_name)
     return
 
-###############################
-# Tests for numpy_replacement #
-###############################
+########################################
+# Tests for Variable.numpy_replacement #
+########################################
 
 def test_basic_numpy_replacement():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
