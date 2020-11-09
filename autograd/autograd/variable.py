@@ -173,6 +173,17 @@ def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     return result
 
+# @todo test this with all combinations of types
+@Variable.new_method('all') # @todo test this method
+@Variable.numpy_replacement(np_all='np.all') # @todo test these numpy methods
+def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.ndarray]:
+    operand_is_variable = isinstance(operand, Variable)
+    operand_data = operand.data if operand_is_variable else operand
+    result = np_all(operand, **kwargs)
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+    return result
+
 # @todo add eq, any, all
 # @todo add gt, gte, le, lte, neq
 
