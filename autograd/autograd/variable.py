@@ -166,7 +166,7 @@ class Variable:
 def any(operand: VariableOperand, np_any: Callable, **kwargs) -> VariableOperand:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
-    result = np_any(a_data, b_data, **kwargs)
+    result = np_any(operand, **kwargs)
     if not a_is_variable and not b_is_variable:
         return result
     if len(kwargs) > 0:
