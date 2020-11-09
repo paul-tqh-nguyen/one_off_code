@@ -106,6 +106,8 @@ class Variable:
     # Methods #
     ###########
 
+    counter = 0
+    
     def __init__(self, data: np.ndarray, directly_depended_on_variable_to_backward_propagation_function: Dict['Variable', Callable] = dict()):
         '''
         For self.directly_depended_on_variable_to_backward_propagation_function, 
