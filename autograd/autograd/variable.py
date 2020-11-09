@@ -157,7 +157,7 @@ class Variable:
      def eq(self, other: VariableOperand) -> Union[bool, np.ndarray]:
          return self == other
 
-     # @todo add gt,gte,le,lte,neq
+     # @todo add gt, gte, le, lte, neq
 
 #######################
 # Variable Operations #
