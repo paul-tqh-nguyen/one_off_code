@@ -105,8 +105,6 @@ class Variable:
     ###########
     # Methods #
     ###########
-
-    counter = 0 # @todo remove thos
     
     def __init__(self, data: np.ndarray, directly_depended_on_variable_to_backward_propagation_function: Dict['Variable', Callable] = dict()):
         '''
@@ -117,24 +115,22 @@ class Variable:
         '''
         self.data = data
         self.directly_depended_on_variable_to_backward_propagation_function = directly_depended_on_variable_to_backward_propagation_function
-        self.__class__.counter += 1 # @todo remove thos
-        self.id = self.__class__.counter # @todo remove thos
         return
-
-    def __repr__(self): # @todo remove thos
-        return f'Variable[{chr(self.id+96)}]'
 
     @property
     def directly_depended_on_variables(self):
         return self.directly_depended_on_variable_to_backward_propagation_function.keys()
     
-    def depended_on_variables(self) -> Generator: # @todo test this iterator directly
-        '''Yields all variables that self directly or indirectly relies on in topological order.'''
+    def depended_on_variables(self) -> Generator:
+        return reversed(list(self._depended_on_variables()))
+    
+    def _depended_on_variables(self) -> Generator:
+        '''Yields all variables that self directly or indirectly relies on in reverse topologically sorted order.'''
         visited_variables: Set[Variable] = set()
         def _traverse(var: Variable) -> Generator:
-            yield var
             visited_variables.add(var)
             yield from chain(*map(_traverse, filter(lambda next_var: next_var not in visited_variables, var.directly_depended_on_variables)))
+            yield var
         yield from _traverse(self)
     
     def calculate_gradient(self, d_minimization_target_variable_over_d_self: Union[int, float, np.number, np.ndarray]) -> Dict['Variable', Union[int, float, np.number, np.ndarray]]:
