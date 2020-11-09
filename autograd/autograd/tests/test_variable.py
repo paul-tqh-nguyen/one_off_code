@@ -4,6 +4,7 @@ import numpy as np
 import sys ; sys.path.append('..')
 import autograd
 from autograd import Variable
+from autograd.misc_utilities import *
 
 def test_variable_depended_on_variables():
     '''
@@ -31,7 +32,7 @@ def test_variable_depended_on_variables():
     f = b - e
     topologically_sorted_variables = list(f.depended_on_variables())
     assert len(topologically_sorted_variables) == len(set(topologically_sorted_variables)) == 6
-    map(id, topologically_sorted_variables)
+    topologically_sorted_variable_ids = eager_map(id, topologically_sorted_variables)
     a = topologically_sorted_variables.index(a)
     b = topologically_sorted_variables.index(b)
     c = topologically_sorted_variables.index(c)
