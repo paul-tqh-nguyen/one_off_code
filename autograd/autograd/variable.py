@@ -148,13 +148,13 @@ class Variable:
             directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
         return directly_depended_on_variable_to_gradient
 
+    def __eq__(self, 
+
 #######################
 # Variable Operations #
 #######################
 
 # @todo lots of boiler plate here; can we abstract it out?
-
-VariableOperand = Union[int, float, np.number, np.ndarray, Variable]
 
 # @todo test this with all combinations of types
 @Variable.differentiable_method() # @todo test this method
