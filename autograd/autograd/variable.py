@@ -227,4 +227,4 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
 ##########
 
 if __name__ == '__main__':
-    print('@todo fill this in')
+    print(f'This module contains the definition of the {Variable.__name__} class.')
