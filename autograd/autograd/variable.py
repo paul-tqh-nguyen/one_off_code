@@ -217,9 +217,8 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
 
 # @todo lots of boiler plate here; can we abstract it out?
 
-# @todo test this with all combinations of types
-@Variable.new_method() # @todo test this method
-@Variable.numpy_replacement(np_dot=['np.dot', 'np.ndarray.dot']) # @todo test these numpy methods
+@Variable.new_method()
+@Variable.numpy_replacement(np_dot=['np.dot', 'np.ndarray.dot'])
 def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
