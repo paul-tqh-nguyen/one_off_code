@@ -304,6 +304,11 @@ def test_differentiable_method_binary_two_names():
 def test_numpy_replacement_fails_on_bogus_name():
 
     with pytest.raises(ValueError, match='is not a valid method name.'):
+        @Variable.differentiable_method('bad!name')
+        def multiply_then_halve(*args, **kwargs) -> None:
+            pass
+
+    with pytest.raises(ValueError, match='is not a valid method name.'):
         @Variable.differentiable_method('good_name', 'bad!name')
         def multiply_then_halve(*args, **kwargs) -> None:
             pass
