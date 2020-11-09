@@ -33,7 +33,7 @@ class Variable:
     # numpy_replacement Decorator
     
     @staticmethod
-    def _numpy_replacement_extract_inputs(internally_used_name_to_np_path: Dict[str, str]) -> Tuple[str, str, Callable]:
+    def _numpy_replacement_extract_inputs(internally_used_name_to_np_path: Dict[str, str]) -> Tuple[str, List[str], Callable]:
         if len(internally_used_name_to_np_path) != 1:
             raise ValueError(f'Only one numpy callable can be replaced. {len(internally_used_name_to_np_path)} were specified.')
         
