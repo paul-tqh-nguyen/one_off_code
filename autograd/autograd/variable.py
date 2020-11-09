@@ -165,6 +165,10 @@ class Variable:
 
      # @todo add gt, gte, le, lte, neq
 
+##########################################
+# Variable Non-Differentiable Operations #
+##########################################
+
 ######################################
 # Variable Differentiable Operations #
 ######################################
