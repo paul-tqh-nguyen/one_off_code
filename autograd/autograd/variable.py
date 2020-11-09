@@ -153,7 +153,7 @@ class Variable:
     def all(self) -> Union[bool, np.ndarray]:
         return self.data.all() if isinstance(self.data, np.ndarray) else bool(self.data)
     
-    def any(self) -> Union[bool, np.ndarray]:
+    def any(self, **kwargs) -> Union[bool, np.ndarray]:
         return self.data.any() if isinstance(self.data, np.ndarray) else bool(self.data)
 
 ##########################################
