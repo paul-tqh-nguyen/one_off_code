@@ -150,11 +150,11 @@ class Variable:
             directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
         return directly_depended_on_variable_to_gradient
 
-    def all(self) -> Union[bool, np.ndarray]:
-        return self.data.all() if isinstance(self.data, np.ndarray) else bool(self.data)
+    def all(self, **kwargs) -> Union[bool, np.ndarray]:
+        return self.data.all(**kwargs) if isinstance(self.data, np.ndarray) else bool(self.data)
     
     def any(self, **kwargs) -> Union[bool, np.ndarray]:
-        return self.data.any() if isinstance(self.data, np.ndarray) else bool(self.data)
+        return self.data.any(**kwargs) if isinstance(self.data, np.ndarray) else bool(self.data)
 
 ##########################################
 # Variable Non-Differentiable Operations #
