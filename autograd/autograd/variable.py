@@ -36,7 +36,7 @@ class Variable:
     @staticmethod
     def _numpy_replacement_extract_inputs(internally_used_name_to_np_path_specification: Dict[str, Union[List[str], str]]) -> Tuple[str, List[str], List[Callable]]:
         if len(internally_used_name_to_np_path_specification) != 1:
-            raise ValueError(f'Only one internally used name can be specified for {numpy_replacement.__qualname__}. {len(internally_used_name_to_np_path_specification)} were given.')
+            raise ValueError(f'Only one internally used name can be specified. {len(internally_used_name_to_np_path_specification)} were given.')
         
         internally_used_name, np_path_specification = only_one(internally_used_name_to_np_path_specification.items())
         
