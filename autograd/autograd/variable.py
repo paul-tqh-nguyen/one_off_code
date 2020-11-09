@@ -42,7 +42,7 @@ class Variable:
         if isinstance(np_path_specification, str):
             np_paths = [np_path_specification]
         elif isinstance(np_path_specification, list):
-            pass
+            np_paths = np_path_specification
         else:
             raise ValueError(f'{np_path_specification} does not specify any numpy paths.') # @todo test this
 
