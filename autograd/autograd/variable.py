@@ -170,7 +170,7 @@ def any(a: VariableOperand, b: VariableOperand, np_any: Callable, **kwargs) -> V
     b_data = b.data if b_is_variable else b
     result = np_any(a_data, b_data, **kwargs)
     if not a_is_variable and not b_is_variable:
-        return dot_product
+        return result
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_any_product_to_backward_propagation_function = {}
