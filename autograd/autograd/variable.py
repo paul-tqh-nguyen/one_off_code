@@ -45,6 +45,7 @@ class Variable:
         elif isinstance(np_path_specification, list):
             np_paths = np_path_specification
         else:
+            print(f"np_path_specification {repr(np_path_specification)}")
             raise ValueError(f'{np_path_specification} does not specify a numpy callable.') # @todo test this
 
         if len(np_paths) == 0: # @todo test this
