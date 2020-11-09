@@ -45,7 +45,6 @@ class Variable:
         elif isinstance(np_path_specification, list):
             np_paths = np_path_specification
         else:
-            print(f"np_path_specification {repr(np_path_specification)}")
             raise ValueError(f'{np_path_specification} does not specify a numpy callable.') # @todo test this
 
         if len(np_paths) == 0: # @todo test this
@@ -68,7 +67,7 @@ class Variable:
             
             for np_path_sub_attribute_index, np_path_sub_attribute in enumerate(np_path_sub_attributes[1:-1], start=1):
                 if not hasattr(replaced_callable_parent_attribute, np_path_sub_attribute):
-                    raise ValueError(f'"{".".join(np_path_sub_attributes[:np_path_sub_attribute_index])}" does not specify a numpy callable.')
+                    raise ValueError(f'"{".".join(np_path_sub_attributes[:np_path_sub_attribute_index+1])}" does not specify a numpy callable.')
                 replaced_callable_parent_attribute = getattr(replaced_callable_parent_attribute, np_path_sub_attribute)
     
             if not hasattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1]):
