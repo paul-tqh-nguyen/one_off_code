@@ -43,7 +43,7 @@ class Variable:
             raise ValueError(f'"{internally_used_name}" is not a vaild identifier name.')
         
         replaced_callable_parent_attribute = np
-        np_path_sub_attributes = np_path.split('.')
+        np_path_sub_attributes = np_paths[0].split('.')
 
         if globals().get(np_path_sub_attributes[0]) != np:
             raise ValueError(f'"{np_path}" does not specify a numpy function.')
