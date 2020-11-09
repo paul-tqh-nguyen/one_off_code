@@ -106,7 +106,7 @@ class Variable:
     # Methods #
     ###########
 
-    counter = 0
+    counter = 0 # @todo remove thos
     
     def __init__(self, data: np.ndarray, directly_depended_on_variable_to_backward_propagation_function: Dict['Variable', Callable] = dict()):
         '''
@@ -121,8 +121,8 @@ class Variable:
         self.id = self.__class__.counter
         return
 
-    def __repr__(self):
-        return f''
+    def __repr__(self): # @todo remove thos
+        return f'Variable[{self.id}]'
 
     @property
     def directly_depended_on_variables(self):
