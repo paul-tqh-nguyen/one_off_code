@@ -303,6 +303,7 @@ def test_differentiable_method_binary_two_names():
 
 def test_numpy_replacement_fails_on_bogus_name():
 
+    with pytest.raises(ValueError, match='Only one numpy callable can be replaced.'):
         @Variable.numpy_replacement(np_mult_ten='np.mult_ten')
         def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
             pass
