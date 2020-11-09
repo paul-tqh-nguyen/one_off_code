@@ -135,10 +135,10 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
                 pass 
 
 ###################################
-# Tests for differentiable_method #
+# Tests for new_method #
 ###################################
 
-def test_differentiable_method_unary_no_name():
+def test_new_method_unary_no_name():
     def _mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
         
@@ -146,7 +146,7 @@ def test_differentiable_method_unary_no_name():
     
     with temp_variable_method_names('mult_ten'):
         
-        @Variable.differentiable_method()
+        @Variable.new_method()
         def mult_ten(operand: VariableOperand) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(_mult_ten(operand.data))
@@ -165,7 +165,7 @@ def test_differentiable_method_unary_no_name():
         var = Variable(np.arange(8).reshape([2,2,2]))
         assert np.all(var.mult_ten().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
-def test_differentiable_method_unary_one_name():
+def test_new_method_unary_one_name():
     def _mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
         
@@ -173,7 +173,7 @@ def test_differentiable_method_unary_one_name():
     
     with temp_variable_method_names('mult_ten_special_name'):
         
-        @Variable.differentiable_method('mult_ten_special_name')
+        @Variable.new_method('mult_ten_special_name')
         def mult_ten(operand: VariableOperand) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(_mult_ten(operand.data))
@@ -192,7 +192,7 @@ def test_differentiable_method_unary_one_name():
         var = Variable(np.arange(8).reshape([2,2,2]))
         assert np.all(var.mult_ten_special_name().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
-def test_differentiable_method_unary_two_names():
+def test_new_method_unary_two_names():
     def _mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
         
@@ -200,7 +200,7 @@ def test_differentiable_method_unary_two_names():
     
     with temp_variable_method_names('mult_ten_first', 'mult_ten_second'):
         
-        @Variable.differentiable_method('mult_ten_first', 'mult_ten_second')
+        @Variable.new_method('mult_ten_first', 'mult_ten_second')
         def mult_ten(operand: VariableOperand) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(_mult_ten(operand.data))
@@ -222,7 +222,7 @@ def test_differentiable_method_unary_two_names():
         assert np.all(var.mult_ten_first().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
         assert np.all(var.mult_ten_second().data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
-def test_differentiable_method_binary_no_name():
+def test_new_method_binary_no_name():
     def _multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
         
@@ -230,7 +230,7 @@ def test_differentiable_method_binary_no_name():
     
     with temp_variable_method_names('multiply_then_halve'):
         
-        @Variable.differentiable_method()
+        @Variable.new_method()
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
             a_is_var = isinstance(a, Variable)
             b_is_var = isinstance(b, Variable)
@@ -247,7 +247,7 @@ def test_differentiable_method_binary_no_name():
         var_b = Variable(5)
         assert np.all(var_a.multiply_then_halve(var_b).data == 25)
 
-def test_differentiable_method_binary_one_name():
+def test_new_method_binary_one_name():
     def _multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
         
@@ -255,7 +255,7 @@ def test_differentiable_method_binary_one_name():
     
     with temp_variable_method_names('mth'):
         
-        @Variable.differentiable_method('mth')
+        @Variable.new_method('mth')
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
             a_is_var = isinstance(a, Variable)
             b_is_var = isinstance(b, Variable)
@@ -273,7 +273,7 @@ def test_differentiable_method_binary_one_name():
         assert np.all(var_a.mth(var_b).data == 25)
         assert 'multiply_then_halve' not in dir(var_a)
         
-def test_differentiable_method_binary_two_names():
+def test_new_method_binary_two_names():
     def _multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return (a*b)/2
         
@@ -281,7 +281,7 @@ def test_differentiable_method_binary_two_names():
     
     with temp_variable_method_names('mth', 'multiple_and_then_take_half_after'):
         
-        @Variable.differentiable_method('mth', 'multiple_and_then_take_half_after')
+        @Variable.new_method('mth', 'multiple_and_then_take_half_after')
         def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
             a_is_var = isinstance(a, Variable)
             b_is_var = isinstance(b, Variable)
@@ -303,11 +303,11 @@ def test_differentiable_method_binary_two_names():
 def test_numpy_replacement_fails_on_bogus_name():
 
     with pytest.raises(ValueError, match='is not a valid method name.'):
-        @Variable.differentiable_method('bad!name')
+        @Variable.new_method('bad!name')
         def multiply_then_halve(*args, **kwargs) -> None:
             pass
 
     with pytest.raises(ValueError, match='is not a valid method name.'):
-        @Variable.differentiable_method('good_name', 'bad!name')
+        @Variable.new_method('good_name', 'bad!name')
         def multiply_then_halve(*args, **kwargs) -> None:
             pass
