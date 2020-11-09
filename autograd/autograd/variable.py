@@ -152,7 +152,10 @@ class Variable:
 
     def __eq__(self, other: VariableOperand) -> Union[bool, np.ndarray]:
         other_data = other.data if isinstance(other, Variable) else other
-        return self == other_data
+        return self.data == other_data
+    
+     def eq(self, other: VariableOperand) -> Union[bool, np.ndarray]:
+         return self == other
 
 #######################
 # Variable Operations #
