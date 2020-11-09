@@ -37,3 +37,8 @@ def test_variable_dot():
     assert a_array.dot(b) == expected_result
 
     # Check types
+    assert isinstance(a.dot(b), Variable)
+    assert isinstance(, Variable)
+    assert isinstance(, Variable)
+    assert isinstance(, Variable)
+    assert isinstance(, Variable)
