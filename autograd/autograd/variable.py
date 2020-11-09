@@ -117,7 +117,12 @@ class Variable:
         '''
         self.data = data
         self.directly_depended_on_variable_to_backward_propagation_function = directly_depended_on_variable_to_backward_propagation_function
+        self.counter += 1
+        self.id = self.counter
         return
+
+    def __repr__(self):
+        return f''
 
     @property
     def directly_depended_on_variables(self):
