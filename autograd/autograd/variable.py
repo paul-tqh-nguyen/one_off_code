@@ -62,6 +62,7 @@ class Variable:
                 raise ValueError(f'"{np_path}" does not specify a numpy callable.')
     
             replaced_callable = getattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1])
+            replaced_callables.push(replaced_callable)
     
         return internally_used_name, np_paths, replaced_callables
     
