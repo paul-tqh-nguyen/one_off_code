@@ -117,7 +117,7 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
                 pass
 
     with temp_numpy_funcs(mult_ten):
-        with pytest.raises(ValueError, match=''):
+        with pytest.raises(ValueError, match='"np.non_existent_name" does not specify a numpy callable.'):
             @Variable.numpy_replacement(np_mult_ten='np.non_existent_name')
             def mult_ten(*args, **kwargs) -> None:
                 pass
