@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from uuid import uuid4
 from contextlib import contextmanager
 from typing import List, Union, Generator, Callable
 
