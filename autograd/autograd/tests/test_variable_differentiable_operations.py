@@ -24,6 +24,7 @@ def test_variable_dot():
     
     # nupmy + numpy
     assert np.dot(a_array, b_array) == expected_result
+    assert np.ndarray.dot(a_array, b_array) == expected_result
     assert a_array.dot(b_array) == expected_result
     
     # Variable + numpy
