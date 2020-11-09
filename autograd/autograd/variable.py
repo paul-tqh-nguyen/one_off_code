@@ -183,23 +183,23 @@ def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.
 # @todo test this with all combinations of types
 @Variable.new_method('equal', 'eq', '__eq__') # @todo test this method
 @Variable.numpy_replacement(np_equal='np.equal') # @todo test these numpy methods
-def equal(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> VariableOperand:
+def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
-    dot_product = np_dot(a_data, b_data, **kwargs)
+    equal_product = np_equal(a_data, b_data, **kwargs)
     if not a_is_variable and not b_is_variable:
-        return dot_product
+        return equal_product
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_dot_product_to_backward_propagation_function = {}
+    variable_depended_on_by_equal_product_to_backward_propagation_function = {}
     if a_is_variable:
-        variable_depended_on_by_dot_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data
+        variable_depended_on_by_equal_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_equal_product: d_minimization_target_over_d_equal_product * b_data
     if b_is_variable:
-        variable_depended_on_by_dot_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * a_data
-    dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_function)
-    return dot_product_variable
+        variable_depended_on_by_equal_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_equal_product: d_minimization_target_over_d_equal_product * a_data
+    equal_product_variable = Variable(equal_product, variable_depended_on_by_equal_product_to_backward_propagation_function)
+    return equal_product_variable
 
 
 # @todo add gt, gte, le, lte, neq
