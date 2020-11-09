@@ -166,15 +166,13 @@ class Variable:
 def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
-    result = np_any(operand, **kwargs)
-    return result
+    return np_any(operand, **kwargs)
 
 @Variable.numpy_replacement(np_all='np.all')
 def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
-    result = np_all(operand, **kwargs)
-    return result
+    return np_all(operand, **kwargs)
 
 # @todo test this with all combinations of types
 @Variable.new_method('equal', 'eq', '__eq__') # @todo test this method
