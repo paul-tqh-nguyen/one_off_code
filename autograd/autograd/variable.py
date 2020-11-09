@@ -33,11 +33,11 @@ class Variable:
     # numpy_replacement Decorator
     
     @staticmethod
-    def _numpy_replacement_extract_inputs(internally_used_name_to_np_path: Dict[str, str]) -> Tuple[str, str, Callable]:
-        if len(internally_used_name_to_np_path) != 1:
-            raise ValueError(f'Only one numpy callable can be replaced. {len(internally_used_name_to_np_path)} were specified.')
+    def _numpy_replacement_extract_inputs(internally_used_name_to_np_paths: Dict[str, str]) -> Tuple[str, str, Callable]:
+        if len(internally_used_name_to_np_paths) != 1:
+            raise ValueError(f'Only one numpy callable can be replaced. {len(internally_used_name_to_np_paths)} were specified.')
         
-        internally_used_name, np_path = only_one(internally_used_name_to_np_path.items())
+        internally_used_name, np_path = only_one(internally_used_name_to_np_paths.items())
         
         if not internally_used_name.isidentifier():
             raise ValueError(f'"{internally_used_name}" is not a vaild identifier name.')
@@ -70,9 +70,9 @@ class Variable:
         return
     
     @classmethod
-    def numpy_replacement(cls, **internally_used_name_to_np_path: Dict[str, str]) -> Callable:
+    def numpy_replacement(cls, **internally_used_name_to_np_paths: Dict[str, str]) -> Callable:
         '''Replaces numpy methods via monkey patching.'''
-        internally_used_name, np_path, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path)
+        internally_used_name, np_path, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_paths)
         def decorator(func: Callable):
             def decorated_function(*args, **kwargs):
                 assert internally_used_name not in kwargs.keys()
