@@ -111,7 +111,7 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
         return operand*10
         
     with temp_numpy_funcs(mult_ten):
-        with pytest.raises(ValueError, match='does not specify a numpy function.'):
+        with pytest.raises(ValueError, match='"np.non" does not exist.'):
             @Variable.numpy_replacement(np_mult_ten='np.non.existent.path.mult_ten')
             def mult_ten(*args, **kwargs) -> None:
                 pass
