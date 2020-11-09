@@ -9,6 +9,7 @@
 # Imports #
 ###########
 
+from forbiddenfruit import curse
 from itertools import chain
 from collections import defaultdict
 import numpy as np
