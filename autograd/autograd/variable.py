@@ -160,8 +160,10 @@ class Variable:
 # Variable Non-Differentiable Operations #
 ##########################################
 
+# @todo test this with all combinations of types
 @Variable.new_method() # @todo test this method
-def eq(a: VariableOperand, b: VariableOperand) -> VariableOperand:
+@Variable.numpy_replacement(np_dot='np.dot') # @todo test these numpy methods
+def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
@@ -179,14 +181,7 @@ def eq(a: VariableOperand, b: VariableOperand) -> VariableOperand:
     dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_function)
     return dot_product_variable
 
-    def __eq__(self, other: VariableOperand) -> Union[bool, np.ndarray]: # @todo test this
-        other_data = other.data if isinstance(other, Variable) else other
-        return self.data == other_data
-    
-     def eq(self, other: VariableOperand) -> Union[bool, np.ndarray]: # @todo test this
-         return self == other
-
-     # @todo add gt, gte, le, lte, neq
+# @todo add gt, gte, le, lte, neq
 
 ######################################
 # Variable Differentiable Operations #
