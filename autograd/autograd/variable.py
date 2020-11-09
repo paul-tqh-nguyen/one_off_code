@@ -117,8 +117,8 @@ class Variable:
         '''
         self.data = data
         self.directly_depended_on_variable_to_backward_propagation_function = directly_depended_on_variable_to_backward_propagation_function
-        self.__class__.counter += 1
-        self.id = self.__class__.counter
+        self.__class__.counter += 1 # @todo remove thos
+        self.id = self.__class__.counter # @todo remove thos
         return
 
     def __repr__(self): # @todo remove thos
