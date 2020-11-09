@@ -304,6 +304,5 @@ def test_differentiable_method_binary_two_names():
 def test_numpy_replacement_fails_on_bogus_name():
 
     with pytest.raises(ValueError, match='is not a valid method name.'):
-        @Variable.numpy_replacement(np_mult_ten='np.mult_ten')
-        def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
-            pass
+        @Variable.differentiable_method('good_name', 'bad!name')
+        def multiply_then_halve(a: Union[int, float, np.number, np.ndarray], b: Union[int, float, np.number, np.ndarray]) -> np.ndarray:
