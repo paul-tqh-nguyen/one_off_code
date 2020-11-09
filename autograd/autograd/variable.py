@@ -54,6 +54,8 @@ class Variable:
 
         replaced_callables: List[Callable] = []
         for np_path in np_paths:
+            print(f"np_path {repr(np_path)}")
+            print(f"np_paths {repr(np_paths)}")
 
             if not isinstance(np_path, str):
                 raise ValueError(f'{np_path_specification} does not specify a numpy callable.') # @todo test this
