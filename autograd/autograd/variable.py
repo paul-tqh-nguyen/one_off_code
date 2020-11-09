@@ -46,7 +46,7 @@ class Variable:
             raise ValueError(f'"{internally_used_name}" is not a vaild identifier name.')
         
         replaced_callable_parent_attribute = np
-        np_path = np_paths[0]
+        np_path = np_paths[0] # Choose the first one, assume
         np_path_sub_attributes = np_path.split('.')
 
         if globals().get(np_path_sub_attributes[0]) != np:
@@ -75,7 +75,7 @@ class Variable:
     
     @classmethod
     def numpy_replacement(cls, **internally_used_name_to_np_paths: Dict[str, str]) -> Callable:
-        '''Replaces numpy methods via monkey patching.'''
+        '''Replaces (possibly many) numpy methods with one given function via monkey patching.'''
         internally_used_name, np_path, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_paths)
         def decorator(func: Callable):
             def decorated_function(*args, **kwargs):
