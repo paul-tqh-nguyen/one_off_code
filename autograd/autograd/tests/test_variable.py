@@ -39,10 +39,10 @@ def test_variable_depended_on_variables():
     d_index = topologically_sorted_variable_ids.index(id(d))
     e_index = topologically_sorted_variable_ids.index(id(e))
     f_index = topologically_sorted_variable_ids.index(id(f))
-    assert f < e
-    assert f < b
-    assert e < d
-    assert d < a
-    assert d < c
-    assert c < a
-    assert c < b
+    assert f_index < e_index
+    assert f_index < b_index
+    assert e_index < d_index
+    assert d_index < a_index
+    assert d_index < c_index
+    assert c_index < a_index
+    assert c_index < b_index
