@@ -122,7 +122,7 @@ class Variable:
         return
 
     def __repr__(self): # @todo remove thos
-        return f'Variable[{chr(self.id+61)}]'
+        return f'Variable[{chr(self.id+60)}]'
 
     @property
     def directly_depended_on_variables(self):
