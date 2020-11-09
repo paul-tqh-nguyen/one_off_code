@@ -174,7 +174,7 @@ def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.
     return result
 
 # @todo test this with all combinations of types
-@Variable.new_method('all')
+#@Variable.new_method('all')
 @Variable.numpy_replacement(np_all='np.all')
 def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.ndarray]:
     print(f"operand {repr(operand)}")
