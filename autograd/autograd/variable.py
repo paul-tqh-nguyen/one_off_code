@@ -221,10 +221,3 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
 
 # @todo support np.power
 # @todo support __eq__ and other comparators
-
-##########
-# Driver #
-##########
-
-if __name__ == '__main__':
-    print(f'This module contains the definition of the {Variable.__name__} class.')
