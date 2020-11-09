@@ -163,8 +163,8 @@ class Variable:
 # @todo there's a lot of boiler plate here, let's abstract it out
 
 # @todo test this with all combinations of types
-@Variable.new_method('any') # @todo test this method
-@Variable.numpy_replacement(np_any='np.any') # @todo test these numpy methods
+@Variable.new_method('any')
+@Variable.numpy_replacement(np_any='np.any')
 def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
@@ -174,8 +174,8 @@ def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.
     return result
 
 # @todo test this with all combinations of types
-@Variable.new_method('all') # @todo test this method
-@Variable.numpy_replacement(np_all='np.all') # @todo test these numpy methods
+@Variable.new_method('all')
+@Variable.numpy_replacement(np_all='np.all')
 def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
