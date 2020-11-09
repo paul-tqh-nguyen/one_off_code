@@ -8,4 +8,4 @@ dependencies:
   - more-itertools
   - pip
   - pip:
-    - forbiddenfruit 0.1.3
+    - forbiddenfruit
