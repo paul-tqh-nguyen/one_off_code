@@ -40,7 +40,7 @@ class Variable:
         internally_used_name, np_paths = only_one(internally_used_name_to_np_paths.items())
 
         if len(np_path) == 0: # @todo test this
-            raise ValueError(f'Only one numpy callable can be replaced. {len(internally_used_name_to_np_paths)} were specified.') # @todo update this string
+            raise ValueError(f'No numpy callable specified to be replaced.')
         
         if not internally_used_name.isidentifier():
             raise ValueError(f'"{internally_used_name}" is not a vaild identifier name.')
