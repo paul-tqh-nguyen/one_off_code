@@ -44,7 +44,8 @@ class Variable:
         
         if not internally_used_name.isidentifier():
             raise ValueError(f'"{internally_used_name}" is not a vaild identifier name.')
-        
+
+        replaced_callables = []
         for np_path in np_paths:
             replaced_callable_parent_attribute = np
             np_path_sub_attributes = np_path.split('.')
