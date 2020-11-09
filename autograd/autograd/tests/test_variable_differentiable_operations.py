@@ -38,7 +38,7 @@ def test_variable_dot():
 
     # Check types
     assert isinstance(a.dot(b), Variable)
-    assert isinstance(, Variable)
+    assert isinstance(np.dot(a, b), Variable)
     assert isinstance(, Variable)
     assert isinstance(, Variable)
     assert isinstance(, Variable)
