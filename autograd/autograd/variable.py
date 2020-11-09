@@ -163,7 +163,7 @@ class Variable:
 # @todo test this with all combinations of types
 @Variable.new_method() # @todo test this method
 @Variable.numpy_replacement(np_dot='np.dot') # @todo test these numpy methods
-def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> VariableOperand:
+def any(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
