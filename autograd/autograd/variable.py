@@ -181,6 +181,7 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
     dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_function)
     return dot_product_variable
 
+# @todo add eq, any, all
 # @todo add gt, gte, le, lte, neq
 
 ######################################
