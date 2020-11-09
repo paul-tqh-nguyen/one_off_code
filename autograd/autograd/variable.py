@@ -174,8 +174,8 @@ def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.
     operand_data = operand.data if operand_is_variable else operand
     return np_all(operand, **kwargs)
 
-@Variable.new_method('equal', 'eq', '__eq__') # @todo test this method
-@Variable.numpy_replacement(np_equal='np.equal') # @todo test these numpy methods
+@Variable.new_method('equal', 'eq', '__eq__')
+@Variable.numpy_replacement(np_equal='np.equal')
 def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
