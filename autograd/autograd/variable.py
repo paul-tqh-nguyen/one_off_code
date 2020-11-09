@@ -155,7 +155,10 @@ class Variable:
     
     def any(self) -> Union[bool, np.ndarray]:
         return self.data.any() if isinstance(self.data, np.ndarray) else bool(self.data)
-    
+
+##########################################
+# Variable Non-Differentiable Operations #
+##########################################
     def __eq__(self, other: VariableOperand) -> Union[bool, np.ndarray]: # @todo test this
         other_data = other.data if isinstance(other, Variable) else other
         return self.data == other_data
@@ -164,10 +167,6 @@ class Variable:
          return self == other
 
      # @todo add gt, gte, le, lte, neq
-
-##########################################
-# Variable Non-Differentiable Operations #
-##########################################
 
 ######################################
 # Variable Differentiable Operations #
