@@ -39,14 +39,15 @@ class Variable:
         
         internally_used_name, np_paths = only_one(internally_used_name_to_np_paths.items())
 
-        if len(np_path) == 0: # @todo test this
+        if len(np_paths) == 0: # @todo test this
             raise ValueError(f'No numpy callable specified to be replaced.')
         
         if not internally_used_name.isidentifier():
             raise ValueError(f'"{internally_used_name}" is not a vaild identifier name.')
         
         replaced_callable_parent_attribute = np
-        np_path_sub_attributes = np_paths[0].split('.')
+        np_path = np_paths[0]
+        np_path_sub_attributes = np_path.split('.')
 
         if globals().get(np_path_sub_attributes[0]) != np:
             raise ValueError(f'"{np_path}" does not specify a numpy function.')
