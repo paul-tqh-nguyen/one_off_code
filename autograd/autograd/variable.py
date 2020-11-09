@@ -160,6 +160,8 @@ class Variable:
 # Variable Non-Differentiable Operations #
 ##########################################
 
+# @todo there's a lot of boiler plate here, let's abstract it out
+
 # @todo test this with all combinations of types
 @Variable.new_method('any') # @todo test this method
 @Variable.numpy_replacement(np_any='np.any') # @todo test these numpy methods
