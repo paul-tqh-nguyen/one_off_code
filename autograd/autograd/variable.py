@@ -180,7 +180,7 @@ def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     return result
 
-# @todo add eq, any, all
+# @todo add eq
 # @todo add gt, gte, le, lte, neq
 
 ######################################
