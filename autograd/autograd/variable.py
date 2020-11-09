@@ -92,7 +92,7 @@ class Variable:
             return
         
         def __call__(self, func: Callable) -> Callable:
-            if len(self.method_names) == 0: # @todo test single, zero, and multiple method name cases
+            if len(self.method_names) == 0:
                 self.method_names = [func.__name__]
             for method_name in self.method_names:
                 setattr(Variable, method_name, func)
