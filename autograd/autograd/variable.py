@@ -165,9 +165,9 @@ class Variable:
 
      # @todo add gt, gte, le, lte, neq
 
-#######################
-# Variable Operations #
-#######################
+######################################
+# Variable Differentiable Operations #
+######################################
 
 # @todo lots of boiler plate here; can we abstract it out?
 
