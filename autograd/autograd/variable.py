@@ -167,8 +167,6 @@ def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
     result = np_any(operand, **kwargs)
-    if len(kwargs) > 0:
-        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     return result
 
 @Variable.numpy_replacement(np_all='np.all')
@@ -176,8 +174,6 @@ def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
     result = np_all(operand, **kwargs)
-    if len(kwargs) > 0:
-        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     return result
 
 # @todo test this with all combinations of types
@@ -188,7 +184,7 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
-    equal_product = np_equal(a_data, b_data, **kwargs)
+    result = np_equal(a_data, b_data, **kwargs)
     return equal_product
 
 
