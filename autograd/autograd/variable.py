@@ -88,8 +88,11 @@ class Variable:
         print(f"module {repr(module)}")
         print(f"np_path_sub_attributes[-1] {repr(np_path_sub_attributes[-1])}")
         print(f"replacement_function {repr(replacement_function)}")
-        #setattr(module, np_path_sub_attributes[-1], replacement_function)
-        forbiddenfruit.curse(module, np_path_sub_attributes[-1], replacement_function)
+        try:
+            setattr(module, np_path_sub_attributes[-1], replacement_function)
+        except TypeError as error:
+            print(f"error {repr(error)}")
+            forbiddenfruit.curse(module, np_path_sub_attributes[-1], replacement_function)
         return
     
     @classmethod
