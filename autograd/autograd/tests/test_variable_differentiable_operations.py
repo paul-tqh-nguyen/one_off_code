@@ -32,4 +32,4 @@ def test_variable_dot():
     
     # numpy + Variable
     assert a_array.dot(b) == expected_result
-    assert np_array.dot(a, b) == expected_result
+    assert np.ndarray.dot(a, b) == expected_result
