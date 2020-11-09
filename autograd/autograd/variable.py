@@ -153,6 +153,9 @@ class Variable:
     def all(self) -> Union[bool, np.ndarray]: # @todo test this
         return self.data.all() if isinstance(self.data, np.ndarray) else bool(self.data)
     
+    def any(self) -> Union[bool, np.ndarray]: # @todo test this
+        return self.data.any() if isinstance(self.data, np.ndarray) else bool(self.data)
+    
     def __eq__(self, other: VariableOperand) -> Union[bool, np.ndarray]: # @todo test this
         other_data = other.data if isinstance(other, Variable) else other
         return self.data == other_data
