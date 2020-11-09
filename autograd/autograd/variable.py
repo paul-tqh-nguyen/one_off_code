@@ -83,7 +83,7 @@ class Variable:
             return decorated_function
         return decorator
     
-    # differentiable_method Decorator
+    # new_method Decorator
     
     class _DifferentiableMethodDecorator:
         def __init__(self, method_names: List[str]):
@@ -101,7 +101,7 @@ class Variable:
             return func
     
     @classmethod
-    def differentiable_method(cls, *method_names: List[str]) -> Callable:
+    def new_method(cls, *method_names: List[str]) -> Callable:
         return cls._DifferentiableMethodDecorator(method_names)
 
     ###########
@@ -176,7 +176,7 @@ class Variable:
 # @todo lots of boiler plate here; can we abstract it out?
 
 # @todo test this with all combinations of types
-@Variable.differentiable_method() # @todo test this method
+@Variable.new_method() # @todo test this method
 @Variable.numpy_replacement(np_dot='np.dot') # @todo test these numpy methods
 def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
@@ -197,7 +197,7 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
     return dot_product_variable
 
 # @todo test this with all combinations of types
-@Variable.differentiable_method('subtract', '__sub__') # @todo test these methods
+@Variable.new_method('subtract', '__sub__') # @todo test these methods
 @Variable.numpy_replacement(np_subtract='np.subtract') # @todo test these numpy methods
 def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
     minuend_is_variable = isinstance(minuend, Variable)
@@ -218,7 +218,7 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     return difference_variable
 
 # @todo test this with all combinations of types
-@Variable.differentiable_method('power', 'pow', '__pow__') # @todo test these methods
+@Variable.new_method('power', 'pow', '__pow__') # @todo test these methods
 @Variable.numpy_replacement(np_float_power='np.float_power') # @todo test these numpy methods
 def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power: Callable, **kwargs) -> VariableOperand:
     base_is_variable = isinstance(base, Variable)
