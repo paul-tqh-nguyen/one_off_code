@@ -39,6 +39,12 @@ def test_variable_dot():
     # Check types
     assert isinstance(a.dot(b), Variable)
     assert isinstance(np.dot(a, b), Variable)
-    assert isinstance(, Variable)
-    assert isinstance(, Variable)
-    assert isinstance(, Variable)
+    assert isinstance(np.dot(a_array, b_array), Variable)
+    assert isinstance(np.ndarray.dot(a_array, b_array), Variable)
+    assert isinstance(a_array.dot(b_array), Variable)
+    assert isinstance(a.dot(b_array), Variable)
+    assert isinstance(np.dot(a, b_array), Variable)
+    assert isinstance(np.dot(a, b), Variable)
+    assert isinstance(np.ndarray.dot(a, b), Variable)
+    assert isinstance(a_array.dot(b), Variable)
+
