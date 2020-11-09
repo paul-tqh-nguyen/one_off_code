@@ -168,7 +168,7 @@ def any(a: VariableOperand, b: VariableOperand, np_any: Callable, **kwargs) -> V
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
-    dot_product = np_any(a_data, b_data, **kwargs)
+    result = np_any(a_data, b_data, **kwargs)
     if not a_is_variable and not b_is_variable:
         return dot_product
     if len(kwargs) > 0:
