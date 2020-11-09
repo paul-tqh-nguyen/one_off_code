@@ -163,6 +163,7 @@ class Variable:
 # @todo there's a lot of boiler plate here, let's abstract it out
 
 # @todo test this with all combinations of types
+#@Variable.new_method('any')
 @Variable.numpy_replacement(np_any='np.any')
 def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
