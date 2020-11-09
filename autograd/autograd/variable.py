@@ -22,6 +22,8 @@ from .misc_utilities import *
 # Variable Classes #
 ####################
 
+VariableOperand = Union[int, float, np.number, np.ndarray, 'Variable']
+
 class Variable:
 
     ##############
