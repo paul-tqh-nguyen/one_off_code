@@ -37,7 +37,8 @@ class Variable:
         if len(internally_used_name_to_np_path_specification) != 1:
             raise ValueError(f'Only one internally used name can be specified for {numpy_replacement.__qualname__}. {len(internally_used_name_to_np_path_specification)} were given.')
         
-        internally_used_name, np_paths = only_one(internally_used_name_to_np_path_specification.items())
+        internally_used_name, np_path_specification = only_one(internally_used_name_to_np_path_specification.items())
+        np_paths = np_path_specification if isinstance(np_path_specification, list) else [np_path_specification]
 
         if len(np_paths) == 0: # @todo test this
             raise ValueError(f'No numpy callable specified to be replaced.')
