@@ -150,7 +150,7 @@ class Variable:
             directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
         return directly_depended_on_variable_to_gradient
 
-    def __eq__(self, 
+    def __eq__(self, other: VariableOperand) -> Union[bool, np.ndarray]
 
 #######################
 # Variable Operations #
