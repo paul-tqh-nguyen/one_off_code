@@ -6,3 +6,6 @@ dependencies:
   - pytest
   - pytest-cov
   - more-itertools
+  - pip
+  - pip:
+    - forbiddenfruit 0.1.3
