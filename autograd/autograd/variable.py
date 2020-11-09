@@ -162,7 +162,6 @@ class Variable:
 
 # @todo there's a lot of boiler plate here, let's abstract it out
 
-# @todo test this with all combinations of types
 @Variable.numpy_replacement(np_any='np.any')
 def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
@@ -172,7 +171,6 @@ def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     return result
 
-# @todo test this with all combinations of types
 @Variable.numpy_replacement(np_all='np.all')
 def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
