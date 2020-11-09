@@ -16,6 +16,8 @@ def test_variable_dot():
     assert np.all(b_array == b.data)
     assert id(a_array) != id(a.data)
     assert id(b_array) != id(b.data)
+
+    def validate_result(result) -> None:
     
     # Variable + Variable
     print(f"a.dot(b).data {repr(a.dot(b).data)}")
