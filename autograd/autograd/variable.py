@@ -44,7 +44,7 @@ class Variable:
         elif isinstance(np_path_specification, list):
             np_paths = np_path_specification
         else:
-            raise ValueError(f'{np_path_specification} does not specify any numpy paths.') # @todo test this
+            raise ValueError(f'{np_path_specification} does not specify a numpy callable.') # @todo test this
 
         if len(np_paths) == 0: # @todo test this
             raise ValueError(f'No numpy callable specified to be replaced.')
@@ -54,6 +54,10 @@ class Variable:
 
         replaced_callables: List[Callable] = []
         for np_path in np_paths:
+
+            if not isinstance(np_path, str):
+                raise ValueError(f'{np_path_specification} does not specify a numpy callable.')
+            
             replaced_callable_parent_attribute = np
             np_path_sub_attributes = np_path.split('.')
     
