@@ -93,7 +93,7 @@ class Variable:
         Replaces numpy methods via monkey patching.
         The single input function 
             - will replace all numpy callables specified.
-            - will internally use the replaced calllable, which the input function will use and refer to internally via the single keyword arg name passed to numpy_replacement.
+            - will internally use the replaced calllable.
         This decorator will replace the numpy callables as specified, but the single given function will not be changed and will be returned.
         '''
         internally_used_name, np_paths, replaced_callables = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path_specification)
@@ -105,7 +105,7 @@ class Variable:
                     return func(*args, **kwargs)
                 decorated_function.__name__ = func.__name__
                 cls._replace_numpy_method(np_path, decorated_function)
-            return func
+            return decorated_function
         return decorator
     
     # new_method Decorator
