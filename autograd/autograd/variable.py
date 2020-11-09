@@ -146,7 +146,6 @@ class Variable:
         for depended_on_variable, calculate_depended_on_variable_gradient in self.directly_depended_on_variable_to_backward_propagation_function.items():
             gradient = calculate_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
             directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
-            # @todo add shape assertions here
         return directly_depended_on_variable_to_gradient
 
 #######################
