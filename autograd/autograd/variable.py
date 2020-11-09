@@ -93,13 +93,13 @@ class Variable:
         internally_used_name, np_paths, replaced_callables = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path_specification)
         def decorator(func: Callable):
             for np_path, replaced_callable in zip(np_paths, replaced_callables):
-            def decorated_function(*args, **kwargs):
-                assert internally_used_name not in kwargs.keys()
-                kwargs[internally_used_name] = replaced_callable
-                return func(*args, **kwargs)
-            decorated_function.__name__ = func.__name__
-            cls._replace_numpy_method(np_path, decorated_function)
-            return decorated_function
+                def decorated_function(*args, **kwargs):
+                    assert internally_used_name not in kwargs.keys()
+                    kwargs[internally_used_name] = replaced_callable
+                    return func(*args, **kwargs)
+                decorated_function.__name__ = func.__name__
+                cls._replace_numpy_method(np_path, decorated_function)
+                return decorated_function
         return decorator
     
     # new_method Decorator
