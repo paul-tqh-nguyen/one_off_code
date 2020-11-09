@@ -66,10 +66,3 @@ class SGD(Optimizer):
         for variable, d_minimization_variable_over_d_variable in variable_to_gradient.items():
             variable.data -= self.learning_rate * d_minimization_variable_over_d_variable
         return
-
-##########
-# Driver #
-##########
-
-if __name__ == '__main__':
-    print(f'This module contains the definition of the {Optimizer.__name__} abstract class and its concrete child classes.')
