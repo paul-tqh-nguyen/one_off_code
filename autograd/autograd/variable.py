@@ -58,7 +58,7 @@ class Variable:
                 replaced_callable_parent_attribute = getattr(replaced_callable_parent_attribute, np_path_sub_attribute)
     
             if not hasattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1]):
-                raise ValueError(f'"{np_path}" does not specify a numpy function.')
+                raise ValueError(f'"{np_path}" does not specify a numpy callable.')
     
             replaced_callable = getattr(replaced_callable_parent_attribute, np_path_sub_attributes[-1])
     
