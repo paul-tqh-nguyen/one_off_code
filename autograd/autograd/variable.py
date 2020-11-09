@@ -77,7 +77,7 @@ class Variable:
         return
     
     @classmethod
-    def numpy_replacement(cls, **internally_used_name_to_np_path_specification: Dict[str, str]) -> Callable:
+    def numpy_replacement(cls, **internally_used_name_to_np_path_specification: Dict[str, Union[List[str], str]]) -> Callable:
         '''Replaces numpy methods via monkey patching. The single given function willl replace all numpy callables specified. '''
         internally_used_name, np_path, replaced_callable = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path_specification)
         def decorator(func: Callable):
