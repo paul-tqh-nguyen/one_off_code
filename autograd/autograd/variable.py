@@ -164,8 +164,6 @@ class Variable:
          return self == other
 
      # @todo add gt, gte, le, lte, neq
-     # @todo add tolist
-     # @todo add copy
 
 #######################
 # Variable Operations #
