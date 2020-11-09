@@ -165,7 +165,7 @@ class Variable:
 # @todo test this with all combinations of types
 @Variable.new_method('any') # @todo test this method
 @Variable.numpy_replacement(np_any='np.any') # @todo test these numpy methods
-def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[int, float, np.number, np.ndarray]:
+def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
     result = np_any(operand, **kwargs)
