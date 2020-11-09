@@ -134,9 +134,9 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
             def mult_ten(*args, **kwargs) -> None:
                 pass 
 
-###################################
-# Tests for new_method #
-###################################
+#################################
+# Tests for Variable.new_method #
+#################################
 
 def test_new_method_unary_no_name():
     def _mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
