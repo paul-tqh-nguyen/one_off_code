@@ -151,8 +151,7 @@ class Variable:
         return directly_depended_on_variable_to_gradient
 
     def all(self) -> Union[bool, np.ndarray]: # @todo test this
-        if isinstance(self.data, np.ndarray):
-            return self.data.all()
+        return self.data.all() if isinstance(self.data, np.ndarray) else bool(self.data)
     
     def __eq__(self, other: VariableOperand) -> Union[bool, np.ndarray]: # @todo test this
         other_data = other.data if isinstance(other, Variable) else other
