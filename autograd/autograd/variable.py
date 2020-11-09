@@ -88,12 +88,10 @@ class Variable:
         try:
             setattr(module, np_path_sub_attributes[-1], replacement_function)
         except TypeError as error:
-            print(f"error.args {repr(error.args)}")
-            print(f"module {repr(module)}")
-            print(f"np_path_sub_attributes[-1] {repr(np_path_sub_attributes[-1])}")
-            print(f"replacement_function {repr(replacement_function)}")
-            exit()
-            forbiddenfruit.curse(module, np_path_sub_attributes[-1], replacement_function)
+            if len(error.args) > 0 and 'can\'t set attributes of built-in/extension type' in error.args[0]:
+                forbiddenfruit.curse(module, np_path_sub_attributes[-1], replacement_function)
+            else:
+                raise error
         return
     
     @classmethod
