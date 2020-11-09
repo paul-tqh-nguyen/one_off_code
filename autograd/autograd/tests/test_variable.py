@@ -33,12 +33,12 @@ def test_variable_depended_on_variables():
     topologically_sorted_variables = list(f.depended_on_variables())
     assert len(topologically_sorted_variables) == len(set(topologically_sorted_variables)) == 6
     topologically_sorted_variable_ids = eager_map(id, topologically_sorted_variables)
-    a = topologically_sorted_variables.index(a)
-    b = topologically_sorted_variables.index(b)
-    c = topologically_sorted_variables.index(c)
-    d = topologically_sorted_variables.index(d)
-    e = topologically_sorted_variables.index(e)
-    f = topologically_sorted_variables.index(f)
+    a = topologically_sorted_variable_ids.index(a)
+    b = topologically_sorted_variable_ids.index(b)
+    c = topologically_sorted_variable_ids.index(c)
+    d = topologically_sorted_variable_ids.index(d)
+    e = topologically_sorted_variable_ids.index(e)
+    f = topologically_sorted_variable_ids.index(f)
     assert f < e
     assert f < b
     assert e < d
