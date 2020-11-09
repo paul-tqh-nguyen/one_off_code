@@ -44,22 +44,3 @@ def test_variable_depended_on_variables():
     assert d < c
     assert c < a
     assert c < b
-
-def test_variable_all_any():
-    var = Variable(np.arange(10))
-    assert not var.all()
-    assert var.any()
-    
-    var = Variable(np.arange(10)+12)
-    assert var.all()
-    assert var.any()
-
-    var = Variable(np.zeros(10))
-    assert not var.all()
-    assert not var.any()
-
-def test_variable_eq():
-    a = Variable(np.arange(10))
-    b = Variable(np.arange(10), dtype=float)
-    assert a.eq(b).all()
-    assert (a == b).all()
