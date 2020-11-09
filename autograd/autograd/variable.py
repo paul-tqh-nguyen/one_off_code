@@ -164,10 +164,8 @@ class Variable:
 @Variable.new_method('any') # @todo test this method
 @Variable.numpy_replacement(np_any='np.any') # @todo test these numpy methods
 def any(operand: VariableOperand, np_any: Callable, **kwargs) -> VariableOperand:
-    a_is_variable = isinstance(a, Variable)
-    b_is_variable = isinstance(b, Variable)
-    a_data = a.data if a_is_variable else a
-    b_data = b.data if b_is_variable else b
+    operand_is_variable = isinstance(operand, Variable)
+    operand_data = operand.data if operand_is_variable else operand
     result = np_any(a_data, b_data, **kwargs)
     if not a_is_variable and not b_is_variable:
         return result
