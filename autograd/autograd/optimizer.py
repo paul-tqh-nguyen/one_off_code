@@ -72,4 +72,4 @@ class SGD(Optimizer):
 ##########
 
 if __name__ == '__main__':
-    print('@todo fill this in')
+    print(f'This module contains the definition of the {Optimizer.__name__} abstract class and its concrete child classes.')
