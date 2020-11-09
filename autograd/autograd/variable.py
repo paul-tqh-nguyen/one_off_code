@@ -167,17 +167,9 @@ def any(operand: VariableOperand, np_any: Callable, **kwargs) -> VariableOperand
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
     result = np_any(operand, **kwargs)
-    if not a_is_variable and not b_is_variable:
-        return result
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_any_product_to_backward_propagation_function = {}
-    if a_is_variable:
-        variable_depended_on_by_any_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_any_product: d_minimization_target_over_d_any_product * b_data
-    if b_is_variable:
-        variable_depended_on_by_any_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_any_product: d_minimization_target_over_d_any_product * a_data
-    dot_product_variable = Variable(dot_product, variable_depended_on_by_any_product_to_backward_propagation_function)
-    return dot_product_variable
+    return result
 
 # @todo add eq, any, all
 # @todo add gt, gte, le, lte, neq
