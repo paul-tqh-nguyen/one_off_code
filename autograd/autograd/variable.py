@@ -185,7 +185,7 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
     result = np_equal(a_data, b_data, **kwargs)
-    return equal_product
+    return result
 
 
 # @todo add gt, gte, le, lte, neq
