@@ -26,9 +26,9 @@ def test_variable_dot():
     assert np.dot(a_array, b_array) == expected_result
     assert a_array.dot(b_array) == expected_result
     
-#     # Variable + numpy
-#     assert a.dot(b_array) == expected_result
-#     assert np.dot(a, b_array) == expected_result
+print(f"#     # Variable + numpy {repr(#     # Variable + numpy)}")
+print(f"#     assert a.dot(b_array) == expected_result {repr(#     assert a.dot(b_array) == expected_result)}")
+print(f"#     assert np.dot(a, b_array) == expected_result {repr(#     assert np.dot(a, b_array) == expected_result)}")
     
 #     # numpy + Variable
 #     assert a_array.dot(b) == expected_result
