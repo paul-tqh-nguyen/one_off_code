@@ -56,7 +56,7 @@ class Variable:
         for np_path in np_paths:
 
             if not isinstance(np_path, str):
-                raise ValueError(f'{np_path_specification} does not specify a numpy callable.')
+                raise ValueError(f'{np_path_specification} does not specify a numpy callable.') # @todo test this
             
             replaced_callable_parent_attribute = np
             np_path_sub_attributes = np_path.split('.')
