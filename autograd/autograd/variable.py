@@ -177,6 +177,7 @@ def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.
 @Variable.new_method('all')
 @Variable.numpy_replacement(np_all='np.all')
 def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.ndarray]:
+    print(f"operand {repr(operand)}")
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
     result = np_all(operand, **kwargs)
