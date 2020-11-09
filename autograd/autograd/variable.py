@@ -92,7 +92,7 @@ class Variable:
         '''
         Replaces numpy methods via monkey patching.
         The single given function will replace all numpy callables specified.
-        This decorator will replace the numpy callables as specified, but the single given function will not be changed.
+        This decorator will replace the numpy callables as specified, but the single given function will not be changed and will be returned as is.
         '''
         internally_used_name, np_paths, replaced_callables = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path_specification)
         def decorator(func: Callable) -> Callable:
