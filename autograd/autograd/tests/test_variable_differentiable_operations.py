@@ -18,6 +18,8 @@ def test_variable_dot():
     assert id(b_array) != id(b.data)
 
     def validate_result(result) -> None:
+        assert result == expected_result
+        return
     
     # Variable + Variable
     print(f"a.dot(b).data {repr(a.dot(b).data)}")
