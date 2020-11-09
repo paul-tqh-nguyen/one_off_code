@@ -300,3 +300,18 @@ def test_differentiable_method_binary_two_names():
         assert np.all(var_a.mth(var_b).data == 25)
         assert np.all(var_a.multiple_and_then_take_half_after(var_b).data == 25)
         assert 'multiply_then_halve' not in dir(var_a)
+
+def test_numpy_replacement_fails_on_bogus_name():
+    def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*10
+    
+    with temp_numpy_funcs(mult_ten):
+        
+        assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+        
+        @Variable.numpy_replacement(np_mult_ten='np.mult_ten')
+        def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
+            if isinstance(operand, Variable):
+                return Variable(np_mult_ten(operand.data))
+            else:
+                return np_mult_ten(operand)
