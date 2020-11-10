@@ -32,7 +32,7 @@ def test_variable_dot():
     
     # nupmy + numpy
     validate_result(np.dot(a_array, b_array), np.int64)
-    validate_result(np.int.dot(a_array, b_array), np.int64)
+    validate_result(np.ndarray.dot(a_array, b_array), np.int64)
     validate_result(a_array.dot(b_array), np.int64)
     
     # Variable + numpy
