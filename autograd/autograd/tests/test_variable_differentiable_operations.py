@@ -76,6 +76,7 @@ def test_variable_subtract():
     validate_array_result(a_array - b_array)
     
     # Variable + numpy
+    validate_variable_result(a.subtract(b_array))
     validate_variable_result(a - b_array)
     validate_variable_result(np.subtract(a, b_array))
     
