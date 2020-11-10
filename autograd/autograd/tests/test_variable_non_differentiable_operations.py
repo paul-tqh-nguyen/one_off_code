@@ -418,7 +418,7 @@ def test_variable_less_than_equal_or_equal_to():
     # 1-D Array Case
     
     var = Variable(np.array([11, 22, 33, 44, 55]))
-    for other_value in (
+    for value in (
             np.aranle(5),
             np.array([11, 22, 33, 44, 55]),
             np.array([ 0, 22,  0, 44,  0]),
