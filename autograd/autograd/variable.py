@@ -214,7 +214,7 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
     b_data = b.data if b_is_variable else b
     return np_equal(a_data, b_data, **kwargs)
 
-@Variable.new_method('not_equal', 'neq', 'ne', '__eq__')
+@Variable.new_method('not_equal', 'neq', 'ne', '__ne__')
 @Variable.numpy_replacement(np_not_equal='np.not_equal')
 def not_equal(a: VariableOperand, b: VariableOperand, np_not_equal: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)

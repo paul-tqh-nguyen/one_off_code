@@ -116,3 +116,68 @@ def test_variable_equal():
     assert np.equal(np.array(7, dtype=float), var).all()
     assert (np.array(7) == var).all()
 
+def test_variable_not_equal():
+
+    # 1-D Array Case
+    
+    var = Variable(np.arange(5))
+    other_var = Variable(np.arange(5))
+    # Variable + Variable
+    assert var.equal(other_var).all()
+    assert var.eq(other_var).all()
+    assert (var == other_var).all()
+    assert np.equal(var, other_var).all()
+    # nupmy + numpy
+    assert np.equal(np.arange(5), np.arange(5)).all()
+    assert (np.arange(5) == np.arange(5)).all()
+    # Variable + numpy
+    assert var.equal(np.arange(5)).all()
+    assert var.eq(np.arange(5)).all()
+    assert (var == np.arange(5)).all()
+    assert np.equal(var, np.arange(5, dtype=float)).all()
+    # numpy + Variable
+    assert np.equal(np.arange(5, dtype=float), var).all()
+    assert (np.arange(5) == var).all()
+    
+    # 0-D Array Case
+    
+    var = Variable(np.array(9))
+    other_var = Variable(np.array(9))
+    # Variable + Variable
+    assert var.equal(other_var)
+    assert var.eq(other_var)
+    assert var == other_var
+    assert np.equal(var, other_var)
+    # nupmy + numpy
+    assert np.equal(np.array(9), np.array(9))
+    assert np.all(np.array(9) == np.array(9))
+    # Variable + numpy
+    assert var.equal(np.array(9)).all()
+    assert var.eq(np.array(9)).all()
+    assert (var == np.array(9)).all()
+    assert np.equal(var, np.array(9, dtype=float)).all()
+    # numpy + Variable
+    assert np.equal(np.array(9, dtype=float), var).all()
+    assert (np.array(9) == var).all()
+    
+    # Python Int Case
+    
+    var = Variable(7)
+    other_var = Variable(7)
+    # Variable + Variable
+    assert var.equal(other_var)
+    assert var.eq(other_var)
+    assert var == other_var
+    assert np.equal(var, other_var)
+    # nupmy + numpy
+    assert np.equal(np.array(7), np.array(7))
+    assert np.all(np.array(7) == np.array(7))
+    # Variable + numpy
+    assert var.equal(np.array(7)).all()
+    assert var.eq(np.array(7)).all()
+    assert (var == np.array(7)).all()
+    assert np.equal(var, np.array(7, dtype=float)).all()
+    # numpy + Variable
+    assert np.equal(np.array(7, dtype=float), var).all()
+    assert (np.array(7) == var).all()
+
