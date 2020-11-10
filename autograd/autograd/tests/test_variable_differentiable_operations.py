@@ -198,5 +198,5 @@ def test_variable_pow():
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
     difference = a**b
     variable_to_gradient = sgd.take_training_step(result)
-    assert np.all(variable_to_gradient[a] == )
+    assert np.all(variable_to_gradient[a] == np.log(a)*a)
     assert np.all(variable_to_gradient[b] == )
