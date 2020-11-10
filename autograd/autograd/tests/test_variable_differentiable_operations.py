@@ -57,9 +57,6 @@ def test_variable_subtract():
     assert id(expected_result_variable) != id(expected_result_array)
 
     def validate_variable_result(result) -> None:
-        print(f"result.eq(expected_result_variable) {repr(result.eq(expected_result_variable))}")
-        print(f"result.data {repr(result.data)}")
-        print(f"expected_result_variable.data {repr(expected_result_variable.data)}")
         assert result.eq(expected_result_variable).all()
         assert isinstance(result, Variable)
         return
