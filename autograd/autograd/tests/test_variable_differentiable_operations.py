@@ -150,9 +150,9 @@ def test_variable_subtract():
     assert np.all(variable_to_gradient[b] == np.full(b.shape, -1))
 
 def test_variable_pow():
-    a_array = 2**np.arange(5, dtype=float)
+    a_array = np.arange(5, dtype=float)+1
     b_array = np.array([0, 2, 2, 3, 3], dtype=float)
-    a = Variable(2**np.arange(5, dtype=float))
+    a = Variable(np.arange(5, dtype=float)+1)
     b = Variable(np.array([0, 2, 2, 3, 3], dtype=float))
     expected_result_variable = Variable(np.array([1, 1, 4, 27, 64]))
     expected_result_array = np.array([1, 1, 4, 27, 64])
