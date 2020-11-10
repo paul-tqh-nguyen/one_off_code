@@ -50,20 +50,16 @@ def test_sgd_dot():
 
 def test_squaring_equal_to_self_multiplication():
     # Variables
-    x_1 = Variable(np.arange(10))
-    x_2 = Variable(np.arange(10))
+    x_1 = Variable(np.arange(4))
+    x_2 = Variable(np.arange(4))
 
     # Optimizer
-    learning_rate = 1e-4
+    learning_rate = 0.1
     sgd_1 = autograd.optimizer.SGD(learning_rate)
     sgd_2 = autograd.optimizer.SGD(learning_rate)
     
     # Take Training Step
-    for _ in range(50):
-        y = x.dot(np.array([-10, 50]))
-        y_hat = 0
-        diff = np.subtract(y, y_hat)
-        loss = diff ** 2
+    loss = diff ** 2
         sgd.take_training_step(loss)
         if np.abs(loss.data) < 1e-3:
             break
