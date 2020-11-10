@@ -173,10 +173,11 @@ class Variable:
             Each entry's key is a variable (let's call it var) that self directly relies on.
             Each entry's value is gradient for var (i.e. d_minimization_target_variable_over_d_var).
         '''
-        directly_depended_on_variable_to_gradient = {}
-        for depended_on_variable, calculate_depended_on_variable_gradient in self.directly_depended_on_variable_to_backward_propagation_functions.items():
-            gradient = calculate_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
-            directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
+        directly_depended_on_variable_to_gradient = defaultdict(lambda: 0)
+        for depended_on_variable, backward_propagation_functions in self.directly_depended_on_variable_to_backward_propagation_functions.items():
+            for calculate_depended_on_variable_gradient in backward_propagation_functions:
+                gradient = calculate_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
+                directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
         return directly_depended_on_variable_to_gradient
 
     def all(self, **kwargs) -> Union[bool, np.ndarray]:
