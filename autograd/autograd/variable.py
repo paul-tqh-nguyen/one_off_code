@@ -257,9 +257,9 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_product_to_backward_propagation_function = {}
     if a_is_variable:
-        variable_depended_on_by_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product
+        variable_depended_on_by_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * b_data
     if b_is_variable:
-        variable_depended_on_by_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product
+        variable_depended_on_by_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * a_data
     product_variable = Variable(product, variable_depended_on_by_product_to_backward_propagation_function)
     return product_variable
 
