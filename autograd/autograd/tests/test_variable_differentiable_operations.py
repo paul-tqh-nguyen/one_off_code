@@ -152,8 +152,8 @@ def test_variable_subtract():
 def test_variable_pow():
     a_array = np.arange(5)
     b_array = np.array([0, 2, 2, 3, 3])
-    a = Variable(np.arange(5))
-    b = Variable(np.array(([0, 2, 2, 3, 3])))
+    a = Variable(np.arange(5, dtype=float))
+    b = Variable(np.array([0, 2, 2, 3, 3], dtype=float))
     expected_result_variable = Variable(np.array([1, 1, 4, 27, 64]))
     expected_result_array = np.array([1, 1, 4, 27, 64])
     
@@ -196,7 +196,7 @@ def test_variable_pow():
     
     # Verify Derivative
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
-    difference = a**b
+    result = a**b
     variable_to_gradient = sgd.take_training_step(result)
     assert np.all(variable_to_gradient[a] == np.log(a_array)*a_array)
     assert np.all(variable_to_gradient[b] == b_array*(a_array**(b_array-1)))
