@@ -23,7 +23,7 @@ from .misc_utilities import *
 # Optimizers #
 ##############
 
-# @todo add gradient clipping as a parameter to take_training_step
+# @todo add gradient clipping as a parameter to take_training_step or as an initialization parameter
 
 class Optimizer(ABC):
     
