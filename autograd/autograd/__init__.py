@@ -25,10 +25,3 @@ In this module, "var is indirectly relied upon mv" means that the Variable mv di
 
 from .variable import Variable, VariableOperand
 from . import optimizer
-
-##########
-# Driver #
-##########
-
-if __name__ == '__main__':
-    print('@todo fill this in')
