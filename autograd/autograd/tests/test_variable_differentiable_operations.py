@@ -46,7 +46,7 @@ def test_variable_subtract():
     a = Variable(np.arange(5))
     b = Variable(np.array([3, 8, 5, 6, 8]))
     expected_result_variable = Variable(np.array([-3, 7, 3, 2, 3]))
-    expected_result_array = np.array([-3. 7, 3, 2, 3])
+    expected_result_array = np.array([-3, 7, 3, 2, 3])
     
     assert np.all(a_array == a.data)
     assert np.all(b_array == b.data)
