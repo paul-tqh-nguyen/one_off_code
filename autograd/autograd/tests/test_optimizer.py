@@ -59,7 +59,8 @@ def test_squaring_equal_to_self_multiplication():
     sgd_2 = autograd.optimizer.SGD(learning_rate)
     
     # Take Training Step
-    loss = diff ** 2
+    loss_1 = (Variable(np.full(4, 5)) - x_1)** 2
+    loss_2 = (Variable(np.full(4, 5)) - x_1)** 2
         sgd.take_training_step(loss)
         if np.abs(loss.data) < 1e-3:
             break
