@@ -241,7 +241,7 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
         variable_depended_on_by_dot_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data)
     if b_is_variable:
         variable_depended_on_by_dot_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * a_data)
-    dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_functions)
+    dot_product_variable = Variable(dot_product, dict(variable_depended_on_by_dot_product_to_backward_propagation_functions))
     return dot_product_variable
 
 @Variable.new_method('multiply', '__mul__')
@@ -261,7 +261,7 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
         variable_depended_on_by_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * b_data)
     if b_is_variable:
         variable_depended_on_by_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * a_data)
-    product_variable = Variable(product, variable_depended_on_by_product_to_backward_propagation_functions)
+    product_variable = Variable(product, dict(variable_depended_on_by_product_to_backward_propagation_functions))
     return product_variable
 
 @Variable.new_method('subtract', '__sub__')
@@ -281,7 +281,7 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
         variable_depended_on_by_difference_to_backward_propagation_functions[minuend].append(lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference)
     if subtrahend_is_variable:
         variable_depended_on_by_difference_to_backward_propagation_functions[subtrahend].append(lambda d_minimization_target_over_d_difference: -d_minimization_target_over_d_difference)
-    difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_functions)
+    difference_variable = Variable(difference, dict(variable_depended_on_by_difference_to_backward_propagation_functions))
     return difference_variable
 
 @Variable.new_method('power', 'pow', '__pow__')
@@ -301,6 +301,6 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
         variable_depended_on_by_power_to_backward_propagation_functions[base].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1))
     if exponent_is_variable:
         variable_depended_on_by_power_to_backward_propagation_functions[exponent].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data))
-    power_variable = Variable(power, variable_depended_on_by_power_to_backward_propagation_functions)
+    power_variable = Variable(power, dict(variable_depended_on_by_power_to_backward_propagation_functions))
     return power_variable
 
