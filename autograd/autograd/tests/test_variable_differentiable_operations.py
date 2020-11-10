@@ -50,6 +50,7 @@ def test_variable_subtract():
     
     assert np.all(a_array == a.data)
     assert np.all(b_array == b.data)
+    assert np.all(expected_result_variable == expected_result_array)
     assert id(a_array) != id(a.data)
     assert id(b_array) != id(b.data)
 
