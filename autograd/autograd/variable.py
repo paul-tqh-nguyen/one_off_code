@@ -177,7 +177,8 @@ class Variable:
         for depended_on_variable, backward_propagation_functions in self.directly_depended_on_variable_to_backward_propagation_functions.items():
             for calculate_depended_on_variable_gradient in backward_propagation_functions:
                 gradient = calculate_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
-                directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
+                directly_depended_on_variable_to_gradient[depended_on_variable] += gradient
+        directly_depended_on_variable_to_gradient = dict(directly_depended_on_variable_to_gradient)
         return directly_depended_on_variable_to_gradient
 
     def all(self, **kwargs) -> Union[bool, np.ndarray]:
