@@ -338,6 +338,7 @@ def test_variable_greater_than_equal_or_equal_to():
     # Variable + Variable
     assert var.greater_equal(other_var).all()
     assert var.greater_than_equal(other_var).all()
+    assert var.ge(other_var).all()
     assert var.gte(other_var).all()
     assert (var >= other_var).all()
     assert np.greater_equal(var, other_var).all()
@@ -347,6 +348,7 @@ def test_variable_greater_than_equal_or_equal_to():
     # Variable + numpy
     assert var.greater_equal(np.arange(5)).all()
     assert var.greater_than_equal(np.arange(5)).all()
+    assert var.ge(np.arange(5)).all()
     assert var.gte(np.arange(5)).all()
     assert (var >= np.arange(5)).all()
     assert np.greater_equal(var, np.arange(5, dtype=float)).all()
@@ -361,6 +363,7 @@ def test_variable_greater_than_equal_or_equal_to():
     # Variable + Variable
     assert var.greater_equal(other_var)
     assert var.greater_than_equal(other_var)
+    assert var.ge(other_var)
     assert var.gte(other_var)
     assert var >= other_var
     assert np.greater_equal(var, other_var)
@@ -370,6 +373,7 @@ def test_variable_greater_than_equal_or_equal_to():
     # Variable + numpy
     assert var.greater_equal(np.array(9)).all()
     assert var.greater_than_equal(np.array(9)).all()
+    assert var.ge(np.array(9)).all()
     assert var.gte(np.array(9)).all()
     assert (var >= np.array(9)).all()
     assert np.greater_equal(var, np.array(9, dtype=float)).all()
@@ -381,22 +385,25 @@ def test_variable_greater_than_equal_or_equal_to():
     
     var = Variable(84)
     other_var = Variable(37)
-    # Variable + Variable
-    assert var.greater_equal(other_var)
-    assert var.greater_than_equal(other_var)
-    assert var.gte(other_var)
-    assert var >= other_var
-    assert np.greater_equal(var, other_var)
-    # nupmy + numpy
-    assert np.greater_equal(np.array(84), np.array(37))
-    assert np.all(np.array(84) >= np.array(37))
-    # Variable + numpy
-    assert var.greater_equal(np.array(37)).all()
-    assert var.greater_than_equal(np.array(37)).all()
-    assert var.gte(np.array(37)).all()
-    assert (var >= np.array(37)).all()
-    assert np.greater_equal(var, np.array(37, dtype=float)).all()
-    # numpy + Variable
-    assert np.greater_equal(var, np.array(37, dtype=float)).all()
-    assert (var >= np.array(37)).all()
-
+        # Variable + Variable
+        assert var.greater_equal(other_var)
+        assert var.greater_than_equal(other_var)
+        assert var.ge(other_var)
+        assert var.gte(other_var)
+        assert var >= other_var
+        assert np.greater_equal(var, other_var)
+        # nupmy + numpy
+        assert np.greater_equal(np.array(84), np.array(37))
+        assert np.all(np.array(84) >= np.array(37))
+        # Variable + numpy
+        assert var.greater_equal(np.array(37)).all()
+        assert var.greater_than_equal(np.array(37)).all()
+        assert var.ge(np.array(37)).all()
+        assert var.gte(np.array(37)).all()
+        assert (var >= np.array(37)).all()
+        assert np.greater_equal(var, np.array(37, dtype=float)).all()
+        # numpy + Variable
+        assert np.greater_equal(var, np.array(37, dtype=float)).all()
+        assert (var >= np.array(37)).all()
+    
+    
