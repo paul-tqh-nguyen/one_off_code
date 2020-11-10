@@ -435,11 +435,11 @@ def test_variable_less_than_equal_or_equal_to():
         assert np.less_equal(value.copy(), np.array([11, 22, 33, 44, 55])).all()
         assert (value.copy() <= np.array([11, 22, 33, 44, 55])).all()
         # Variable + numpy
-        assert var.less_equal(value.copy()).all()
-        assert var.less_than_equal(value.copy()).all()
-        assert var.le(value.copy()).all()
-        assert var.lte(value.copy()).all()
-        assert (var <= value.copy()).all()
+        assert var.less_equal(np.array([11, 22, 33, 44, 55])).all()
+        assert var.less_than_equal(np.array([11, 22, 33, 44, 55])).all()
+        assert var.le(np.array([11, 22, 33, 44, 55])).all()
+        assert var.lte(np.array([11, 22, 33, 44, 55])).all()
+        assert (var <= np.array([11, 22, 33, 44, 55])).all()
         assert np.less_equal(var, np.arange(5, dtype=float)).all()
         # numpy + Variable
         assert np.less_equal(var, np.arange(5, dtype=float)).all()
