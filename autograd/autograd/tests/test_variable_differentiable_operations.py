@@ -42,8 +42,10 @@ def test_variable_dot():
 
     
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
-    a.dot(b)
-        variable_to_gradient = sgd.take_training_step(loss)
+    dot_product = a.dot(b)
+    variable_to_gradient = sgd.take_training_step(dot_product)
+    assert variable_to_gradient[a] == b
+    assert variable_to_gradient[b] == a
 
 def test_variable_multiply():
     a_array = np.arange(5)
