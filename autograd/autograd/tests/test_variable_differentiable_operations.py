@@ -144,10 +144,10 @@ def test_variable_subtract():
     
     # Verify Derivative
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
-    product = a*b
-    variable_to_gradient = sgd.take_training_step(product)
-    assert np.all(variable_to_gradient[a] == b_array)
-    assert np.all(variable_to_gradient[b] == a_array)
+    difference = a-b
+    variable_to_gradient = sgd.take_training_step(difference)
+    assert np.all(variable_to_gradient[a] == np.ones(a.shape))
+    assert np.all(variable_to_gradient[b] == np.full(b.shape, -1))
 
 def test_variable_pow():
     a_array = np.arange(5)
