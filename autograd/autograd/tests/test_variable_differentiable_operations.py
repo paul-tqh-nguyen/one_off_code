@@ -19,6 +19,7 @@ def test_variable_dot():
 
     def validate_result(result, expected_type) -> None:
         assert result == expected_result
+        assert isinstance(result, expected_type)
         return
     
     # Variable + Variable
