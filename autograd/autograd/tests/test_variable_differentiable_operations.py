@@ -45,8 +45,8 @@ def test_variable_multiply():
     b_array = np.array([3, 8, 5, 6, 8])
     a = Variable(np.arange(5))
     b = Variable(np.array([3, 8, 5, 6, 8]))
-    expected_result_variable = Variable(np.array([-3, -7, -3, -3, -4]))
-    expected_result_array = np.array([-3, -7, -3, -3, -4])
+    expected_result_variable = Variable(np.array(0, 8, 10, 18, 32])
+    expected_result_array = np.array((0, 8, 10, 18, 32])
     
     assert np.all(a_array == a.data)
     assert np.all(b_array == b.data)
@@ -68,22 +68,22 @@ def test_variable_multiply():
         
     # Variable + Variable
     validate_variable_result(a.multiply(b))
-    validate_variable_result(a - b)
+    validate_variable_result(a * b)
     validate_variable_result(np.multiply(a, b))
     
     # nupmy + numpy
     validate_array_result(np.multiply(a_array, b_array))
-    validate_array_result(a_array - b_array)
+    validate_array_result(a_array * b_array)
     
     # Variable + numpy
     validate_variable_result(a.multiply(b_array))
-    validate_variable_result(a - b_array)
+    validate_variable_result(a * b_array)
     validate_variable_result(np.multiply(a, b_array))
     
     # numpy + Variable
     # @todo make these work
     # validate_variable_result(np.multiply(a_array, b))
-    # validate_variable_result(a_array - b)
+    # validate_variable_result(a_array * b)
 
 def test_variable_subtract():
     a_array = np.arange(5)
