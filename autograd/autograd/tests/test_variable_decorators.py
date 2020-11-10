@@ -200,13 +200,13 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
         with pytest.raises(ValueError, match='slashes" does not specify a numpy callable.'):
             @Variable.numpy_replacement(np_mult_ten=['np.mult_ten', 'np.bogus\name\with\slashes'])
             def mult_ten(*args, **kwargs) -> None:
+                pass
+    
+    with temp_numpy_funcs(mult_ten):
+        with pytest.raises(ValueError, match='No numpy callable specified to be replaced.'):
+            @Variable.numpy_replacement(np_mult_ten=[])
+            def mult_ten(*args, **kwargs) -> None:
                 pass 
-
-    # with temp_numpy_funcs(mult_ten):
-    #     with pytest.raises(ValueError, match='slashes" does not specify a numpy callable.'):
-    #         @Variable.numpy_replacement(np_mult_ten='np.bogus\name\with\slashes')
-    #         def mult_ten(*args, **kwargs) -> None:
-    #             pass 
 
 #################################
 # Tests for Variable.new_method #

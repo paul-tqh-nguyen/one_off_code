@@ -45,10 +45,10 @@ class Variable:
         elif isinstance(np_path_specification, list):
             np_paths = np_path_specification
         else:
-            raise ValueError(f'{np_path_specification} does not specify a numpy callable.') # @todo test this
+            raise ValueError(f'{np_path_specification} does not specify a numpy callable.')
 
-        if len(np_paths) == 0: # @todo test this
-            raise ValueError(f'No numpy callable specified to be replaced.')
+        if len(np_paths) == 0:
+            raise ValueError('No numpy callable specified to be replaced.')
         
         if not internally_used_name.isidentifier():
             raise ValueError(f'"{internally_used_name}" is not a vaild identifier name.')
