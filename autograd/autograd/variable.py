@@ -257,9 +257,8 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_function)
     return difference_variable
 
-# @todo test this with all combinations of types
-@Variable.new_method('power', 'pow', '__pow__') # @todo test these methods
-@Variable.numpy_replacement(np_float_power='np.float_power') # @todo test these numpy methods
+@Variable.new_method('power', 'pow', '__pow__')
+@Variable.numpy_replacement(np_float_power='np.float_power')
 def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power: Callable, **kwargs) -> VariableOperand:
     base_is_variable = isinstance(base, Variable)
     exponent_is_variable = isinstance(exponent, Variable)
