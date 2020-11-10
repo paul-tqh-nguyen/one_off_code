@@ -115,18 +115,22 @@ def test_basic_numpy_replacement():
 
         # Verify numpy still works
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
+        assert np.all(np.multiply_by_ten(np.ones(4)) == np.full([4], 10))
 
         # Verify 1-D arrays
         var = Variable(np.arange(3))
         assert np.all(np.mult_ten(var).data == np.array([00, 10, 20]))
+        assert np.all(np.multiply_by_ten(var).data == np.array([00, 10, 20]))
 
         # Verify 2-D arrays
         var = Variable(np.arange(4).reshape([2,2]))
         assert np.all(np.mult_ten(var).data == np.array([[00, 10], [20, 30]]))
+        assert np.all(np.multiply_by_ten(var).data == np.array([[00, 10], [20, 30]]))
 
         # Verify 3-D arrays
         var = Variable(np.arange(8).reshape([2,2,2]))
         assert np.all(np.mult_ten(var).data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
+        assert np.all(np.multiply_by_ten(var).data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
 
 def test_numpy_replacement_fails_on_multiple_inputs():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
