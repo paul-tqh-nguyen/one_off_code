@@ -58,6 +58,9 @@ def test_variable_subtract():
 
     def validate_variable_result(result) -> None:
         assert result.eq(expected_result_variable).all()
+        result.eq(expected_result_variable)
+        result
+        expected_result_variable
         assert isinstance(result, Variable)
         return
 
