@@ -8,8 +8,8 @@ from autograd import Variable
 def test_variable_dot():
     a_array = np.arange(5)
     b_array = np.array([3, 8, 5, 6, 8])
-    a = Variable(np.arange(5))
-    b = Variable(np.array([3, 8, 5, 6, 8]))
+    a = Variable(np.arange(5, dtype=float))
+    b = Variable(np.array([3, 8, 5, 6, 8], dtype=float))
     expected_result = 68
 
     assert np.all(a_array == a.data)
@@ -44,8 +44,12 @@ def test_variable_dot():
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
     dot_product = a.dot(b)
     variable_to_gradient = sgd.take_training_step(dot_product)
-    assert variable_to_gradient[a] == b
-    assert variable_to_gradient[b] == a
+    print(f"a {repr(a)}")
+    print(f"b {repr(b)}")
+    print(f"variable_to_gradient[a] {repr(variable_to_gradient[a])}")
+    print(f"variable_to_gradient[b] {repr(variable_to_gradient[b])}")
+    assert np.all(variable_to_gradient[a] == b)
+    assert np.all(variable_to_gradient[b] == a)
 
 def test_variable_multiply():
     a_array = np.arange(5)
