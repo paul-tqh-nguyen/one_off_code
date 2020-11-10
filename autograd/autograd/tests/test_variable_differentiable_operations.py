@@ -154,8 +154,8 @@ def test_variable_pow():
     b_array = np.array([0, 2, 2, 3, 3], dtype=float)
     a = Variable(np.arange(5, dtype=float)+1)
     b = Variable(np.array([0, 2, 2, 3, 3], dtype=float))
-    expected_result_variable = Variable(np.array([1, 1, 4, 27, 64]))
-    expected_result_array = np.array([1, 1, 4, 27, 64])
+    expected_result_variable = Variable(np.array([1, 4, 9, 64, 125]))
+    expected_result_array = np.array([1, 4, 9, 64, 125])
     
     assert np.all(a_array == a.data)
     assert np.all(b_array == b.data)
@@ -198,7 +198,5 @@ def test_variable_pow():
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
     result = a**b
     variable_to_gradient = sgd.take_training_step(result)
-    print(f"variable_to_gradient[a] {repr(variable_to_gradient[a])}")
-    print(f"b_array*(a_array**(b_array-1)) {repr(b_array*(a_array**(b_array-1)))}")
     assert np.all(variable_to_gradient[a] == b_array*(a_array**(b_array-1)))
     assert np.all(variable_to_gradient[b] == np.log(a_array)*(a_array**b_array))
