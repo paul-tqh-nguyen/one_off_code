@@ -23,20 +23,20 @@ def test_variable_dot():
         return
     
     # Variable + Variable
-    assert validate_result(a.dot(b), Variable)
-    assert validate_result(np.dot(a, b), Variable)
+    validate_result(a.dot(b), Variable)
+    validate_result(np.dot(a, b), Variable)
     
     # nupmy + numpy
-    assert validate_result(np.dot(a_array, b_array), np.ndarray)
-    assert validate_result(np.ndarray.dot(a_array, b_array), np.ndarray)
-    assert validate_result(a_array.dot(b_array), np.ndarray)
+    validate_result(np.dot(a_array, b_array), np.ndarray)
+    validate_result(np.ndarray.dot(a_array, b_array), np.ndarray)
+    validate_result(a_array.dot(b_array), np.ndarray)
     
     # Variable + numpy
-    assert validate_result(a.dot(b_array), Variable)
-    assert validate_result(np.dot(a, b_array), Variable)
+    validate_result(a.dot(b_array), Variable)
+    validate_result(np.dot(a, b_array), Variable)
     
     # numpy + Variable
-    assert validate_result(np.dot(a, b), Variable)
-    assert validate_result(np.ndarray.dot(a, b), Variable)
-    assert validate_result(a_array.dot(b), Variable)
+    validate_result(np.dot(a, b), Variable)
+    validate_result(np.ndarray.dot(a, b), Variable)
+    validate_result(a_array.dot(b), Variable)
     
