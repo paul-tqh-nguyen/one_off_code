@@ -279,7 +279,7 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     if minuend_is_variable:
         variable_depended_on_by_difference_to_backward_propagation_function[minuend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
     if subtrahend_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_function[subtrahend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
+        variable_depended_on_by_difference_to_backward_propagation_function[subtrahend] = lambda d_minimization_target_over_d_difference: -d_minimization_target_over_d_difference
     difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_function)
     return difference_variable
 
