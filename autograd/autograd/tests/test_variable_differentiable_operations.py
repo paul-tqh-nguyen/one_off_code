@@ -81,9 +81,8 @@ def test_variable_multiply():
     validate_variable_result(np.multiply(a, b_array))
     
     # numpy + Variable
-    # @todo make these work
     validate_variable_result(np.multiply(a_array, b))
-    # validate_variable_result(a_array * b)
+    # validate_variable_result(a_array * b) # @todo make this work
 
 def test_variable_subtract():
     a_array = np.arange(5)
@@ -126,9 +125,8 @@ def test_variable_subtract():
     validate_variable_result(np.subtract(a, b_array))
     
     # numpy + Variable
-    # @todo make these work
-    # validate_variable_result(np.subtract(a_array, b))
-    # validate_variable_result(a_array - b)
+    validate_variable_result(np.subtract(a_array, b))
+    # validate_variable_result(a_array - b) # @todo make this work
 
 def test_variable_pow():
     a_array = np.arange(5)
@@ -172,6 +170,5 @@ def test_variable_pow():
     validate_variable_result(np.float_power(a, b_array))
     
     # numpy + Variable
-    # @todo make these work
-    # validate_variable_result(np.float_power(a_array, b))
-    # validate_variable_result(a_array ** b)
+    validate_variable_result(np.float_power(a_array, b))
+    # validate_variable_result(a_array ** b) # @todo make this work
