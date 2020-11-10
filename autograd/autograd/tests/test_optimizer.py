@@ -39,6 +39,7 @@ def test_sgd_dot():
         y = x.dot(np.array([-10, 50]))
         y_hat = 0
         print(f"y {repr(y)}")
+        print(f"y.data {repr(y.data)}")
         print(f"y.data.shape {repr(y.data.shape)}")
         diff = y - y_hat
         loss = diff ** 2
