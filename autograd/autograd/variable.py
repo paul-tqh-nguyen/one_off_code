@@ -214,14 +214,14 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
     b_data = b.data if b_is_variable else b
     return np_equal(a_data, b_data, **kwargs)
 
-@Variable.new_method('neq', 'eq', '__eq__')
-@Variable.numpy_replacement(np_equal='np.equal')
-def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) -> VariableOperand:
+@Variable.new_method('not_equal', 'neq', 'ne', '__eq__')
+@Variable.numpy_replacement(np_not_equal='np.not_equal')
+def not_equal(a: VariableOperand, b: VariableOperand, np_not_equal: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
-    return np_equal(a_data, b_data, **kwargs)
+    return np_not_equal(a_data, b_data, **kwargs)
 
 # @todo add gt, gte, le, lte, neq
 
