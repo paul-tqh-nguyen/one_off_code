@@ -82,6 +82,6 @@ def test_variable_subtract():
     
     # numpy + Variable
     validate_variable_result(np.subtract(a, b))
-    validate_variable_result(np.ndarray.subtract(a, b))
+    validate_variable_result(a - b)
     validate_variable_result(a_array.subtract(b))
     
