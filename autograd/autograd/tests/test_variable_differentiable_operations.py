@@ -68,6 +68,7 @@ def test_variable_subtract():
     
     # Variable + Variable
     validate_variable_result(a.subtract(b))
+    validate_variable_result(a-b)
     validate_variable_result(np.subtract(a, b))
     
     # nupmy + numpy
