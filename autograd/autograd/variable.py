@@ -243,23 +243,23 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
     dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_function)
     return dot_product_variable
 
-@Variable.new_method('multiply', '__sub__')
+@Variable.new_method('multiply', '__mul__')
 @Variable.numpy_replacement(np_multiply='np.multiply') # @todo support __mul__ methods
-def multiply(minuend: VariableOperand, subtrahend: VariableOperand, np_multiply: Callable, **kwargs) -> VariableOperand:
-    minuend_is_variable = isinstance(minuend, Variable)
-    subtrahend_is_variable = isinstance(subtrahend, Variable)
-    minuend_data = minuend.data if minuend_is_variable else minuend
-    subtrahend_data = subtrahend.data if subtrahend_is_variable else subtrahend
-    difference = np_multiply(minuend_data, subtrahend_data, **kwargs)
-    if not minuend_is_variable and not subtrahend_is_variable:
+def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kwargs) -> VariableOperand:
+    a_is_variable = isinstance(a, Variable)
+    b_is_variable = isinstance(b, Variable)
+    a_data = a.data if a_is_variable else a
+    b_data = b.data if b_is_variable else b
+    difference = np_multiply(a_data, b_data, **kwargs)
+    if not a_is_variable and not b_is_variable:
         return difference
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_difference_to_backward_propagation_function = {}
-    if minuend_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_function[minuend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
-    if subtrahend_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_function[subtrahend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
+    if a_is_variable:
+        variable_depended_on_by_difference_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
+    if b_is_variable:
+        variable_depended_on_by_difference_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
     difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_function)
     return difference_variable
 
