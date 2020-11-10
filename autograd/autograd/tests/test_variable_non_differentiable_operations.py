@@ -271,8 +271,8 @@ def test_variable_less():
     assert (var < other_var).all()
     assert np.less(var, other_var).all()
     # nupmy + numpy
-    assert np.less(np.array([11, 22, 33, 44, 55]), np.arange(5)).all()
-    assert (np.array([11, 22, 33, 44, 55]) < np.arange(5)).all()
+    assert np.less(np.arange(5), np.array([11, 22, 33, 44, 55])).all()
+    assert (np.arange(5) < np.array([11, 22, 33, 44, 55])).all()
     # Variable + numpy
     assert var.less(np.arange(5)).all()
     assert var.less_than(np.arange(5)).all()
