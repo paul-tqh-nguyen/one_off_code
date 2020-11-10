@@ -188,7 +188,7 @@ class Variable:
 # Variable Non-Differentiable Operations #
 ##########################################
 
-# @todo there's a lot of boiler plate here, let's abstract it out
+# @todo lots of boiler plate ; abstract it out
 
 @Variable.numpy_replacement(np_any='np.any')
 def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.ndarray]:
@@ -217,7 +217,8 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
 # Variable Differentiable Operations #
 ######################################
 
-# @todo lots of boiler plate here; can we abstract it out?
+# @todo lots of boiler plate ; abstract it out.
+
 # @todo support int, float, and all the np types of various sizes for each operation
 
 @Variable.new_method()
