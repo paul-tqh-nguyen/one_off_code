@@ -250,18 +250,18 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
-    difference = np_multiply(a_data, b_data, **kwargs)
+    product = np_multiply(a_data, b_data, **kwargs)
     if not a_is_variable and not b_is_variable:
-        return difference
+        return product
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_difference_to_backward_propagation_function = {}
+    variable_depended_on_by_product_to_backward_propagation_function = {}
     if a_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
+        variable_depended_on_by_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product
     if b_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
-    difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_function)
-    return difference_variable
+        variable_depended_on_by_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product
+    product_variable = Variable(product, variable_depended_on_by_product_to_backward_propagation_function)
+    return product_variable
 
 @Variable.new_method('subtract', '__sub__')
 @Variable.numpy_replacement(np_subtract='np.subtract') # @todo support __sub__ methods
