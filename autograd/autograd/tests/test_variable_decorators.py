@@ -41,6 +41,8 @@ def temp_variable_method_names(*method_names: List[str]) -> Generator:
 def test_basic_numpy_replacement():
     def mult_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
         return operand*10
+    def multiply_by_ten(operand: Union[int, float, np.number, np.ndarray]) -> Union[int, float, np.number, np.ndarray]:
+        return operand*2*5
     
     with temp_numpy_funcs(mult_ten):
         
@@ -98,11 +100,11 @@ def test_basic_numpy_replacement():
         var = Variable(np.arange(8).reshape([2,2,2]))
         assert np.all(np.mult_ten(var).data == np.array([[[00, 10], [20, 30]], [[40, 50], [60, 70]]]))
     
-    with temp_numpy_funcs(mult_ten):
+    with temp_numpy_funcs(mult_ten, multiply_by_ten):
         
         assert np.all(np.mult_ten(np.ones(4)) == np.full([4], 10))
         
-        @Variable.numpy_replacement(np_mult_ten=['np.mult_ten'])
+        @Variable.numpy_replacement(np_mult_ten=['np.mult_ten', 'np.multiply_by_ten'])
         def mult_ten(operand: VariableOperand, np_mult_ten: Callable) -> np.ndarray:
             if isinstance(operand, Variable):
                 return Variable(np_mult_ten(operand.data))
