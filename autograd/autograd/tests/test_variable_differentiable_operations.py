@@ -19,6 +19,8 @@ def test_variable_dot():
 
     def validate_result(result, expected_type: type) -> None:
         assert result == expected_result
+        print(f"result {repr(result)}")
+        print(f"expected_type {repr(expected_type)}")
         assert isinstance(result, expected_type)
         return
     
