@@ -62,6 +62,7 @@ def test_squaring_equal_to_self_multiplication():
     
     # Verify Results
     for _ in range(500):
+        
         diff_1 = np.subtract(40, Variable(np.full(4, 5, dtype=float)).dot(x_1))
         diff_2 = np.subtract(40, Variable(np.full(4, 5, dtype=float)).dot(x_2))
         diff_3_a = np.subtract(40, Variable(np.full(4, 5, dtype=float)).dot(x_3))
