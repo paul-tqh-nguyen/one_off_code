@@ -356,9 +356,9 @@ def test_variable_greater_than_equal_or_equal_to():
         assert var.ge(other_value.copy()).all()
         assert var.gte(other_value.copy()).all()
         assert (var >= other_value.copy()).all()
-        assert np.greater_equal(var, np.arange(5, dtype=float)).all()
+        assert np.greater_equal(var, other_value.copy()).all()
         # numpy + Variable
-        assert np.greater_equal(var, np.arange(5, dtype=float)).all()
+        assert np.greater_equal(var, other_value.copy()).all()
         assert (var >= other_value.copy()).all()
         
     # 0-D Array Case
@@ -440,10 +440,10 @@ def test_variable_less_than_equal_or_equal_to():
         assert var.le(np.array([11, 22, 33, 44, 55])).all()
         assert var.lte(np.array([11, 22, 33, 44, 55])).all()
         assert (var <= np.array([11, 22, 33, 44, 55])).all()
-        assert np.less_equal(var, np.arange(5, dtype=float)).all()
+        assert np.less_equal(var, np.array([11, 22, 33, 44, 55])).all()
         # numpy + Variable
-        assert np.less_equal(var, np.arange(5, dtype=float)).all()
-        assert (var <= value.copy()).all()
+        assert np.less_equal(var, np.array([11, 22, 33, 44, 55])).all()
+        assert (var <= np.array([11, 22, 33, 44, 55])).all()
         
     # 0-D Array Case
     
