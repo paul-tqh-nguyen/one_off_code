@@ -86,9 +86,9 @@ def test_variable_subtract():
 
 def test_variable_pow():
     a_array = np.arange(5)
-    b_array = np.array([3, 8, 5, 6, 8])
+    b_array = np.array([0, 2, 2, 3, 3])
     a = Variable(np.arange(5))
-    b = Variable(np.array([3, 8, 5, 6, 8]))
+    b = Variable(np.array(([0, 2, 2, 3, 3])))
     expected_result_variable = Variable(np.array([-3, -7, -3, -3, -4]))
     expected_result_array = np.array([-3, -7, -3, -3, -4])
     
