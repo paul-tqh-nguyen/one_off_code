@@ -40,16 +40,12 @@ def test_variable_dot():
     validate_result(np.ndarray.dot(a_array, b), Variable)
     validate_result(a_array.dot(b), Variable)
 
-    
+    # Verify gradient
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
     dot_product = a.dot(b)
     variable_to_gradient = sgd.take_training_step(dot_product)
-    print(f"a {repr(a)}")
-    print(f"b {repr(b)}")
-    print(f"variable_to_gradient[a] {repr(variable_to_gradient[a])}")
-    print(f"variable_to_gradient[b] {repr(variable_to_gradient[b])}")
-    assert np.all(variable_to_gradient[a] == b)
-    assert np.all(variable_to_gradient[b] == a)
+    assert np.all(variable_to_gradient[a] == b_array)
+    assert np.all(variable_to_gradient[b] == a_array)
 
 def test_variable_multiply():
     a_array = np.arange(5)
