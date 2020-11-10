@@ -120,8 +120,8 @@ def test_variable_not_equal():
 
     # 1-D Array Case
     
-    var = Variable(np.arange(5))
-    other_var = Variable(np.array([11, 22, 33, 44, 55]))
+    var = Variable(np.array([11, 22, 33, 44, 55]))
+    other_var = Variable(np.arange(5))
     # Variable + Variable
     assert var.not_equal(other_var).all()
     assert var.neq(other_var).all()
@@ -129,16 +129,17 @@ def test_variable_not_equal():
     assert (var != other_var).all()
     assert np.not_equal(var, other_var).all()
     # nupmy + numpy
-    assert np.equal(np.arange(5), np.arange(5)).all()
-    assert (np.arange(5) == np.arange(5)).all()
+    assert np.not_equal(np.arange(5), np.arange(5)).all()
+    assert (np.arange(5) != np.arange(5)).all()
     # Variable + numpy
-    assert var.equal(np.arange(5)).all()
-    assert var.eq(np.arange(5)).all()
-    assert (var == np.arange(5)).all()
-    assert np.equal(var, np.arange(5, dtype=float)).all()
+    assert var.not_equal(np.arange(5)).all()
+    assert var.neq(np.arange(5)).all()
+    assert var.ne(np.arange(5)).all()
+    assert (var != np.arange(5)).all()
+    assert np.not_equal(var, np.arange(5, dtype=float)).all()
     # numpy + Variable
-    assert np.equal(np.arange(5, dtype=float), var).all()
-    assert (np.arange(5) == var).all()
+    assert np.not_equal(np.arange(5, dtype=float), var).all()
+    assert (np.arange(5) != var).all()
     
     # 0-D Array Case
     
