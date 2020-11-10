@@ -67,8 +67,8 @@ def test_variable_subtract():
         return
     
     # Variable + Variable
-    validate_variable_result(a.dot(b), Variable)
-    validate_variable_result(np.dot(a, b), Variable)
+    validate_variable_result(a.dot(b))
+    validate_variable_result(np.dot(a, b))
     
     # nupmy + numpy
     validate_variable_result(np.dot(a_array, b_array), np.int64)
@@ -76,11 +76,11 @@ def test_variable_subtract():
     validate_variable_result(a_array.dot(b_array), np.int64)
     
     # Variable + numpy
-    validate_variable_result(a.dot(b_array), Variable)
-    validate_variable_result(np.dot(a, b_array), Variable)
+    validate_variable_result(a.dot(b_array))
+    validate_variable_result(np.dot(a, b_array))
     
     # numpy + Variable
-    validate_variable_result(np.dot(a, b), Variable)
-    validate_variable_result(np.ndarray.dot(a, b), Variable)
-    validate_variable_result(a_array.dot(b), Variable)
+    validate_variable_result(np.dot(a, b))
+    validate_variable_result(np.ndarray.dot(a, b))
+    validate_variable_result(a_array.dot(b))
     
