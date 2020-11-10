@@ -237,9 +237,8 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
     dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_function)
     return dot_product_variable
 
-# @todo test this with all combinations of types
-@Variable.new_method('subtract', '__sub__') # @todo test these methods
-@Variable.numpy_replacement(np_subtract=['np.subtract', 'np.ndarray.__sub__']) # @todo test these numpy methods
+@Variable.new_method('subtract', '__sub__')
+@Variable.numpy_replacement(np_subtract=['np.subtract', 'np.ndarray.__sub__']) # @todo support int, float, and all the np types of various sizes
 def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
     minuend_is_variable = isinstance(minuend, Variable)
     subtrahend_is_variable = isinstance(subtrahend, Variable)
