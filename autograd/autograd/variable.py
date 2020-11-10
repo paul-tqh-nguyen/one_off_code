@@ -232,14 +232,14 @@ def greater(a: VariableOperand, b: VariableOperand, np_greater: Callable, **kwar
     b_data = b.data if b_is_variable else b
     return np_greater(a_data, b_data, **kwargs)
 
-@Variable.new_method('greater', 'greater_than', 'gt', '__gt__')
-@Variable.numpy_replacement(np_greater='np.greater')
-def greater(a: VariableOperand, b: VariableOperand, np_greater: Callable, **kwargs) -> VariableOperand:
+@Variable.new_method('greater_equal', 'greater_than_equal', 'ge', 'gte', '__ge__')
+@Variable.numpy_replacement(np_greater_equal='np.greater_equal')
+def greater_equal(a: VariableOperand, b: VariableOperand, np_greater_equal: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
-    return np_greater(a_data, b_data, **kwargs)
+    return np_greater_equal(a_data, b_data, **kwargs)
 
 ######################################
 # Variable Differentiable Operations #
