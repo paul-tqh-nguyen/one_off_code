@@ -206,6 +206,24 @@ def test_numpy_replacement_fails_on_bogus_numpy_names():
         with pytest.raises(ValueError, match='No numpy callable specified to be replaced.'):
             @Variable.numpy_replacement(np_mult_ten=[])
             def mult_ten(*args, **kwargs) -> None:
+                pass
+    
+    with temp_numpy_funcs(mult_ten):
+        with pytest.raises(ValueError, match='1 does not specify a numpy callable.'):
+            @Variable.numpy_replacement(np_mult_ten=1)
+            def mult_ten(*args, **kwargs) -> None:
+                pass
+    
+    with temp_numpy_funcs(mult_ten):
+        with pytest.raises(ValueError, match='1 does not specify a numpy callable.'):
+            @Variable.numpy_replacement(np_mult_ten=[1])
+            def mult_ten(*args, **kwargs) -> None:
+                pass
+    
+    with temp_numpy_funcs(mult_ten):
+        with pytest.raises(ValueError, match='1 does not specify a numpy callable.'):
+            @Variable.numpy_replacement(np_mult_ten=[1, 'np.mult_ten'])
+            def mult_ten(*args, **kwargs) -> None:
                 pass 
 
 #################################
