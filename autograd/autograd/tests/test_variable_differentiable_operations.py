@@ -50,8 +50,8 @@ def test_variable_dot():
 def test_variable_multiply():
     a_array = np.arange(5)
     b_array = np.array([3, 8, 5, 6, 8])
-    a = Variable(np.arange(5))
-    b = Variable(np.array([3, 8, 5, 6, 8]))
+    a = Variable(np.arange(5, dtype=float))
+    b = Variable(np.array([3, 8, 5, 6, 8], dtype=float))
     expected_result_variable = Variable(np.array([0, 8, 10, 18, 32]))
     expected_result_array = np.array([0, 8, 10, 18, 32])
     
@@ -101,8 +101,8 @@ def test_variable_multiply():
 def test_variable_subtract():
     a_array = np.arange(5)
     b_array = np.array([3, 8, 5, 6, 8])
-    a = Variable(np.arange(5))
-    b = Variable(np.array([3, 8, 5, 6, 8]))
+    a = Variable(np.arange(5, dtype=float))
+    b = Variable(np.array([3, 8, 5, 6, 8], dtype=float))
     expected_result_variable = Variable(np.array([-3, -7, -3, -3, -4]))
     expected_result_array = np.array([-3, -7, -3, -3, -4])
     
@@ -141,6 +141,13 @@ def test_variable_subtract():
     # numpy + Variable
     validate_variable_result(np.subtract(a_array, b))
     # validate_variable_result(a_array - b) # @todo make this work
+    
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    product = a*b
+    variable_to_gradient = sgd.take_training_step(product)
+    assert np.all(variable_to_gradient[a] == b_array)
+    assert np.all(variable_to_gradient[b] == a_array)
 
 def test_variable_pow():
     a_array = np.arange(5)
