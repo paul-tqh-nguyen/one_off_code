@@ -22,7 +22,6 @@ def test_variable_dot():
         return
     
     # Variable + Variable
-    print(f"a.dot(b).data {repr(a.dot(b).data)}")
     assert a.dot(b) == expected_result
     assert np.dot(a, b) == expected_result
     
