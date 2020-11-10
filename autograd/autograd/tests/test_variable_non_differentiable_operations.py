@@ -334,8 +334,8 @@ def test_variable_greater_than_equal_or_equal_to():
     # 1-D Array Case
     
     var = Variable(np.array([11, 22, 33, 44, 55]))
-    for other_value in ():
-        other_var = Variable(np.arange(5))
+    for other_value in (np.arange(5)):
+        other_var = Variable(other_value)
         # Variable + Variable
         assert var.greater_equal(other_var).all()
         assert var.greater_than_equal(other_var).all()
@@ -344,18 +344,18 @@ def test_variable_greater_than_equal_or_equal_to():
         assert (var >= other_var).all()
         assert np.greater_equal(var, other_var).all()
         # nupmy + numpy
-        assert np.greater_equal(np.array([11, 22, 33, 44, 55]), np.arange(5)).all()
-        assert (np.array([11, 22, 33, 44, 55]) >= np.arange(5)).all()
+        assert np.greater_equal(np.array([11, 22, 33, 44, 55]), other_value.copy()).all()
+        assert (np.array([11, 22, 33, 44, 55]) >= other_value.copy()).all()
         # Variable + numpy
-        assert var.greater_equal(np.arange(5)).all()
-        assert var.greater_than_equal(np.arange(5)).all()
-        assert var.ge(np.arange(5)).all()
-        assert var.gte(np.arange(5)).all()
-        assert (var >= np.arange(5)).all()
+        assert var.greater_equal(other_value.copy()).all()
+        assert var.greater_than_equal(other_value.copy()).all()
+        assert var.ge(other_value.copy()).all()
+        assert var.gte(other_value.copy()).all()
+        assert (var >= other_value.copy()).all()
         assert np.greater_equal(var, np.arange(5, dtype=float)).all()
         # numpy + Variable
         assert np.greater_equal(var, np.arange(5, dtype=float)).all()
-        assert (var >= np.arange(5)).all()
+        assert (var >= other_value.copy()).all()
         
     # 0-D Array Case
     
