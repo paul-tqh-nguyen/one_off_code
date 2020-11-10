@@ -238,9 +238,9 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_dot_product_to_backward_propagation_functions = defaultdict(list)
     if a_is_variable:
-        variable_depended_on_by_dot_product_to_backward_propagation_functions[a] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data
+        variable_depended_on_by_dot_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data)
     if b_is_variable:
-        variable_depended_on_by_dot_product_to_backward_propagation_functions[b] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * a_data
+        variable_depended_on_by_dot_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * a_data)
     dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_functions)
     return dot_product_variable
 
@@ -258,9 +258,9 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_product_to_backward_propagation_functions = defaultdict(list)
     if a_is_variable:
-        variable_depended_on_by_product_to_backward_propagation_functions[a] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * b_data
+        variable_depended_on_by_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * b_data)
     if b_is_variable:
-        variable_depended_on_by_product_to_backward_propagation_functions[b] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * a_data
+        variable_depended_on_by_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * a_data)
     product_variable = Variable(product, variable_depended_on_by_product_to_backward_propagation_functions)
     return product_variable
 
@@ -278,9 +278,9 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_difference_to_backward_propagation_functions = defaultdict(list)
     if minuend_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_functions[minuend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
+        variable_depended_on_by_difference_to_backward_propagation_functions[minuend].append(lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference)
     if subtrahend_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_functions[subtrahend] = lambda d_minimization_target_over_d_difference: -d_minimization_target_over_d_difference
+        variable_depended_on_by_difference_to_backward_propagation_functions[subtrahend].append(lambda d_minimization_target_over_d_difference: -d_minimization_target_over_d_difference)
     difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_functions)
     return difference_variable
 
@@ -298,9 +298,9 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_power_to_backward_propagation_functions = defaultdict(list)
     if base_is_variable:
-        variable_depended_on_by_power_to_backward_propagation_functions[base] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1)
+        variable_depended_on_by_power_to_backward_propagation_functions[base].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1))
     if exponent_is_variable:
-        variable_depended_on_by_power_to_backward_propagation_functions[exponent] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data)
+        variable_depended_on_by_power_to_backward_propagation_functions[exponent].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data))
     power_variable = Variable(power, variable_depended_on_by_power_to_backward_propagation_functions)
     return power_variable
 
