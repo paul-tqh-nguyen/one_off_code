@@ -23,6 +23,8 @@ from .misc_utilities import *
 # Optimizers #
 ##############
 
+# @todo add gradient clipping as a parameter to take_training_step
+
 class Optimizer(ABC):
     
     @abstractmethod
