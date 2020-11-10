@@ -82,7 +82,7 @@ def test_variable_multiply():
     
     # numpy + Variable
     # @todo make these work
-    # validate_variable_result(np.multiply(a_array, b))
+    validate_variable_result(np.multiply(a_array, b))
     # validate_variable_result(a_array * b)
 
 def test_variable_subtract():
