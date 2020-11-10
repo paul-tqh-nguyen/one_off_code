@@ -17,7 +17,7 @@ def test_variable_dot():
     assert id(a_array) != id(a.data)
     assert id(b_array) != id(b.data)
 
-    def validate_result(result, expected_type) -> None:
+    def validate_result(result: , expected_type: type) -> None:
         assert result == expected_result
         assert isinstance(result, expected_type)
         return
