@@ -62,7 +62,7 @@ def test_variable_subtract():
         return
 
     def validate_array_result(result) -> None:
-        assert result == expected_result_array
+        assert np.all(result == expected_result_array)
         assert isinstance(result, np.ndarray)
         return
     
