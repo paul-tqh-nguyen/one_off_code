@@ -194,22 +194,22 @@ def test_variable_greater():
     var = Variable(np.array([11, 22, 33, 44, 55]))
     other_var = Variable(np.arange(5))
     # Variable + Variable
-    assert var.not_equal(other_var).all()
-    assert var.neq(other_var).all()
-    assert var.ne(other_var).all()
+    assert var.greater(other_var).all()
+    assert var.greater_than(other_var).all()
+    assert var.gt(other_var).all()
     assert (var != other_var).all()
-    assert np.not_equal(var, other_var).all()
+    assert np.greater(var, other_var).all()
     # nupmy + numpy
-    assert np.not_equal(np.arange(5), np.array([11, 22, 33, 44, 55])).all()
+    assert np.greater(np.arange(5), np.array([11, 22, 33, 44, 55])).all()
     assert (np.arange(5) != np.array([11, 22, 33, 44, 55])).all()
     # Variable + numpy
-    assert var.not_equal(np.arange(5)).all()
-    assert var.neq(np.arange(5)).all()
-    assert var.ne(np.arange(5)).all()
+    assert var.greater(np.arange(5)).all()
+    assert var.greater_than(np.arange(5)).all()
+    assert var.gt(np.arange(5)).all()
     assert (var != np.arange(5)).all()
-    assert np.not_equal(var, np.arange(5, dtype=float)).all()
+    assert np.greater(var, np.arange(5, dtype=float)).all()
     # numpy + Variable
-    assert np.not_equal(np.arange(5, dtype=float), var).all()
+    assert np.greater(np.arange(5, dtype=float), var).all()
     assert (np.arange(5) != var).all()
     
     # 0-D Array Case
@@ -217,22 +217,22 @@ def test_variable_greater():
     var = Variable(np.array(21, dtype=float))
     other_var = Variable(np.array(9))
     # Variable + Variable
-    assert var.not_equal(other_var)
-    assert var.neq(other_var)
-    assert var.ne(other_var)
+    assert var.greater(other_var)
+    assert var.greater_than(other_var)
+    assert var.gt(other_var)
     assert var != other_var
-    assert np.not_equal(var, other_var)
+    assert np.greater(var, other_var)
     # nupmy + numpy
-    assert np.not_equal(np.array(9), np.array(21))
+    assert np.greater(np.array(9), np.array(21))
     assert np.all(np.array(9) != np.array(21))
     # Variable + numpy
-    assert var.not_equal(np.array(9)).all()
-    assert var.neq(np.array(9)).all()
-    assert var.ne(np.array(9)).all()
+    assert var.greater(np.array(9)).all()
+    assert var.greater_than(np.array(9)).all()
+    assert var.gt(np.array(9)).all()
     assert (var != np.array(9)).all()
-    assert np.not_equal(var, np.array(9, dtype=float)).all()
+    assert np.greater(var, np.array(9, dtype=float)).all()
     # numpy + Variable
-    assert np.not_equal(np.array(9, dtype=float), var).all()
+    assert np.greater(np.array(9, dtype=float), var).all()
     assert (np.array(9) != var).all()
     
     # Python Int Case
@@ -240,21 +240,21 @@ def test_variable_greater():
     var = Variable(37)
     other_var = Variable(84)
     # Variable + Variable
-    assert var.not_equal(other_var)
-    assert var.neq(other_var)
-    assert var.ne(other_var)
+    assert var.greater(other_var)
+    assert var.greater_than(other_var)
+    assert var.gt(other_var)
     assert var != other_var
-    assert np.not_equal(var, other_var)
+    assert np.greater(var, other_var)
     # nupmy + numpy
-    assert np.not_equal(np.array(37), np.array(84))
+    assert np.greater(np.array(37), np.array(84))
     assert np.all(np.array(37) != np.array(84))
     # Variable + numpy
-    assert var.not_equal(np.array(84)).all()
-    assert var.neq(np.array(84)).all()
-    assert var.ne(np.array(84)).all()
+    assert var.greater(np.array(84)).all()
+    assert var.greater_than(np.array(84)).all()
+    assert var.gt(np.array(84)).all()
     assert (var != np.array(84)).all()
-    assert np.not_equal(var, np.array(84, dtype=float)).all()
+    assert np.greater(var, np.array(84, dtype=float)).all()
     # numpy + Variable
-    assert np.not_equal(np.array(84, dtype=float), var).all()
+    assert np.greater(np.array(84, dtype=float), var).all()
     assert (np.array(84) != var).all()
 
