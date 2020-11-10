@@ -40,7 +40,7 @@ def test_variable_dot():
     validate_result(np.ndarray.dot(a, b), Variable)
     validate_result(a_array.dot(b), Variable)    
 
-def test_variable_dot():
+def test_variable_subtract():
     a_array = np.arange(5)
     b_array = np.array([3, 8, 5, 6, 8])
     a = Variable(np.arange(5))
