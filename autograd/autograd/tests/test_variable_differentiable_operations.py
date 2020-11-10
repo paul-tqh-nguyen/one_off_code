@@ -89,8 +89,8 @@ def test_variable_pow():
     b_array = np.array([0, 2, 2, 3, 3])
     a = Variable(np.arange(5))
     b = Variable(np.array(([0, 2, 2, 3, 3])))
-    expected_result_variable = Variable(np.array([-3, -7, -3, -3, -4]))
-    expected_result_array = np.array([-3, -7, -3, -3, -4])
+    expected_result_variable = Variable(np.array([1, 1, 4, 27, 64]))
+    expected_result_array = np.array([1, 1, 4, 27, 64])
     
     assert np.all(a_array == a.data)
     assert np.all(b_array == b.data)
