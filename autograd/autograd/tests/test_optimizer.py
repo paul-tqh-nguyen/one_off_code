@@ -17,7 +17,7 @@ def test_sgd():
     for _ in range(50):
         y = x.dot(np.array([-10, 50]))
         y_hat = 0
-        diff = (y - y_hat)
+        diff = y - y_hat
         loss = diff ** 2
         sgd.take_training_step(loss)
         if np.abs(loss.data) < 1e-3:
