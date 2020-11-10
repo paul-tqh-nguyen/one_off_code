@@ -21,6 +21,7 @@ def test_variable_dot():
         assert result == expected_result
         print()
         print(f"result {repr(result)}")
+        print(f"type(result) {repr(type(result))}")
         print(f"expected_type {repr(expected_type)}")
         assert isinstance(result, expected_type)
         return
