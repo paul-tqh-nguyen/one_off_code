@@ -37,7 +37,7 @@ def test_variable_dot():
     
     # numpy + Variable
     validate_result(np.dot(a_array, b), Variable)
-    validate_result(np.ndarray.dot(a, b), Variable)
+    validate_result(np.ndarray.dot(a_array, b), Variable)
     validate_result(a_array.dot(b), Variable)    
 
 def test_variable_subtract():
