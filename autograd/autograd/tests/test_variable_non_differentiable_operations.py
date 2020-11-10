@@ -484,16 +484,16 @@ def test_variable_less_than_equal_or_equal_to():
         assert var <= other_var
         assert np.less_equal(var, other_var)
         # nupmy + numpy
-        assert np.less_equal(np.array(84), np.array(value))
-        assert np.all(np.array(84) <= np.array(value))
+        assert np.less_equal(np.array(value), np.array(84))
+        assert np.all(np.array(value) <= np.array(84))
         # Variable + numpy
-        assert var.less_equal(np.array(value)).all()
-        assert var.less_than_equal(np.array(value)).all()
-        assert var.le(np.array(value)).all()
-        assert var.lte(np.array(value)).all()
-        assert (var <= np.array(value)).all()
-        assert np.less_equal(var, np.array(value, dtype=float)).all()
+        assert var.less_equal(np.array(84)).all()
+        assert var.less_than_equal(np.array(84)).all()
+        assert var.le(np.array(84)).all()
+        assert var.lte(np.array(84)).all()
+        assert (var <= np.array(84)).all()
+        assert np.less_equal(var, np.array(84, dtype=float)).all()
         # numpy + Variable
-        assert np.less_equal(var, np.array(value, dtype=float)).all()
-        assert (var <= np.array(value)).all()
+        assert np.less_equal(var, np.array(84, dtype=float)).all()
+        assert (var <= np.array(84)).all()
 
