@@ -83,3 +83,47 @@ def test_variable_subtract():
     # numpy + Variable
     validate_variable_result(np.subtract(a_array, b))
     validate_variable_result(a_array - b)
+
+def test_variable_pow():
+    a_array = np.arange(5)
+    b_array = np.array([3, 8, 5, 6, 8])
+    a = Variable(np.arange(5))
+    b = Variable(np.array([3, 8, 5, 6, 8]))
+    expected_result_variable = Variable(np.array([-3, -7, -3, -3, -4]))
+    expected_result_array = np.array([-3, -7, -3, -3, -4])
+    
+    assert np.all(a_array == a.data)
+    assert np.all(b_array == b.data)
+    assert np.all(expected_result_variable == expected_result_array)
+    
+    assert id(a_array) != id(a.data)
+    assert id(b_array) != id(b.data)
+    assert id(expected_result_variable) != id(expected_result_array)
+
+    def validate_variable_result(result) -> None:
+        assert result.eq(expected_result_variable).all()
+        assert isinstance(result, Variable)
+        return
+
+    def validate_array_result(result) -> None:
+        assert np.all(result == expected_result_array)
+        assert isinstance(result, np.ndarray)
+        return
+        
+    # Variable + Variable
+    validate_variable_result(a.subtract(b))
+    validate_variable_result(a - b)
+    validate_variable_result(np.subtract(a, b))
+    
+    # nupmy + numpy
+    validate_array_result(np.subtract(a_array, b_array))
+    validate_array_result(a_array - b_array)
+    
+    # Variable + numpy
+    validate_variable_result(a.subtract(b_array))
+    validate_variable_result(a - b_array)
+    validate_variable_result(np.subtract(a, b_array))
+    
+    # numpy + Variable
+    validate_variable_result(np.subtract(a_array, b))
+    validate_variable_result(a_array - b)
