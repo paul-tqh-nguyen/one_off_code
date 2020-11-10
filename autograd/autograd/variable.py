@@ -136,20 +136,21 @@ class Variable:
     # Methods #
     ###########
     
-    def __init__(self, data: np.ndarray, directly_depended_on_variable_to_backward_propagation_function: Dict['Variable', List[Callable]] = dict()):
+    def __init__(self, data: np.ndarray, directly_depended_on_variable_to_backward_propagation_functions: Dict['Variable', List[Callable]] = dict()):
         '''
-        For self.directly_depended_on_variable_to_backward_propagation_function, 
+        For self.directly_depended_on_variable_to_backward_propagation_functions, 
             - Each key is a variable (let's call it var)
-            - Each value is a function that takes in d_minimization_target_variable_over_d_self (i.e. the gradient for self) and returns d_minimization_target_variable_over_d_var (i.e. the gradient for var).
-                - This function performs one step of backward propagation along one edge in the computation graph.
+            - Each value is a list of functions that take in d_minimization_target_variable_over_d_self (i.e. the gradient for self) and returns d_minimization_target_variable_over_d_var (i.e. the gradient for var).
+                - When all of these functions are executed, they perform one step of backward propagation along one edge in the computation graph.
+                - There need to be multiple functions since self can direcltly depend on depended_on_variable in multiple ways, e.g. y = x**2 + x**3
         '''
         self.data = data
-        self.directly_depended_on_variable_to_backward_propagation_function = directly_depended_on_variable_to_backward_propagation_function
+        self.directly_depended_on_variable_to_backward_propagation_functions = directly_depended_on_variable_to_backward_propagation_functions
         return
 
     @property
     def directly_depended_on_variables(self):
-        return self.directly_depended_on_variable_to_backward_propagation_function.keys()
+        return self.directly_depended_on_variable_to_backward_propagation_functions.keys()
     
     def depended_on_variables(self) -> Generator:
         return reversed(list(self._depended_on_variables()))
@@ -173,7 +174,7 @@ class Variable:
             Each entry's value is gradient for var (i.e. d_minimization_target_variable_over_d_var).
         '''
         directly_depended_on_variable_to_gradient = {}
-        for depended_on_variable, calculate_depended_on_variable_gradient in self.directly_depended_on_variable_to_backward_propagation_function.items():
+        for depended_on_variable, calculate_depended_on_variable_gradient in self.directly_depended_on_variable_to_backward_propagation_functions.items():
             gradient = calculate_depended_on_variable_gradient(d_minimization_target_variable_over_d_self)
             directly_depended_on_variable_to_gradient[depended_on_variable] = gradient
         return directly_depended_on_variable_to_gradient
@@ -235,12 +236,12 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
         return dot_product
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_dot_product_to_backward_propagation_function = {}
+    variable_depended_on_by_dot_product_to_backward_propagation_functions = defaultdict(list)
     if a_is_variable:
-        variable_depended_on_by_dot_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data
+        variable_depended_on_by_dot_product_to_backward_propagation_functions[a] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * b_data
     if b_is_variable:
-        variable_depended_on_by_dot_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * a_data
-    dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_function)
+        variable_depended_on_by_dot_product_to_backward_propagation_functions[b] = lambda d_minimization_target_over_d_dot_product: d_minimization_target_over_d_dot_product * a_data
+    dot_product_variable = Variable(dot_product, variable_depended_on_by_dot_product_to_backward_propagation_functions)
     return dot_product_variable
 
 @Variable.new_method('multiply', '__mul__')
@@ -255,12 +256,12 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
         return product
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_product_to_backward_propagation_function = {}
+    variable_depended_on_by_product_to_backward_propagation_functions = defaultdict(list)
     if a_is_variable:
-        variable_depended_on_by_product_to_backward_propagation_function[a] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * b_data
+        variable_depended_on_by_product_to_backward_propagation_functions[a] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * b_data
     if b_is_variable:
-        variable_depended_on_by_product_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * a_data
-    product_variable = Variable(product, variable_depended_on_by_product_to_backward_propagation_function)
+        variable_depended_on_by_product_to_backward_propagation_functions[b] = lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * a_data
+    product_variable = Variable(product, variable_depended_on_by_product_to_backward_propagation_functions)
     return product_variable
 
 @Variable.new_method('subtract', '__sub__')
@@ -275,12 +276,12 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
         return difference
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_difference_to_backward_propagation_function = {}
+    variable_depended_on_by_difference_to_backward_propagation_functions = defaultdict(list)
     if minuend_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_function[minuend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
+        variable_depended_on_by_difference_to_backward_propagation_functions[minuend] = lambda d_minimization_target_over_d_difference: d_minimization_target_over_d_difference
     if subtrahend_is_variable:
-        variable_depended_on_by_difference_to_backward_propagation_function[subtrahend] = lambda d_minimization_target_over_d_difference: -d_minimization_target_over_d_difference
-    difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_function)
+        variable_depended_on_by_difference_to_backward_propagation_functions[subtrahend] = lambda d_minimization_target_over_d_difference: -d_minimization_target_over_d_difference
+    difference_variable = Variable(difference, variable_depended_on_by_difference_to_backward_propagation_functions)
     return difference_variable
 
 @Variable.new_method('power', 'pow', '__pow__')
@@ -295,11 +296,11 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
         return power
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_power_to_backward_propagation_function = {}
+    variable_depended_on_by_power_to_backward_propagation_functions = defaultdict(list)
     if base_is_variable:
-        variable_depended_on_by_power_to_backward_propagation_function[base] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1)
+        variable_depended_on_by_power_to_backward_propagation_functions[base] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1)
     if exponent_is_variable:
-        variable_depended_on_by_power_to_backward_propagation_function[exponent] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data)
-    power_variable = Variable(power, variable_depended_on_by_power_to_backward_propagation_function)
+        variable_depended_on_by_power_to_backward_propagation_functions[exponent] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data)
+    power_variable = Variable(power, variable_depended_on_by_power_to_backward_propagation_functions)
     return power_variable
 
