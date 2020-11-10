@@ -51,12 +51,19 @@ def test_variable_subtract():
     assert np.all(a_array == a.data)
     assert np.all(b_array == b.data)
     assert np.all(expected_result_variable == expected_result_array)
+    
     assert id(a_array) != id(a.data)
     assert id(b_array) != id(b.data)
+    assert id(expected_result_variable) != id(expected_result_array)
 
-    def validate_result(result, expected_type: type) -> None:
-        assert result == expected_result
-        assert isinstance(result, expected_type)
+    def validate_variable_result(result) -> None:
+        assert result == expected_result_variable
+        assert isinstance(result, Variable)
+        return
+
+    def validate_array_result(result) -> None:
+        assert result == expected_result_array
+        assert isinstance(result, Variable)
         return
     
     # Variable + Variable
