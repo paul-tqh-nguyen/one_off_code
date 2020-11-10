@@ -68,12 +68,12 @@ def test_variable_subtract():
     
     # Variable + Variable
     validate_variable_result(a.subtract(b))
-    validate_variable_result(a-b)
+    validate_variable_result(a - b)
     validate_variable_result(np.subtract(a, b))
     
     # nupmy + numpy
     validate_array_result(np.subtract(a_array, b_array))
-    validate_array_result(np.ndarray.subtract(a_array, b_array))
+    validate_array_result(a_array - b_array)
     validate_array_result(a_array.subtract(b_array))
     
     # Variable + numpy
