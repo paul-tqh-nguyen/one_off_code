@@ -25,6 +25,8 @@ from .misc_utilities import *
 
 VariableOperand = Union[int, float, bool, np.number, np.ndarray, 'Variable']
 
+# @todo add slicing via the __getitem__ method that returns variables
+
 class Variable:
 
     ##############
