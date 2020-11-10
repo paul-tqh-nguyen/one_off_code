@@ -241,6 +241,24 @@ def greater_equal(a: VariableOperand, b: VariableOperand, np_greater_equal: Call
     b_data = b.data if b_is_variable else b
     return np_greater_equal(a_data, b_data, **kwargs)
 
+@Variable.new_method('less', 'less_than', 'lt', '__lt__')
+@Variable.numpy_replacement(np_less='np.less')
+def less(a: VariableOperand, b: VariableOperand, np_less: Callable, **kwargs) -> VariableOperand:
+    a_is_variable = isinstance(a, Variable)
+    b_is_variable = isinstance(b, Variable)
+    a_data = a.data if a_is_variable else a
+    b_data = b.data if b_is_variable else b
+    return np_less(a_data, b_data, **kwargs)
+
+@Variable.new_method('less_equal', 'less_than_equal', 'le', 'lte', '__le__')
+@Variable.numpy_replacement(np_less_equal='np.less_equal')
+def less_equal(a: VariableOperand, b: VariableOperand, np_less_equal: Callable, **kwargs) -> VariableOperand:
+    a_is_variable = isinstance(a, Variable)
+    b_is_variable = isinstance(b, Variable)
+    a_data = a.data if a_is_variable else a
+    b_data = b.data if b_is_variable else b
+    return np_less_equal(a_data, b_data, **kwargs)
+
 ######################################
 # Variable Differentiable Operations #
 ######################################
