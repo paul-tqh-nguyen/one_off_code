@@ -114,17 +114,17 @@ def test_variable_pow():
     validate_variable_result(a.power(b))
     validate_variable_result(a.pow(b))
     validate_variable_result(a ** b)
-    validate_variable_result(np.power(a, b))
+    validate_variable_result(np.float_power(a, b))
     
     # nupmy + numpy
-    validate_array_result(np.power(a_array, b_array))
+    validate_array_result(np.float_power(a_array, b_array))
     validate_array_result(a_array ** b_array)
     
     # Variable + numpy
     validate_variable_result(a.power(b_array))
     validate_variable_result(a ** b_array)
-    validate_variable_result(np.power(a, b_array))
+    validate_variable_result(np.float_power(a, b_array))
     
     # numpy + Variable
-    validate_variable_result(np.power(a_array, b))
+    validate_variable_result(np.float_power(a_array, b))
     validate_variable_result(a_array ** b)

@@ -274,7 +274,7 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
     if base_is_variable:
         variable_depended_on_by_power_to_backward_propagation_function[base] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1)
     if exponent_is_variable:
-        variable_depended_on_by_power_to_backward_propagation_function[b] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data)
+        variable_depended_on_by_power_to_backward_propagation_function[exponent] = lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data)
     power_variable = Variable(power, variable_depended_on_by_power_to_backward_propagation_function)
     return power_variable
 
