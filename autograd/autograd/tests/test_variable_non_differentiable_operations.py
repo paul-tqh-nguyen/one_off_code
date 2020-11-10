@@ -337,7 +337,7 @@ def test_variable_greater_than_equal_or_equal_to():
     for other_value in (
             np.arange(5),
             np.array([11, 22, 33, 44, 55]),
-            np.array([00, 22, 00, 44, 00]),
+            np.array([ 0, 22,  0, 44,  0]),
     ):
         other_var = Variable(other_value)
         # Variable + Variable
@@ -412,5 +412,88 @@ def test_variable_greater_than_equal_or_equal_to():
         # numpy + Variable
         assert np.greater_equal(var, np.array(other_value, dtype=float)).all()
         assert (var >= np.array(other_value)).all()
+
+def test_variable_less_than_equal_or_equal_to():
+
+    # 1-D Array Case
     
+    var = Variable(np.array([11, 22, 33, 44, 55]))
+    for other_value in (
+            np.arange(5),
+            np.array([11, 22, 33, 44, 55]),
+            np.array([ 0, 22,  0, 44,  0]),
+    ):
+        other_var = Variable(other_value)
+        # Variable + Variable
+        assert var.less_equal(other_var).all()
+        assert var.less_than_equal(other_var).all()
+        assert var.ge(other_var).all()
+        assert var.gte(other_var).all()
+        assert (var >= other_var).all()
+        assert np.less_equal(var, other_var).all()
+        # nupmy + numpy
+        assert np.less_equal(np.array([11, 22, 33, 44, 55]), other_value.copy()).all()
+        assert (np.array([11, 22, 33, 44, 55]) >= other_value.copy()).all()
+        # Variable + numpy
+        assert var.less_equal(other_value.copy()).all()
+        assert var.less_than_equal(other_value.copy()).all()
+        assert var.ge(other_value.copy()).all()
+        assert var.gte(other_value.copy()).all()
+        assert (var >= other_value.copy()).all()
+        assert np.less_equal(var, np.arange(5, dtype=float)).all()
+        # numpy + Variable
+        assert np.less_equal(var, np.arange(5, dtype=float)).all()
+        assert (var >= other_value.copy()).all()
+        
+    # 0-D Array Case
     
+    var = Variable(np.array(21, dtype=float))
+    for other_value in (9, 21):
+        other_var = Variable(np.array(other_value))
+        # Variable + Variable
+        assert var.less_equal(other_var)
+        assert var.less_than_equal(other_var)
+        assert var.ge(other_var)
+        assert var.gte(other_var)
+        assert var >= other_var
+        assert np.less_equal(var, other_var)
+        # nupmy + numpy
+        assert np.less_equal(np.array(21), np.array(other_value))
+        assert np.all(np.array(21) >= np.array(other_value))
+        # Variable + numpy
+        assert var.less_equal(np.array(other_value)).all()
+        assert var.less_than_equal(np.array(other_value)).all()
+        assert var.ge(np.array(other_value)).all()
+        assert var.gte(np.array(other_value)).all()
+        assert (var >= np.array(other_value)).all()
+        assert np.less_equal(var, np.array(other_value, dtype=float)).all()
+        # numpy + Variable
+        assert np.less_equal(var, np.array(other_value, dtype=float)).all()
+        assert (var >= np.array(other_value)).all()
+        
+    # Python Int Case
+    
+    var = Variable(84)
+    for other_value in (37, 84):
+        other_var = Variable(other_value)
+        # Variable + Variable
+        assert var.less_equal(other_var)
+        assert var.less_than_equal(other_var)
+        assert var.ge(other_var)
+        assert var.gte(other_var)
+        assert var >= other_var
+        assert np.less_equal(var, other_var)
+        # nupmy + numpy
+        assert np.less_equal(np.array(84), np.array(other_value))
+        assert np.all(np.array(84) >= np.array(other_value))
+        # Variable + numpy
+        assert var.less_equal(np.array(other_value)).all()
+        assert var.less_than_equal(np.array(other_value)).all()
+        assert var.ge(np.array(other_value)).all()
+        assert var.gte(np.array(other_value)).all()
+        assert (var >= np.array(other_value)).all()
+        assert np.less_equal(var, np.array(other_value, dtype=float)).all()
+        # numpy + Variable
+        assert np.less_equal(var, np.array(other_value, dtype=float)).all()
+        assert (var >= np.array(other_value)).all()
+
