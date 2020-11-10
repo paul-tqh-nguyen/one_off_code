@@ -66,3 +66,5 @@ class SGD(Optimizer):
         for variable, d_minimization_variable_over_d_variable in variable_to_gradient.items():
             variable.data -= self.learning_rate * d_minimization_variable_over_d_variable
         return
+
+# @todo add Adam optimizer
