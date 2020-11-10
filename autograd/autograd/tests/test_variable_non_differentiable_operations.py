@@ -496,4 +496,3 @@ def test_variable_less_than_equal_or_equal_to():
         # numpy + Variable
         assert np.less_equal(var, np.array(84, dtype=float)).all()
         assert (var <= np.array(84)).all()
-
