@@ -334,7 +334,11 @@ def test_variable_greater_than_equal_or_equal_to():
     # 1-D Array Case
     
     var = Variable(np.array([11, 22, 33, 44, 55]))
-    for other_value in (np.arange(5)):
+    for other_value in (
+            np.arange(5),
+            np.array([11, 22, 33, 44, 55]),
+            np.array([00, 22, 00, 44, 00]),
+    ):
         other_var = Variable(other_value)
         # Variable + Variable
         assert var.greater_equal(other_var).all()
