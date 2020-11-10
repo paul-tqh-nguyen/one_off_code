@@ -161,27 +161,29 @@ def test_variable_not_equal():
     assert (var != np.array(9)).all()
     assert np.not_equal(var, np.array(9, dtype=float)).all()
     # numpy + Variable
-    assert np.equal(np.array(9, dtype=float), var).all()
-    assert (np.array(9) == var).all()
+    assert np.not_equal(np.array(9, dtype=float), var).all()
+    assert (np.array(9) != var).all()
     
     # Python Int Case
     
     var = Variable(7)
     other_var = Variable(7)
     # Variable + Variable
-    assert var.equal(other_var)
-    assert var.eq(other_var)
-    assert var == other_var
-    assert np.equal(var, other_var)
+    assert var.not_equal(other_var)
+    assert var.neq(other_var)
+    assert var.ne(other_var)
+    assert var != other_var
+    assert np.not_equal(var, other_var)
     # nupmy + numpy
-    assert np.equal(np.array(7), np.array(7))
-    assert np.all(np.array(7) == np.array(7))
+    assert np.not_equal(np.array(7), np.array(7))
+    assert np.all(np.array(7) != np.array(7))
     # Variable + numpy
-    assert var.equal(np.array(7)).all()
-    assert var.eq(np.array(7)).all()
-    assert (var == np.array(7)).all()
-    assert np.equal(var, np.array(7, dtype=float)).all()
+    assert var.not_equal(np.array(7)).all()
+    assert var.neq(np.array(7)).all()
+    assert var.ne(np.array(7)).all()
+    assert (var != np.array(7)).all()
+    assert np.not_equal(var, np.array(7, dtype=float)).all()
     # numpy + Variable
-    assert np.equal(np.array(7, dtype=float), var).all()
-    assert (np.array(7) == var).all()
+    assert np.not_equal(np.array(7, dtype=float), var).all()
+    assert (np.array(7) != var).all()
 
