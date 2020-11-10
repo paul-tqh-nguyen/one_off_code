@@ -58,7 +58,7 @@ def test_squaring_equal_to_self_multiplication():
     sgd_1 = autograd.optimizer.SGD(learning_rate)
     sgd_2 = autograd.optimizer.SGD(learning_rate)
     
-    # Training
+    # Take Training Step
     for _ in range(50):
         y = x.dot(np.array([-10, 50]))
         y_hat = 0
