@@ -200,8 +200,8 @@ def test_variable_greater():
     assert (var > other_var).all()
     assert np.greater(var, other_var).all()
     # nupmy + numpy
-    assert np.greater(np.arange(5), np.array([11, 22, 33, 44, 55])).all()
-    assert (np.arange(5) > np.array([11, 22, 33, 44, 55])).all()
+    assert np.greater(np.array([11, 22, 33, 44, 55]), np.arange(5)).all()
+    assert (np.array([11, 22, 33, 44, 55]) > np.arange(5)).all()
     # Variable + numpy
     assert var.greater(np.arange(5)).all()
     assert var.greater_than(np.arange(5)).all()
