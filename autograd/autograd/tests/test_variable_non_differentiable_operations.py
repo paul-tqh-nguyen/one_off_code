@@ -278,9 +278,9 @@ def test_variable_less():
     assert var.less_than(np.array([11, 22, 33, 44, 55])).all()
     assert var.lt(np.array([11, 22, 33, 44, 55])).all()
     assert (var < np.array([11, 22, 33, 44, 55])).all()
-    assert np.less(var, np.arange(5, dtype=float)).all()
+    assert np.less(var, np.array([11, 22, 33, 44, 55])).all()
     # numpy + Variable
-    assert np.less(var, np.arange(5, dtype=float)).all()
+    assert np.less(var, np.array([11, 22, 33, 44, 55])).all()
     assert (var < np.array([11, 22, 33, 44, 55])).all()
     
     # 0-D Array Case
@@ -317,15 +317,15 @@ def test_variable_less():
     assert var < other_var
     assert np.less(var, other_var)
     # nupmy + numpy
-    assert np.less(np.array(84), np.array(37))
-    assert np.all(np.array(84) < np.array(37))
+    assert np.less(np.array(37), np.array(84))
+    assert np.all(np.array(37) < np.array(84))
     # Variable + numpy
-    assert var.less(np.array(37)).all()
-    assert var.less_than(np.array(37)).all()
-    assert var.lt(np.array(37)).all()
-    assert (var < np.array(37)).all()
-    assert np.less(var, np.array(37, dtype=float)).all()
+    assert var.less(np.array(84)).all()
+    assert var.less_than(np.array(84)).all()
+    assert var.lt(np.array(84)).all()
+    assert (var < np.array(84)).all()
+    assert np.less(var, np.array(84, dtype=float)).all()
     # numpy + Variable
-    assert np.less(var, np.array(37, dtype=float)).all()
-    assert (var < np.array(37)).all()
+    assert np.less(var, np.array(84, dtype=float)).all()
+    assert (var < np.array(84)).all()
 
