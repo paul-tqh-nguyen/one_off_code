@@ -40,7 +40,7 @@ def test_variable_dot():
     validate_result(np.ndarray.dot(a_array, b), Variable)
     validate_result(a_array.dot(b), Variable)
 
-    # Verify gradient
+    # Verify Derivative
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
     dot_product = a.dot(b)
     variable_to_gradient = sgd.take_training_step(dot_product)
@@ -90,6 +90,13 @@ def test_variable_multiply():
     # numpy + Variable
     validate_variable_result(np.multiply(a_array, b))
     # validate_variable_result(a_array * b) # @todo make this work
+
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    product = a*b
+    variable_to_gradient = sgd.take_training_step(product)
+    assert np.all(variable_to_gradient[a] == b_array)
+    assert np.all(variable_to_gradient[b] == a_array)
 
 def test_variable_subtract():
     a_array = np.arange(5)
