@@ -221,6 +221,8 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
 
 # @todo support int, float, and all the np types of various sizes for each operation
 
+# @todo support np.power
+
 @Variable.new_method()
 @Variable.numpy_replacement(np_dot=['np.dot', 'np.ndarray.dot'])
 def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> VariableOperand:
@@ -281,4 +283,3 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
     power_variable = Variable(power, variable_depended_on_by_power_to_backward_propagation_function)
     return power_variable
 
-# @todo support np.power
