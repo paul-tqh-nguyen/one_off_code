@@ -121,7 +121,7 @@ def test_variable_not_equal():
     # 1-D Array Case
     
     var = Variable(np.arange(5))
-    other_var = Variable(np.arange(5))
+    other_var = Variable(np.array([11, 22, 33, 44, 55]))
     # Variable + Variable
     assert var.equal(other_var).all()
     assert var.eq(other_var).all()
