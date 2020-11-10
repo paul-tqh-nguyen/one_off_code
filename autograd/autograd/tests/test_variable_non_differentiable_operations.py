@@ -246,15 +246,15 @@ def test_variable_greater():
     assert var > other_var
     assert np.greater(var, other_var)
     # nupmy + numpy
-    assert np.greater(np.array(84) > np.array(37))
+    assert np.greater(np.array(84), np.array(37))
     assert np.all(np.array(84) > np.array(37))
     # Variable + numpy
-    assert var.greater(np.array(84)).all()
-    assert var.greater_than(np.array(84)).all()
-    assert var.gt(np.array(84)).all()
-    assert (var > np.array(84)).all()
-    assert np.greater(var, np.array(84, dtype=float)).all()
+    assert var.greater(np.array(37)).all()
+    assert var.greater_than(np.array(37)).all()
+    assert var.gt(np.array(37)).all()
+    assert (var > np.array(37)).all()
+    assert np.greater(var, np.array(37, dtype=float)).all()
     # numpy + Variable
-    assert np.greater(np.array(84, dtype=float), var).all()
-    assert (np.array(84) > var).all()
+    assert np.greater(var, np.array(37, dtype=float)).all()
+    assert (var > np.array(37)).all()
 
