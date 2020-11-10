@@ -151,6 +151,10 @@ class Variable:
     @property
     def directly_depended_on_variables(self):
         return self.directly_depended_on_variable_to_backward_propagation_functions.keys()
+
+    @property
+    def shape(self):
+        return self.data.shape
     
     def depended_on_variables(self) -> Generator:
         return reversed(list(self._depended_on_variables()))

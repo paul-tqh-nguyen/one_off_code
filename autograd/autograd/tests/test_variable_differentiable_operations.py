@@ -193,3 +193,9 @@ def test_variable_pow():
     # numpy + Variable
     validate_variable_result(np.float_power(a_array, b))
     # validate_variable_result(a_array ** b) # @todo make this work
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    difference = a-b
+    variable_to_gradient = sgd.take_training_step(difference)
+    assert np.all(variable_to_gradient[a] == np.ones(a.shape))
+    assert np.all(variable_to_gradient[b] == np.full(b.shape, -1))
