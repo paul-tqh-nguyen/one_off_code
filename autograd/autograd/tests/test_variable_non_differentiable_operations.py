@@ -123,10 +123,11 @@ def test_variable_not_equal():
     var = Variable(np.arange(5))
     other_var = Variable(np.array([11, 22, 33, 44, 55]))
     # Variable + Variable
-    assert var.equal(other_var).all()
-    assert var.eq(other_var).all()
-    assert (var == other_var).all()
-    assert np.equal(var, other_var).all()
+    assert var.not_equal(other_var).all()
+    assert var.neq(other_var).all()
+    assert var.ne(other_var).all()
+    assert (var != other_var).all()
+    assert np.not_equal(var, other_var).all()
     # nupmy + numpy
     assert np.equal(np.arange(5), np.arange(5)).all()
     assert (np.arange(5) == np.arange(5)).all()
