@@ -239,7 +239,7 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
 
 # @todo test this with all combinations of types
 @Variable.new_method('subtract', '__sub__') # @todo test these methods
-@Variable.numpy_replacement(np_subtract=['np.subtract', np.ndarray.__sub__]) # @todo test these numpy methods
+@Variable.numpy_replacement(np_subtract=['np.subtract', 'np.ndarray.__sub__']) # @todo test these numpy methods
 def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
     minuend_is_variable = isinstance(minuend, Variable)
     subtrahend_is_variable = isinstance(subtrahend, Variable)
