@@ -17,6 +17,8 @@ def test_sgd():
     for _ in range(50):
         y = x.dot(np.array([-10, 50]))
         y_hat = 0
+        print(f"y {repr(y)}")
+        print(f"y_hat {repr(y_hat)}")
         diff = (y - y_hat)
         loss = diff ** 2
         sgd.take_training_step(loss)
