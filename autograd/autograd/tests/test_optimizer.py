@@ -86,9 +86,9 @@ def test_squaring_equal_to_self_multiplication():
         assert np.all(variable_to_gradient_2[x_2] == variable_to_gradient_3[x_3])
         assert np.all(variable_to_gradient_3[x_3] == variable_to_gradient_1[x_1])
         
-        if loss_1 == 0:
+        if loss_1 < 1e-6:
             break
-    print(f"loss_1.data {repr(loss_1.data)}")
-    assert loss_1 == 0
-    assert loss_2 == 0
-    assert loss_3 == 0
+        
+    assert loss_1 < 1e-6
+    assert loss_2 < 1e-6
+    assert loss_3 < 1e-6
