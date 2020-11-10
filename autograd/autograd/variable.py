@@ -216,6 +216,7 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
 ######################################
 
 # @todo lots of boiler plate here; can we abstract it out?
+# @todo support int, float, and all the np types of various sizes for each operation
 
 @Variable.new_method()
 @Variable.numpy_replacement(np_dot=['np.dot', 'np.ndarray.dot'])
@@ -238,7 +239,7 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
     return dot_product_variable
 
 @Variable.new_method('subtract', '__sub__')
-@Variable.numpy_replacement(np_subtract=['np.subtract', 'np.ndarray.__sub__']) # @todo support int, float, and all the np types of various sizes
+@Variable.numpy_replacement(np_subtract=['np.subtract', 'np.ndarray.__sub__'])
 def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
     minuend_is_variable = isinstance(minuend, Variable)
     subtrahend_is_variable = isinstance(subtrahend, Variable)
@@ -278,4 +279,3 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
     return power_variable
 
 # @todo support np.power
-# @todo support __eq__ and other comparators
