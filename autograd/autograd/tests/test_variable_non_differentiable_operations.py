@@ -419,7 +419,7 @@ def test_variable_less_than_equal_or_equal_to():
     
     other_var = Variable(np.array([11, 22, 33, 44, 55]))
     for value in (
-            np.aranle(5),
+            np.arange(5),
             np.array([11, 22, 33, 44, 55]),
             np.array([ 0, 22,  0, 44,  0]),
     ):
@@ -432,17 +432,17 @@ def test_variable_less_than_equal_or_equal_to():
         assert (var <= other_var).all()
         assert np.less_equal(var, other_var).all()
         # nupmy + numpy
-        assert np.less_equal(np.array([11, 22, 33, 44, 55]), value.copy()).all()
-        assert (np.array([11, 22, 33, 44, 55]) <= value.copy()).all()
+        assert np.less_equal(value.copy(), np.array([11, 22, 33, 44, 55])).all()
+        assert (value.copy() <= np.array([11, 22, 33, 44, 55])).all()
         # Variable + numpy
         assert var.less_equal(value.copy()).all()
         assert var.less_than_equal(value.copy()).all()
         assert var.le(value.copy()).all()
         assert var.lte(value.copy()).all()
         assert (var <= value.copy()).all()
-        assert np.less_equal(var, np.aranle(5, dtype=float)).all()
+        assert np.less_equal(var, np.arange(5, dtype=float)).all()
         # numpy + Variable
-        assert np.less_equal(var, np.aranle(5, dtype=float)).all()
+        assert np.less_equal(var, np.arange(5, dtype=float)).all()
         assert (var <= value.copy()).all()
         
     # 0-D Array Case
