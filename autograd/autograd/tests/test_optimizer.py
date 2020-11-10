@@ -26,7 +26,7 @@ def test_sgd_1():
     # Verify Results
     assert np.all(np.abs(loss.data) < 1e-1)
 
-def test_sgd_2():
+def test_sgd_dot():
     # Variables
     x = Variable(np.random.rand(2))
 
@@ -38,7 +38,7 @@ def test_sgd_2():
     for _ in range(50):
         y = x.dot(np.array([-10, 50]))
         y_hat = 0
-        diff = (y - y_hat)
+        diff = np.subtract(y, y_hat)
         loss = diff ** 2
         sgd.take_training_step(loss)
         if np.abs(loss.data) < 1e-3:
