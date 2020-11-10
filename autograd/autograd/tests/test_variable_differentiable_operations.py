@@ -45,8 +45,8 @@ def test_variable_multiply():
     b_array = np.array([3, 8, 5, 6, 8])
     a = Variable(np.arange(5))
     b = Variable(np.array([3, 8, 5, 6, 8]))
-    expected_result_variable = Variable(np.array(0, 8, 10, 18, 32])
-    expected_result_array = np.array((0, 8, 10, 18, 32])
+    expected_result_variable = Variable(np.array([0, 8, 10, 18, 32]))
+    expected_result_array = np.array([0, 8, 10, 18, 32])
     
     assert np.all(a_array == a.data)
     assert np.all(b_array == b.data)
