@@ -36,7 +36,7 @@ def test_variable_dot():
     validate_result(np.dot(a, b_array), Variable)
     
     # numpy + Variable
-    validate_result(np.dot(a, b), Variable)
+    validate_result(np.dot(a_array, b), Variable)
     validate_result(np.ndarray.dot(a, b), Variable)
     validate_result(a_array.dot(b), Variable)    
 
