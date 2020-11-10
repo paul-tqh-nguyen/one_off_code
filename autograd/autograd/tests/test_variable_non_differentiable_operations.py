@@ -329,7 +329,7 @@ def test_variable_less():
     assert np.less(var, np.array(84, dtype=float)).all()
     assert (var < np.array(84)).all()
 
-def test_variable_greater_than_or_equal_to():
+def test_variable_greater_than_equal_or_equal_to():
 
     # 1-D Array Case
     
@@ -337,7 +337,7 @@ def test_variable_greater_than_or_equal_to():
     other_var = Variable(np.arange(5))
     # Variable + Variable
     assert var.greater(other_var).all()
-    assert var.greater_than(other_var).all()
+    assert var.greater_than_equal(other_var).all()
     assert var.gt(other_var).all()
     assert (var > other_var).all()
     assert np.greater(var, other_var).all()
@@ -346,7 +346,7 @@ def test_variable_greater_than_or_equal_to():
     assert (np.array([11, 22, 33, 44, 55]) > np.arange(5)).all()
     # Variable + numpy
     assert var.greater(np.arange(5)).all()
-    assert var.greater_than(np.arange(5)).all()
+    assert var.greater_than_equal(np.arange(5)).all()
     assert var.gt(np.arange(5)).all()
     assert (var > np.arange(5)).all()
     assert np.greater(var, np.arange(5, dtype=float)).all()
@@ -360,7 +360,7 @@ def test_variable_greater_than_or_equal_to():
     other_var = Variable(np.array(9))
     # Variable + Variable
     assert var.greater(other_var)
-    assert var.greater_than(other_var)
+    assert var.greater_than_equal(other_var)
     assert var.gt(other_var)
     assert var > other_var
     assert np.greater(var, other_var)
@@ -369,7 +369,7 @@ def test_variable_greater_than_or_equal_to():
     assert np.all(np.array(21) > np.array(9))
     # Variable + numpy
     assert var.greater(np.array(9)).all()
-    assert var.greater_than(np.array(9)).all()
+    assert var.greater_than_equal(np.array(9)).all()
     assert var.gt(np.array(9)).all()
     assert (var > np.array(9)).all()
     assert np.greater(var, np.array(9, dtype=float)).all()
@@ -383,7 +383,7 @@ def test_variable_greater_than_or_equal_to():
     other_var = Variable(37)
     # Variable + Variable
     assert var.greater(other_var)
-    assert var.greater_than(other_var)
+    assert var.greater_than_equal(other_var)
     assert var.gt(other_var)
     assert var > other_var
     assert np.greater(var, other_var)
@@ -392,7 +392,7 @@ def test_variable_greater_than_or_equal_to():
     assert np.all(np.array(84) > np.array(37))
     # Variable + numpy
     assert var.greater(np.array(37)).all()
-    assert var.greater_than(np.array(37)).all()
+    assert var.greater_than_equal(np.array(37)).all()
     assert var.gt(np.array(37)).all()
     assert (var > np.array(37)).all()
     assert np.greater(var, np.array(37, dtype=float)).all()
