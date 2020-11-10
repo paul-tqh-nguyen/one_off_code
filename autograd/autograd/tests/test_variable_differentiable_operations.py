@@ -12,8 +12,6 @@ def test_variable_dot():
     b = Variable(np.array([3, 8, 5, 6, 8]))
     expected_result = 68
 
-    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
-    
     assert np.all(a_array == a.data)
     assert np.all(b_array == b.data)
     assert id(a_array) != id(a.data)
@@ -22,7 +20,6 @@ def test_variable_dot():
     def validate_result(result, expected_type: type) -> None:
         assert result == expected_result
         assert isinstance(result, expected_type)
-        variable_to_gradient_1 = sgd_1.take_training_step(loss_1)
         return
     
     # Variable + Variable
@@ -41,7 +38,12 @@ def test_variable_dot():
     # numpy + Variable
     validate_result(np.dot(a_array, b), Variable)
     validate_result(np.ndarray.dot(a_array, b), Variable)
-    validate_result(a_array.dot(b), Variable)    
+    validate_result(a_array.dot(b), Variable)
+
+    
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    a.dot(b)
+        variable_to_gradient = sgd.take_training_step(loss)
 
 def test_variable_multiply():
     a_array = np.arange(5)
