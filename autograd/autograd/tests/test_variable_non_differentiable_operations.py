@@ -359,28 +359,29 @@ def test_variable_greater_than_equal_or_equal_to():
     # 0-D Array Case
     
     var = Variable(np.array(21, dtype=float))
-    other_var = Variable(np.array(9))
-    # Variable + Variable
-    assert var.greater_equal(other_var)
-    assert var.greater_than_equal(other_var)
-    assert var.ge(other_var)
-    assert var.gte(other_var)
-    assert var >= other_var
-    assert np.greater_equal(var, other_var)
-    # nupmy + numpy
-    assert np.greater_equal(np.array(21), np.array(9))
-    assert np.all(np.array(21) >= np.array(9))
-    # Variable + numpy
-    assert var.greater_equal(np.array(9)).all()
-    assert var.greater_than_equal(np.array(9)).all()
-    assert var.ge(np.array(9)).all()
-    assert var.gte(np.array(9)).all()
-    assert (var >= np.array(9)).all()
-    assert np.greater_equal(var, np.array(9, dtype=float)).all()
-    # numpy + Variable
-    assert np.greater_equal(var, np.array(9, dtype=float)).all()
-    assert (var >= np.array(9)).all()
-    
+    for other_value in (9, 21):
+        other_var = Variable(np.array(9))
+        # Variable + Variable
+        assert var.greater_equal(other_var)
+        assert var.greater_than_equal(other_var)
+        assert var.ge(other_var)
+        assert var.gte(other_var)
+        assert var >= other_var
+        assert np.greater_equal(var, other_var)
+        # nupmy + numpy
+        assert np.greater_equal(np.array(21), np.array(9))
+        assert np.all(np.array(21) >= np.array(9))
+        # Variable + numpy
+        assert var.greater_equal(np.array(9)).all()
+        assert var.greater_than_equal(np.array(9)).all()
+        assert var.ge(np.array(9)).all()
+        assert var.gte(np.array(9)).all()
+        assert (var >= np.array(9)).all()
+        assert np.greater_equal(var, np.array(9, dtype=float)).all()
+        # numpy + Variable
+        assert np.greater_equal(var, np.array(9, dtype=float)).all()
+        assert (var >= np.array(9)).all()
+        
     # Python Int Case
     
     var = Variable(84)
