@@ -345,7 +345,6 @@ def test_variable_sum():
     assert np.all(expected_result_variable == expected_result_number)
     
     assert id(a_array) != id(a.data)
-    assert id(b_array) != id(b.data)
     assert id(expected_result_variable) != id(expected_result_number)
 
     def validate_variable_result(result) -> None:
@@ -358,24 +357,14 @@ def test_variable_sum():
         assert isinstance(result, np.ndarray)
         return
     
-    # Variable + Variable
-    validate_variable_result(a.sum(b))
-    validate_variable_result(a + b)
-    validate_variable_result(np.sum(a, b))
+    # Variable
+    validate_variable_result(a.sum())
+    validate_variable_result(np.sum(a))
     
     # nupmy + numpy
-    validate_array_result(np.sum(a_array, b_array))
-    validate_array_result(a_array + b_array)
-    
-    # Variable + numpy
-    validate_variable_result(a.sum(b_array))
-    validate_variable_result(a + b_array)
-    validate_variable_result(np.sum(a, b_array))
-    
-    # numpy + Variable
-    validate_variable_result(np.sum(a_array, b))
-    # validate_variable_result(a_array + b) # @todo make this work
-    
+    validate_array_result(np.sum(a_array))
+    validate_array_result(a_array.sum())
+        
     # Verify Derivative
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
     difference = a+b
