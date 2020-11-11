@@ -267,5 +267,5 @@ def test_variable_pow():
         sgd.take_training_step(loss)
         if loss.data.sum() < 1e-4:
             break
-    assert np.abs(x.data - np.array([2, 3])).sum() < 2e-3
+    assert np.abs(x.data - np.array([2, 3])).sum() < 9e-3
     assert loss.data.sum() < 1e-4
