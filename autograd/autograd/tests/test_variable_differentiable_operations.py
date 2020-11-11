@@ -58,6 +58,7 @@ def test_variable_dot():
         sgd.take_training_step(loss)
         if 0 < loss.data < 1e-3:
             break
+    assert np.abs(x.data - np.array([0, 60])).sum() < 1
     assert 0 < loss.data < 1e-3
 
 def test_variable_multiply():
@@ -183,12 +184,11 @@ def test_variable_subtract():
         y_hat = np.array([10, 10])
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        print(f"loss.data.sum() {repr(loss.data.sum())}")
         sgd.take_training_step(loss)
-        if loss.data.sum() < 1e-6):
+        if loss.data.sum() < 1e-10:
             break
-    assert np.abs(x.data - np.array([30, -40])).sum() < 1e-3
-    assert loss.data.sum() < 1e-6):
+    assert np.abs(x.data - np.array([0, 60])).sum() < 1
+    assert loss.data.sum() < 1e-10
 
 def test_variable_pow():
     a_array = np.arange(5, dtype=float)+1
