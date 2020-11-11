@@ -58,7 +58,6 @@ def test_variable_dot():
         sgd.take_training_step(loss)
         if 0 < loss.data < 1e-3:
             break
-    assert np.abs(x.data - np.array([0, 60])).sum() < 1
     assert 0 < loss.data < 1e-3
 
 def test_variable_multiply():
@@ -123,6 +122,7 @@ def test_variable_multiply():
         sgd.take_training_step(loss)
         if np.all(loss.data < 1e-3):
             break
+    assert np.abs(x.data).sum() < 5e-3
     assert np.all(loss.data < 1e-3)
 
 def test_variable_subtract():
@@ -241,3 +241,18 @@ def test_variable_pow():
     variable_to_gradient = sgd.take_training_step(result)
     assert np.all(variable_to_gradient[a] == b_array*(a_array**(b_array-1)))
     assert np.all(variable_to_gradient[b] == np.log(a_array)*(a_array**b_array))
+
+    # Verify Trainability (Base)
+    x = Variable(np.array([1234, 5678], dtype=float))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-1)
+    for _ in range(1_000):
+        y = x.pow(np.array([2, 3]))
+        y_hat = np.array([100, 8])
+        diff = np.subtract(y, y_hat)
+        loss = diff ** 2
+        print(f"loss.data {repr(loss.data)}")
+        sgd.take_training_step(loss)
+        if loss.data.sum() < 1e-10:
+            break
+    assert np.abs(x.data - np.array([10, 2])).sum() < 1e-5
+    assert loss.data.sum() < 1e-10
