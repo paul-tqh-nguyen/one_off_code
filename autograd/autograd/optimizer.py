@@ -65,7 +65,7 @@ class SGD(Optimizer):
 
     def take_training_step(self, minimization_variable: Variable) -> Dict[Variable, Union[int, float, np.number, np.ndarray]]:
         variable_to_gradient = self.execute_backpropagation(minimization_variable)
-        # @todo make this class track the variables we only car about changing. Don't bother taking steps for variables that aren't important.
+        # @todo make this class track the variables we only care about changing. Don't bother taking steps for variables that aren't important.
         for variable, d_minimization_variable_over_d_variable in variable_to_gradient.items():
             variable.data -= self.learning_rate * d_minimization_variable_over_d_variable
         return variable_to_gradient

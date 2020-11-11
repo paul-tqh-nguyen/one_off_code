@@ -11,6 +11,7 @@
 
 import forbiddenfruit
 from itertools import chain
+from functools import reduce
 from collections import defaultdict
 import numpy as np
 from typing import List, Set, Tuple, DefaultDict, Dict, Callable, Union, Generator, Optional
@@ -22,6 +23,8 @@ from .misc_utilities import *
 ####################
 # Variable Classes #
 ####################
+
+# @todo we use ValueError in places where NotImplementedError would be more appropriate
 
 VariableOperand = Union[int, float, bool, np.number, np.ndarray, 'Variable']
 
@@ -98,7 +101,7 @@ class Variable:
         return
     
     @classmethod
-    def numpy_replacement(cls, **internally_used_name_to_np_path_specification: Dict[str, Union[List[str], str]]) -> Callable:
+    def numpy_replacement(cls, is_ufunc: bool = False, **internally_used_name_to_np_path_specification: Dict[str, Union[List[str], str]]) -> Callable:
         '''Replaces numpy methods via monkey patching. The replaced methods are assumed to be behavioraly equivalent.'''
         internally_used_name, np_paths, replaced_callables = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path_specification)
         def decorator(func: Callable) -> Callable:
@@ -107,6 +110,21 @@ class Variable:
                     assert internally_used_name not in kwargs.keys()
                     kwargs[internally_used_name] = replaced_callable
                     return func(*args, **kwargs)
+                if is_ufunc: # @todo test this with both True and False
+                    # @todo abstract this out
+                    # @todo support other ufunc methods
+                    def reducer(array, axis, dtype, out, **reducer_kwargs): # @todo add type hints
+                        if axis is not None: # @todo test this
+                            raise ValueError(f'The parameter "axis" is not supported for {np_path}.reduce.')
+                        if dtype is not None: # @todo test this
+                            raise ValueError(f'The parameter "dtype" is not supported for {np_path}.reduce.')
+                        if out is not None: # @todo test this
+                            raise ValueError(f'The parameter "out" is not supported for {np_path}.reduce.')
+                        if len(reducer_kwargs) > 0: # @todo test this
+                            raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in reducer_kwargs.keys()]} are not supported for {np_path}.reduce.')
+                        reduction = replaced_callable.reduce(array, axis, dtype, out)
+                        return reduction
+                    decorated_function.reduce = reducer
                 decorated_function.__name__ = func.__name__
                 cls._replace_numpy_method(np_path, decorated_function)
             return decorated_function
@@ -204,6 +222,21 @@ class Variable:
         variable_depended_on_by_summation_to_backward_propagation_functions[self].append(lambda d_minimization_target_over_d_summation: d_minimization_target_over_d_summation * np.ones(self.shape))
         summation_variable = Variable(summation, dict(variable_depended_on_by_summation_to_backward_propagation_functions))
         return summation_variable
+
+    def __abs__(self, **kwargs) -> 'Variable':
+        return self.abs(**kwargs)
+    
+    def abs(self, **kwargs) -> 'Variable':
+        absolute_value = np.abs(self.data, **kwargs)
+        if len(kwargs) > 0:
+            raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+        variable_depended_on_by_absolute_value_to_backward_propagation_functions = defaultdict(list)
+        d_absolute_value_over_d_self = np.ones(self.shape, dtype=float)
+        d_absolute_value_over_d_self[self.data==0] = 0
+        d_absolute_value_over_d_self[self.data<0] = -1
+        variable_depended_on_by_absolute_value_to_backward_propagation_functions[self].append(lambda d_minimization_target_over_d_absolute_value: d_minimization_target_over_d_absolute_value * d_absolute_value_over_d_self)
+        absolute_value_variable = Variable(absolute_value, dict(variable_depended_on_by_absolute_value_to_backward_propagation_functions))
+        return absolute_value_variable
 
 ##########################################
 # Variable Non-Differentiable Operations #
@@ -368,7 +401,7 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     return difference_variable
 
 @Variable.new_method('add', '__add__')
-@Variable.numpy_replacement(np_add='np.add') # @todo support __add__ methods
+@Variable.numpy_replacement(np_add='np.add', is_ufunc=True) # @todo support __add__ methods
 def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
@@ -391,7 +424,7 @@ def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> V
 def sum(operand: VariableOperand, np_sum: Callable, **kwargs) -> VariableOperand:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
-    summation = np_sum(operand, **kwargs)
+    summation = np_sum(operand_data, **kwargs)
     if not operand_is_variable:
         return summation
     if len(kwargs) > 0:
@@ -400,4 +433,18 @@ def sum(operand: VariableOperand, np_sum: Callable, **kwargs) -> VariableOperand
     variable_depended_on_by_summation_to_backward_propagation_functions[operand].append(lambda d_minimization_target_over_d_summation: d_minimization_target_over_d_summation * np.ones(operand.shape))
     summation_variable = Variable(summation, dict(variable_depended_on_by_summation_to_backward_propagation_functions))
     return summation_variable
+
+@Variable.numpy_replacement(np_abs=['np.abs', 'np.absolute'])
+def abs(operand: VariableOperand, np_abs: Callable, **kwargs) -> VariableOperand:
+    operand_is_variable = isinstance(operand, Variable)
+    operand_data = operand.data if operand_is_variable else operand
+    absolute_value = np_abs(operand_data, **kwargs)
+    if not operand_is_variable:
+        return absolute_value
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+    variable_depended_on_by_absolute_value_to_backward_propagation_functions = defaultdict(list)
+    variable_depended_on_by_absolute_value_to_backward_propagation_functions[operand].append(lambda d_minimization_target_over_d_absolute_value: d_minimization_target_over_d_absolute_value * np.ones(operand.shape))
+    absolute_value_variable = Variable(absolute_value, dict(variable_depended_on_by_absolute_value_to_backward_propagation_functions))
+    return absolute_value_variable
 

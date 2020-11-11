@@ -55,10 +55,10 @@ def test_variable_dot():
         y_hat = 0
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        sgd.take_training_step(loss)
-        if 0 < loss.data < 1e-3:
+        if 0 < loss < 1e-3:
             break
-    assert 0 < loss.data < 1e-3
+        sgd.take_training_step(loss)
+    assert 0 < loss < 1e-3
 
 def test_variable_multiply():
     a_array = np.arange(5)
@@ -119,11 +119,11 @@ def test_variable_multiply():
         y_hat = 0
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        sgd.take_training_step(loss)
-        if np.all(loss.data < 1e-3):
+        if np.all(loss < 1e-3):
             break
-    assert np.abs(x.data).sum() < 5e-3
-    assert np.all(loss.data < 1e-3)
+        sgd.take_training_step(loss)
+    assert np.abs(x).sum() < 5e-3
+    assert np.all(loss < 1e-3)
 
 def test_variable_subtract():
     a_array = np.arange(5)
@@ -184,11 +184,11 @@ def test_variable_subtract():
         y_hat = np.array([10, 10])
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        sgd.take_training_step(loss)
-        if loss.data.sum() < 1e-10:
+        if loss.sum() < 1e-10:
             break
-    assert np.abs(x.data - np.array([0, 60])).sum() < 1
-    assert loss.data.sum() < 1e-10
+        sgd.take_training_step(loss)
+    assert np.abs(x - np.array([0, 60])).sum() < 1
+    assert loss.sum() < 1e-10
 
 def test_variable_pow():
     a_array = np.arange(5, dtype=float)+1
@@ -250,11 +250,11 @@ def test_variable_pow():
         y_hat = np.array([100, 8])
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        variable_to_gradient = sgd.take_training_step(loss)
-        if loss.data.sum() < 1e-4:
+        if loss.sum() < 1e-4:
             break
-    assert np.abs(x.data - np.array([10, 2])).sum() < 2e-3
-    assert loss.data.sum() < 1e-4
+        variable_to_gradient = sgd.take_training_step(loss)
+    assert np.abs(x - np.array([10, 2])).sum() < 2e-3
+    assert loss.sum() < 1e-4
 
     # Verify Trainability (Exponent)
     x = Variable(np.array([1.9, 2.9], dtype=float))
@@ -264,11 +264,11 @@ def test_variable_pow():
         y_hat = np.array([9, 8])
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        sgd.take_training_step(loss)
-        if loss.data.sum() < 1e-4:
+        if loss.sum() < 1e-4:
             break
-    assert np.abs(x.data - np.array([2, 3])).sum() < 9e-3
-    assert loss.data.sum() < 1e-4
+        sgd.take_training_step(loss)
+    assert np.abs(x - np.array([2, 3])).sum() < 9e-3
+    assert loss.sum() < 1e-4
 
 def test_variable_add():
     a_array = np.arange(5)
@@ -329,14 +329,14 @@ def test_variable_add():
         y_hat = np.array([10, 10])
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        sgd.take_training_step(loss)
-        if loss.data.sum() < 1e-10:
+        if loss.sum() < 1e-10:
             break
-    assert np.abs(x.data - np.array([20, -40])).sum() < 1
-    assert loss.data.sum() < 1e-10
+        sgd.take_training_step(loss)
+    assert np.abs(x - np.array([20, -40])).sum() < 1
+    assert loss.sum() < 1e-10
 
 def test_variable_sum():
-    a_array = np.arange(5)
+    a_array = np.arange(5) # @todo test single number case as well
     a = Variable(np.arange(5, dtype=float)) # @todo test single number case as well
     expected_result_variable = Variable(10)
     expected_result_number = 10
@@ -362,7 +362,7 @@ def test_variable_sum():
     validate_variable_result(a.sum())
     validate_variable_result(np.sum(a))
     
-    # nupmy + numpy
+    # nupmy
     validate_number_result(a_array.sum())
     validate_number_result(np.sum(a_array))
         
@@ -380,8 +380,56 @@ def test_variable_sum():
         y_hat = 10
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        sgd.take_training_step(loss)
-        if loss.data.sum() < 1e-10:
+        if loss.sum() < 1e-10:
             break
-    assert np.abs(x.data - 10).sum() < 1e-4
-    assert loss.data.sum() < 1e-10
+        sgd.take_training_step(loss)
+    assert np.abs(x.sum() - 10) < 1e-4
+    assert loss.sum() < 1e-10
+
+def test_variable_abs():
+    a_array = np.array([0, -1, -2, 3]) # @todo test single number case as well
+    a = Variable(np.array([0, -1, -2, 3], dtype=float)) # @todo test single number case as well
+    expected_result_variable = Variable(np.arange(4))
+    expected_result_array = np.arange(4)
+    
+    assert np.all(a_array == a.data)
+    assert np.all(expected_result_variable == expected_result_array)
+    
+    assert id(a_array) != id(a.data)
+    assert id(expected_result_variable) != id(expected_result_array)
+
+    def validate_variable_result(result) -> None:
+        assert expected_result_variable.eq(result).all()
+        assert isinstance(result, Variable)
+        return
+
+    def validate_array_result(result) -> None:
+        assert np.all(result == expected_result_array)
+        assert isinstance(result, np.ndarray)
+        return
+    
+    # Variable
+    validate_variable_result(abs(a))
+    validate_variable_result(a.abs())
+    validate_variable_result(np.abs(a))
+    
+    # nupmy + numpy
+    validate_array_result(abs(a_array))
+    validate_array_result(np.abs(a_array))
+        
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    absolute_value = a.abs()
+    variable_to_gradient = sgd.take_training_step(absolute_value)
+    assert np.all(variable_to_gradient[a] == np.array([0, -1, -1, 1]))
+
+    # Verify Trainability
+    x = Variable(np.array([-2, -1, 0, 1, 2], dtype=float))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-1)
+    for _ in range(1_000):
+        absolute_value = x.abs()
+        if np.all(np.abs(absolute_value) < 1e-10):
+            break
+        sgd.take_training_step(absolute_value)
+    assert np.all(np.abs(absolute_value) < 1e-10)
+    assert np.all(np.abs(x) < 1e-10)
