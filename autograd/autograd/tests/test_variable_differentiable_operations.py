@@ -243,15 +243,19 @@ def test_variable_pow():
     assert np.all(variable_to_gradient[b] == np.log(a_array)*(a_array**b_array))
 
     # Verify Trainability (Base)
-    x = Variable(np.array([1234, 5678], dtype=float))
-    sgd = autograd.optimizer.SGD(learning_rate=1e-1)
-    for _ in range(1_000):
+    x = Variable(np.array([12, 5], dtype=float))
+    sgd = autograd.optimizer.SGD(learning_rate=5e-4)
+    for _ in range(100):
         y = x.pow(np.array([2, 3]))
         y_hat = np.array([100, 8])
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
+        print()
+        print(f"x.data {repr(x.data)}")
+        variable_to_gradient = sgd.take_training_step(loss)
+        print(f"x.data {repr(x.data)}")
         print(f"loss.data {repr(loss.data)}")
-        sgd.take_training_step(loss)
+        print(f"variable_to_gradient[x] {repr(variable_to_gradient[x])}")
         if loss.data.sum() < 1e-10:
             break
     assert np.abs(x.data - np.array([10, 2])).sum() < 1e-5
