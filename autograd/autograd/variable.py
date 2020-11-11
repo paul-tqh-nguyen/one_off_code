@@ -195,6 +195,8 @@ class Variable:
     def sum(self, **kwargs) -> 'Variable':
         summation = self.data.sum(**kwargs)
         if len(kwargs) > 0:
+            if 'axis' in kwargs:
+                del kwargs['axis']
             print(f"kwargs['axis'] {repr(kwargs['axis'])}")
             print(f"kwargs['out'] {repr(kwargs['out'])}")
             raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
