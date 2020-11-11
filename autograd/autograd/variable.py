@@ -193,7 +193,11 @@ class Variable:
         return self.data.any(**kwargs) if isinstance(self.data, np.ndarray) else bool(self.data)
     
     def sum(self, **kwargs) -> Union[bool, np.ndarray]:
-        return self.data.sum(**kwargs)
+        summation = self.data.sum(**kwargs)
+        if len(kwargs) > 0:
+            raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+        
+        return 
 
 ##########################################
 # Variable Non-Differentiable Operations #
