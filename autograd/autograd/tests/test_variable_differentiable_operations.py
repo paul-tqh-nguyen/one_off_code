@@ -257,16 +257,14 @@ def test_variable_pow():
     assert loss.data.sum() < 1e-4
 
     # Verify Trainability (Exponent)
-    x = Variable(np.random.rand(2))
-    sgd = autograd.optimizer.SGD(learning_rate=1e-6)
-    for _ in range(1000):
-        y = np.float_power(np.array([10, 2], dtype=float), x)
-        y_hat = np.array([100, 8])
+    x = Variable(np.array([1.9, 2.9], dtype=float))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    for _ in range(1_000):
+        y = np.float_power(np.array([3, 2], dtype=float), x)
+        y_hat = np.array([9, 8])
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
-        print(f"x.data {repr(x.data)}")
-        print(f"loss.data.sum() {repr(loss.data.sum())}")
-        variable_to_gradient = sgd.take_training_step(loss)
+        sgd.take_training_step(loss)
         if loss.data.sum() < 1e-4:
             break
     assert np.abs(x.data - np.array([2, 3])).sum() < 2e-3
