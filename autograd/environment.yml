@@ -9,3 +9,6 @@ dependencies:
   - pip
   - pip:
     - forbiddenfruit
+
+# Only required for examples
+  - conda-forge::jupyterlab

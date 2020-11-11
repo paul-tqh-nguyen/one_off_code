@@ -91,6 +91,7 @@ class Variable:
             setattr(module, np_path_sub_attributes[-1], replacement_function)
         except TypeError as error:
             if len(error.args) == 1 and 'can\'t set attributes of built-in/extension type' in error.args[0]:
+                # @todo warn when this case is used stating that it's dangerous.
                 forbiddenfruit.curse(module, np_path_sub_attributes[-1], replacement_function)
             else:
                 raise error
