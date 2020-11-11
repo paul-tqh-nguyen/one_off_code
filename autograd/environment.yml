@@ -12,3 +12,4 @@ dependencies:
 
 # Only required for examples
   - conda-forge::jupyterlab
+  - pandas

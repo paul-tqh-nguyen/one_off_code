@@ -334,6 +334,26 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     difference_variable = Variable(difference, dict(variable_depended_on_by_difference_to_backward_propagation_functions))
     return difference_variable
 
+@Variable.new_method('add', '__add__')
+@Variable.numpy_replacement(np_add='np.add') # @todo support __add__ methods
+def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> VariableOperand:
+    a_is_variable = isinstance(a, Variable)
+    b_is_variable = isinstance(b, Variable)
+    a_data = a.data if a_is_variable else a
+    b_data = b.data if b_is_variable else b
+    sum_value = np_add(a_data, b_data, **kwargs)
+    if not a_is_variable and not b_is_variable:
+        return sum_value
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+    variable_depended_on_by_sum_value_to_backward_propagation_functions = defaultdict(list)
+    if a_is_variable:
+        variable_depended_on_by_sum_value_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_sum_value: d_minimization_target_over_d_sum_value)
+    if b_is_variable:
+        variable_depended_on_by_sum_value_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_sum_value: d_minimization_target_over_d_sum_value)
+    sum_value_variable = Variable(sum_value, dict(variable_depended_on_by_sum_value_to_backward_propagation_functions))
+    return sum_value_variable
+
 @Variable.new_method('power', 'pow', '__pow__')
 @Variable.numpy_replacement(np_float_power='np.float_power')
 def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power: Callable, **kwargs) -> VariableOperand:

@@ -269,3 +269,68 @@ def test_variable_pow():
             break
     assert np.abs(x.data - np.array([2, 3])).sum() < 9e-3
     assert loss.data.sum() < 1e-4
+
+def test_variable_add():
+    a_array = np.arange(5)
+    b_array = np.array([3, 8, 5, 6, 8])
+    a = Variable(np.arange(5, dtype=float))
+    b = Variable(np.array([3, 8, 5, 6, 8], dtype=float))
+    expected_result_variable = Variable(np.array([3, 9,7, 9, 12]))
+    expected_result_array = np.array([3, 9,7, 9, 12])
+    
+    assert np.all(a_array == a.data)
+    assert np.all(b_array == b.data)
+    assert np.all(expected_result_variable == expected_result_array)
+    
+    assert id(a_array) != id(a.data)
+    assert id(b_array) != id(b.data)
+    assert id(expected_result_variable) != id(expected_result_array)
+
+    def validate_variable_result(result) -> None:
+        assert result.eq(expected_result_variable).all()
+        assert isinstance(result, Variable)
+        return
+
+    def validate_array_result(result) -> None:
+        assert np.all(result == expected_result_array)
+        assert isinstance(result, np.ndarray)
+        return
+    
+    # Variable + Variable
+    validate_variable_result(a.add(b))
+    validate_variable_result(a + b)
+    validate_variable_result(np.add(a, b))
+    
+    # nupmy + numpy
+    validate_array_result(np.add(a_array, b_array))
+    validate_array_result(a_array + b_array)
+    
+    # Variable + numpy
+    validate_variable_result(a.add(b_array))
+    validate_variable_result(a + b_array)
+    validate_variable_result(np.add(a, b_array))
+    
+    # numpy + Variable
+    validate_variable_result(np.add(a_array, b))
+    # validate_variable_result(a_array + b) # @todo make this work
+    
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    difference = a+b
+    variable_to_gradient = sgd.take_training_step(difference)
+    assert np.all(variable_to_gradient[a] == np.ones(a.shape))
+    assert np.all(variable_to_gradient[b] == np.ones(b.shape))
+
+    # Verify Trainability
+    x = Variable(np.random.rand(2))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-1)
+    for _ in range(1_000):
+        y = x.add(np.array([-10, 50]))
+        y_hat = np.array([10, 10])
+        diff = np.subtract(y, y_hat)
+        loss = diff ** 2
+        sgd.take_training_step(loss)
+        if loss.data.sum() < 1e-10:
+            break
+    assert np.abs(x.data - np.array([20, -40])).sum() < 1
+    assert loss.data.sum() < 1e-10
