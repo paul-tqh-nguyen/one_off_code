@@ -354,6 +354,7 @@ def test_variable_sum():
 
     def validate_number_result(result) -> None:
         assert np.all(result == expected_result_number)
+        float(result) # error means it can't be converted to a float
         assert isinstance(result, np.number)
         return
     
