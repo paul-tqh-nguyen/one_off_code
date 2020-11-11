@@ -175,6 +175,21 @@ def test_variable_subtract():
     assert np.all(variable_to_gradient[a] == np.ones(a.shape))
     assert np.all(variable_to_gradient[b] == np.full(b.shape, -1))
 
+    # Verify Trainability
+    x = Variable(np.random.rand(2))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-1)
+    for _ in range(1_000):
+        y = x.subtract(np.array([-10, 50]))
+        y_hat = np.array([10, 10])
+        diff = np.subtract(y, y_hat)
+        loss = diff ** 2
+        print(f"loss.data.sum() {repr(loss.data.sum())}")
+        sgd.take_training_step(loss)
+        if loss.data.sum() < 1e-6):
+            break
+    assert np.abs(x.data - np.array([30, -40])).sum() < 1e-3
+    assert loss.data.sum() < 1e-6):
+
 def test_variable_pow():
     a_array = np.arange(5, dtype=float)+1
     b_array = np.array([0, 2, 2, 3, 3], dtype=float)
