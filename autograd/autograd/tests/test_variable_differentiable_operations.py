@@ -334,3 +334,65 @@ def test_variable_add():
             break
     assert np.abs(x.data - np.array([20, -40])).sum() < 1
     assert loss.data.sum() < 1e-10
+
+def test_variable_sum():
+    a_array = np.arange(5)
+    a = Variable(np.arange(5, dtype=float))
+    expected_result_variable = Variable(10)
+    expected_result_number = 10
+    
+    assert np.all(a_array == a.data)
+    assert np.all(expected_result_variable == expected_result_number)
+    
+    assert id(a_array) != id(a.data)
+    assert id(b_array) != id(b.data)
+    assert id(expected_result_variable) != id(expected_result_number)
+
+    def validate_variable_result(result) -> None:
+        assert result.eq(expected_result_variable).all()
+        assert isinstance(result, Variable)
+        return
+
+    def validate_array_result(result) -> None:
+        assert np.all(result == expected_result_number)
+        assert isinstance(result, np.ndarray)
+        return
+    
+    # Variable + Variable
+    validate_variable_result(a.sum(b))
+    validate_variable_result(a + b)
+    validate_variable_result(np.sum(a, b))
+    
+    # nupmy + numpy
+    validate_array_result(np.sum(a_array, b_array))
+    validate_array_result(a_array + b_array)
+    
+    # Variable + numpy
+    validate_variable_result(a.sum(b_array))
+    validate_variable_result(a + b_array)
+    validate_variable_result(np.sum(a, b_array))
+    
+    # numpy + Variable
+    validate_variable_result(np.sum(a_array, b))
+    # validate_variable_result(a_array + b) # @todo make this work
+    
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    difference = a+b
+    variable_to_gradient = sgd.take_training_step(difference)
+    assert np.all(variable_to_gradient[a] == np.ones(a.shape))
+    assert np.all(variable_to_gradient[b] == np.ones(b.shape))
+
+    # Verify Trainability
+    x = Variable(np.random.rand(2))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-1)
+    for _ in range(1_000):
+        y = x.sum(np.array([-10, 50]))
+        y_hat = np.array([10, 10])
+        diff = np.subtract(y, y_hat)
+        loss = diff ** 2
+        sgd.take_training_step(loss)
+        if loss.data.sum() < 1e-10:
+            break
+    assert np.abs(x.data - np.array([20, -40])).sum() < 1
+    assert loss.data.sum() < 1e-10
