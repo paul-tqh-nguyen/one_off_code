@@ -385,7 +385,7 @@ def sum(operand: VariableOperand, np_sum: Callable, **kwargs) -> VariableOperand
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_sum_value_to_backward_propagation_functions = defaultdict(list)
-    variable_depended_on_by_sum_value_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_sum_value: d_minimization_target_over_d_sum_value)
+    variable_depended_on_by_sum_value_to_backward_propagation_functions[operand].append(lambda d_minimization_target_over_d_sum_value: d_minimization_target_over_d_sum_value * np.ones(operand.shape))
     sum_value_variable = Variable(sum_value, dict(variable_depended_on_by_sum_value_to_backward_propagation_functions))
     return sum_value_variable
 
