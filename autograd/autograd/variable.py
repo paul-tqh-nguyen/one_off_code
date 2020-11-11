@@ -195,6 +195,8 @@ class Variable:
     def sum(self, **kwargs) -> 'Variable':
         summation = self.data.sum(**kwargs)
         if len(kwargs) > 0:
+            print(f"kwargs['axis'] {repr(kwargs['axis'])}")
+            print(f"kwargs['out'] {repr(kwargs['out'])}")
             raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
         variable_depended_on_by_summation_to_backward_propagation_functions = defaultdict(list)
         variable_depended_on_by_summation_to_backward_propagation_functions[self].append(lambda d_minimization_target_over_d_summation: d_minimization_target_over_d_summation * np.ones(self.shape))
