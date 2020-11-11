@@ -362,15 +362,14 @@ def test_variable_sum():
     validate_variable_result(np.sum(a))
     
     # nupmy + numpy
-    validate_array_result(np.sum(a_array))
     validate_array_result(a_array.sum())
+    validate_array_result(np.sum(a_array))
         
     # Verify Derivative
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
-    difference = a+b
-    variable_to_gradient = sgd.take_training_step(difference)
+    summation = a.sum()
+    variable_to_gradient = sgd.take_training_step(summation)
     assert np.all(variable_to_gradient[a] == np.ones(a.shape))
-    assert np.all(variable_to_gradient[b] == np.ones(b.shape))
 
     # Verify Trainability
     x = Variable(np.random.rand(2))
