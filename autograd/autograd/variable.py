@@ -193,7 +193,7 @@ class Variable:
         return self.data.any(**kwargs) if isinstance(self.data, np.ndarray) else bool(self.data)
     
     def sum(self, **kwargs) -> Union[bool, np.ndarray]:
-        return self.data.sum(**kwargs) if isinstance(self.data, np.ndarray) else self.data
+        return self.data.sum(**kwargs) if isinstance(self.data, np.ndarray) else self
 
 ##########################################
 # Variable Non-Differentiable Operations #
