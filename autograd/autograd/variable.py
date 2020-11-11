@@ -294,6 +294,26 @@ def dot(a: VariableOperand, b: VariableOperand, np_dot: Callable, **kwargs) -> V
     dot_product_variable = Variable(dot_product, dict(variable_depended_on_by_dot_product_to_backward_propagation_functions))
     return dot_product_variable
 
+@Variable.new_method('power', 'pow', '__pow__')
+@Variable.numpy_replacement(np_float_power='np.float_power')
+def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power: Callable, **kwargs) -> VariableOperand:
+    base_is_variable = isinstance(base, Variable)
+    exponent_is_variable = isinstance(exponent, Variable)
+    base_data = base.data if base_is_variable else base
+    exponent_data = exponent.data if exponent_is_variable else exponent
+    power = np_float_power(base_data, exponent_data, **kwargs)
+    if not base_is_variable and not exponent_is_variable:
+        return power
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+    variable_depended_on_by_power_to_backward_propagation_functions = defaultdict(list)
+    if base_is_variable:
+        variable_depended_on_by_power_to_backward_propagation_functions[base].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1))
+    if exponent_is_variable:
+        variable_depended_on_by_power_to_backward_propagation_functions[exponent].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data))
+    power_variable = Variable(power, dict(variable_depended_on_by_power_to_backward_propagation_functions))
+    return power_variable
+
 @Variable.new_method('multiply', '__mul__')
 @Variable.numpy_replacement(np_multiply='np.multiply') # @todo support __mul__ methods
 def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kwargs) -> VariableOperand:
@@ -353,24 +373,3 @@ def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> V
         variable_depended_on_by_sum_value_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_sum_value: d_minimization_target_over_d_sum_value)
     sum_value_variable = Variable(sum_value, dict(variable_depended_on_by_sum_value_to_backward_propagation_functions))
     return sum_value_variable
-
-@Variable.new_method('power', 'pow', '__pow__')
-@Variable.numpy_replacement(np_float_power='np.float_power')
-def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power: Callable, **kwargs) -> VariableOperand:
-    base_is_variable = isinstance(base, Variable)
-    exponent_is_variable = isinstance(exponent, Variable)
-    base_data = base.data if base_is_variable else base
-    exponent_data = exponent.data if exponent_is_variable else exponent
-    power = np_float_power(base_data, exponent_data, **kwargs)
-    if not base_is_variable and not exponent_is_variable:
-        return power
-    if len(kwargs) > 0:
-        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_power_to_backward_propagation_functions = defaultdict(list)
-    if base_is_variable:
-        variable_depended_on_by_power_to_backward_propagation_functions[base].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1))
-    if exponent_is_variable:
-        variable_depended_on_by_power_to_backward_propagation_functions[exponent].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data))
-    power_variable = Variable(power, dict(variable_depended_on_by_power_to_backward_propagation_functions))
-    return power_variable
-
