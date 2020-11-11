@@ -47,6 +47,19 @@ def test_variable_dot():
     assert np.all(variable_to_gradient[a] == b_array)
     assert np.all(variable_to_gradient[b] == a_array)
 
+    # Verify Trainability
+    x = Variable(np.random.rand(2))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-4)
+    for _ in range(50):
+        y = x.dot(np.array([-10, 50]))
+        y_hat = 0
+        diff = np.subtract(y, y_hat)
+        loss = diff ** 2
+        sgd.take_training_step(loss)
+        if 0 < loss.data < 1e-3:
+            break
+    assert 0 < loss.data < 1e-3
+
 def test_variable_multiply():
     a_array = np.arange(5)
     b_array = np.array([3, 8, 5, 6, 8])
@@ -97,6 +110,19 @@ def test_variable_multiply():
     variable_to_gradient = sgd.take_training_step(product)
     assert np.all(variable_to_gradient[a] == b_array)
     assert np.all(variable_to_gradient[b] == a_array)
+
+    # Verify Trainability
+    x = Variable(np.random.rand(2))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-4)
+    for _ in range(1_000):
+        y = x.multiply(np.array([-10, 50]))
+        y_hat = 0
+        diff = np.subtract(y, y_hat)
+        loss = diff ** 2
+        sgd.take_training_step(loss)
+        if np.all(loss.data < 1e-3):
+            break
+    assert np.all(loss.data < 1e-3)
 
 def test_variable_subtract():
     a_array = np.arange(5)
