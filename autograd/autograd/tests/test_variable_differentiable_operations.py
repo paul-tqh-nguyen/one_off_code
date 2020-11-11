@@ -337,7 +337,7 @@ def test_variable_add():
 
 def test_variable_sum():
     a_array = np.arange(5)
-    a = Variable(np.arange(5, dtype=float)) # @todo test single case as well
+    a = Variable(np.arange(5, dtype=float)) # @todo test single number case as well
     expected_result_variable = Variable(10)
     expected_result_number = 10
     
