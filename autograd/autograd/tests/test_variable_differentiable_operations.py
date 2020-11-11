@@ -375,12 +375,12 @@ def test_variable_sum():
     x = Variable(np.random.rand(2))
     sgd = autograd.optimizer.SGD(learning_rate=1e-1)
     for _ in range(1_000):
-        y = x.sum(np.array([-10, 50]))
-        y_hat = np.array([10, 10])
+        y = x.sum()
+        y_hat = 10
         diff = np.subtract(y, y_hat)
         loss = diff ** 2
         sgd.take_training_step(loss)
         if loss.data.sum() < 1e-10:
             break
-    assert np.abs(x.data - np.array([20, -40])).sum() < 1
+    assert np.abs(x.data - 10).sum() < 1e-4
     assert loss.data.sum() < 1e-10
