@@ -191,6 +191,9 @@ class Variable:
     
     def any(self, **kwargs) -> Union[bool, np.ndarray]:
         return self.data.any(**kwargs) if isinstance(self.data, np.ndarray) else bool(self.data)
+    
+    def sum(self, **kwargs) -> Union[bool, np.ndarray]:
+        return self.data.sum(**kwargs) if isinstance(self.data, np.ndarray) else self.data
 
 ##########################################
 # Variable Non-Differentiable Operations #
@@ -374,7 +377,6 @@ def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> V
     summation_variable = Variable(summation, dict(variable_depended_on_by_summation_to_backward_propagation_functions))
     return summation_variable
 
-@Variable.new_method('sum')
 @Variable.numpy_replacement(np_sum='np.sum')
 def sum(operand: VariableOperand, np_sum: Callable, **kwargs) -> VariableOperand:
     operand_is_variable = isinstance(operand, Variable)
