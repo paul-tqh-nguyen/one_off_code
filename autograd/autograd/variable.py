@@ -194,9 +194,9 @@ class Variable:
     
     def sum(self, **kwargs) -> 'Variable':
         summation = self.data.sum(**kwargs)
-        if kwargs.get('axis', UNIQUE_BOGUS_RESULT_IDENTIFIER) == UNIQUE_BOGUS_RESULT_IDENTIFIER:
+        if kwargs.get('axis', UNIQUE_BOGUS_RESULT_IDENTIFIER) == None:
             del kwargs['axis']
-        if kwargs.get('out', UNIQUE_BOGUS_RESULT_IDENTIFIER) == UNIQUE_BOGUS_RESULT_IDENTIFIER:
+        if kwargs.get('out', UNIQUE_BOGUS_RESULT_IDENTIFIER) == None:
             del kwargs['out']
         if len(kwargs) > 0:
             raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
