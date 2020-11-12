@@ -455,15 +455,15 @@ def matmul(a: VariableOperand, b: VariableOperand, np_matmul: Callable, **kwargs
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
     b_data = b.data if b_is_variable else b
-    summation = np_matmul(a_data, b_data, **kwargs)
+    matrix_product = np_matmul(a_data, b_data, **kwargs)
     if not a_is_variable and not b_is_variable:
-        return summation
+        return matrix_product
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
-    variable_depended_on_by_summation_to_backward_propagation_functions = defaultdict(list)
+    variable_depended_on_by_matrix_product_to_backward_propagation_functions = defaultdict(list)
     if a_is_variable:
-        variable_depended_on_by_summation_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_summation: d_minimization_target_over_d_summation)
+        variable_depended_on_by_matrix_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_matrix_product: d_minimization_target_over_d_matrix_product)
     if b_is_variable:
-        variable_depended_on_by_summation_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_summation: d_minimization_target_over_d_summation)
-    summation_variable = Variable(summation, dict(variable_depended_on_by_summation_to_backward_propagation_functions))
-    return summation_variable
+        variable_depended_on_by_matrix_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_matrix_product: d_minimization_target_over_d_matrix_product)
+    matrix_product_variable = Variable(matrix_product, dict(variable_depended_on_by_matrix_product_to_backward_propagation_functions))
+    return matrix_product_variable
