@@ -361,7 +361,7 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
     return power_variable
 
 @Variable.new_method('multiply', '__mul__')
-@Variable.numpy_replacement(np_multiply='np.multiply') # @todo support np.ndarray.__mul__ methods
+@Variable.numpy_replacement(np_multiply='np.multiply') # @todo support np.ndarray.__mul__
 def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
@@ -381,7 +381,7 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
     return product_variable
 
 @Variable.new_method('subtract', '__sub__')
-@Variable.numpy_replacement(np_subtract='np.subtract') # @todo support np.ndarray.__sub__ methods
+@Variable.numpy_replacement(np_subtract='np.subtract') # @todo support np.ndarray.__sub__
 def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
     minuend_is_variable = isinstance(minuend, Variable)
     subtrahend_is_variable = isinstance(subtrahend, Variable)
@@ -401,7 +401,7 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     return difference_variable
 
 @Variable.new_method('add', '__add__')
-@Variable.numpy_replacement(np_add='np.add', is_ufunc=True) # @todo support np.ndarray.__add__ methods
+@Variable.numpy_replacement(np_add='np.add', is_ufunc=True) # @todo support np.ndarray.__add__
 def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
@@ -449,7 +449,7 @@ def abs(operand: VariableOperand, np_abs: Callable, **kwargs) -> VariableOperand
     return absolute_value_variable
 
 @Variable.new_method('matmul', '__matmul__')
-@Variable.numpy_replacement(np_matmul='np.matmul') # @todo support np.ndarray.__matmul__ methods
+@Variable.numpy_replacement(np_matmul='np.matmul') # @todo support np.ndarray.__matmul__
 def matmul(a: VariableOperand, b: VariableOperand, np_matmul: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
