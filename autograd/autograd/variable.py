@@ -461,9 +461,9 @@ def matmul(a: VariableOperand, b: VariableOperand, np_matmul: Callable, **kwargs
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_matrix_product_to_backward_propagation_functions = defaultdict(list)
-    if a_is_variable:
-        variable_depended_on_by_matrix_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_matrix_product: d_minimization_target_over_d_matrix_product)
-    if b_is_variable:
-        variable_depended_on_by_matrix_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_matrix_product: d_minimization_target_over_d_matrix_product)
+    # if a_is_variable:
+    #     variable_depended_on_by_matrix_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_matrix_product: d_minimization_target_over_d_matrix_product)
+    # if b_is_variable:
+    #     variable_depended_on_by_matrix_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_matrix_product: d_minimization_target_over_d_matrix_product)
     matrix_product_variable = Variable(matrix_product, dict(variable_depended_on_by_matrix_product_to_backward_propagation_functions))
     return matrix_product_variable
