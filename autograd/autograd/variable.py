@@ -28,6 +28,7 @@ from .misc_utilities import *
 
 VariableOperand = Union[int, float, bool, np.number, np.ndarray, 'Variable']
 
+# @todo add transpose method
 # @todo add slicing via the __getitem__ method that returns variables
 
 class Variable:
@@ -361,7 +362,7 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
     return power_variable
 
 @Variable.new_method('multiply', '__mul__')
-@Variable.numpy_replacement(np_multiply='np.multiply') # @todo support np.ndarray.__mul__
+@Variable.numpy_replacement(np_multiply='np.multiply')
 def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
@@ -381,7 +382,7 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
     return product_variable
 
 @Variable.new_method('subtract', '__sub__')
-@Variable.numpy_replacement(np_subtract='np.subtract') # @todo support np.ndarray.__sub__
+@Variable.numpy_replacement(np_subtract='np.subtract')
 def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract: Callable, **kwargs) -> VariableOperand:
     minuend_is_variable = isinstance(minuend, Variable)
     subtrahend_is_variable = isinstance(subtrahend, Variable)
@@ -401,7 +402,7 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     return difference_variable
 
 @Variable.new_method('add', '__add__')
-@Variable.numpy_replacement(np_add='np.add', is_ufunc=True) # @todo support np.ndarray.__add__
+@Variable.numpy_replacement(np_add='np.add', is_ufunc=True)
 def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
@@ -449,7 +450,7 @@ def abs(operand: VariableOperand, np_abs: Callable, **kwargs) -> VariableOperand
     return absolute_value_variable
 
 @Variable.new_method('matmul', '__matmul__')
-@Variable.numpy_replacement(np_matmul='np.matmul') # @todo support np.ndarray.__matmul__
+@Variable.numpy_replacement(np_matmul='np.matmul')
 def matmul(a: VariableOperand, b: VariableOperand, np_matmul: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
@@ -461,9 +462,9 @@ def matmul(a: VariableOperand, b: VariableOperand, np_matmul: Callable, **kwargs
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_matrix_product_to_backward_propagation_functions = defaultdict(list)
-    # if a_is_variable:
-    #     variable_depended_on_by_matrix_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_matrix_product: d_minimization_target_over_d_matrix_product)
-    # if b_is_variable:
-    #     variable_depended_on_by_matrix_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_matrix_product: d_minimization_target_over_d_matrix_product)
+    if a_is_variable:
+        variable_depended_on_by_matrix_product_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_matrix_product: np_matmul(d_minimization_target_over_d_matrix_product, b_data.T))
+    if b_is_variable:
+        variable_depended_on_by_matrix_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_matrix_product: np_matmul(a_data.T, d_minimization_target_over_d_matrix_product))
     matrix_product_variable = Variable(matrix_product, dict(variable_depended_on_by_matrix_product_to_backward_propagation_functions))
     return matrix_product_variable

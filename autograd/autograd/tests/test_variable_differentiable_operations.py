@@ -316,8 +316,8 @@ def test_variable_add():
     
     # Verify Derivative
     sgd = autograd.optimizer.SGD(learning_rate=1e-3)
-    difference = a+b
-    variable_to_gradient = sgd.take_training_step(difference)
+    summation = a+b
+    variable_to_gradient = sgd.take_training_step(summation)
     assert np.all(variable_to_gradient[a] == np.ones(a.shape))
     assert np.all(variable_to_gradient[b] == np.ones(b.shape))
 
@@ -433,3 +433,87 @@ def test_variable_abs():
         sgd.take_training_step(absolute_value)
     assert np.all(np.abs(absolute_value) < 1e-10)
     assert np.all(np.abs(x) < 1e-10)
+
+def test_variable_matmul():
+    a_matrix = np.arange(10, dtype=float).reshape(2,5)
+    b_matrix = np.arange(10, dtype=float).reshape(2,5).T
+    a = Variable(np.array([
+        [0, 1, 2, 3, 4],
+        [5, 6, 7, 8, 9],
+    ], dtype=float))
+    b = Variable(np.array([
+        [0, 5],
+        [1, 6],
+        [2, 7],
+        [3, 8],
+        [4, 9],
+    ], dtype=float))
+    expected_result_variable = Variable(np.array([
+        [30, 80],
+        [80, 255],
+    ], dtype=float))
+    expected_result_matrix = np.array([
+        [30, 80],
+        [80, 255],
+    ], dtype=float)
+    
+    assert np.all(a_matrix == a.data)
+    assert np.all(b_matrix == b.data)
+    assert np.all(expected_result_variable == expected_result_matrix)
+    
+    assert id(a_matrix) != id(a.data)
+    assert id(b_matrix) != id(b.data)
+    assert id(expected_result_variable) != id(expected_result_matrix)
+
+    def validate_variable_result(result) -> None:
+        assert tuple(result.shape) == (2, 2)
+        assert result.eq(expected_result_variable).all()
+        assert isinstance(result, Variable)
+        return
+
+    def validate_matrix_result(result) -> None:
+        assert tuple(result.shape) == (2, 2)
+        assert np.all(result == expected_result_matrix)
+        assert isinstance(result, np.ndarray)
+        return
+    
+    # Variable + Variable
+    validate_variable_result(a.matmul(b))
+    validate_variable_result(a @ b)
+    validate_variable_result(np.matmul(a, b))
+    
+    # nupmy + numpy
+    validate_matrix_result(np.matmul(a_matrix, b_matrix))
+    validate_matrix_result(a_matrix @ b_matrix)
+    
+    # Variable + numpy
+    validate_variable_result(a.matmul(b_matrix))
+    validate_variable_result(a @ b_matrix)
+    validate_variable_result(np.matmul(a, b_matrix))
+    
+    # numpy + Variable
+    validate_variable_result(np.matmul(a_matrix, b))
+    # validate_variable_result(a_matrix @ b) # @todo make this work
+    
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    matrix_product = a @ b
+    variable_to_gradient = sgd.take_training_step(matrix_product)
+    assert np.all(variable_to_gradient[a].shape == a.shape)
+    assert np.all(variable_to_gradient[b].shape == b.shape)
+    assert np.all(variable_to_gradient[a] == b_matrix.T)
+    assert np.all(variable_to_gradient[b] == a_matrix.T)
+    
+    # Verify Trainability
+    x = Variable(np.array([[1.1, 1.9], [2.9, 4.1]]))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-2)
+    for _ in range(1_000):
+        y = x.matmul(np.array([[1, 2], [3, 4]]))
+        y_hat = np.array([[7, 10], [15, 22]])
+        diff = np.subtract(y, y_hat)
+        loss = diff ** 2
+        if loss.sum() < 1e-10:
+            break
+        sgd.take_training_step(loss)
+    assert np.abs(x.sum() - np.array([[1, 2], [3, 4]]).sum()) < 0.04
+    assert loss.sum() < 1e-10

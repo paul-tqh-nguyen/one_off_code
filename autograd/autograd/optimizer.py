@@ -40,7 +40,9 @@ class Optimizer(ABC):
         In other words, this function accumulates the gradients of all variables that dependent_variable directly or indirectly is a function of.
         '''
         variable_to_gradient = defaultdict(lambda: 0)
-        d_dependent_variable_over_d_dependent_variable = np.ones(dependent_variable.data.shape)
+        if len(dependent_variable.data.shape) > 2:
+            raise NotImplementedError(f'Backpropagation on arrays with dimensionality > 2 not yet supported.')
+        d_dependent_variable_over_d_dependent_variable = np.ones(dependent_variable.data.shape) if len(dependent_variable.data.shape) < 2 else np.eye(dependent_variable.data.shape[1])
         variable_to_gradient[dependent_variable] = d_dependent_variable_over_d_dependent_variable
         # iterate over variables depended on by dependent_variable (directly or indirectly) in topologically sorted order (i.e. DFS ordedr with no repeats)
         for var in dependent_variable.depended_on_variables():
