@@ -319,6 +319,7 @@ def less_equal(a: VariableOperand, b: VariableOperand, np_less_equal: Callable, 
 
 # @todo support int, float, and all the np types of various sizes for each operation
 
+# @todo support np.squeeze
 # @todo support np.power
 
 @Variable.new_method()
@@ -468,3 +469,19 @@ def matmul(a: VariableOperand, b: VariableOperand, np_matmul: Callable, **kwargs
         variable_depended_on_by_matrix_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_matrix_product: np_matmul(a_data.T, d_minimization_target_over_d_matrix_product))
     matrix_product_variable = Variable(matrix_product, dict(variable_depended_on_by_matrix_product_to_backward_propagation_functions))
     return matrix_product_variable
+
+@Variable.new_method('expand_dims')
+@Variable.numpy_replacement(np_expand_dims='np.expand_dims')
+def expand_dims(operand: VariableOperand, axis: Union[Tuple[int], int], np_expand_dims: Callable, **kwargs) -> VariableOperand:
+    operand_is_variable = isinstance(a, Variable)
+    operand_data = operand.data if operand_is_variable else operand
+    expanded_operand = np_expand_dims(operand_data, axis, **kwargs)
+    if not operand_is_variable:
+        return expanded_operand
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+    variable_depended_on_by_expanded_operand_to_backward_propagation_functions = defaultdict(list)
+    # @todo test that we don't have infinite recursion when backgpropagating through a series of np.exapnd_dims calls and np.squeeze calls
+    variable_depended_on_by_expanded_operand_to_backward_propagation_functions[operand].append(lambda d_minimization_target_over_d_expanded_operand: d_minimization_target_over_d_expanded_operand.squeeze(axis))
+    expanded_operand_variable = Variable(expanded_operand, dict(variable_depended_on_by_expanded_operand_to_backward_propagation_functions))
+    return expanded_operand_variable

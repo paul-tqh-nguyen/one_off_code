@@ -98,7 +98,7 @@ fi
 alias ssh-cuda="ssh pnguyen@colo-dgx-01.corp.continuum.io"
 alias ssh-tunnel="ssh pnguyen@colo-dgx-01.corp.continuum.io -NL 8080:localhost:8080"
 
-alias pytest="pytest --cov-report=html"
+alias pytest="pytest --cov-report=html -rs"
 
 alias init-impact="source ~/.bashrc ; cd ~/code/impact_of_attention && conda env create ; conda activate impact"
 alias del-impact="for i in \$(seq 1 5); do conda deactivate ; done ; ~/code/impact_of_attention && conda env remove --name impact"
