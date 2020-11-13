@@ -253,7 +253,7 @@ def test_variable_pow():
         if loss.sum() < 1e-4:
             break
         variable_to_gradient = sgd.take_training_step(loss)
-    assert np.abs(x - np.array([10, 2])).sum() < 2e-3
+    assert np.abs(x - np.array([10, 2])).sum() < 3e-3
     assert loss.sum() < 1e-4
 
     # Verify Trainability (Exponent)
@@ -516,4 +516,59 @@ def test_variable_matmul():
             break
         sgd.take_training_step(loss)
     assert np.abs(x.sum() - np.array([[1, 2], [3, 4]]).sum()) < 0.04
+    assert loss.sum() < 1e-10
+
+def test_variable_expand_dims():
+    a_array = np.arange(5)
+    a = Variable(np.arange(5, dtype=float))
+    expected_result_variable = Variable(np.array([[0, 1, 2, 3, 4]]))
+    expected_result_number = np.array([[0, 1, 2, 3, 4]])
+    
+    assert np.all(a_array == a.data)
+    assert np.all(expected_result_variable == expected_result_number)
+    
+    assert id(a_array) != id(a.data)
+    assert id(expected_result_variable) != id(expected_result_number)
+
+    def validate_variable_result(result) -> None:
+        assert result.eq(expected_result_variable).all()
+        assert isinstance(result, Variable)
+        return
+
+    def validate_array_result(result) -> None:
+        assert np.all(result == expected_result_number)
+        assert isinstance(result, np.ndarray)
+        return
+    
+    # Variable
+    validate_variable_result(a.expand_dims(0))
+    validate_variable_result(a.expand_dims((0,)))
+    validate_variable_result(np.expand_dims(a, 0))
+    validate_variable_result(np.expand_dims(a, (0,)))
+    
+    # nupmy
+    validate_array_result(np.expand_dims(a_array, 0))
+    validate_array_result(np.expand_dims(a_array, (0,)))
+        
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    a_expanded = a.expand_dims(0)
+    diff = a_expanded - np.zeros(5)
+    loss = np.sum(diff ** 2)
+    variable_to_gradient = sgd.take_training_step(loss)
+    assert np.all(variable_to_gradient[a] == np.arange(5)*2)
+    assert np.all(variable_to_gradient[a_expanded] == np.arange(5)*2)
+
+    # Verify Trainability
+    x = Variable(np.random.rand(2))
+    sgd = autograd.optimizer.SGD(learning_rate=1e-1)
+    for _ in range(1_000):
+        y = x.expand_dims(1)
+        y_hat = np.array([[10], [30]])
+        diff = np.subtract(y, y_hat)
+        loss = np.sum(diff ** 2)
+        if loss.sum() < 1e-10:
+            break
+        sgd.take_training_step(loss)
+    assert np.abs(np.sum(x - np.array([[10], [30]]))) < 1e-4
     assert loss.sum() < 1e-10

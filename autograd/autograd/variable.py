@@ -473,7 +473,7 @@ def matmul(a: VariableOperand, b: VariableOperand, np_matmul: Callable, **kwargs
 @Variable.new_method('expand_dims')
 @Variable.numpy_replacement(np_expand_dims='np.expand_dims')
 def expand_dims(operand: VariableOperand, axis: Union[Tuple[int], int], np_expand_dims: Callable, **kwargs) -> VariableOperand:
-    operand_is_variable = isinstance(a, Variable)
+    operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
     expanded_operand = np_expand_dims(operand_data, axis, **kwargs)
     if not operand_is_variable:
