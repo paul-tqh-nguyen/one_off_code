@@ -205,6 +205,11 @@ class Variable:
         directly_depended_on_variable_to_gradient = dict(directly_depended_on_variable_to_gradient)
         return directly_depended_on_variable_to_gradient
 
+    def __repr__(self):
+        old_prefix = 'array'
+        new_prefix = 'Variable'
+        return repr(self.data).replace('\n'+' '*len(old_prefix), '\n'+' '*len(new_prefix)).replace(old_prefix, new_prefix)
+    
     def all(self, **kwargs) -> Union[bool, np.ndarray]:
         return self.data.all(**kwargs) if isinstance(self.data, np.ndarray) else bool(self.data)
     
@@ -223,7 +228,7 @@ class Variable:
         variable_depended_on_by_summation_to_backward_propagation_functions[self].append(lambda d_minimization_target_over_d_summation: d_minimization_target_over_d_summation * np.ones(self.shape))
         summation_variable = Variable(summation, dict(variable_depended_on_by_summation_to_backward_propagation_functions))
         return summation_variable
-
+        
     def __abs__(self, **kwargs) -> 'Variable':
         return self.abs(**kwargs)
     
@@ -256,6 +261,15 @@ def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
     return np_all(operand, **kwargs)
+
+@Variable.new_method('isclose')
+@Variable.numpy_replacement(np_isclose='np.isclose')
+def isclose(a: VariableOperand, b: VariableOperand, np_isclose: Callable, **kwargs) -> VariableOperand:
+    a_is_variable = isinstance(a, Variable)
+    b_is_variable = isinstance(b, Variable)
+    a_data = a.data if a_is_variable else a
+    b_data = b.data if b_is_variable else b
+    return np_isclose(a_data, b_data, **kwargs)
 
 @Variable.new_method('equal', 'eq', '__eq__')
 @Variable.numpy_replacement(np_equal='np.equal')
@@ -436,6 +450,21 @@ def sum(operand: VariableOperand, np_sum: Callable, **kwargs) -> VariableOperand
     summation_variable = Variable(summation, dict(variable_depended_on_by_summation_to_backward_propagation_functions))
     return summation_variable
 
+@Variable.new_method('log', 'natural_log')
+@Variable.numpy_replacement(np_log='np.log')
+def log(operand: VariableOperand, np_log: Callable, **kwargs) -> VariableOperand:
+    operand_is_variable = isinstance(operand, Variable)
+    operand_data = operand.data if operand_is_variable else operand
+    log_result = np_log(operand_data, **kwargs)
+    if not operand_is_variable:
+        return log_result
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+    variable_depended_on_by_log_result_to_backward_propagation_functions = defaultdict(list)
+    variable_depended_on_by_log_result_to_backward_propagation_functions[operand].append(lambda d_minimization_target_over_d_log_result: d_minimization_target_over_d_log_result * np.float_power(operand_data, -1))
+    log_result_variable = Variable(log_result, dict(variable_depended_on_by_log_result_to_backward_propagation_functions))
+    return log_result_variable
+
 @Variable.numpy_replacement(np_abs=['np.abs', 'np.absolute'])
 def abs(operand: VariableOperand, np_abs: Callable, **kwargs) -> VariableOperand:
     operand_is_variable = isinstance(operand, Variable)
@@ -473,6 +502,7 @@ def matmul(a: VariableOperand, b: VariableOperand, np_matmul: Callable, **kwargs
 @Variable.new_method('expand_dims')
 @Variable.numpy_replacement(np_expand_dims='np.expand_dims')
 def expand_dims(operand: VariableOperand, axis: Union[Tuple[int], int], np_expand_dims: Callable, **kwargs) -> VariableOperand:
+    '''For variables, this returns a copy instead of a view.'''
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
     expanded_operand = np_expand_dims(operand_data, axis, **kwargs)
@@ -483,5 +513,5 @@ def expand_dims(operand: VariableOperand, axis: Union[Tuple[int], int], np_expan
     variable_depended_on_by_expanded_operand_to_backward_propagation_functions = defaultdict(list)
     # @todo test that we don't have infinite recursion when backgpropagating through a series of np.exapnd_dims calls and np.squeeze calls
     variable_depended_on_by_expanded_operand_to_backward_propagation_functions[operand].append(lambda d_minimization_target_over_d_expanded_operand: d_minimization_target_over_d_expanded_operand.squeeze(axis))
-    expanded_operand_variable = Variable(expanded_operand, dict(variable_depended_on_by_expanded_operand_to_backward_propagation_functions))
+    expanded_operand_variable = Variable(expanded_operand.copy(), dict(variable_depended_on_by_expanded_operand_to_backward_propagation_functions))
     return expanded_operand_variable
