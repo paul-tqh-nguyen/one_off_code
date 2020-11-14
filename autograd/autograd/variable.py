@@ -372,7 +372,7 @@ def float_power(base: VariableOperand, exponent: VariableOperand, np_float_power
     if base_is_variable:
         variable_depended_on_by_power_to_backward_propagation_functions[base].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * exponent_data * np_float_power(base_data, exponent_data-1))
     if exponent_is_variable:
-        variable_depended_on_by_power_to_backward_propagation_functions[exponent].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data*np.log(base_data))
+        variable_depended_on_by_power_to_backward_propagation_functions[exponent].append(lambda d_minimization_target_over_d_power: d_minimization_target_over_d_power * power.data * np.log(base_data))
     power_variable = Variable(power, dict(variable_depended_on_by_power_to_backward_propagation_functions))
     return power_variable
 
@@ -395,6 +395,26 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
         variable_depended_on_by_product_to_backward_propagation_functions[b].append(lambda d_minimization_target_over_d_product: d_minimization_target_over_d_product * a_data)
     product_variable = Variable(product, dict(variable_depended_on_by_product_to_backward_propagation_functions))
     return product_variable
+
+@Variable.new_method('divide', '__divide__')
+@Variable.numpy_replacement(np_divide='np.divide')
+def divide(dividend: VariableOperand, divisor: VariableOperand, np_divide: Callable, **kwargs) -> VariableOperand:
+    dividend_is_variable = isinstance(dividend, Variable)
+    divisor_is_variable = isinstance(divisor, Variable)
+    dividend_data = dividend.data if dividend_is_variable else dividend
+    divisor_data = divisor.data if divisor_is_variable else divisor
+    quotient = np_divide(a_data, divisor_data, **kwargs)
+    if not dividend_is_variable and not divisor_is_variable:
+        return quotient
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+    variable_depended_on_by_quotient_to_backward_propagation_functions = defaultdict(list)
+    if a_is_variable:
+        variable_depended_on_by_quotient_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_quotient: d_minimization_target_over_d_quotient / divisor_data)
+    if divisor_is_variable:
+        variable_depended_on_by_quotient_to_backward_propagation_functions[divisor].append(lambda d_minimization_target_over_d_quotient: d_minimization_target_over_d_quotient * -(dividend_data ** 2))
+    quotient_variable = Variable(quotient, dict(variable_depended_on_by_quotient_to_backward_propagation_functions))
+    return quotient_variable
 
 @Variable.new_method('subtract', '__sub__')
 @Variable.numpy_replacement(np_subtract='np.subtract')
