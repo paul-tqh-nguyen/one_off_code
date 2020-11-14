@@ -125,6 +125,71 @@ def test_variable_multiply():
     assert np.abs(x).sum() < 5e-3
     assert np.all(loss < 1e-3)
 
+def test_variable_divide():
+    a_array = np.arange(5)
+    b_array = np.array([3, 8, 5, 6, 8])
+    a = Variable(np.arange(5, dtype=float))
+    b = Variable(np.array([3, 8, 5, 6, 8], dtype=float))
+    expected_result_variable = Variable(np.array([0, 0.125, 0.4, 0.5, 0.5]))
+    expected_result_array = np.array([0, 0.125, 0.4, 0.5, 0.5])
+    
+    assert np.all(a_array == a.data)
+    assert np.all(b_array == b.data)
+    assert np.all(expected_result_variable == expected_result_array)
+    
+    assert id(a_array) != id(a.data)
+    assert id(b_array) != id(b.data)
+    assert id(expected_result_variable) != id(expected_result_array)
+
+    def validate_variable_result(result) -> None:
+        assert result.eq(expected_result_variable).all()
+        assert isinstance(result, Variable)
+        return
+
+    def validate_array_result(result) -> None:
+        assert np.all(result == expected_result_array)
+        assert isinstance(result, np.ndarray)
+        return
+    
+    # Variable + Variable
+    validate_variable_result(a.divide(b))
+    validate_variable_result(a / b)
+    validate_variable_result(np.divide(a, b))
+    
+    # numpy + numpy
+    validate_array_result(np.divide(a_array, b_array))
+    validate_array_result(a_array / b_array)
+    
+    # Variable + numpy
+    validate_variable_result(a.divide(b_array))
+    validate_variable_result(a / b_array)
+    validate_variable_result(np.divide(a, b_array))
+    
+    # numpy + Variable
+    validate_variable_result(np.divide(a_array, b))
+    # validate_variable_result(a_array / b) # @todo make this work
+
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    product = a/b
+    variable_to_gradient = sgd.take_training_step(product)
+    assert np.all(variable_to_gradient[a] == 1/b_array)
+    assert np.all(variable_to_gradient[b] == -(a_array**2))
+
+    # Verify Trainability
+    x = Variable(np.random.rand(2))
+    y = np.array([3,7])
+    sgd = autograd.optimizer.SGD(learning_rate=1)
+    for _ in range(1_000):
+        y_hat = x.divide(np.array([10, 20]))
+        diff = np.subtract(y, y_hat)
+        loss = diff ** 2
+        if np.all(loss < 1e-3):
+            break
+        sgd.take_training_step(loss)
+    assert np.abs(x - np.array([30, 140])).sum() < 1
+    assert np.all(loss < 1e-3)
+
 def test_variable_subtract():
     a_array = np.arange(5)
     b_array = np.array([3, 8, 5, 6, 8])

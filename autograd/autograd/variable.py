@@ -396,21 +396,21 @@ def multiply(a: VariableOperand, b: VariableOperand, np_multiply: Callable, **kw
     product_variable = Variable(product, dict(variable_depended_on_by_product_to_backward_propagation_functions))
     return product_variable
 
-@Variable.new_method('divide', '__divide__')
+@Variable.new_method('divide', '__truediv__')
 @Variable.numpy_replacement(np_divide='np.divide')
 def divide(dividend: VariableOperand, divisor: VariableOperand, np_divide: Callable, **kwargs) -> VariableOperand:
     dividend_is_variable = isinstance(dividend, Variable)
     divisor_is_variable = isinstance(divisor, Variable)
     dividend_data = dividend.data if dividend_is_variable else dividend
     divisor_data = divisor.data if divisor_is_variable else divisor
-    quotient = np_divide(a_data, divisor_data, **kwargs)
+    quotient = np_divide(dividend_data, divisor_data, **kwargs)
     if not dividend_is_variable and not divisor_is_variable:
         return quotient
     if len(kwargs) > 0:
         raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
     variable_depended_on_by_quotient_to_backward_propagation_functions = defaultdict(list)
-    if a_is_variable:
-        variable_depended_on_by_quotient_to_backward_propagation_functions[a].append(lambda d_minimization_target_over_d_quotient: d_minimization_target_over_d_quotient / divisor_data)
+    if dividend_is_variable:
+        variable_depended_on_by_quotient_to_backward_propagation_functions[dividend].append(lambda d_minimization_target_over_d_quotient: d_minimization_target_over_d_quotient / divisor_data)
     if divisor_is_variable:
         variable_depended_on_by_quotient_to_backward_propagation_functions[divisor].append(lambda d_minimization_target_over_d_quotient: d_minimization_target_over_d_quotient * -(dividend_data ** 2))
     quotient_variable = Variable(quotient, dict(variable_depended_on_by_quotient_to_backward_propagation_functions))
