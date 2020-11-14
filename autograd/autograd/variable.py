@@ -112,6 +112,7 @@ class Variable:
                     kwargs[internally_used_name] = replaced_callable
                     return func(*args, **kwargs)
                 if is_ufunc: # @todo test this with both True and False
+                    # @todo instead of passing in is_ufunc, check if the replaced_callable is an instance of ufunc
                     # @todo abstract this out
                     # @todo support other ufunc methods
                     def reducer(array, axis, dtype, out, **reducer_kwargs): # @todo add type hints
@@ -188,7 +189,7 @@ class Variable:
             yield var
         yield from _traverse(self)
     
-    def calculate_gradient(self, d_minimization_target_variable_over_d_self: Union[int, float, np.number, np.ndarray]) -> Dict['Variable', Union[int, float, np.number, np.ndarray]]:
+    def directly_backward_propagate_gradient(self, d_minimization_target_variable_over_d_self: Union[int, float, np.number, np.ndarray]) -> Dict['Variable', Union[int, float, np.number, np.ndarray]]:
         '''
         Backward propagates the gradient (i.e. d_minimization_target_variable_over_d_self) to variables that self directly 
         relies on, i.e. is a direct function of (does not include variables it is transitively or indirectly dependent on).
@@ -535,3 +536,18 @@ def expand_dims(operand: VariableOperand, axis: Union[Tuple[int], int], np_expan
     variable_depended_on_by_expanded_operand_to_backward_propagation_functions[operand].append(lambda d_minimization_target_over_d_expanded_operand: d_minimization_target_over_d_expanded_operand.squeeze(axis))
     expanded_operand_variable = Variable(expanded_operand.copy(), dict(variable_depended_on_by_expanded_operand_to_backward_propagation_functions))
     return expanded_operand_variable
+
+@Variable.new_method('exp')
+@Variable.numpy_replacement(np_exp='np.exp')
+def exp(operand: VariableOperand, np_exp: Callable, **kwargs) -> VariableOperand:
+    operand_is_variable = isinstance(operand, Variable)
+    operand_data = operand.data if operand_is_variable else operand
+    exp_result = np_exp(operand_data, **kwargs)
+    if not operand_is_variable:
+        return exp_result
+    if len(kwargs) > 0:
+        raise ValueError(f'The parameters {[repr(kwarg_name) for kwarg_name in kwargs.keys()]} are not supported for {Variable.__qualname__}.')
+    variable_depended_on_by_exp_result_to_backward_propagation_functions = defaultdict(list)
+    variable_depended_on_by_exp_result_to_backward_propagation_functions[operand].append(lambda d_minimization_target_over_d_exp_result: d_minimization_target_over_d_exp_result * exp_result.data)
+    exp_result_variable = Variable(exp_result.copy(), dict(variable_depended_on_by_exp_result_to_backward_propagation_functions))
+    return exp_result_variable

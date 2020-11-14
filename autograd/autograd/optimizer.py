@@ -49,7 +49,7 @@ class Optimizer(ABC):
             assert var in variable_to_gradient
             d_dependent_variable_over_d_var = variable_to_gradient[var]
             # backpropagate one step gradient from var to variables it directly relies on
-            variable_depended_on_by_var_to_gradient = var.calculate_gradient(d_dependent_variable_over_d_var)
+            variable_depended_on_by_var_to_gradient = var.directly_backward_propagate_gradient(d_dependent_variable_over_d_var)
             for variable_depended_on_by_var, gradient in variable_depended_on_by_var_to_gradient.items():
                 variable_to_gradient[variable_depended_on_by_var] += gradient
         variable_to_gradient = dict(variable_to_gradient)
