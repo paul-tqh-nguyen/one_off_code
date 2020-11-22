@@ -102,7 +102,7 @@ class Variable:
         return
     
     @classmethod
-    def numpy_replacement(cls, is_ufunc: bool = False, **internally_used_name_to_np_path_specification: Dict[str, Union[List[str], str]]) -> Callable:
+    def numpy_replacement(cls, **internally_used_name_to_np_path_specification: Dict[str, Union[List[str], str]]) -> Callable:
         '''Replaces numpy methods via monkey patching. The replaced methods are assumed to be behavioraly equivalent.'''
         internally_used_name, np_paths, replaced_callables = cls._numpy_replacement_extract_inputs(internally_used_name_to_np_path_specification)
         def decorator(func: Callable) -> Callable:
@@ -111,7 +111,7 @@ class Variable:
                     assert internally_used_name not in kwargs.keys()
                     kwargs[internally_used_name] = replaced_callable
                     return func(*args, **kwargs)
-                if is_ufunc: # @todo test this with both True and False
+                if isinstance(replaced_callable, np.ufunc): # @todo test this with both True and False
                     # @todo instead of passing in is_ufunc, check if the replaced_callable is an instance of ufunc
                     # @todo abstract this out
                     # @todo support other ufunc methods
@@ -438,7 +438,7 @@ def subtract(minuend: VariableOperand, subtrahend: VariableOperand, np_subtract:
     return difference_variable
 
 @Variable.new_method('add', '__add__')
-@Variable.numpy_replacement(np_add='np.add', is_ufunc=True)
+@Variable.numpy_replacement(np_add='np.add')
 def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> VariableOperand:
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
