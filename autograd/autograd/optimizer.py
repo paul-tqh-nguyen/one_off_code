@@ -53,6 +53,9 @@ class Optimizer(ABC):
             for variable_depended_on_by_var, gradient in variable_depended_on_by_var_to_gradient.items():
                 variable_to_gradient[variable_depended_on_by_var] += gradient
         variable_to_gradient = dict(variable_to_gradient)
+        # # @todo remove this
+        # for v, g in variable_to_gradient.items():
+        #     variable_to_gradient[v] = g/np.linalg.norm(g)
         return variable_to_gradient
 
     @abstractmethod
