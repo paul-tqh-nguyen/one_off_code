@@ -754,3 +754,53 @@ def test_variable_exp():
         sgd.take_training_step(loss)
     assert np.all(loss < 1e-15)
     assert np.all(np.abs(x) < 1e-2)
+
+def test_variable_negative():
+    a_array = np.array([1, 2]) # @todo test single number case as well
+    a = Variable(np.array([1, 2], dtype=float)) # @todo test single number case as well
+    expected_result_variable = Variable(np.array([-1.0, -2.0]))
+    expected_result_array = np.array([-1, -2])
+    
+    assert np.all(a_array == a.data)
+    assert np.all(expected_result_variable == expected_result_array)
+    
+    assert id(a_array) != id(a.data)
+    assert id(expected_result_variable) != id(expected_result_array)
+    
+    def validate_variable_result(result) -> None:
+        assert expected_result_variable.equal(result).all()
+        assert isinstance(result, Variable)
+        return
+    
+    def validate_array_result(result) -> None:
+        assert np.equal(result, expected_result_array).all()
+        assert isinstance(result, np.ndarray)
+        return
+    
+    # Variable
+    validate_variable_result(np.negative(a))
+    validate_variable_result(a.negative())
+    
+    # numpy
+    validate_array_result(np.negative(a_array))
+    
+    # Verify Derivative
+    sgd = autograd.optimizer.SGD(learning_rate=1e-3)
+    negative_result = a.negative()
+    variable_to_gradient = sgd.take_training_step(negative_result)
+    assert all(isinstance(var, Variable) and isinstance(grad, np.ndarray) for var, grad in variable_to_gradient.items())
+    assert np.all(np.equal(variable_to_gradient[a], np.full(a.shape, -1.0)))
+    
+    # Verify Trainability
+    x = Variable(np.random.rand(2))
+    y = 1
+    sgd = autograd.optimizer.SGD(learning_rate=1e-1)
+    for training_step_index in range(1_000):
+        y_hat = x.negative()
+        diff = np.subtract(y, y_hat)
+        loss = np.sum(diff ** 2)
+        if training_step_index > 10 and loss.sum() < 1e-15:
+            break
+        var2grad = sgd.take_training_step(loss)
+    assert np.all(loss < 1e-15)
+    assert np.all(x+1 < 1e-2)
