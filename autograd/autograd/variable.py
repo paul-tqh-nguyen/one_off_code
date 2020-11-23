@@ -413,7 +413,7 @@ def divide(dividend: VariableOperand, divisor: VariableOperand, np_divide: Calla
     if dividend_is_variable:
         variable_depended_on_by_quotient_to_backward_propagation_functions[dividend].append(lambda d_minimization_target_over_d_quotient: d_minimization_target_over_d_quotient / divisor_data)
     if divisor_is_variable:
-        variable_depended_on_by_quotient_to_backward_propagation_functions[divisor].append(lambda d_minimization_target_over_d_quotient: d_minimization_target_over_d_quotient * -dividend_data * (divisor_data ** -2))
+        variable_depended_on_by_quotient_to_backward_propagation_functions[divisor].append(lambda d_minimization_target_over_d_quotient: d_minimization_target_over_d_quotient * -dividend_data * (divisor_data ** -2.0))
     quotient_variable = Variable(quotient, dict(variable_depended_on_by_quotient_to_backward_propagation_functions))
     return quotient_variable
 

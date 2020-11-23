@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
 
-import sys ; sys.path.append('..')
 import autograd
 from autograd import Variable
 
@@ -177,7 +176,7 @@ def test_variable_divide():
     variable_to_gradient = sgd.take_training_step(product)
     assert all(isinstance(var, Variable) and isinstance(grad, np.ndarray) for var, grad in variable_to_gradient.items())
     assert np.all(variable_to_gradient[a] == 1/b_array)
-    assert np.all(variable_to_gradient[b] == -(a_array**2))
+    assert np.all(variable_to_gradient[b] == -a_array * (b_array ** -2.0))
 
     # Verify Trainability
     x = Variable(np.random.rand(2))

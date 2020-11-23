@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
 
-import sys ; sys.path.append('..')
 import autograd
 from autograd import Variable
 from autograd.misc_utilities import *

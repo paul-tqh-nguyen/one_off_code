@@ -3,7 +3,6 @@ import numpy as np
 from contextlib import contextmanager
 from typing import List, Union, Generator, Callable
 
-import sys ; sys.path.append('..')
 import autograd
 from autograd import Variable, VariableOperand
 
