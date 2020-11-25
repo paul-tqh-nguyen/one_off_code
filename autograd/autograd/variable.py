@@ -111,6 +111,7 @@ class Variable:
                     assert internally_used_name not in kwargs.keys()
                     kwargs[internally_used_name] = replaced_callable
                     return func(*args, **kwargs)
+                decorated_function.replaced_callable = replaced_callable
                 if isinstance(replaced_callable, np.ufunc): # @todo test this with both True and False
                     # @todo instead of passing in is_ufunc, check if the replaced_callable is an instance of ufunc
                     # @todo abstract this out
@@ -207,9 +208,13 @@ class Variable:
         return directly_depended_on_variable_to_gradient
 
     def __repr__(self):
-        old_prefix = 'array'
-        new_prefix = 'Variable'
-        return repr(self.data).replace('\n'+' '*len(old_prefix), '\n'+' '*len(new_prefix)).replace(old_prefix, new_prefix)
+        if isinstance(self.data, np.ndarray):
+            old_prefix = 'array'
+            new_prefix = self.__class__.__name__
+            representation = repr(self.data).replace('\n'+' '*len(old_prefix), '\n'+' '*len(new_prefix)).replace(old_prefix, new_prefix)
+        else:
+            representation = f'{self.__class__.__name__}({self.data})'
+        return representation
     
     def all(self, **kwargs) -> Union[bool, np.ndarray]:
         return self.data.all(**kwargs) if isinstance(self.data, np.ndarray) else bool(self.data)
@@ -245,27 +250,59 @@ class Variable:
         absolute_value_variable = Variable(absolute_value, dict(variable_depended_on_by_absolute_value_to_backward_propagation_functions))
         return absolute_value_variable
 
+    def __radd__(self, summand: VariableOperand) -> VariableOperand:
+        return self.add(summand) # @todo test this
+
+    def __rsub__(self, minuend: VariableOperand) -> VariableOperand:
+        return self.neg().add(minuend) # @todo test this
+
+    def __rmul__(self, factor: VariableOperand) -> VariableOperand:
+        return self.multiply(factor) # @todo test this
+
+    def __rtruediv__(self, dividend: VariableOperand) -> VariableOperand:
+        return self.pow(-1).multiply(dividend) # @todo test this
+    
+    def sigmoid(self) -> 'Variable':
+        return 1 / (np.exp(self.neg())+1) # @todo test this
+
+    def squared_error(self, target: VariableOperand) -> 'Variable': # @todo test this
+        return self.subtract(target).pow(2.0)
+
+    def bce_loss(self, target: VariableOperand,  epsilon: float = 1e-16) -> 'Variable': # @todo test this
+        prediction = self.add(epsilon) if self.eq(0).all() else self
+        loss = -(target*np.log(prediction) + (1-target)*np.log(1-prediction))
+        return loss
+
 ##########################################
 # Variable Non-Differentiable Operations #
 ##########################################
 
 # @todo lots of boiler plate ; abstract it out
 
-@Variable.numpy_replacement(np_any='np.any')
+@Variable.new_method('round', 'around') # @todo test this
+@Variable.numpy_replacement(np_around='np.around')
+def around(operand: VariableOperand, np_around: Callable, **kwargs) -> VariableOperand:
+    if kwargs.get('out') is not None:
+        raise ValueError(f'The parameter {repr("out")} is not supported for {Variable.__qualname__}.')
+    operand_is_variable = isinstance(operand, Variable)
+    operand_data = operand.data if operand_is_variable else operand
+    return np_around(operand_data, **kwargs)
+
+@Variable.numpy_replacement(np_any='np.any') # @todo retry using @Variable.new_method here
 def any(operand: VariableOperand, np_any: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
-    return np_any(operand, **kwargs)
+    return np_any(operand_data, **kwargs)
 
-@Variable.numpy_replacement(np_all='np.all')
+@Variable.numpy_replacement(np_all='np.all') # @todo retry using @Variable.new_method here
 def all(operand: VariableOperand, np_all: Callable, **kwargs) -> Union[bool, np.ndarray]:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
-    return np_all(operand, **kwargs)
+    return np_all(operand_data, **kwargs)
 
 @Variable.new_method('isclose')
 @Variable.numpy_replacement(np_isclose='np.isclose')
-def isclose(a: VariableOperand, b: VariableOperand, np_isclose: Callable, **kwargs) -> VariableOperand:
+def isclose(a: VariableOperand, b: VariableOperand, np_isclose: Callable, **kwargs) -> VariableOperand: # @todo review this return type
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
@@ -274,7 +311,7 @@ def isclose(a: VariableOperand, b: VariableOperand, np_isclose: Callable, **kwar
 
 @Variable.new_method('equal', 'eq', '__eq__')
 @Variable.numpy_replacement(np_equal='np.equal')
-def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) -> VariableOperand:
+def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) -> VariableOperand: # @todo review this return type
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
@@ -283,7 +320,7 @@ def equal(a: VariableOperand, b: VariableOperand, np_equal: Callable, **kwargs) 
 
 @Variable.new_method('not_equal', 'neq', 'ne', '__ne__')
 @Variable.numpy_replacement(np_not_equal='np.not_equal')
-def not_equal(a: VariableOperand, b: VariableOperand, np_not_equal: Callable, **kwargs) -> VariableOperand:
+def not_equal(a: VariableOperand, b: VariableOperand, np_not_equal: Callable, **kwargs) -> VariableOperand: # @todo review this return type
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
@@ -292,7 +329,7 @@ def not_equal(a: VariableOperand, b: VariableOperand, np_not_equal: Callable, **
 
 @Variable.new_method('greater', 'greater_than', 'gt', '__gt__')
 @Variable.numpy_replacement(np_greater='np.greater')
-def greater(a: VariableOperand, b: VariableOperand, np_greater: Callable, **kwargs) -> VariableOperand:
+def greater(a: VariableOperand, b: VariableOperand, np_greater: Callable, **kwargs) -> VariableOperand: # @todo review this return type
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
@@ -301,7 +338,7 @@ def greater(a: VariableOperand, b: VariableOperand, np_greater: Callable, **kwar
 
 @Variable.new_method('greater_equal', 'greater_than_equal', 'ge', 'gte', '__ge__')
 @Variable.numpy_replacement(np_greater_equal='np.greater_equal')
-def greater_equal(a: VariableOperand, b: VariableOperand, np_greater_equal: Callable, **kwargs) -> VariableOperand:
+def greater_equal(a: VariableOperand, b: VariableOperand, np_greater_equal: Callable, **kwargs) -> VariableOperand: # @todo review this return type
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
@@ -310,7 +347,7 @@ def greater_equal(a: VariableOperand, b: VariableOperand, np_greater_equal: Call
 
 @Variable.new_method('less', 'less_than', 'lt', '__lt__')
 @Variable.numpy_replacement(np_less='np.less')
-def less(a: VariableOperand, b: VariableOperand, np_less: Callable, **kwargs) -> VariableOperand:
+def less(a: VariableOperand, b: VariableOperand, np_less: Callable, **kwargs) -> VariableOperand: # @todo review this return type
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
@@ -319,7 +356,7 @@ def less(a: VariableOperand, b: VariableOperand, np_less: Callable, **kwargs) ->
 
 @Variable.new_method('less_equal', 'less_than_equal', 'le', 'lte', '__le__')
 @Variable.numpy_replacement(np_less_equal='np.less_equal')
-def less_equal(a: VariableOperand, b: VariableOperand, np_less_equal: Callable, **kwargs) -> VariableOperand:
+def less_equal(a: VariableOperand, b: VariableOperand, np_less_equal: Callable, **kwargs) -> VariableOperand: # @todo review this return type
     a_is_variable = isinstance(a, Variable)
     b_is_variable = isinstance(b, Variable)
     a_data = a.data if a_is_variable else a
@@ -457,7 +494,9 @@ def add(a: VariableOperand, b: VariableOperand, np_add: Callable, **kwargs) -> V
     summation_variable = Variable(summation, dict(variable_depended_on_by_summation_to_backward_propagation_functions))
     return summation_variable
 
-@Variable.numpy_replacement(np_sum='np.sum')
+# @todo support np.mean
+
+@Variable.numpy_replacement(np_sum='np.sum') # @todo retry using @Variable.new_method here
 def sum(operand: VariableOperand, np_sum: Callable, **kwargs) -> VariableOperand:
     operand_is_variable = isinstance(operand, Variable)
     operand_data = operand.data if operand_is_variable else operand
@@ -543,7 +582,7 @@ def exp(operand: VariableOperand, np_exp: Callable, **kwargs) -> VariableOperand
     del np_exp
     return np.float_power(np.e, operand, **kwargs)
 
-@Variable.new_method('__neg__', 'negative', 'negate')
+@Variable.new_method('__neg__', 'neg', 'negative', 'negate')
 @Variable.numpy_replacement(np_negative='np.negative')
 def neg(operand: VariableOperand, np_negative: Callable, **kwargs) -> VariableOperand:
     del np_negative

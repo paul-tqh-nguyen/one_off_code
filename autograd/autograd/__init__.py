@@ -24,5 +24,5 @@ In this module, "var is indirectly relied upon mv" means that the Variable mv di
 ###########
 
 from .variable import Variable, VariableOperand
-from .layer import LinearLayer
+from .layer import LinearLayer, LogisticRegressionLayer
 from . import optimizer
