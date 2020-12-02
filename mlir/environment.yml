@@ -1,6 +1,10 @@
 name: mlir
 dependencies:
   - python=3.7
+  - conda-forge::bazel
   - pip
   - pip:
     - tensorflow
+
+# Notes:
+# export JAVA_HOME=/Users/pnguyen/anaconda3/envs/mlir/ # this is necessary to use bazel
