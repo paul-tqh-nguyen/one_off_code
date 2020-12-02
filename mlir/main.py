@@ -37,12 +37,7 @@ if __name__ == '__main__':
     g = tf.Graph()
     with g.as_default():
         inputs = tf.keras.Input(shape=(2,)) 
-        x = ttf.keras.layers.Dense(units=1)(inputs)
-        
-        ops = g.get_operations()
-        for op in ops:
-            print(op.name, op.type)
-            
-        tf.io.write_graph(g.as_graph_def(), '/tmp/', 'tf_graph.pb', as_text=False)
-    
-    
+        x = tf.keras.layers.Dense(units=1)(inputs)
+    graph_def = g.as_graph_def()
+    mlir_text = tf.mlir.experimental.convert_graph_def(graph_def, pass_pipeline='tf-standard-pipeline')
+    print(f"mlir_text \n{mlir_text}")
