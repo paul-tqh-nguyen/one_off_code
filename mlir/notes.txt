@@ -5,7 +5,7 @@
 
 This is necessary to use bazel:
 
-export JAVA_HOME=/Users/pnguyen/anaconda3/envs/mlir/
+export JAVA_HOME=$HOME/anaconda3/envs/mlir/
 
 ################
 # TensorFlowRT #
@@ -13,10 +13,10 @@ export JAVA_HOME=/Users/pnguyen/anaconda3/envs/mlir/
 
 To build TFRT:
 
-export JAVA_HOME=/Users/pnguyen/anaconda3/envs/mlir/
+export JAVA_HOME=$HOME/anaconda3/envs/mlir/
 git clone https://github.com/tensorflow/runtime.git
 cd runtime/
-# these two currently don't work
+# these two currently don't work on mac
 bazel build //tools:bef_executor  --sandbox_debug --verbose_failures
 bazel build //tools:tfrt_translate  --sandbox_debug --verbose_failures
 
