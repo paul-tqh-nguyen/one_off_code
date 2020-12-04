@@ -1,11 +1,11 @@
-func @hello() {
+func @hello_integers() {
   %chain = tfrt.new.chain
 
-  // Create a string containing "hello world" and store it in %hello.
-  %hello = "tfrt_test.get_string"() { string_attr = "hello world" } : () -> !tfrt.string
+  // Create an integer containing 42.
+  %forty_two = tfrt.constant.i32 42
 
-  // Print the string in %hello.
-  "tfrt_test.print_string"(%hello, %chain) : (!tfrt.string, !tfrt.chain) -> !tfrt.chain
+  // Print 42.
+  tfrt.print.i32 %forty_two, %chain
 
   tfrt.return
 }

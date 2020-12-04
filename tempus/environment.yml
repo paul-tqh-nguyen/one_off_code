@@ -1,10 +1,11 @@
 name: tempus
 dependencies:
   - python=3.7
-  - pytorch==1.7.0
+  - pytorch::pytorch==1.7.0
   - numpy
   - pandas
   - scikit-learn
+  - tqdm
   - pip
   - pip:
     - pandarallel

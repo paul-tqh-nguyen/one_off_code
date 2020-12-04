@@ -20,43 +20,8 @@ cd runtime/
 bazel build //tools:bef_executor  --sandbox_debug --verbose_failures
 bazel build //tools:tfrt_translate  --sandbox_debug --verbose_failures
 
-#########
-# Misc. #
-#########
+Hello Integers (from https://github.com/tensorflow/runtime/blob/master/documents/tutorial.md)
 
-(mlir) pnguyen@0584:/Users/pnguyen/code/one_off_code/mlir/runtime$ grep -ir "storage.googleapis.com/mirror.tensorflow.org" .
-grep: ./bazel-bin/tools/bef_executor.runfiles/tf_runtime/tools/bef_executor: No such file or directory
-grep: ./bazel-out/host/bin/external/llvm-project/llvm/llvm-tblgen.runfiles/tf_runtime/external/llvm-project/llvm/llvm-tblgen: No such file or directory
-grep: ./bazel-out/host/bin/external/llvm-project/llvm/llvm-tblgen.runfiles/llvm-project/llvm/llvm-tblgen: No such file or directory
-grep: ./bazel-out/host/bin/external/llvm-project/mlir/mlir-linalg-ods-gen.runfiles/tf_runtime/external/llvm-project/mlir/mlir-linalg-ods-gen: No such file or directory
-grep: ./bazel-out/host/bin/external/llvm-project/mlir/mlir-linalg-ods-gen.runfiles/llvm-project/mlir/mlir-linalg-ods-gen: No such file or directory
-grep: ./bazel-out/host/bin/external/llvm-project/mlir/mlir-tblgen.runfiles/tf_runtime/external/llvm-project/mlir/mlir-tblgen: No such file or directory
-grep: ./bazel-out/host/bin/external/llvm-project/mlir/mlir-tblgen.runfiles/llvm-project/mlir/mlir-tblgen: No such file or directory
-grep: ./bazel-out/darwin-opt/bin/tools/bef_executor.runfiles/tf_runtime/tools/bef_executor: No such file or directory
-grep: ./bazel-runtime/bazel-out/host/bin/external/llvm-project/llvm/llvm-tblgen.runfiles/tf_runtime/external/llvm-project/llvm/llvm-tblgen: No such file or directory
-grep: ./bazel-runtime/bazel-out/host/bin/external/llvm-project/llvm/llvm-tblgen.runfiles/llvm-project/llvm/llvm-tblgen: No such file or directory
-grep: ./bazel-runtime/bazel-out/host/bin/external/llvm-project/mlir/mlir-linalg-ods-gen.runfiles/tf_runtime/external/llvm-project/mlir/mlir-linalg-ods-gen: No such file or directory
-grep: ./bazel-runtime/bazel-out/host/bin/external/llvm-project/mlir/mlir-linalg-ods-gen.runfiles/llvm-project/mlir/mlir-linalg-ods-gen: No such file or directory
-grep: ./bazel-runtime/bazel-out/host/bin/external/llvm-project/mlir/mlir-tblgen.runfiles/tf_runtime/external/llvm-project/mlir/mlir-tblgen: No such file or directory
-grep: ./bazel-runtime/bazel-out/host/bin/external/llvm-project/mlir/mlir-tblgen.runfiles/llvm-project/mlir/mlir-tblgen: No such file or directory
-grep: ./bazel-runtime/bazel-out/darwin-opt/bin/tools/bef_executor.runfiles/tf_runtime/tools/bef_executor: No such file or directory
-grep: warning: ./bazel-runtime/external/tf_runtime: recursive directory loop
-./bazel-runtime/dependencies.bzl:        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/llvm/llvm-project/archive/{commit}.tar.gz".format(commit = LLVM_COMMIT),
-./bazel-runtime/dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
-./bazel-runtime/dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/gitlab.com/libeigen/eigen/-/archive/3c02fefec53f21d9fad537ff0d62d8dcc8162466/eigen-3c02fefec53f21d9fad537ff0d62d8dcc8162466.tar.gz",
-./bazel-runtime/dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/intel/mkl-dnn/archive/v0.21.2.tar.gz",
-./bazel-runtime/dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
-./bazel-runtime/dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/v3.9.2.zip",
-./bazel-runtime/dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/NVlabs/cub/archive/1.8.0.zip",
-./bazel-runtime/dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
-./bazel-runtime/dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/pypi.python.org/packages/source/p/py-cpuinfo/py-cpuinfo-0.2.3.tar.gz",
-./dependencies.bzl:        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/llvm/llvm-project/archive/{commit}.tar.gz".format(commit = LLVM_COMMIT),
-./dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
-./dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/gitlab.com/libeigen/eigen/-/archive/3c02fefec53f21d9fad537ff0d62d8dcc8162466/eigen-3c02fefec53f21d9fad537ff0d62d8dcc8162466.tar.gz",
-./dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/intel/mkl-dnn/archive/v0.21.2.tar.gz",
-./dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/google/googletest/archive/b6cd405286ed8635ece71c72f118e659f4ade3fb.zip",
-./dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/protocolbuffers/protobuf/archive/v3.9.2.zip",
-./dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/NVlabs/cub/archive/1.8.0.zip",
-./dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/zlib.net/zlib-1.2.11.tar.gz",
-./dependencies.bzl:            "https://storage.googleapis.com/mirror.tensorflow.org/pypi.python.org/packages/source/p/py-cpuinfo/py-cpuinfo-0.2.3.tar.gz",
-(mlir) pnguyen@0584:/Users/pnguyen/code/one_off_code/mlir/runtime$ 
+./runtime/bazel-bin/tools/tfrt_translate  --mlir-to-bef test.mlir > test.bef
+hexdump -C test.mlir
+./runtime/bazel-bin/tools/bef_executor test.bef
