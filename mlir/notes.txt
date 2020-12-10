@@ -5,7 +5,7 @@
 
 This is necessary to use bazel:
 
-export JAVA_HOME=$HOME/anaconda3/envs/mlir/
+export JAVA_HOME=/home/pnguyen/miniconda3/envs/mlir/
 
 ################
 # TensorFlowRT #
@@ -25,3 +25,25 @@ Hello Integers (from https://github.com/tensorflow/runtime/blob/master/documents
 ./runtime/bazel-bin/tools/tfrt_translate  --mlir-to-bef test.mlir > test.bef
 hexdump -C test.mlir
 ./runtime/bazel-bin/tools/bef_executor test.bef
+
+##############
+# IREE CMake #
+##############
+
+#export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/mlir/lib:$LD_LIBRARY_PATH
+#cmake -G Ninja -B ../iree-build/ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DIREE_BUILD_PYTHON_BINDINGS=ON -DIREE_BUILD_TENSORFLOW_COMPILER=ON .
+
+Maybe installing via bazel made the pyiree bindings work? I have no idea why it works now.
+Make sure to update CMakeLists.txt to install the python bindings and TF stuff.
+
+##############
+# IREE Bazel #
+##############
+
+#git clone https://github.com/google/iree.git
+export CC=clang
+export CXX=clang++
+cd iree
+git submodule update --init
+python3 configure_bazel.py
+#bazel test -k iree/... # to run tests
