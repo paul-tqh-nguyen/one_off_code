@@ -109,7 +109,6 @@ if __name__ == '__main__':
         print()
         print(f'input_image.shape {repr(input_image.shape)}')
         print()
-        print(f"type(result) {repr(type(result))}")
         print(f'result.shape {repr(result.shape)}')
         print()
     

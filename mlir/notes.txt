@@ -1,49 +1,7 @@
 
-#########
-# bazel #
-#########
+# Build and install as described in 
 
-This is necessary to use bazel:
+export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/tmp/lib:$LD_LIBRARY_PATH
 
-export JAVA_HOME=/home/pnguyen/miniconda3/envs/mlir/
-
-################
-# TensorFlowRT #
-################
-
-To build TFRT:
-
-export JAVA_HOME=$HOME/anaconda3/envs/mlir/
-git clone https://github.com/tensorflow/runtime.git
-cd runtime/
-# these two currently don't work on mac
-bazel build //tools:bef_executor  --sandbox_debug --verbose_failures
-bazel build //tools:tfrt_translate  --sandbox_debug --verbose_failures
-
-Hello Integers (from https://github.com/tensorflow/runtime/blob/master/documents/tutorial.md)
-
-./runtime/bazel-bin/tools/tfrt_translate  --mlir-to-bef test.mlir > test.bef
-hexdump -C test.mlir
-./runtime/bazel-bin/tools/bef_executor test.bef
-
-##############
-# IREE CMake #
-##############
-
-#export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/mlir/lib:$LD_LIBRARY_PATH
-#cmake -G Ninja -B ../iree-build/ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DIREE_BUILD_PYTHON_BINDINGS=ON -DIREE_BUILD_TENSORFLOW_COMPILER=ON .
-
-Maybe installing via bazel made the pyiree bindings work? I have no idea why it works now.
-Make sure to update CMakeLists.txt to install the python bindings and TF stuff.
-
-##############
-# IREE Bazel #
-##############
-
-#git clone https://github.com/google/iree.git
-export CC=clang
-export CXX=clang++
-cd iree
-git submodule update --init
-python3 configure_bazel.py
-#bazel test -k iree/... # to run tests
+# Example 1
+/home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/toyc-ch1 /home/pnguyen/code/one_off_code/mlir/llvm-project/mlir/test/Examples/Toy/Ch1/ast.toy -emit=ast

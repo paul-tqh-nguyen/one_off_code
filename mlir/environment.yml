@@ -1,14 +1,16 @@
 name: mlir
 dependencies:
   - python=3.7
+  - pip
+  - pip:
+    - tensorflow
+
+# IREE
   - conda-forge::bazel
-  - cmake>=3.13
+  - cmake
   - clang
   - clangxx
   - jupyter
   - conda-forge::ninja
   - conda-forge::jupyter_http_over_ws
   - matplotlib
-  - pip
-  - pip:
-    - tensorflow
