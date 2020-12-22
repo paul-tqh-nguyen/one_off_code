@@ -365,6 +365,34 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
 	  (lambda ()
 	    (local-set-key (kbd "C-c p") 'python-printf-selected)))
 
+;; C/C++ Settings
+
+(defun cpp-printf-selected ()
+  (interactive)
+  (when (use-region-p)
+    (let* ((region-string (buffer-substring (region-beginning) (region-end)))
+	   (region-lines (split-string region-string "\n"))
+	   (number-of-region-lines (length region-lines))
+	   (current-line-index 0))
+      (delete-region (region-beginning) (region-end))
+      (dolist (region-line-unnormalized region-lines)
+	(let* ((region-line (replace-regexp-in-string "	" "        " region-line-unnormalized))
+	       (index-of-first-non-white-space-character (string-match "[^\s-]" region-line))
+	       (no-indentation-region-line (if index-of-first-non-white-space-character (substring region-line index-of-first-non-white-space-character nil) region-line)))
+	  (if (null index-of-first-non-white-space-character)
+	      (insert region-line)
+	    (progn
+	      (dotimes (space-index index-of-first-non-white-space-character)
+	  	(insert " "))
+	      (insert (format "std::cout << \"%s: \" << %s << \"\\n\";" no-indentation-region-line no-indentation-region-line))))
+	  (unless (eq current-line-index (1- number-of-region-lines))
+	    (insert "\n")
+	    (setq current-line-index (1+ current-line-index))))))))
+
+(add-hook 'c++-mode-hook
+	  (lambda ()
+	    (local-set-key (kbd "C-c p") 'cpp-printf-selected)))
+
 ;; Misc. OS-Specific / Machine-Specific Changes
 
 (cond

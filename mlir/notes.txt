@@ -1,7 +1,55 @@
+# Links
 
-# Build and install as described in 
+https://mlir.llvm.org/docs/Tutorials/Toy/
+
+# Build Notes
 
 export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/tmp/lib:$LD_LIBRARY_PATH
 
-# Example 1
+========================================================================================================================
+
+# Rebuild MLIR
+
+pushd /home/pnguyen/code/one_off_code/mlir/llvm-project/build/ ; cmake -G Ninja ../llvm -DLLVM_ENABLE_PROJECTS=mlir -DLLVM_BUILD_EXAMPLES=ON -DLLVM_TARGETS_TO_BUILD="X86;NVPTX;AMDGPU" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON ; cmake --build . --target check-mlir ; popd
+
+========================================================================================================================
+
+# Create new MLIR project
+
+# Add "add_subdirectory(paul)" to llvm-project/mlir/examples
+
+========================================================================================================================
+
+# Examples
+
 /home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/toyc-ch1 /home/pnguyen/code/one_off_code/mlir/llvm-project/mlir/test/Examples/Toy/Ch1/ast.toy -emit=ast
+
+/home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/toyc-ch2 /home/pnguyen/code/one_off_code/mlir/llvm-project/mlir/test/Examples/Toy/Ch2/ast.toy -emit=mlir
+
+# Current
+
+pushd /home/pnguyen/code/one_off_code/mlir/llvm-project/build/ && cmake -G Ninja ../llvm -DLLVM_ENABLE_PROJECTS=mlir -DLLVM_BUILD_EXAMPLES=ON -DLLVM_TARGETS_TO_BUILD="X86;NVPTX;AMDGPU" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON && cmake --build . --target check-mlir && popd  && printf "\n\n\n\n\n\n\n\n" && /home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/toyc-ch2 /tmp/test/test.toy -emit=mlir
+
+========================================================================================================================
+
+We want to reproduce this line:
+    toy.print %0 : tensor<2x3xf64>
+
+Inside "mlir::LogicalResult mlirGen(PrintExprAST &call)", we generate the MLIR for arg
+The MLIR for arg is "%0"
+
+We want to figure out where that "%0" comes from.
+
+"%0" comes from a VariableExprAST
+
+How do we get access to the variable name in code?
+
+========================================================================================================================
+
+"mlir::Value mlirGen(LiteralExprAST &lit)" returns an mlir::Value
+
+We want to pass that MILR::Value to our print function.
+
+We've already created the MLIR::Value in paulFunc.
+
+Which value is it?
