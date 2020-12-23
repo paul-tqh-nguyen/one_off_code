@@ -40,6 +40,7 @@
 ;; LLVM Settings
 
 (load "tablegen-mode.el")
+(load "llvm-mode.el")
 
 ;; Javascript Settings
 
