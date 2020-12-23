@@ -37,6 +37,11 @@
 (load "undo-tree.el")
 (global-undo-tree-mode)
 
+;; LLVM Settings
+
+(load "tablegen-mode.el")
+(load "llvm-mode.el")
+
 ;; Javascript Settings
 
 (load "json-reformat.el")

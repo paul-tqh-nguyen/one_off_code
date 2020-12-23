@@ -1,21 +1,43 @@
-# Links
+
+# Misc. Links
 
 https://mlir.llvm.org/docs/Tutorials/Toy/
 
-# Build Notes
+========================================================================================================================
+
+# Necessary Environment Variables
 
 export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/tmp/lib:$LD_LIBRARY_PATH
 
 ========================================================================================================================
 
-# Rebuild MLIR
+# Rebuild MLIR https://mlir.llvm.org/getting_started/
 
 pushd /home/pnguyen/code/one_off_code/mlir/llvm-project/build/ ; cmake -G Ninja ../llvm -DLLVM_ENABLE_PROJECTS=mlir -DLLVM_BUILD_EXAMPLES=ON -DLLVM_TARGETS_TO_BUILD="X86;NVPTX;AMDGPU" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON ; cmake --build . --target check-mlir ; popd
 
 ========================================================================================================================
 
-# Create new MLIR project
+# Create new standalone MLIR project
 
-# Add "add_subdirectory(paul)" to llvm-project/mlir/examples
+export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/tmp/lib:$LD_LIBRARY_PATH
+export BUILD_DIR=/home/pnguyen/code/one_off_code/mlir/llvm-project/build
+export PREFIX=/home/pnguyen/code/one_off_code/mlir/llvm-project/build
+
+cd /home/pnguyen/code/one_off_code/mlir/llvm-project/mlir/examples/paul
+mkdir build
+cd build
+
+cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit
+cmake --build . --target check-standalone
+ninja
+
+# ./paullang-main/paullang-main
+# cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit && cmake --build . --target check-paullang && ninja && ./paullang-main/paullang-main
+
+========================================================================================================================
+
+Current
+
+Let's reproduce our code from Ch2 in our new stand alone project.
 
 ========================================================================================================================
