@@ -32,12 +32,59 @@ cmake --build . --target check-standalone
 ninja
 
 # ./paullang-main/paullang-main
-# cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit && cmake --build . --target check-paullang && ninja && ./paullang-main/paullang-main
+cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit && cmake --build . --target check-paullang && ninja && ./paullang-main/paullang-main
 
 ========================================================================================================================
 
 Current
 
-Let's reproduce our code from Ch2 in our new stand alone project.
+To run Ch3 Examples:
+
+/home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/toyc-ch3 /home/pnguyen/code/one_off_code/mlir/llvm-project/mlir/test/Examples/Toy/Ch3/transpose_transpose.toy -emit=mlir -opt
+
+pushd /home/pnguyen/code/one_off_code/mlir/llvm-project/build/ ; cmake -G Ninja ../llvm -DLLVM_ENABLE_PROJECTS=mlir -DLLVM_BUILD_EXAMPLES=ON -DLLVM_TARGETS_TO_BUILD="X86;NVPTX;AMDGPU" -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_ASSERTIONS=ON ; cmake --build . --target check-mlir ; popd ; printf "\n\n\n\n\n\n\n" ; /home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/toyc-ch3 /home/pnguyen/code/one_off_code/mlir/llvm-project/mlir/test/Examples/Toy/Ch3/transpose_transpose.toy -emit=mlir -opt
+
+===================
+
+Add a DRR module to optimize transpose_transpose away.
+
+examples/toy/Ch3/mlir/ToyCombine.td contains some rewrite patters (we want to copy ReshapeReshapeOptPattern)
+
+examples/toy/Ch3/CMakeLists.txt contains info on how to build the *.td files for the rewrite patterns
+
+    set(LLVM_TARGET_DEFINITIONS mlir/ToyCombine.td) # LLVM_TARGET_DEFINITIONS is a special variable
+    mlir_tablegen(ToyCombine.inc -gen-rewriters) # I think ToyCombine is the name of the *.td file
+    add_public_tablegen_target(ToyCh3CombineIncGen) # ToyCh3CombineIncGen is just a target name
+    
+    add_toy_chapter(...) # ToyCh3CombineIncGen is used here,
+    # one_off_code/mlir/llvm-project/mlir contains the definition of add_toy_chapter
+    # I think we just want to copy add_dependencies and use it with "paullang-main" ? 
+
+
+NOTE! From examples/toy/Ch4/include/toy/CMakeLists.txt
+
+    # Most dialects should use add_mlir_dialect().  See examples/standalone.
+    set(LLVM_TARGET_DEFINITIONS Ops.td)
+    mlir_tablegen(Ops.h.inc -gen-op-decls)
+    mlir_tablegen(Ops.cpp.inc -gen-op-defs)
+    add_public_tablegen_target(ToyCh4OpsIncGen)
+    
+    # Most dialects should use add_mlir_interfaces().
+    set(LLVM_TARGET_DEFINITIONS ShapeInferenceInterface.td)
+    mlir_tablegen(ShapeInferenceOpInterfaces.h.inc -gen-op-interface-decls)
+    mlir_tablegen(ShapeInferenceOpInterfaces.cpp.inc -gen-op-interface-defs)
+    add_public_tablegen_target(ToyCh4ShapeInferenceInterfaceIncGen)
+
+Let's find out how the Ch3 example uses the rewrite pattern when "-opt" is passed in.
+
+Let's see if we can do a basic pass.
+
+https://mlir.llvm.org/docs/Tutorials/QuickstartRewrites/
+
+Figure out why examples/paul/include/PaulLang/PaulLangPasses.td can't import TransposeOp
+
+Currently, we can't run pass managers over a mlir::ModuleOp, but:
+* in examples/toy/Ch3/mlir/MLIRGen.cpp , "mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST)" returns a mlir::OwningModuleRef.
+* in examples/toy/Ch3/mlir/MLIRGen.cpp , "MLIRGenImpl(context).mlirGen(moduleAST)" is supposed to be a mlir::ModuleOp bc "mlir::ModuleOp mlirGen(ModuleAST &moduleAST)" returns a mlir::ModuleOp
 
 ========================================================================================================================
