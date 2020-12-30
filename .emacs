@@ -232,7 +232,7 @@
 
 (defun broadcast-cuda ()
   (interactive)
-  (let ((broadcast-command (read-string "Command to broadcast:"))
+  (let ((broadcast-command (read-string "Command to broadcast: "))
 	(shell-loaders '(
 			 cuda
 			 cuda-shell
