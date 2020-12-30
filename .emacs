@@ -230,6 +230,27 @@
 		      jupyter
 		      )))
 
+(defun broadcast-cuda ()
+  (interactive)
+  (let ((broadcast-command (read-string "Command to broadcast:"))
+	(shell-loaders '(
+			 cuda
+			 cuda-shell
+			 cuda-test
+			 cuda-python
+			 cuda-second
+			 cuda-third
+			 cuda-fourth
+			 cuda-fifth
+			 jupyter
+			 )))
+    (dolist (shell-loader shell-loaders)
+      (funcall shell-loader)
+      (end-of-buffer)
+      (insert broadcast-command)
+      (comint-send-input)
+      )))
+
 (defun gpu-farm-int (func-for-cuda-id)
   (interactive)
   (delete-other-windows)
