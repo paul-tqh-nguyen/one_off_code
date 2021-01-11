@@ -127,9 +127,13 @@ def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -
         exitCallback(printed_output)
     return
 
-def shell(shell_command: str) -> str:
-    import subprocess
-    return subprocess.check_output(shell_command, shell=True).decode('utf-8')
+def shell(input_command: str) -> str:
+    '''Handles multi-line input_command'''
+    command = input_command.encode("utf-8")
+    process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    stdout_string, _ = process.communicate(command)
+    stdout_string = stdout_string.decode("utf-8")
+    return stdout_string
 
 def pid() -> int:
     import os
