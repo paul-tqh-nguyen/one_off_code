@@ -1,32 +1,5 @@
-name: mg
+name: static_autodiff
 dependencies:
 # dev environment
   - python=3.7
-  - coverage
-  - pytest
-  - pytest-cov
-  - black
-  - conda-forge::pre-commit
-
-# documentation
-  - sphinx=3.0.4
-  - nbsphinx
-  - notebook
-  - conda-forge::pydata-sphinx-theme
-  - matplotlib
-  - pip
-  - pip:
-    - rst2pdf
-    - nest_asyncio
-
-# metagraph dependencies (so setup.py develop doesn't pip install them)
-  - importlib_metadata
-  - numpy
-  - networkx
-  - pandas
-  - scipy
-  - dask
-  - conda-forge::donfig
-  - conda-forge::grblas
-  - conda-forge::python-louvain
-  - conda-forge::websockets
+  - pyparsing
