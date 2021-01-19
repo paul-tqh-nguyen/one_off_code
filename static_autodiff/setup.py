@@ -1,6 +1,6 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
-setup(
+setup( # TODO add more here
     name="leibniz",
     description="A domain-specific language for automatic differentiation via static computation graphs.",
     author="Paul Nguyen",

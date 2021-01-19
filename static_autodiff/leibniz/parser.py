@@ -2,6 +2,8 @@
 '''
 '''
 
+# TODO fill in doc string
+
 ###########
 # Imports #
 ###########
@@ -11,6 +13,8 @@ from pyparsing import pyparsing_common as ppc
 from pyparsing import Word
 
 from misc_utilities import *
+
+# TODO make usure imports are used
 
 ###########
 # Globals #
@@ -34,19 +38,16 @@ real_pe = _float_pe | integer_pe
 
 grammar_pe = real_pe # TODO update this
 
+################
+# Entry Points #
+################
+
+def parseSourceCode(input_string: str): # TODO add return type
+    return grammar_pe.parseString(input_string, parseAll=True)
+
 ##########
 # Driver #
 ##########
 
-# @debug_on_error
-# def main() -> None:
-#     input_string = '''
-# 0.3213 1.2 -123 1e2 3
-# '''
-#     parse_result = grammar_pe.parseString(input_string, parseAll=True)
-#     print(f"parse_result {repr(parse_result)}")
-#     breakpoint()
-#     return
-
 if __name__ == '__main__':
-    main()
+    print("TODO add something here")
