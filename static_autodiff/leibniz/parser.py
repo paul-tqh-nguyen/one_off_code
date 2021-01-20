@@ -31,27 +31,23 @@ from .misc_utilities import *
 
 # ParserElement.setDefaultWhitespaceChars(' \t') # TODO enable this
 
-# Atom Parser Elements
+# Literal Parser Elements
 
 def parse_boolean(_s: str, _loc: int, tokens: pyparsing.ParseResults):
-    assert len(tokens) == 1
-    token = tokens.pop()
+    token = only_one(tokens)
     assert token in ('True', 'False')
-    bool_token = True if token == 'True' else False
-    tokens.append(bool_token)
+    bool_value = True if token == 'True' else False
+    return bool_value
 
 boolean_pe = oneOf('True False').setName('boolean').setParseAction(parse_boolean)
 
-integer_pe = ppc.signed_integer.setName('integer')
+integer_pe = ppc.integer.setName('integer')
 _float_pe = ppc.real | ppc.sci_real
 real_pe = (_float_pe | integer_pe).setName('real number')
 
-identifier_pe = ppc.identifier.setName('identifier')
-
-atom_pe = (boolean_pe | real_pe | identifier_pe).setName('atom')
-
 # Arithmetic Operation Parser Elements
 
+negative_operation_pe = Literal('-').setName('negative operation')
 exponent_operation_pe = oneOf('^ **').setName('power operation')
 multiplication_operation_pe = Literal('*').setName('multiplication operation')
 division_operation_pe = Literal('/').setName('division operation')
@@ -65,11 +61,19 @@ and_operation_pe = Literal('and').setName('and operation')
 xor_operation_pe = Literal('xor').setName('xor operation')
 or_operation_pe = Literal('or').setName('or operation')
 
+# Atom Parser Elements
+
+_boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | or_operation_pe
+identifier_pe = ~_boolean_operation_pe + ~boolean_pe + ppc.identifier.setName('identifier')
+
+atom_pe = (identifier_pe | real_pe | boolean_pe).setName('atom')
+
 # Expression Parser Elements
 
 arithmetic_expression_pe = infixNotation(
     real_pe | identifier_pe,
     [
+        (negative_operation_pe, 1, opAssoc.RIGHT),
         (exponent_operation_pe, 2, opAssoc.RIGHT),
         (multiplication_operation_pe | division_operation_pe, 2, opAssoc.LEFT),
         (addition_operation_pe | subtraction_operation_pe, 2, opAssoc.LEFT),
@@ -79,14 +83,14 @@ arithmetic_expression_pe = infixNotation(
 boolean_expression_pe = infixNotation(
     boolean_pe | identifier_pe,
     [
-        (not_operation_pe, 2, opAssoc.RIGHT),
+        (not_operation_pe, 1, opAssoc.RIGHT),
         (and_operation_pe, 2, opAssoc.LEFT),
         (xor_operation_pe, 2, opAssoc.LEFT),
         (or_operation_pe, 2, opAssoc.LEFT),
     ],
 ).setName('boolean expression')
 
-expression_pe = (atom_pe | arithmetic_expression_pe | boolean_expression_pe).setName('expression')
+expression_pe = (arithmetic_expression_pe | boolean_expression_pe | atom_pe).setName('expression')
 
 # Declaration Parser Elements
 
@@ -103,9 +107,15 @@ grammar_pe = declaration_pe # TODO update this
 def parseSourceCode(input_string: str): # TODO add return type
     return grammar_pe.parseString(input_string, parseAll=True)
 
+# TODO enable this
+# __all__ = [
+#     'parseSourceCode'
+# ]
+
 ##########
 # Driver #
 ##########
 
 if __name__ == '__main__':
     print("TODO add something here")
+
