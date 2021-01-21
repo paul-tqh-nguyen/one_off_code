@@ -2,6 +2,9 @@
 import pytest
 
 from leibniz import parser
+from leibniz.parser import TypeASTNode, RealLiteralASTNode, AtomicDeclarationASTNode
+
+# TODO verify that the above imports are used
 
 def test_parser_atomic_boolean():
     expected_input_output_pairs = [
@@ -9,7 +12,7 @@ def test_parser_atomic_boolean():
         ('False', False),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[2]
+        result = parser.parseSourceCode('x = '+input_string).asList()[0][3].value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -31,7 +34,7 @@ def test_parser_atomic_real():
         # ('1.23e-2', 0.0123),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[2]
+        result = parser.parseSourceCode('x = '+input_string).asList()[0][3].value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -53,7 +56,7 @@ def test_parser_atomic_identifier():
         'vAr213feEF',
     ]
     for input_string in valid_identifiers:
-        result = parser.parseSourceCode(input_string+' = 1').asList()[0]
+        result = parser.parseSourceCode(input_string+' = 1').asList()[0][0]
         assert type(result) is str
         assert result == input_string, f'''
 input_string: {repr(input_string)}
@@ -88,7 +91,7 @@ def test_parser_boolean_expression():
         ('True xor (False or not True) and True xor False', [True, 'xor', [[False, 'or', ['not', True]], 'and', True], 'xor', False]),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[2]
+        result = parser.parseSourceCode('x = '+input_string).asList()[0][3]
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -111,15 +114,15 @@ def test_parser_arithmetic_expression():
         ('1 ** 2 - 3', [[1, '**', 2], '-', 3]),
         ('1 ^ (2 + 3)', [1, '^', [2, '+', 3]]),
         ('1 ^ (2 - -3)', [1, '^', [2, '-', ['-', 3]]]),
+        ('1 ^ (2 --3)', [1, '^', [2, '-', ['-', 3]]]),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[2]
+        result = parser.parseSourceCode('x = '+input_string).asList()[0][3]
         assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
-    assert False
 
 def test_parser_function_call():
     expected_input_output_pairs = [
@@ -131,7 +134,7 @@ def test_parser_function_call():
         ('f(x := 1, y := g(arg:=True))', ['f', '(', 'x', ':=', 1, 'y', ':=', 'g', '(', 'arg', ':=', True, ')', ')']),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[2:]
+        result = parser.parseSourceCode('x = '+input_string).asList()[0][3:]
         assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -140,14 +143,14 @@ expected_result: {repr(expected_result)}
 
 def test_parser_declaration():
     expected_input_output_pairs = [
-        ('x', ['x']),
-        ('x = 1', ['x', '=', 1]),
-        ('x: Integer', ['x', ':', 'Integer']),
-        ('x: Real = 1', ['x', ':', 'Real', '=', 1]),
-        ('x ; x = 1 ; x: Integer ; x: Real = 1', ['x', 'x', '=', 1, 'x', ':', 'Integer', 'x', ':', 'Real', '=', 1]),
+        ('x', ['x', []]),
+        ('x = 1', ['x', [], '=', 1]),
+        ('x: Integer', ['x', [':', 'Integer']]),
+        ('x: Real = 1', ['x', [':', 'Real'], '=', 1]),
+        # ('x ; x = 1 ; x: Integer ; x: Real = 1', ['x', 'x', '=', 1, 'x', ':', 'Integer', 'x', ':', 'Real', '=', 1]), # TODO make this work
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode(input_string).asList()
+        result = parser.parseSourceCode(input_string).asList()[0]
         assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -156,12 +159,22 @@ expected_result: {repr(expected_result)}
 
 def test_parser_comments():
     expected_input_output_pairs = [
-        ('x # comment', ['x']),
-        ('x: Integer # comment', ['x', ':', 'Integer']),
-        ('x: Real = 1 # comment', ['x', ':', 'Real', '=', 1]),
+        ('x # comment', [AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=None)]),
+        ('x = 1 # comment', [AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1))]),
+        ('x: Integer # comment', [AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Integer'), value=None)]),
+        ('x: Real = 1 # comment', [AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))]),
+        (
+            'x ; x = 1 ; x: Integer ; x: Real = 1 # y = 123',
+            [
+                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=None),
+                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
+                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Integer'), value=None),
+                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))
+            ]
+        ),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode(input_string).asList()
+        result = parser.parseSourceCode(input_string).asList()[0]
         assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
 input_string: {repr(input_string)}
 result: {repr(result)}

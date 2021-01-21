@@ -475,6 +475,9 @@ def n_choose_k(n: int, k: int):
 def lerp(start: float, end: float, floatValue: float) -> float:
     return start + floatValue * (end - start);
 
+def true(*args, **kwargs) -> bool:
+    return True
+
 def false(*args, **kwargs) -> bool:
     return False
 
