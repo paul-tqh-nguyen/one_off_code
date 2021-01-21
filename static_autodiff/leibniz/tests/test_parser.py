@@ -119,3 +119,51 @@ input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
+    assert False
+
+def test_parser_function_call():
+    expected_input_output_pairs = [
+        ('f()', ['f', '(', ')']),
+        ('f(x := 1)', ['f', '(', 'x', ':=', 1, ')']),
+        ('f(x := 1, y := 2)', ['f', '(', 'x', ':=', 1, 'y', ':=', 2, ')']),
+        ('f(x := 1e3, y := var)', ['f', '(', 'x', ':=', 1_000.0, 'y', ':=', 'var', ')']),
+        ('f(x := 1, y := True)', ['f', '(', 'x', ':=', 1, 'y', ':=', True, ')']),
+        ('f(x := 1, y := g(arg:=True))', ['f', '(', 'x', ':=', 1, 'y', ':=', 'g', '(', 'arg', ':=', True, ')', ')']),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        result = parser.parseSourceCode('x = '+input_string).asList()[2:]
+        assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_declaration():
+    expected_input_output_pairs = [
+        ('x', ['x']),
+        ('x = 1', ['x', '=', 1]),
+        ('x: Integer', ['x', ':', 'Integer']),
+        ('x: Real = 1', ['x', ':', 'Real', '=', 1]),
+        ('x ; x = 1 ; x: Integer ; x: Real = 1', ['x', 'x', '=', 1, 'x', ':', 'Integer', 'x', ':', 'Real', '=', 1]),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        result = parser.parseSourceCode(input_string).asList()
+        assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_comments():
+    expected_input_output_pairs = [
+        ('x # comment', ['x']),
+        ('x: Integer # comment', ['x', ':', 'Integer']),
+        ('x: Real = 1 # comment', ['x', ':', 'Real', '=', 1]),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        result = parser.parseSourceCode(input_string).asList()
+        assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
