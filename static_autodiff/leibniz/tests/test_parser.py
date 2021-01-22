@@ -6,6 +6,7 @@ from leibniz.parser import (
     TypeASTNode,
     BooleanLiteralASTNode,
     RealLiteralASTNode,
+    VariableASTNode,
     NegativeExpressionASTNode,
     ExponentExpressionASTNode,
     MultiplicationExpressionASTNode,
@@ -16,9 +17,11 @@ from leibniz.parser import (
     AndExpressionASTNode,
     XorExpressionASTNode,
     OrExpressionASTNode,
-    AtomicDeclarationASTNode,
+    FunctionCallASTNode,
+    DeclarationASTNode,
     SubtheoryASTNode,
 )
+from leibniz.misc_utilities import *
 
 # TODO verify that the above imports are used
 
@@ -28,7 +31,10 @@ def test_parser_atomic_boolean():
         ('False', False),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[0][3].value
+        subtheory_node = parser.parseSourceCode('x = '+input_string)
+        declaration_node = only_one(subtheory_node.declarations)
+        value_node = declaration_node.value
+        result = value_node.value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -36,7 +42,7 @@ expected_result: {repr(expected_result)}
 '''
 
 def test_parser_atomic_real():
-    expected_input_output_pairs = [ # TODO Make all these cases work
+    expected_input_output_pairs = [
         ('123', 123),
         ('0.123', 0.123),
         ('.123', 0.123),
@@ -50,7 +56,10 @@ def test_parser_atomic_real():
         # ('1.23e-2', 0.0123),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[0][3].value
+        subtheory_node = parser.parseSourceCode('x = '+input_string)
+        declaration_node = only_one(subtheory_node.declarations)
+        value_node = declaration_node.value
+        result = value_node.value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -72,7 +81,10 @@ def test_parser_atomic_identifier():
         'vAr213feEF',
     ]
     for input_string in valid_identifiers:
-        result = parser.parseSourceCode(input_string+' = 1').asList()[0][0]
+        subtheory_node = parser.parseSourceCode(input_string+' = 1')
+        declaration_node = only_one(subtheory_node.declarations)
+        identifier_node = declaration_node.identifier
+        result = identifier_node.name
         assert type(result) is str
         assert result == input_string, f'''
 input_string: {repr(input_string)}
@@ -82,118 +94,118 @@ result: {repr(result)}
 def test_parser_boolean_expression():
     expected_input_output_pairs = [
         ('not False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=NotExpressionASTNode(
                     arg=BooleanLiteralASTNode(value=False)
                 ))
         ])),
         ('not True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=NotExpressionASTNode(
                     arg=BooleanLiteralASTNode(value=True)
                 ))
         ])),
         ('True and True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AndExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=True),
                     right_arg=BooleanLiteralASTNode(value=True)
                 ))
         ])),
         ('False and False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AndExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=False),
                     right_arg=BooleanLiteralASTNode(value=False)
                 ))
         ])),
         ('True and False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AndExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=True),
                     right_arg=BooleanLiteralASTNode(value=False)
                 ))
         ])),
         ('False and True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AndExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=False),
                     right_arg=BooleanLiteralASTNode(value=True)
                 ))
         ])),
         ('True xor True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=XorExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=True),
                     right_arg=BooleanLiteralASTNode(value=True)
                 ))
         ])),
         ('False xor False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=XorExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=False),
                     right_arg=BooleanLiteralASTNode(value=False)
                 ))
         ])),
         ('True xor False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=XorExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=True),
                     right_arg=BooleanLiteralASTNode(value=False)
                 ))
         ])),
         ('False xor True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=XorExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=False),
                     right_arg=BooleanLiteralASTNode(value=True)
                 ))
         ])),
         ('True or True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=OrExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=True),
                     right_arg=BooleanLiteralASTNode(value=True)
                 ))
         ])),
         ('False or False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=OrExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=False),
                     right_arg=BooleanLiteralASTNode(value=False)
                 ))
         ])),
         ('True or False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=OrExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=True),
                     right_arg=BooleanLiteralASTNode(value=False)
                 ))
         ])),
         ('False or True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=OrExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=False),
                     right_arg=BooleanLiteralASTNode(value=True)
                 ))
         ])),
         ('True and True and False and True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AndExpressionASTNode(
                     left_arg=AndExpressionASTNode(
                         left_arg=AndExpressionASTNode(
@@ -206,16 +218,16 @@ def test_parser_boolean_expression():
                 ))
         ])),
         ('not True and True', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AndExpressionASTNode(
                     left_arg=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True)),
                     right_arg=BooleanLiteralASTNode(value=True)
                 ))
         ])),
         ('not True and True xor False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=XorExpressionASTNode(
                     left_arg=AndExpressionASTNode(
                         left_arg=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True)),
@@ -224,8 +236,8 @@ def test_parser_boolean_expression():
                     right_arg=BooleanLiteralASTNode(value=False)
                 ))])),
         ('False or not True and True xor False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=OrExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=False),
                     right_arg=XorExpressionASTNode(
@@ -237,8 +249,8 @@ def test_parser_boolean_expression():
                     )
                 ))])),
         ('True xor False or not True and True xor False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=OrExpressionASTNode(
                     left_arg=XorExpressionASTNode(
                         left_arg=BooleanLiteralASTNode(value=True),
@@ -253,15 +265,24 @@ def test_parser_boolean_expression():
                     )
                 ))])),
         ('True xor (False or not True) and True xor False', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=XorExpressionASTNode(
-                    left_arg=BooleanLiteralASTNode(value=True),
-                    right_arg=
-                ))])), # [True, 'xor', [[False, 'or', ['not', True]], 'and', True], 'xor', False]
+                    left_arg=XorExpressionASTNode(
+                        left_arg=BooleanLiteralASTNode(value=True),
+                        right_arg=AndExpressionASTNode(
+                            left_arg=OrExpressionASTNode(
+                                left_arg=BooleanLiteralASTNode(value=False),
+                                right_arg=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True)),
+                            ),
+                            right_arg=BooleanLiteralASTNode(value=True)
+                        )
+                    ),
+                    right_arg=BooleanLiteralASTNode(value=False)
+                ))])),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[0]
+        result = parser.parseSourceCode('x = '+input_string)
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -271,16 +292,16 @@ expected_result: {repr(expected_result)}
 def test_parser_arithmetic_expression():
     expected_input_output_pairs = [
         ('1 + 2', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AdditionExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=RealLiteralASTNode(value=2)
                 ))
         ])),
         ('1 + 2 - 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=SubtractionExpressionASTNode(
                     left_arg=AdditionExpressionASTNode(
                         left_arg=RealLiteralASTNode(value=1),
@@ -290,8 +311,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 + 2 * 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AdditionExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=MultiplicationExpressionASTNode(
@@ -301,8 +322,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('(1 + 2) * 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=MultiplicationExpressionASTNode(
                     left_arg=AdditionExpressionASTNode(
                         left_arg=RealLiteralASTNode(value=1),
@@ -312,8 +333,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 / 2 * 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=MultiplicationExpressionASTNode(
                     left_arg=DivisionExpressionASTNode(
                         left_arg=RealLiteralASTNode(value=1),
@@ -323,8 +344,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 / 2 + 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=AdditionExpressionASTNode(
                     left_arg=DivisionExpressionASTNode(
                         left_arg=RealLiteralASTNode(value=1),
@@ -334,8 +355,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 / (2 + 3)', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=DivisionExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=AdditionExpressionASTNode(
@@ -345,16 +366,16 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 ^ 2', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=ExponentExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=RealLiteralASTNode(value=2)
                 ),
             )])),
         ('1 ^ (2 + 3)', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=ExponentExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=AdditionExpressionASTNode(
@@ -364,8 +385,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 ** 2 ^ 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=ExponentExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=ExponentExpressionASTNode(
@@ -375,8 +396,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 ^ 2 ** 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=ExponentExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=ExponentExpressionASTNode(
@@ -386,8 +407,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 / 2 ** 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=DivisionExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=ExponentExpressionASTNode(
@@ -397,8 +418,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 ** 2 - 3', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=SubtractionExpressionASTNode(
                     left_arg=ExponentExpressionASTNode(
                         left_arg=RealLiteralASTNode(value=1),
@@ -408,8 +429,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 ^ (2 + 3)', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=ExponentExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=AdditionExpressionASTNode(
@@ -419,8 +440,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 ^ (2 - -3)', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=ExponentExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=SubtractionExpressionASTNode(
@@ -430,8 +451,8 @@ def test_parser_arithmetic_expression():
                 ),
             )])),
         ('1 ** (2 --3)', SubtheoryASTNode(declarations=[
-            AtomicDeclarationASTNode(
-                identifier='x', identifier_type=TypeASTNode(value=None),
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
                 value=ExponentExpressionASTNode(
                     left_arg=RealLiteralASTNode(value=1),
                     right_arg=SubtractionExpressionASTNode(
@@ -442,25 +463,8 @@ def test_parser_arithmetic_expression():
             )])),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[0]
+        result = parser.parseSourceCode('x = '+input_string)
         assert result == expected_result, f'''
-input_string: {repr(input_string)}
-result: {repr(result)}
-expected_result: {repr(expected_result)}
-'''
-
-def test_parser_function_call():
-    expected_input_output_pairs = [
-        ('f()', ['f', '(', ')']),
-        ('f(x := 1)', ['f', '(', 'x', ':=', 1, ')']),
-        ('f(x := 1, y := 2)', ['f', '(', 'x', ':=', 1, 'y', ':=', 2, ')']),
-        ('f(x := 1e3, y := var)', ['f', '(', 'x', ':=', 1_000.0, 'y', ':=', 'var', ')']),
-        ('f(x := 1, y := True)', ['f', '(', 'x', ':=', 1, 'y', ':=', True, ')']),
-        ('f(x := 1, y := g(arg:=True))', ['f', '(', 'x', ':=', 1, 'y', ':=', 'g', '(', 'arg', ':=', True, ')', ')']),
-    ]
-    for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[0][3:]
-        assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
@@ -468,15 +472,20 @@ expected_result: {repr(expected_result)}
 
 def test_parser_declaration():
     expected_input_output_pairs = [
-        ('x', ['x', []]),
-        ('x = 1', ['x', [], '=', 1]),
-        ('x: Integer', ['x', [':', 'Integer']]),
-        ('x: Real = 1', ['x', [':', 'Real'], '=', 1]),
-        # ('x ; x = 1 ; x: Integer ; x: Real = 1', ['x', 'x', '=', 1, 'x', ':', 'Integer', 'x', ':', 'Real', '=', 1]), # TODO make this work
+        ('x', SubtheoryASTNode(declarations=[DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=None)])),
+        ('x = 1', SubtheoryASTNode(declarations=[DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1))])),
+        ('x: Integer', SubtheoryASTNode(declarations=[DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Integer'), value=None)])),
+        ('x: Real = 1', SubtheoryASTNode(declarations=[DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))])),
+        ('x ; x = 1 ; x: Integer ; x: Real = 1', SubtheoryASTNode(declarations=[
+            DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=None),
+            DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
+            DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Integer'), value=None),
+            DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1)),
+        ])),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode(input_string).asList()[0]
-        assert result == expected_result and all(type(r) is type(er) for r, er in zip(result, expected_result)), f'''
+        result = parser.parseSourceCode(input_string)
+        assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
@@ -484,17 +493,17 @@ expected_result: {repr(expected_result)}
 
 def test_parser_comments():
     expected_input_output_pairs = [
-        ('x # comment', SubtheoryASTNode(declarations=[AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=None)])),
-        ('x = 1 # comment', SubtheoryASTNode(declarations=[AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1))])),
-        ('x: Integer # comment', SubtheoryASTNode(declarations=[AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Integer'), value=None)])),
-        ('x: Real = 1 # comment', SubtheoryASTNode(declarations=[AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))])),
+        ('x # comment', SubtheoryASTNode(declarations=[DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=None)])),
+        ('x = 1 # comment', SubtheoryASTNode(declarations=[DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1))])),
+        ('x: Integer # comment # comment ', SubtheoryASTNode(declarations=[DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Integer'), value=None)])),
+        ('x: Real = 1 # comment', SubtheoryASTNode(declarations=[DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))])),
         (
             'x ; x = 1 ; x: Integer ; x: Real = 1 # y = 123',
             SubtheoryASTNode(declarations=[
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=None),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Integer'), value=None),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=None),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Integer'), value=None),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))
             ])
         ),
         (
@@ -508,19 +517,101 @@ x ; x = 1 ; x: Integer ; x: Real = 1 # y = 123
 
 ''',
             SubtheoryASTNode(declarations=[
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=None),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Integer'), value=None),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1)),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=None),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Integer'), value=None),
-                AtomicDeclarationASTNode(identifier='x', identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=None),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Integer'), value=None),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1)),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=None),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Integer'), value=None),
+                DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))
             ])
         ),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode(input_string).asList()[0]
+        result = parser.parseSourceCode(input_string)
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_function_call():
+    expected_input_output_pairs = [
+        ('x = f() # comment', SubtheoryASTNode(declarations=[
+            DeclarationASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=FunctionCallASTNode(arg_bindings=[], function_name=VariableASTNode(name='f')))
+        ])),
+        ('x = f(a:=1) # comment', SubtheoryASTNode(declarations=[
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
+                value=FunctionCallASTNode(
+                    arg_bindings=[(VariableASTNode(name='a'), RealLiteralASTNode(value=1))],
+                    function_name=VariableASTNode(name='f'))
+            )])),
+        ('x = f(a:=1, b:=2)', SubtheoryASTNode(declarations=[
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
+                value=FunctionCallASTNode(
+                    arg_bindings=[
+                        (VariableASTNode(name='a'), RealLiteralASTNode(value=1)),
+                        (VariableASTNode(name='b'), RealLiteralASTNode(value=2))
+                    ],
+                    function_name=VariableASTNode(name='f'))
+            )])),
+        ('x = f(a:=1e3, b:=y)', SubtheoryASTNode(declarations=[
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
+                value=FunctionCallASTNode(
+                    arg_bindings=[
+                        (VariableASTNode(name='a'), RealLiteralASTNode(value=1000.0)),
+                        (VariableASTNode(name='b'), VariableASTNode(name='y'))
+                    ],
+                    function_name=VariableASTNode(name='f'))
+            )])),
+        ('x = f(a:=1, b:=2, c:= True)', SubtheoryASTNode(declarations=[
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
+                value=FunctionCallASTNode(
+                    arg_bindings=[
+                        (VariableASTNode(name='a'), RealLiteralASTNode(value=1)),
+                        (VariableASTNode(name='b'), RealLiteralASTNode(value=2)),
+                        (VariableASTNode(name='c'), BooleanLiteralASTNode(value=True))
+                    ],
+                    function_name=VariableASTNode(name='f'))
+            )])),
+        ('x = f(a:=1+2, b:= True or False)', SubtheoryASTNode(declarations=[
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
+                value=FunctionCallASTNode(
+                    arg_bindings=[
+                        (VariableASTNode(name='a'), AdditionExpressionASTNode(
+                            left_arg=RealLiteralASTNode(value=1),
+                            right_arg=RealLiteralASTNode(value=2)
+                        )),
+                        (VariableASTNode(name='b'), OrExpressionASTNode(
+                            left_arg=BooleanLiteralASTNode(value=True),
+                            right_arg=BooleanLiteralASTNode(value=False)
+                        ))
+                    ],
+                    function_name=VariableASTNode(name='f'))
+            )])),
+        ('x = f(a := 1, b := g(arg:=True))', SubtheoryASTNode(declarations=[
+            DeclarationASTNode(
+                identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None),
+                value=FunctionCallASTNode(
+                    arg_bindings=[
+                        (VariableASTNode(name='a'), RealLiteralASTNode(value=1)),
+                        (VariableASTNode(name='b'), FunctionCallASTNode(
+                            arg_bindings=[
+                                (VariableASTNode(name='arg'), BooleanLiteralASTNode(value=True)),
+                            ],
+                            function_name=VariableASTNode(name='g')))
+                    ],
+                    function_name=VariableASTNode(name='f'))
+            )])),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        result = parser.parseSourceCode(input_string)
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}

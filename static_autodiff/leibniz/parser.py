@@ -50,6 +50,13 @@ from .misc_utilities import *
 # AST Functionality #
 #####################
 
+def _trace_parse(s: str, loc: int, tokens: pyparsing.ParseResults): # TODO remove this
+    print()
+    print(f"s {repr(s)}")
+    print(f"loc {repr(loc)}")
+    print(f"tokens {repr(tokens)}")
+    
+
 class ASTNode(ABC):
 
     @abstractmethod
@@ -70,7 +77,7 @@ class ASTNode(ABC):
         '''Determines syntactic equivalence, not semantic equivalence or canonicality.'''
         raise NotImplementedError
     
-class LiteralASTNodeType(type):
+class AtomASTNodeType(type):
 
     base_ast_node_class = ASTNode
     
@@ -80,12 +87,17 @@ class LiteralASTNodeType(type):
             assert method_name not in attributes.keys(), f'{method_name} already defined for class {class_name}'
 
         updated_attributes = dict(attributes)
+        # Required Declarations
         value_type: type = updated_attributes.pop('value_type')
         token_checker: typing.Callable[[typing.Any], bool] = updated_attributes.pop('token_checker')
-        dwimming_func: typing.Callable[[typing.Any], value_type] = updated_attributes.pop('dwimming_func')
+        # Optional Declarations
+        value_attribute_name: str = updated_attributes.pop('value_attribute_name', 'value')
+        dwimming_func: typing.Callable[[typing.Any], value_type] = updated_attributes.pop('dwimming_func', lambda token: token)
         
-        def __init__(self, value: value_type):
-            self.value: value_type = value
+        def __init__(self, *args, **kwargs):
+            assert sum(map(len, (args, kwargs))) == 1
+            value: value_type = args[0] if len(args) == 1 else kwargs[value_attribute_name]
+            setattr(self, value_attribute_name, value)
 
         @classmethod
         def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> class_name:
@@ -96,7 +108,7 @@ class LiteralASTNodeType(type):
             return node_instance
         
         def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' with 'is_equivalent'
-            return type(self) is type(other) and self.value is other.value
+            return type(self) is type(other) and getattr(self, value_attribute_name) is getattr(other, value_attribute_name)
         
         updated_attributes['__init__'] = __init__
         updated_attributes['parse_action'] = parse_action
@@ -109,8 +121,8 @@ class LiteralASTNodeType(type):
 class ExpressionASTNode(ASTNode):
     pass
 
-class ExpressionLiteralASTNodeType(LiteralASTNodeType):
-    '''Though "ExpressionLiteral" might sound like an oxymoron, literals are just the atomic elements of an expression, but they are also expressions (albeit trivial expressions).'''
+class ExpressionAtomASTNodeType(AtomASTNodeType):
+    '''The atomic bases that make up expressions.'''
 
     base_ast_node_class = ExpressionASTNode
 
@@ -149,22 +161,27 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
 
 # Type Node
 
-class TypeASTNode(metaclass=LiteralASTNodeType):
+class TypeASTNode(metaclass=AtomASTNodeType):
     value_type = typing.Optional[str]
     token_checker = lambda token: token in (None, 'Boolean', 'Integer', 'Real')
-    dwimming_func = lambda token: token
 
 # Literal Node Generation
 
-class BooleanLiteralASTNode(metaclass=ExpressionLiteralASTNodeType):
+class BooleanLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = bool
     token_checker = lambda token: token in ('True', 'False')
     dwimming_func = lambda token: True if token == 'True' else False
 
-class RealLiteralASTNode(metaclass=ExpressionLiteralASTNodeType):
+class RealLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = bool
     token_checker = lambda token: isinstance(token, (float, int))
-    dwimming_func = lambda token: token
+
+# Identifier / Variable Node Generation
+
+class VariableASTNode(metaclass=AtomASTNodeType):
+    value_attribute_name = 'name'
+    value_type = str
+    token_checker = lambda token: isinstance(token, str)
 
 # Arithmetic Expression Node Generation
 
@@ -228,6 +245,29 @@ class XorExpressionASTNode(BinaryOperationExpressionASTNode):
 class OrExpressionASTNode(BinaryOperationExpressionASTNode):
     pass
 
+# Function Call Node Generation
+
+class FunctionCallASTNode(ASTNode):
+    
+    def __init__(self, function_name: VariableASTNode, arg_bindings: typing.List[typing.Tuple[VariableASTNode, ExpressionASTNode]]):
+        self.function_name = function_name
+        self.arg_bindings = arg_bindings
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionCallASTNode':
+        assert len(tokens) is 2
+        function_name = tokens[0]
+        arg_bindings = eager_map(tuple, map(pyparsing.ParseResults.asList, tokens[1]))
+        node_instance = cls(function_name, arg_bindings)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: 'ASTNode') -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            self.function_name == other.function_name and \
+            all(self.arg_bindings)
+
 # Declaration Node Generation
 
 def parse_atomic_declaration_type_label_pe(_s: str, _loc: int, type_label_tokens: pyparsing.ParseResults) -> TypeASTNode:
@@ -241,15 +281,15 @@ def parse_atomic_declaration_type_label_pe(_s: str, _loc: int, type_label_tokens
     assert isinstance(node_instance, TypeASTNode)
     return node_instance
 
-class AtomicDeclarationASTNode(ASTNode):
+class DeclarationASTNode(ASTNode):
     
-    def __init__(self, identifier: str, identifier_type: TypeASTNode, value: typing.Optional[typing.Any]): # TODO update the type for "value"
-        self.identifier: str = identifier
-        self.identifier_type: TypeASTNode = identifier_type
-        self.value: typing.Optional[typing.Any] = value # TODO update the type for self.value
+    def __init__(self, identifier: VariableASTNode, identifier_type: TypeASTNode, value: typing.Optional[ExpressionASTNode]):
+        self.identifier = identifier
+        self.identifier_type = identifier_type
+        self.value = value
     
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'AtomicDeclarationASTNode':
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'DeclarationASTNode':
         assert len(tokens) in (2, 3)
         if len(tokens) is 2:
             node_instance = cls(tokens[0], tokens[1], None)
@@ -263,7 +303,7 @@ class AtomicDeclarationASTNode(ASTNode):
     def __eq__(self, other: 'ASTNode') -> bool:
         # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
-            self.identifier is other.identifier and \
+            self.identifier == other.identifier and \
             self.identifier_type == other.identifier_type and \
             self.value == other.value
 
@@ -271,8 +311,8 @@ class AtomicDeclarationASTNode(ASTNode):
 
 class SubtheoryASTNode(ASTNode):
     
-    def __init__(self, declarations: typing.List[AtomicDeclarationASTNode]):
-        self.declarations: typing.List[AtomicDeclarationASTNode] = declarations
+    def __init__(self, declarations: typing.List[DeclarationASTNode]):
+        self.declarations: typing.List[DeclarationASTNode] = declarations
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'SubtheoryASTNode':
@@ -339,7 +379,7 @@ boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | 
 
 # Atom Parser Elements
 
-identifier_pe = ~boolean_operation_pe + ~boolean_pe + ppc.identifier.setName('identifier')
+identifier_pe = (~boolean_operation_pe + ~boolean_pe + ppc.identifier).setName('identifier').setParseAction(VariableASTNode.parse_action)
 
 atom_pe = (identifier_pe | real_pe | boolean_pe).setName('atom')
 
@@ -367,9 +407,9 @@ boolean_expression_pe = infixNotation(
     ],
 ).setName('boolean expression')
 
-function_variable_binding_pe = identifier_pe + ':=' + expression_pe
-function_variable_bindings_pe = Optional(delimitedList(function_variable_binding_pe))
-function_call_pe = (identifier_pe + Literal('(') + function_variable_bindings_pe + Literal(')')).setName('function call')
+function_variable_binding_pe = Group(identifier_pe + Suppress(':=') + expression_pe)
+function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
+function_call_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallASTNode.parse_action)
 
 expression_pe <<= (function_call_pe | arithmetic_expression_pe | boolean_expression_pe | atom_pe).setName('expression')
 
@@ -377,7 +417,7 @@ expression_pe <<= (function_call_pe | arithmetic_expression_pe | boolean_express
 
 atomic_declaration_type_label_pe = Optional(Suppress(':') + type_pe).setParseAction(parse_atomic_declaration_type_label_pe)
 atomic_declaration_value_label_pe = Optional(Suppress('=') + expression_pe)
-atomic_declaration_pe = (identifier_pe + atomic_declaration_type_label_pe + atomic_declaration_value_label_pe).setParseAction(AtomicDeclarationASTNode.parse_action)
+atomic_declaration_pe = (identifier_pe + atomic_declaration_type_label_pe + atomic_declaration_value_label_pe).setParseAction(DeclarationASTNode.parse_action)
 
 non_atomic_declaration_pe = atomic_declaration_pe + Suppress(';') + delimitedList(atomic_declaration_pe, delim=';')
 
@@ -387,7 +427,8 @@ declaration_pe = (non_atomic_declaration_pe | atomic_declaration_pe).setName('ex
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('end-of-line comment')
 
-line_of_code_pe = Group(Optional(declaration_pe)) # TODO update this with imperative code as well
+# TODO is this necessary?
+line_of_code_pe = Group(Optional(declaration_pe)) # TODO update this with imperative code as well 
 
 subtheory_pe = delimitedList(line_of_code_pe, delim='\n').ignore(comment_pe).setParseAction(SubtheoryASTNode.parse_action)
 
@@ -396,7 +437,7 @@ subtheory_pe = delimitedList(line_of_code_pe, delim='\n').ignore(comment_pe).set
 ################
 
 def parseSourceCode(input_string: str): # TODO add return type
-    return subtheory_pe.parseString(input_string, parseAll=True)
+    return only_one(subtheory_pe.parseString(input_string, parseAll=True))
 
 # TODO enable this
 # __all__ = [
