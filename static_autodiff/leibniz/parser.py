@@ -166,7 +166,7 @@ class RealLiteralASTNode(metaclass=ExpressionLiteralASTNodeType):
     token_checker = lambda token: isinstance(token, (float, int))
     dwimming_func = lambda token: token
 
-# Expression Node Generation
+# Arithmetic Expression Node Generation
 
 class NegativeExpressionASTNode(UnaryOperationExpressionASTNode):
     pass
@@ -213,6 +213,20 @@ def parse_addition_or_subtraction_expression_pe(_s: str, _loc: int, group_tokens
         else:
             raise ValueError(f'Unrecognized operation {repr(remaining_operation_string)}')
     return node_instance
+
+# Boolean Expression Node Generation
+
+class NotExpressionASTNode(UnaryOperationExpressionASTNode):
+    pass
+
+class AndExpressionASTNode(BinaryOperationExpressionASTNode):
+    pass
+
+class XorExpressionASTNode(BinaryOperationExpressionASTNode):
+    pass
+
+class OrExpressionASTNode(BinaryOperationExpressionASTNode):
+    pass
 
 # Declaration Node Generation
 
@@ -346,10 +360,10 @@ arithmetic_expression_pe = infixNotation(
 boolean_expression_pe = infixNotation(
     boolean_pe | identifier_pe,
     [
-        (not_operation_pe, 1, opAssoc.RIGHT),
-        (and_operation_pe, 2, opAssoc.LEFT),
-        (xor_operation_pe, 2, opAssoc.LEFT),
-        (or_operation_pe, 2, opAssoc.LEFT),
+        (not_operation_pe, 1, opAssoc.RIGHT, NotExpressionASTNode.parse_action),
+        (and_operation_pe, 2, opAssoc.LEFT, AndExpressionASTNode.parse_action),
+        (xor_operation_pe, 2, opAssoc.LEFT, XorExpressionASTNode.parse_action),
+        (or_operation_pe, 2, opAssoc.LEFT, OrExpressionASTNode.parse_action),
     ],
 ).setName('boolean expression')
 

@@ -12,6 +12,10 @@ from leibniz.parser import (
     DivisionExpressionASTNode,
     AdditionExpressionASTNode,
     SubtractionExpressionASTNode,
+    NotExpressionASTNode,
+    AndExpressionASTNode,
+    XorExpressionASTNode,
+    OrExpressionASTNode,
     AtomicDeclarationASTNode,
     SubtheoryASTNode,
 )
@@ -77,33 +81,187 @@ result: {repr(result)}
 
 def test_parser_boolean_expression():
     expected_input_output_pairs = [
-        ('not False', ['not', False]),
-        ('not True', ['not', True]),
-        
-        ('True and True', [True, 'and', True]),
-        ('False and False', [False, 'and', False]),
-        ('True and False', [True, 'and', False]),
-        ('False and True', [False, 'and', True]),
-
-        ('True xor True', [True, 'xor', True]),
-        ('False xor False', [False, 'xor', False]),
-        ('True xor False', [True, 'xor', False]),
-        ('False xor True', [False, 'xor', True]),
-
-        ('True or True', [True, 'or', True]),
-        ('False or False', [False, 'or', False]),
-        ('True or False', [True, 'or', False]),
-        ('False or True', [False, 'or', True]),
-
-        ('True and True and False and True', [True, 'and', True, 'and', False, 'and', True]),
-        ('not True and True', [['not', True], 'and', True]),
-        ('not True and True xor False', [[['not', True], 'and', True], 'xor', False]),
-        ('False or not True and True xor False', [False, 'or', [[['not', True], 'and', True], 'xor', False]]),
-        ('True xor False or not True and True xor False', [[True, 'xor', False], 'or', [[['not', True], 'and', True], 'xor', False]]),
-        ('True xor (False or not True) and True xor False', [True, 'xor', [[False, 'or', ['not', True]], 'and', True], 'xor', False]),
+        ('not False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=NotExpressionASTNode(
+                    arg=BooleanLiteralASTNode(value=False)
+                ))
+        ])),
+        ('not True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=NotExpressionASTNode(
+                    arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('True and True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=AndExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=True),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('False and False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=AndExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=False),
+                    right_arg=BooleanLiteralASTNode(value=False)
+                ))
+        ])),
+        ('True and False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=AndExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=True),
+                    right_arg=BooleanLiteralASTNode(value=False)
+                ))
+        ])),
+        ('False and True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=AndExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=False),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('True xor True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=XorExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=True),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('False xor False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=XorExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=False),
+                    right_arg=BooleanLiteralASTNode(value=False)
+                ))
+        ])),
+        ('True xor False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=XorExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=True),
+                    right_arg=BooleanLiteralASTNode(value=False)
+                ))
+        ])),
+        ('False xor True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=XorExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=False),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('True or True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=OrExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=True),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('False or False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=OrExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=False),
+                    right_arg=BooleanLiteralASTNode(value=False)
+                ))
+        ])),
+        ('True or False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=OrExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=True),
+                    right_arg=BooleanLiteralASTNode(value=False)
+                ))
+        ])),
+        ('False or True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=OrExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=False),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('True and True and False and True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=AndExpressionASTNode(
+                    left_arg=AndExpressionASTNode(
+                        left_arg=AndExpressionASTNode(
+                            left_arg=BooleanLiteralASTNode(value=True),
+                            right_arg=BooleanLiteralASTNode(value=True)
+                        ),
+                        right_arg=BooleanLiteralASTNode(value=False)
+                    ),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('not True and True', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=AndExpressionASTNode(
+                    left_arg=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True)),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ))
+        ])),
+        ('not True and True xor False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=XorExpressionASTNode(
+                    left_arg=AndExpressionASTNode(
+                        left_arg=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True)),
+                        right_arg=BooleanLiteralASTNode(value=True)
+                    ),
+                    right_arg=BooleanLiteralASTNode(value=False)
+                ))])),
+        ('False or not True and True xor False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=OrExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=False),
+                    right_arg=XorExpressionASTNode(
+                        left_arg=AndExpressionASTNode(
+                            left_arg=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True)),
+                            right_arg=BooleanLiteralASTNode(value=True)
+                        ),
+                        right_arg=BooleanLiteralASTNode(value=False)
+                    )
+                ))])),
+        ('True xor False or not True and True xor False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=OrExpressionASTNode(
+                    left_arg=XorExpressionASTNode(
+                        left_arg=BooleanLiteralASTNode(value=True),
+                        right_arg=BooleanLiteralASTNode(value=False)
+                    ),
+                    right_arg=XorExpressionASTNode(
+                        left_arg=AndExpressionASTNode(
+                            left_arg=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True)),
+                            right_arg=BooleanLiteralASTNode(value=True),
+                        ),
+                        right_arg=BooleanLiteralASTNode(value=False)
+                    )
+                ))])),
+        ('True xor (False or not True) and True xor False', SubtheoryASTNode(declarations=[
+            AtomicDeclarationASTNode(
+                identifier='x', identifier_type=TypeASTNode(value=None),
+                value=XorExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=True),
+                    right_arg=
+                ))])), # [True, 'xor', [[False, 'or', ['not', True]], 'and', True], 'xor', False]
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        result = parser.parseSourceCode('x = '+input_string).asList()[0][3]
+        result = parser.parseSourceCode('x = '+input_string).asList()[0]
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}

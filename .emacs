@@ -37,6 +37,10 @@
 (load "undo-tree.el")
 (global-undo-tree-mode)
 
+;; YAML Mode
+
+(load "yaml-mode.el")
+
 ;; LLVM Settings
 
 (load "tablegen-mode.el")
