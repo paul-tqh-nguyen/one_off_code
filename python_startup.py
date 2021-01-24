@@ -264,7 +264,7 @@ def trace(func: Callable) -> Callable:
         arg_values_string = ', '.join((f'{param_name}={human_readable_value(value)}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
         probably_unique_id = random.randint(10,99)
         global TRACE_INDENT_LEVEL, TRACE_INDENTATION
-        entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] {func.__name__}({arg_values_string})'
+        entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] {func.__qualname__}({arg_values_string})'
         with std_out(sys.__stdout__):
             print()
             print(entry_line)

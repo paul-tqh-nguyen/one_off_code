@@ -108,7 +108,13 @@ class AtomASTNodeType(type):
             return node_instance
         
         def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' with 'is_equivalent'
-            return type(self) is type(other) and getattr(self, value_attribute_name) is getattr(other, value_attribute_name)
+            other_value = getattr(other, value_attribute_name)
+            same_type = type(self) is type(other)
+            
+            self_value = getattr(self, value_attribute_name)
+            same_value_type = type(self_value) is type(other_value)
+            same_value = self_value == other_value
+            return same_type and same_value_type and same_value
         
         updated_attributes['__init__'] = __init__
         updated_attributes['parse_action'] = parse_action
@@ -118,7 +124,10 @@ class AtomASTNodeType(type):
         assert all(hasattr(result_class, method_name) for method_name in method_names)
         return result_class
 
-class ExpressionASTNode(ASTNode):
+class StatementASTNode(ASTNode):
+    pass
+    
+class ExpressionASTNode(StatementASTNode):
     pass
 
 class ExpressionAtomASTNodeType(AtomASTNodeType):
@@ -178,7 +187,7 @@ class RealLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
 
 # Identifier / Variable Node Generation
 
-class VariableASTNode(metaclass=AtomASTNodeType):
+class VariableASTNode(metaclass=ExpressionAtomASTNodeType):
     value_attribute_name = 'name'
     value_type = str
     token_checker = lambda token: isinstance(token, str)
@@ -247,14 +256,14 @@ class OrExpressionASTNode(BinaryOperationExpressionASTNode):
 
 # Function Call Node Generation
 
-class FunctionCallASTNode(ASTNode):
+class FunctionCallExpressionASTNode(ExpressionASTNode):
     
     def __init__(self, function_name: VariableASTNode, arg_bindings: typing.List[typing.Tuple[VariableASTNode, ExpressionASTNode]]):
         self.function_name = function_name
         self.arg_bindings = arg_bindings
     
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionCallASTNode':
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionCallExpressionASTNode':
         assert len(tokens) is 2
         function_name = tokens[0]
         arg_bindings = eager_map(tuple, map(pyparsing.ParseResults.asList, tokens[1]))
@@ -266,11 +275,15 @@ class FunctionCallASTNode(ASTNode):
         # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
-            all(self.arg_bindings)
+            all(
+                self_arg_binding == other_arg_binding
+                for self_arg_binding, other_arg_binding
+                in zip(self.arg_bindings, other.arg_bindings)
+            )
 
-# Declaration Node Generation
+# Assignment Node Generation
 
-def parse_atomic_declaration_type_label_pe(_s: str, _loc: int, type_label_tokens: pyparsing.ParseResults) -> TypeASTNode:
+def parse_assignment_type_declaration_pe(_s: str, _loc: int, type_label_tokens: pyparsing.ParseResults) -> TypeASTNode:
     assert len(type_label_tokens) in (0, 1)
     if len(type_label_tokens) is 0:
         node_instance: TypeASTNode = TypeASTNode(None)
@@ -281,22 +294,17 @@ def parse_atomic_declaration_type_label_pe(_s: str, _loc: int, type_label_tokens
     assert isinstance(node_instance, TypeASTNode)
     return node_instance
 
-class DeclarationASTNode(ASTNode):
+class AssignmentASTNode(StatementASTNode):
     
-    def __init__(self, identifier: VariableASTNode, identifier_type: TypeASTNode, value: typing.Optional[ExpressionASTNode]):
+    def __init__(self, identifier: VariableASTNode, identifier_type: TypeASTNode, value: ExpressionASTNode):
         self.identifier = identifier
         self.identifier_type = identifier_type
         self.value = value
     
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'DeclarationASTNode':
-        assert len(tokens) in (2, 3)
-        if len(tokens) is 2:
-            node_instance = cls(tokens[0], tokens[1], None)
-        elif len(tokens) is 3:
-            node_instance = cls(tokens[0], tokens[1], tokens[2])
-        else:
-            raise ValueError(f'Unexpected declaration tokens {tokens}')
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'AssignmentASTNode':
+        assert len(tokens) is 3
+        node_instance = cls(tokens[0], tokens[1], tokens[2])
         return node_instance
 
     # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
@@ -307,30 +315,30 @@ class DeclarationASTNode(ASTNode):
             self.identifier_type == other.identifier_type and \
             self.value == other.value
 
-# Subtheory Node Generation
+# Module Node Generation
 
-class SubtheoryASTNode(ASTNode):
+class ModuleASTNode(ASTNode):
     
-    def __init__(self, declarations: typing.List[DeclarationASTNode]):
-        self.declarations: typing.List[DeclarationASTNode] = declarations
+    def __init__(self, statements: typing.List[StatementASTNode]):
+        self.statements: typing.List[StatementASTNode] = statements
     
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'SubtheoryASTNode':
-        atomic_declaration_ast_node_lists  = tokens.asList()
-        atomic_declaration_ast_nodes = sum(atomic_declaration_ast_node_lists, [])
-        node_instance = cls(atomic_declaration_ast_nodes)
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ModuleASTNode':
+        statement_ast_node_lists  = tokens.asList()
+        statement_ast_nodes = sum(statement_ast_node_lists, [])
+        node_instance = cls(statement_ast_nodes)
         return node_instance
 
     # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: 'ASTNode') -> bool:
-        '''Order of declarations matters here since this method determines syntactic equivalence.'''
+        '''Order of statements matters here since this method determines syntactic equivalence.'''
         # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
-            len(self.declarations) == len(other.declarations) and \
+            len(self.statements) == len(other.statements) and \
             all(
-                self_declaration == other_declaration
-                for self_declaration, other_declaration
-                in zip(self.declarations, other.declarations)
+                self_statement == other_statement
+                for self_statement, other_statement
+                in zip(self.statements, other.statements)
             )
 
 # TODO use is_equivalent in the tests as well
@@ -409,35 +417,50 @@ boolean_expression_pe = infixNotation(
 
 function_variable_binding_pe = Group(identifier_pe + Suppress(':=') + expression_pe)
 function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
-function_call_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallASTNode.parse_action)
+function_call_expression_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallExpressionASTNode.parse_action)
 
-expression_pe <<= (function_call_pe | arithmetic_expression_pe | boolean_expression_pe | atom_pe).setName('expression')
+expression_pe <<= (function_call_expression_pe | arithmetic_expression_pe | boolean_expression_pe | atom_pe).setName('expression')
 
-# Declaration Parser Elements
+# Assignment Parser Elements
 
-atomic_declaration_type_label_pe = Optional(Suppress(':') + type_pe).setParseAction(parse_atomic_declaration_type_label_pe)
-atomic_declaration_value_label_pe = Optional(Suppress('=') + expression_pe)
-atomic_declaration_pe = (identifier_pe + atomic_declaration_type_label_pe + atomic_declaration_value_label_pe).setParseAction(DeclarationASTNode.parse_action)
+assignment_type_declaration_pe = Optional(Suppress(':') + type_pe).setParseAction(parse_assignment_type_declaration_pe)
+assignment_value_declaration_pe = Suppress('=') + expression_pe
+assignment_pe = (identifier_pe + assignment_type_declaration_pe + assignment_value_declaration_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
 
-non_atomic_declaration_pe = atomic_declaration_pe + Suppress(';') + delimitedList(atomic_declaration_pe, delim=';')
+# Module & Misc. Parser Elements
 
-declaration_pe = (non_atomic_declaration_pe | atomic_declaration_pe).setName('expression').setName('declaration')
+comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
-# Subtheory & Misc. Parser Elements
+atomic_statement_pe = Group(Optional(assignment_pe | expression_pe))
 
-comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('end-of-line comment')
+non_atomic_statement_pe = atomic_statement_pe + Suppress(';') + delimitedList(atomic_statement_pe, delim=';')
 
-# TODO is this necessary?
-line_of_code_pe = Group(Optional(declaration_pe)) # TODO update this with imperative code as well 
+statement_pe = (non_atomic_statement_pe | atomic_statement_pe).setName('statement')
 
-subtheory_pe = delimitedList(line_of_code_pe, delim='\n').ignore(comment_pe).setParseAction(SubtheoryASTNode.parse_action)
+module_pe = delimitedList(statement_pe, delim='\n').ignore(comment_pe).setParseAction(ModuleASTNode.parse_action)
 
 ################
 # Entry Points #
 ################
 
+class ParseError(Exception):
+
+    def __init__(self, original_text, problematic_text, problem_column_number):
+        self.original_text = original_text
+        self.problematic_text = problematic_text
+        self.problem_column_number = problem_column_number
+        super().__init__(f'''Could not parse the following:
+
+    {self.problematic_text}
+    {(' '*(self.problem_column_number - 1))}^
+''')
+
 def parseSourceCode(input_string: str): # TODO add return type
-    return only_one(subtheory_pe.parseString(input_string, parseAll=True))
+    try:
+        result = only_one(module_pe.parseString(input_string, parseAll=True))
+    except pyparsing.ParseException as exception:
+        raise ParseError(input_string, exception.line, exception.col)
+    return result
 
 # TODO enable this
 # __all__ = [
