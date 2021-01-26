@@ -353,6 +353,28 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
 		    
 		    shell))
 
+(defun broadcast-local ()
+  (interactive)
+  (let ((broadcast-command (read-string "Command to broadcast: "))
+	(shell-loaders '(
+			 shell
+			 python
+ 
+			 tmp
+			 second
+			 third
+			 fourth
+			 fifth
+
+			 ssh-tunnel
+			 )))
+    (dolist (shell-loader shell-loaders)
+      (funcall shell-loader)
+      (end-of-buffer)
+      (insert broadcast-command)
+      (comint-send-input)
+      )))
+
 ;; Shortcut Keys
 
 (global-set-key (kbd "C-c \"") 'escape-quotes)

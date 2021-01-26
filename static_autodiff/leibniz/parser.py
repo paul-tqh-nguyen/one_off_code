@@ -47,6 +47,8 @@ from .misc_utilities import *
 # Globals #
 ###########
 
+BOGUS_TOKEN = object()
+
 # pyparsing.ParserElement.enablePackrat() # TODO consider enabling this
 
 #############################
@@ -136,7 +138,7 @@ class ASTNode(ABC):
     def __eq__(self, other: 'ASTNode') -> bool:
         '''Determines syntactic equivalence, not semantic equivalence or canonicality.'''
         raise NotImplementedError
-    
+
 class AtomASTNodeType(type):
 
     base_ast_node_class = ASTNode
@@ -169,7 +171,7 @@ class AtomASTNodeType(type):
             return node_instance
         
         def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' with 'is_equivalent'
-            other_value = getattr(other, value_attribute_name)
+            other_value = getattr(other, value_attribute_name, BOGUS_TOKEN)
             same_type = type(self) is type(other)
             
             self_value = getattr(self, value_attribute_name)
@@ -343,14 +345,37 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
                 in zip(self.arg_bindings, other.arg_bindings)
             )
 
+# Vector Literal Node Generation
+
+class VectorLiteralExpressionASTNode(ExpressionASTNode):
+    
+    def __init__(self, values: typing.List[ExpressionASTNode]) -> None:
+        self.values = values
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'VectorLiteralExpressionASTNode':
+        values = tokens.asList()
+        node_instance = cls(values)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            all(
+                self_value == other_value
+                for self_value, other_value
+                in zip(self.values, other.values)
+            )
+
 # Tensor Type Node Generation
 
 class TensorTypeASTNode(ASTNode):
 
     def __init__(self, base_type_name: typing.Optional[BaseTypeName], shape: typing.Optional[typing.List[int]]) -> None:
         '''
-        shape == [1, 2, 3] means this tensor has 3 dimensions with the given sizes
-        shape == [None, 2] means this tensor has 2 dimensions with an unspecified size for the first dimension size and a fixed size for the second dimension 
+        shape == [IntegerLiteralASTNode(value=1), IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)] means this tensor has 3 dimensions with the given sizes
+        shape == [None, IntegerLiteralASTNode(value=2)] means this tensor has 2 dimensions with an unspecified size for the first dimension size and a fixed size for the second dimension 
         shape == [] means this tensor has 0 dimensions, i.e. is a scalar
         shape == None means this tensor could have any arbitrary number of dimensions
         '''
@@ -363,7 +388,7 @@ class TensorTypeASTNode(ASTNode):
         assert len(tokens) in (1, 2)
         base_type_name = tokens[0]
         if len(tokens) is 2:
-            shape = tokens[1].asList()
+            shape = [None if e=='?' else e for e in tokens[1].asList()]
             if shape == ['???']:
                 shape = None
         else:
@@ -449,7 +474,7 @@ pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
 
 # Type Parser Elements
 
-tensor_dimension_declaration_pe = Suppress('<') + Group(Optional(delimitedList(ppc.integer))) + Suppress('>')
+tensor_dimension_declaration_pe = Suppress('<') + Group(Optional(delimitedList(Literal('???') | Literal('?') | ppc.integer))) + Suppress('>')
 
 boolean_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Boolean'](Literal('Boolean') + Optional(tensor_dimension_declaration_pe)).setName('boolean tensor type')
 integer_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Integer'](Literal('Integer') + Optional(tensor_dimension_declaration_pe)).setName('integer tensor type')
@@ -519,7 +544,12 @@ function_variable_binding_pe = Group(variable_pe + Suppress(':=') + expression_p
 function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
 function_call_expression_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallExpressionASTNode.parse_action)
 
-expression_pe <<= (function_call_expression_pe | arithmetic_expression_pe | boolean_expression_pe | atom_pe).setName('expression')
+vector_literal_pe = Forward()
+expression_pe <<= (function_call_expression_pe | arithmetic_expression_pe | boolean_expression_pe | atom_pe | vector_literal_pe).setName('expression')
+
+# Vector Literal Parser Elements
+
+vector_literal_pe <<= (Suppress('{') + delimitedList(expression_pe, delim=',') + Suppress('}')).setName('tensor').setParseAction(VectorLiteralExpressionASTNode.parse_action)
 
 # Assignment Parser Elements
 
