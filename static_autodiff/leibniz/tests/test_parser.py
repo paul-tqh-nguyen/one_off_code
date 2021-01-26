@@ -4,9 +4,10 @@ import pytest
 from leibniz import parser
 from leibniz.parser import (
     ExpressionASTNode,
-    TypeASTNode,
+    TensorTypeASTNode,
     BooleanLiteralASTNode,
-    RealLiteralASTNode,
+    IntegerLiteralASTNode,
+    FloatLiteralASTNode,
     VariableASTNode,
     NegativeExpressionASTNode,
     ExponentExpressionASTNode,
@@ -21,7 +22,7 @@ from leibniz.parser import (
     FunctionCallExpressionASTNode,
     AssignmentASTNode,
     ModuleASTNode,
-)
+) # TODO reorder these in according to their declaration
 from leibniz.misc_utilities import *
 
 # TODO verify that the above imports are used
@@ -53,8 +54,9 @@ def test_parser_atomic_boolean():
         assert isinstance(assignment_node, AssignmentASTNode)
         assert isinstance(assignment_node.identifier, VariableASTNode)
         assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TypeASTNode)
-        assert assignment_node.identifier_type.value is None
+        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
+        assert assignment_node.identifier_type.base_type_name is None
+        assert assignment_node.identifier_type.shape is None
         value_node = assignment_node.value
         assert isinstance(value_node, BooleanLiteralASTNode)
         result = value_node.value
@@ -64,9 +66,35 @@ result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
 
-def test_parser_atomic_real():
+
+def test_parser_atomic_integer():
     expected_input_output_pairs = [
         ('123', 123),
+        ('0', 0),
+        ('0000', 0),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        module_node = parser.parseSourceCode('x = '+input_string)
+        assert isinstance(module_node, ModuleASTNode)
+        assert isinstance(module_node.statements, list)
+        assignment_node = only_one(module_node.statements)
+        assert isinstance(assignment_node, AssignmentASTNode)
+        assert isinstance(assignment_node.identifier, VariableASTNode)
+        assert assignment_node.identifier.name is 'x'
+        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
+        assert assignment_node.identifier_type.base_type_name is None
+        assert assignment_node.identifier_type.shape is None
+        value_node = assignment_node.value
+        assert isinstance(value_node, IntegerLiteralASTNode)
+        result = value_node.value
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_atomic_float():
+    expected_input_output_pairs = [
         ('0.123', 0.123),
         ('.123', 0.123),
         # ('1.e2', 100.0),
@@ -87,10 +115,11 @@ def test_parser_atomic_real():
         assert isinstance(assignment_node, AssignmentASTNode)
         assert isinstance(assignment_node.identifier, VariableASTNode)
         assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TypeASTNode)
-        assert assignment_node.identifier_type.value is None
+        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
+        assert assignment_node.identifier_type.base_type_name is None
+        assert assignment_node.identifier_type.shape is None
         value_node = assignment_node.value
-        assert isinstance(value_node, RealLiteralASTNode)
+        assert isinstance(value_node, FloatLiteralASTNode)
         result = value_node.value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
@@ -118,8 +147,9 @@ def test_parser_atomic_identifier():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert assignment_node.value == RealLiteralASTNode(value=1) # TODO change this "==" to is_equivalent
-        assert assignment_node.identifier_type.value is None
+        assert assignment_node.value == IntegerLiteralASTNode(value=1) # TODO change this "==" to is_equivalent
+        assert assignment_node.identifier_type.base_type_name is None
+        assert assignment_node.identifier_type.shape is None
         identifier_node = assignment_node.identifier
         assert isinstance(identifier_node, VariableASTNode)
         result = identifier_node.name
@@ -213,8 +243,9 @@ def test_parser_boolean_expression():
         assert isinstance(assignment_node, AssignmentASTNode)
         assert isinstance(assignment_node.identifier, VariableASTNode)
         assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TypeASTNode)
-        assert assignment_node.identifier_type.value is None
+        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
+        assert assignment_node.identifier_type.base_type_name is None
+        assert assignment_node.identifier_type.shape is None
         result = assignment_node.value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
@@ -224,118 +255,118 @@ expected_result: {repr(expected_result)}
 
 def test_parser_arithmetic_expression():
     expected_input_output_pairs = [
-        ('1 + 2', AdditionExpressionASTNode(left_arg=RealLiteralASTNode(value=1), right_arg=RealLiteralASTNode(value=2))),
+        ('1 + 2', AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2))),
         ('1 + 2 - 3',
          SubtractionExpressionASTNode(
              left_arg=AdditionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=1),
-                 right_arg=RealLiteralASTNode(value=2)
+                 left_arg=IntegerLiteralASTNode(value=1),
+                 right_arg=IntegerLiteralASTNode(value=2)
              ),
-             right_arg=RealLiteralASTNode(value=3)
+             right_arg=IntegerLiteralASTNode(value=3)
          )),
         ('1 + 2 * 3',
          AdditionExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=MultiplicationExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=RealLiteralASTNode(value=3)
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=IntegerLiteralASTNode(value=3)
              )
          )),
         ('(1 + 2) * 3',
          MultiplicationExpressionASTNode(
              left_arg=AdditionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=1),
-                 right_arg=RealLiteralASTNode(value=2)
+                 left_arg=IntegerLiteralASTNode(value=1),
+                 right_arg=IntegerLiteralASTNode(value=2)
              ),
-             right_arg=RealLiteralASTNode(value=3)
+             right_arg=IntegerLiteralASTNode(value=3)
          )),
         ('1 / 2 * 3',
          MultiplicationExpressionASTNode(
              left_arg=DivisionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=1),
-                 right_arg=RealLiteralASTNode(value=2)
+                 left_arg=IntegerLiteralASTNode(value=1),
+                 right_arg=IntegerLiteralASTNode(value=2)
              ),
-             right_arg=RealLiteralASTNode(value=3)
+             right_arg=IntegerLiteralASTNode(value=3)
          )),
         ('1 / 2 + 3',
          AdditionExpressionASTNode(
              left_arg=DivisionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=1),
-                 right_arg=RealLiteralASTNode(value=2)
+                 left_arg=IntegerLiteralASTNode(value=1),
+                 right_arg=IntegerLiteralASTNode(value=2)
              ),
-             right_arg=RealLiteralASTNode(value=3)
+             right_arg=IntegerLiteralASTNode(value=3)
          )),
         ('1 / (2 + 3)',
          DivisionExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=AdditionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=RealLiteralASTNode(value=3)
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=IntegerLiteralASTNode(value=3)
              )
          )),
-        ('1 ^ 2',ExponentExpressionASTNode(left_arg=RealLiteralASTNode(value=1), right_arg=RealLiteralASTNode(value=2))),
+        ('1 ^ 2',ExponentExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2))),
         ('1 ^ (2 + 3)',
          ExponentExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=AdditionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=RealLiteralASTNode(value=3)
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=IntegerLiteralASTNode(value=3)
              )
          )),
         ('1 ** 2 ^ 3',
          ExponentExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=ExponentExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=RealLiteralASTNode(value=3)
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=IntegerLiteralASTNode(value=3)
              )
          )),
         ('1 ^ 2 ** 3',
          ExponentExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=ExponentExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=RealLiteralASTNode(value=3)
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=IntegerLiteralASTNode(value=3)
              )
          )),
         ('1 / 2 ** 3',
          DivisionExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=ExponentExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=RealLiteralASTNode(value=3)
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=IntegerLiteralASTNode(value=3)
              )
          )),
         ('1 ** 2 - 3',
          SubtractionExpressionASTNode(
              left_arg=ExponentExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=1),
-                 right_arg=RealLiteralASTNode(value=2)
+                 left_arg=IntegerLiteralASTNode(value=1),
+                 right_arg=IntegerLiteralASTNode(value=2)
              ),
-             right_arg=RealLiteralASTNode(value=3)
+             right_arg=IntegerLiteralASTNode(value=3)
          )),
         ('1 ^ (2 + 3)',
          ExponentExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=AdditionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=RealLiteralASTNode(value=3)
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=IntegerLiteralASTNode(value=3)
              )
          )),
         ('1 ^ (2 - -3)',
          ExponentExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=SubtractionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=NegativeExpressionASTNode(RealLiteralASTNode(value=3))
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=3))
              )
          )),
         ('1 ** (2 --3)',
          ExponentExpressionASTNode(
-             left_arg=RealLiteralASTNode(value=1),
+             left_arg=IntegerLiteralASTNode(value=1),
              right_arg=SubtractionExpressionASTNode(
-                 left_arg=RealLiteralASTNode(value=2),
-                 right_arg=NegativeExpressionASTNode(RealLiteralASTNode(value=3))
+                 left_arg=IntegerLiteralASTNode(value=2),
+                 right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=3))
              )
          )),
     ]
@@ -347,8 +378,9 @@ def test_parser_arithmetic_expression():
         assert isinstance(assignment_node, AssignmentASTNode)
         assert isinstance(assignment_node.identifier, VariableASTNode)
         assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TypeASTNode)
-        assert assignment_node.identifier_type.value is None
+        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
+        assert assignment_node.identifier_type.base_type_name is None
+        assert assignment_node.identifier_type.shape is None
         result = assignment_node.value
         assert isinstance(result, ExpressionASTNode)
         assert result == expected_result, f'''
@@ -359,8 +391,8 @@ expected_result: {repr(expected_result)}
 
 def test_parser_assignment():
     expected_input_output_pairs = [
-        ('x = 1', AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1))),
-        ('x: Real = 1', AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))),
+        ('x = 1', AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1))),
+        ('x: Integer = 1', AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(input_string)
@@ -370,7 +402,7 @@ def test_parser_assignment():
         assert isinstance(assignment_node, AssignmentASTNode)
         assert isinstance(assignment_node.identifier, VariableASTNode)
         assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TypeASTNode)
+        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
         result = assignment_node
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
@@ -380,8 +412,8 @@ expected_result: {repr(expected_result)}
 
 def test_parser_comments():
     expected_input_output_pairs = [
-        ('x = 1 # comment', ModuleASTNode(statements=[AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1))])),
-        ('x: Real = 1 # comment', ModuleASTNode(statements=[AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1))])),
+        ('x = 1 # comment', ModuleASTNode(statements=[AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1))])),
+        ('x: Integer = 1 # comment', ModuleASTNode(statements=[AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))])),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         result = parser.parseSourceCode(input_string)
@@ -393,53 +425,53 @@ expected_result: {repr(expected_result)}
 
 def test_parser_function_call():
     expected_input_output_pairs = [
-        ('f() # comment', FunctionCallExpressionASTNode(arg_bindings=[], function_name=VariableASTNode(name='f'))),
+        ('f() # comment', FunctionCallExpressionASTNode(arg_bindings=[], function_name='f')),
         ('f(a:=1) # comment',
          FunctionCallExpressionASTNode(
-             arg_bindings=[(VariableASTNode(name='a'), RealLiteralASTNode(value=1))],
-             function_name=VariableASTNode(name='f'))
+             arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=1))],
+             function_name='f')
         ),
         ('f(a:=1, b:=2)', FunctionCallExpressionASTNode(
             arg_bindings=[
-                (VariableASTNode(name='a'), RealLiteralASTNode(value=1)),
-                (VariableASTNode(name='b'), RealLiteralASTNode(value=2))
+                (VariableASTNode(name='a'), IntegerLiteralASTNode(value=1)),
+                (VariableASTNode(name='b'), IntegerLiteralASTNode(value=2))
             ],
-            function_name=VariableASTNode(name='f'))),
+            function_name='f')),
         ('f(a:=1e3, b:=y)', FunctionCallExpressionASTNode(
             arg_bindings=[
-                (VariableASTNode(name='a'), RealLiteralASTNode(value=1000.0)),
+                (VariableASTNode(name='a'), FloatLiteralASTNode(value=1000.0)),
                 (VariableASTNode(name='b'), VariableASTNode(name='y'))
             ],
-            function_name=VariableASTNode(name='f'))),
+            function_name='f')),
         ('f(a:=1, b:=2, c:= True)', FunctionCallExpressionASTNode(
             arg_bindings=[
-                (VariableASTNode(name='a'), RealLiteralASTNode(value=1)),
-                (VariableASTNode(name='b'), RealLiteralASTNode(value=2)),
+                (VariableASTNode(name='a'), IntegerLiteralASTNode(value=1)),
+                (VariableASTNode(name='b'), IntegerLiteralASTNode(value=2)),
                 (VariableASTNode(name='c'), BooleanLiteralASTNode(value=True))
             ],
-            function_name=VariableASTNode(name='f'))),
+            function_name='f')),
         ('f(a:=1+2, b:= True or False)', FunctionCallExpressionASTNode(
             arg_bindings=[
                 (VariableASTNode(name='a'), AdditionExpressionASTNode(
-                    left_arg=RealLiteralASTNode(value=1),
-                    right_arg=RealLiteralASTNode(value=2)
+                    left_arg=IntegerLiteralASTNode(value=1),
+                    right_arg=IntegerLiteralASTNode(value=2)
                 )),
                 (VariableASTNode(name='b'), OrExpressionASTNode(
                     left_arg=BooleanLiteralASTNode(value=True),
                     right_arg=BooleanLiteralASTNode(value=False)
                 ))
             ],
-            function_name=VariableASTNode(name='f'))),
+            function_name='f')),
         ('f(a := 1, b := g(arg:=True))', FunctionCallExpressionASTNode(
             arg_bindings=[
-                (VariableASTNode(name='a'), RealLiteralASTNode(value=1)),
+                (VariableASTNode(name='a'), IntegerLiteralASTNode(value=1)),
                 (VariableASTNode(name='b'), FunctionCallExpressionASTNode(
                     arg_bindings=[
                         (VariableASTNode(name='arg'), BooleanLiteralASTNode(value=True)),
                     ],
-                    function_name=VariableASTNode(name='g')))
+                    function_name='g'))
             ],
-            function_name=VariableASTNode(name='f'))),
+            function_name='f')),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
@@ -449,8 +481,9 @@ def test_parser_function_call():
         assert isinstance(assignment_node, AssignmentASTNode)
         assert isinstance(assignment_node.identifier, VariableASTNode)
         assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TypeASTNode)
-        assert assignment_node.identifier_type.value is None
+        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
+        assert assignment_node.identifier_type.base_type_name is None
+        assert assignment_node.identifier_type.shape is None
         result = assignment_node.value
         assert isinstance(result, FunctionCallExpressionASTNode)
         assert result == expected_result, f'''
@@ -467,41 +500,41 @@ def test_parser_module():
         ('\n\n\n \t   \n', ModuleASTNode(statements=[])),
         ('1 + 2',
          ModuleASTNode(statements=[
-             AdditionExpressionASTNode(left_arg=RealLiteralASTNode(value=1), right_arg=RealLiteralASTNode(value=2)),
+             AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
          ])),
-        ('x = 1 ; 1 + 2 ; x: Real = 1',
+        ('x = 1 ; 1 + 2 ; x: Integer = 1',
          ModuleASTNode(statements=[
-             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
-             AdditionExpressionASTNode(left_arg=RealLiteralASTNode(value=1), right_arg=RealLiteralASTNode(value=2)),
-             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1)),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
+             AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1)),
          ])),
-        ('x = 1 ; x: Real = 1 ; 1 + 2 # y = 123',
+        ('x = 1 ; x: Integer = 1 ; 1 + 2 # y = 123',
          ModuleASTNode(statements=[
-             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
-             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1)),
-             AdditionExpressionASTNode(left_arg=RealLiteralASTNode(value=1), right_arg=RealLiteralASTNode(value=2)),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1)),
+             AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
          ])
         ),
         ('''
 
 x
 x = 1 # comment
-x: Real = 1 # comment
+x: Integer = 1 # comment
 init_something()
 init_something(x:=x)
-x = 1 ; x: Real = 1 # y = 123
+x = 1 ; x: Integer = 1 # y = 123
 1 + 2
 
 ''',
          ModuleASTNode(statements=[
              VariableASTNode(name='x'),
-             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
-             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1)),
-             FunctionCallExpressionASTNode(arg_bindings=[], function_name=VariableASTNode(name='init_something')),
-             FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), VariableASTNode(name='x'))], function_name=VariableASTNode(name='init_something')),
-             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value=None), value=RealLiteralASTNode(value=1)),
-             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TypeASTNode(value='Real'), value=RealLiteralASTNode(value=1)),
-             AdditionExpressionASTNode(left_arg=RealLiteralASTNode(value=1), right_arg=RealLiteralASTNode(value=2)),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1)),
+             FunctionCallExpressionASTNode(arg_bindings=[], function_name='init_something'),
+             FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), VariableASTNode(name='x'))], function_name='init_something'),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1)),
+             AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
          ])
         ),
     ]

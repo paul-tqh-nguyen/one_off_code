@@ -9,6 +9,8 @@
 ###########
 
 import typing
+import typing_extensions
+import weakref
 import pyparsing
 from pyparsing import pyparsing_common as ppc
 from pyparsing import (
@@ -35,6 +37,7 @@ from pyparsing import (
 from abc import ABC, abstractmethod
 from functools import reduce
 from collections import defaultdict
+from operator import getitem
 
 from .misc_utilities import *
 
@@ -46,6 +49,64 @@ from .misc_utilities import *
 
 # pyparsing.ParserElement.enablePackrat() # TODO consider enabling this
 
+#############################
+# Sanity Checking Utilities #
+#############################
+
+BASE_TYPES = ('Boolean', 'Integer', 'Float')
+
+BaseTypeName = getitem(typing_extensions.Literal, BASE_TYPES)
+
+class BaseTypeTrackerType(type):
+    
+    instantiated_base_type_tracker_classes: typing.List[weakref.ref] = []
+    # TODO track weak references to instances of this metaclass ; use that to sanity check later on ; also, assert that these weak instances are still valid at sanity-checking-time
+    
+    def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict):
+        
+        updated_attributes = dict(attributes)
+        assert 'tracked_type' in updated_attributes
+        updated_attributes['base_type_to_value'] = {}
+        result_class = type.__new__(meta, class_name, bases, updated_attributes)
+        
+        result_class_weakref = weakref.ref(result_class)
+        meta.instantiated_base_type_tracker_classes.append(result_class_weakref)
+        
+        return result_class
+    
+    def __getitem__(cls, base_type_name: BaseTypeName) -> typing.Callable[[typing.Any], typing.Any]:
+        def note_value(value: typing.Any) -> typing.Any:
+            assert base_type_name not in cls.base_type_to_value
+            assert isinstance(value, cls.tracked_type), f'{value} is not an instance of the tracked type {cls.tracked_type}'
+            cls.base_type_to_value[base_type_name] = value
+            return value
+        return note_value
+    
+    def __getattr__(cls, base_type_name: BaseTypeName) -> typing.Callable[[typing.Any], typing.Any]:
+        return cls[base_type_name]
+    
+    @classmethod
+    def vaildate_base_types(meta) -> None:
+        for instantiated_base_type_tracker_class_weakref in meta.instantiated_base_type_tracker_classes:
+            instantiated_base_type_tracker_class = instantiated_base_type_tracker_class_weakref()
+            instantiated_base_type_tracker_class_is_alive = instantiated_base_type_tracker_class is not None
+            assert instantiated_base_type_tracker_class_is_alive
+            assert all(key in BASE_TYPES for key in instantiated_base_type_tracker_class.base_type_to_value.keys())
+        return
+
+def sanity_check_base_types() -> None:
+    BaseTypeTrackerType.vaildate_base_types()
+    return 
+
+class TensorTypeParserElementBaseTypeTracker(metaclass=BaseTypeTrackerType):
+    tracked_type: type = pyparsing.ParserElement
+
+class AtomicLiteralParserElementBaseTypeTracker(metaclass=BaseTypeTrackerType):
+    tracked_type: type = pyparsing.ParserElement
+
+class LiteralASTNodeClassBaseTypeTracker(metaclass=BaseTypeTrackerType):
+    tracked_type: type = type
+
 #####################
 # AST Functionality #
 #####################
@@ -55,12 +116,11 @@ def _trace_parse(s: str, loc: int, tokens: pyparsing.ParseResults): # TODO remov
     print(f"s {repr(s)}")
     print(f"loc {repr(loc)}")
     print(f"tokens {repr(tokens)}")
-    
 
 class ASTNode(ABC):
 
     @abstractmethod
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         raise NotImplementedError
     
     @classmethod
@@ -94,9 +154,10 @@ class AtomASTNodeType(type):
         value_attribute_name: str = updated_attributes.pop('value_attribute_name', 'value')
         dwimming_func: typing.Callable[[typing.Any], value_type] = updated_attributes.pop('dwimming_func', lambda token: token)
         
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             assert sum(map(len, (args, kwargs))) == 1
             value: value_type = args[0] if len(args) == 1 else kwargs[value_attribute_name]
+            assert isinstance(value, value_type)
             setattr(self, value_attribute_name, value)
 
         @classmethod
@@ -137,7 +198,7 @@ class ExpressionAtomASTNodeType(AtomASTNodeType):
 
 class BinaryOperationExpressionASTNode(ExpressionASTNode):
 
-    def __init__(self, left_arg: ExpressionASTNode, right_arg: ExpressionASTNode):
+    def __init__(self, left_arg: ExpressionASTNode, right_arg: ExpressionASTNode) -> None:
         self.left_arg: ExpressionASTNode = left_arg
         self.right_arg: ExpressionASTNode = right_arg
 
@@ -155,7 +216,7 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
 
 class UnaryOperationExpressionASTNode(ExpressionASTNode):
 
-    def __init__(self, arg: ExpressionASTNode):
+    def __init__(self, arg: ExpressionASTNode) -> None:
         self.arg: ExpressionASTNode = arg
 
     @classmethod
@@ -168,22 +229,23 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
     def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' and '==' with 'is_equivalent'
         return type(self) is type(other) and self.arg == other.arg
 
-# Type Node
-
-class TypeASTNode(metaclass=AtomASTNodeType):
-    value_type = typing.Optional[str]
-    token_checker = lambda token: token in (None, 'Boolean', 'Integer', 'Real')
-
 # Literal Node Generation
 
+@LiteralASTNodeClassBaseTypeTracker.Boolean
 class BooleanLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = bool
     token_checker = lambda token: token in ('True', 'False')
     dwimming_func = lambda token: True if token == 'True' else False
 
-class RealLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
-    value_type = bool
-    token_checker = lambda token: isinstance(token, (float, int))
+@LiteralASTNodeClassBaseTypeTracker.Integer
+class IntegerLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
+    value_type = int
+    token_checker = lambda token: isinstance(token, int)
+
+@LiteralASTNodeClassBaseTypeTracker.Float
+class FloatLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
+    value_type = float
+    token_checker = lambda token: isinstance(token, float)
 
 # Identifier / Variable Node Generation
 
@@ -258,7 +320,7 @@ class OrExpressionASTNode(BinaryOperationExpressionASTNode):
 
 class FunctionCallExpressionASTNode(ExpressionASTNode):
     
-    def __init__(self, function_name: VariableASTNode, arg_bindings: typing.List[typing.Tuple[VariableASTNode, ExpressionASTNode]]):
+    def __init__(self, function_name: VariableASTNode, arg_bindings: typing.List[typing.Tuple[VariableASTNode, ExpressionASTNode]]) -> None:
         self.function_name = function_name
         self.arg_bindings = arg_bindings
     
@@ -271,7 +333,7 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
         return node_instance
 
     # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
-    def __eq__(self, other: 'ASTNode') -> bool:
+    def __eq__(self, other: ASTNode) -> bool:
         # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
@@ -281,22 +343,57 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
                 in zip(self.arg_bindings, other.arg_bindings)
             )
 
+# Tensor Type Node Generation
+
+class TensorTypeASTNode(ASTNode):
+
+    def __init__(self, base_type_name: typing.Optional[BaseTypeName], shape: typing.Optional[typing.List[int]]) -> None:
+        '''
+        shape == [1, 2, 3] means this tensor has 3 dimensions with the given sizes
+        shape == [None, 2] means this tensor has 2 dimensions with an unspecified size for the first dimension size and a fixed size for the second dimension 
+        shape == [] means this tensor has 0 dimensions, i.e. is a scalar
+        shape == None means this tensor could have any arbitrary number of dimensions
+        '''
+        assert implies(base_type_name is None, shape is None)
+        self.base_type_name = base_type_name
+        self.shape = shape
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'TensorTypeASTNode':
+        assert len(tokens) in (1, 2)
+        base_type_name = tokens[0]
+        if len(tokens) is 2:
+            shape = tokens[1].asList()
+            if shape == ['???']:
+                shape = None
+        else:
+            shape = []
+        node_instance = cls(base_type_name, shape)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            self.base_type_name is other.base_type_name and \
+            self.shape == other.shape
+
 # Assignment Node Generation
 
-def parse_assignment_type_declaration_pe(_s: str, _loc: int, type_label_tokens: pyparsing.ParseResults) -> TypeASTNode:
+def parse_assignment_type_declaration_pe(_s: str, _loc: int, type_label_tokens: pyparsing.ParseResults) -> TensorTypeASTNode:
     assert len(type_label_tokens) in (0, 1)
     if len(type_label_tokens) is 0:
-        node_instance: TypeASTNode = TypeASTNode(None)
+        node_instance: TensorTypeASTNode = TensorTypeASTNode(None, None)
     elif len(type_label_tokens) is 1:
-        node_instance: TypeASTNode = only_one(type_label_tokens)
+        node_instance: TensorTypeASTNode = only_one(type_label_tokens)
     else:
         raise ValueError(f'Unexpected type label tokens {type_label_tokens}')
-    assert isinstance(node_instance, TypeASTNode)
+    assert isinstance(node_instance, TensorTypeASTNode)
     return node_instance
 
 class AssignmentASTNode(StatementASTNode):
     
-    def __init__(self, identifier: VariableASTNode, identifier_type: TypeASTNode, value: ExpressionASTNode):
+    def __init__(self, identifier: VariableASTNode, identifier_type: TensorTypeASTNode, value: ExpressionASTNode) -> None:
         self.identifier = identifier
         self.identifier_type = identifier_type
         self.value = value
@@ -308,7 +405,7 @@ class AssignmentASTNode(StatementASTNode):
         return node_instance
 
     # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
-    def __eq__(self, other: 'ASTNode') -> bool:
+    def __eq__(self, other: ASTNode) -> bool:
         # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.identifier == other.identifier and \
@@ -319,18 +416,17 @@ class AssignmentASTNode(StatementASTNode):
 
 class ModuleASTNode(ASTNode):
     
-    def __init__(self, statements: typing.List[StatementASTNode]):
+    def __init__(self, statements: typing.List[StatementASTNode]) -> None:
         self.statements: typing.List[StatementASTNode] = statements
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ModuleASTNode':
-        statement_ast_node_lists  = tokens.asList()
-        statement_ast_nodes = sum(statement_ast_node_lists, [])
+        statement_ast_nodes = tokens.asList()
         node_instance = cls(statement_ast_nodes)
         return node_instance
 
     # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
-    def __eq__(self, other: 'ASTNode') -> bool:
+    def __eq__(self, other: ASTNode) -> bool:
         '''Order of statements matters here since this method determines syntactic equivalence.'''
         # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
@@ -353,19 +449,21 @@ pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
 
 # Type Parser Elements
 
-boolean_type_pe = Literal('Boolean').setName('boolean type')
-integer_type_pe = Literal('Integer').setName('integer type')
-real_type_pe = Literal('Real').setName('real type')
+tensor_dimension_declaration_pe = Suppress('<') + Group(Optional(delimitedList(ppc.integer))) + Suppress('>')
 
-type_pe = (boolean_type_pe | integer_type_pe | real_type_pe).setParseAction(TypeASTNode.parse_action)
+boolean_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Boolean'](Literal('Boolean') + Optional(tensor_dimension_declaration_pe)).setName('boolean tensor type')
+integer_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Integer'](Literal('Integer') + Optional(tensor_dimension_declaration_pe)).setName('integer tensor type')
+float_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Float'](Literal('Float') + Optional(tensor_dimension_declaration_pe)).setName('float tensor type')
+
+tensor_type_pe = (boolean_tensor_type_pe | integer_tensor_type_pe | float_tensor_type_pe).setParseAction(TensorTypeASTNode.parse_action)
 
 # Literal Parser Elements
 
-boolean_pe = oneOf('True False').setName('boolean').setParseAction(BooleanLiteralASTNode.parse_action)
+boolean_pe = AtomicLiteralParserElementBaseTypeTracker['Boolean'](oneOf('True False')).setName('boolean').setParseAction(BooleanLiteralASTNode.parse_action)
 
-integer_pe = ppc.integer
-float_pe = ppc.real | ppc.sci_real
-real_pe = (float_pe | integer_pe).setName('real number').setParseAction(RealLiteralASTNode.parse_action)
+integer_pe = AtomicLiteralParserElementBaseTypeTracker['Integer'](ppc.integer).setName('unsigned integer').setParseAction(ppc.convertToInteger, IntegerLiteralASTNode.parse_action)
+
+float_pe = AtomicLiteralParserElementBaseTypeTracker['Float'](ppc.real | ppc.sci_real).setName('floating point number').setParseAction(FloatLiteralASTNode.parse_action)
 
 # Arithmetic Operation Parser Elements
 
@@ -387,16 +485,18 @@ boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | 
 
 # Atom Parser Elements
 
-identifier_pe = (~boolean_operation_pe + ~boolean_pe + ppc.identifier).setName('identifier').setParseAction(VariableASTNode.parse_action)
+identifier_pe = (~boolean_operation_pe + ~boolean_pe + ppc.identifier)
 
-atom_pe = (identifier_pe | real_pe | boolean_pe).setName('atom')
+variable_pe = identifier_pe.copy().setName('identifier').setParseAction(VariableASTNode.parse_action)
+
+atom_pe = (variable_pe | float_pe | integer_pe | boolean_pe).setName('atom')
 
 # Expression Parser Elements
 
 expression_pe = Forward()
 
 arithmetic_expression_pe = infixNotation(
-    real_pe | identifier_pe,
+    float_pe | integer_pe | variable_pe,
     [
         (negative_operation_pe, 1, opAssoc.RIGHT, NegativeExpressionASTNode.parse_action),
         (exponent_operation_pe, 2, opAssoc.RIGHT, ExponentExpressionASTNode.parse_action),
@@ -406,7 +506,7 @@ arithmetic_expression_pe = infixNotation(
 ).setName('arithmetic expression')
 
 boolean_expression_pe = infixNotation(
-    boolean_pe | identifier_pe,
+    boolean_pe | variable_pe,
     [
         (not_operation_pe, 1, opAssoc.RIGHT, NotExpressionASTNode.parse_action),
         (and_operation_pe, 2, opAssoc.LEFT, AndExpressionASTNode.parse_action),
@@ -415,7 +515,7 @@ boolean_expression_pe = infixNotation(
     ],
 ).setName('boolean expression')
 
-function_variable_binding_pe = Group(identifier_pe + Suppress(':=') + expression_pe)
+function_variable_binding_pe = Group(variable_pe + Suppress(':=') + expression_pe)
 function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
 function_call_expression_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallExpressionASTNode.parse_action)
 
@@ -423,15 +523,15 @@ expression_pe <<= (function_call_expression_pe | arithmetic_expression_pe | bool
 
 # Assignment Parser Elements
 
-assignment_type_declaration_pe = Optional(Suppress(':') + type_pe).setParseAction(parse_assignment_type_declaration_pe)
+assignment_type_declaration_pe = Optional(Suppress(':') + tensor_type_pe).setParseAction(parse_assignment_type_declaration_pe)
 assignment_value_declaration_pe = Suppress('=') + expression_pe
-assignment_pe = (identifier_pe + assignment_type_declaration_pe + assignment_value_declaration_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
+assignment_pe = (variable_pe + assignment_type_declaration_pe + assignment_value_declaration_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
 
 # Module & Misc. Parser Elements
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
-atomic_statement_pe = Group(Optional(assignment_pe | expression_pe))
+atomic_statement_pe = Optional(assignment_pe | expression_pe)
 
 non_atomic_statement_pe = atomic_statement_pe + Suppress(';') + delimitedList(atomic_statement_pe, delim=';')
 
@@ -445,7 +545,7 @@ module_pe = delimitedList(statement_pe, delim='\n').ignore(comment_pe).setParseA
 
 class ParseError(Exception):
 
-    def __init__(self, original_text, problematic_text, problem_column_number):
+    def __init__(self, original_text, problematic_text, problem_column_number) -> None:
         self.original_text = original_text
         self.problematic_text = problematic_text
         self.problem_column_number = problem_column_number
@@ -455,7 +555,7 @@ class ParseError(Exception):
     {(' '*(self.problem_column_number - 1))}^
 ''')
 
-def parseSourceCode(input_string: str): # TODO add return type
+def parseSourceCode(input_string: str) -> ModuleASTNode:
     try:
         result = only_one(module_pe.parseString(input_string, parseAll=True))
     except pyparsing.ParseException as exception:
@@ -470,6 +570,8 @@ def parseSourceCode(input_string: str): # TODO add return type
 ##########
 # Driver #
 ##########
+
+sanity_check_base_types()
 
 if __name__ == '__main__':
     print("TODO add something here")
