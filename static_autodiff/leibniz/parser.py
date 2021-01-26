@@ -55,7 +55,7 @@ BOGUS_TOKEN = object()
 # Sanity Checking Utilities #
 #############################
 
-BASE_TYPES = ('Boolean', 'Integer', 'Float')
+BASE_TYPES = ('Boolean', 'Integer', 'Float', 'NothingType')
 
 BaseTypeName = getitem(typing_extensions.Literal, BASE_TYPES)
 
@@ -93,7 +93,9 @@ class BaseTypeTrackerType(type):
             instantiated_base_type_tracker_class = instantiated_base_type_tracker_class_weakref()
             instantiated_base_type_tracker_class_is_alive = instantiated_base_type_tracker_class is not None
             assert instantiated_base_type_tracker_class_is_alive
+            assert len(BASE_TYPES) == len(instantiated_base_type_tracker_class.base_type_to_value.keys())
             assert all(key in BASE_TYPES for key in instantiated_base_type_tracker_class.base_type_to_value.keys())
+            assert all(base_type in instantiated_base_type_tracker_class.base_type_to_value.keys() for base_type in BASE_TYPES)
         return
 
 def sanity_check_base_types() -> None:
@@ -140,6 +142,8 @@ class ASTNode(ABC):
         raise NotImplementedError
 
 class AtomASTNodeType(type):
+
+    # TODO is this needed or is ExpressionAtomASTNodeType sufficient?
 
     base_ast_node_class = ASTNode
     
@@ -249,6 +253,22 @@ class FloatLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = float
     token_checker = lambda token: isinstance(token, float)
 
+@LiteralASTNodeClassBaseTypeTracker.NothingType
+class NothingTypeLiteralASTNode(ExpressionASTNode):
+    
+    def __init__(self) -> None:
+        return
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionCallExpressionASTNode':
+        assert len(tokens) is 0
+        node_instance = cls()
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        return type(self) is type(other)
+
 # Identifier / Variable Node Generation
 
 class VariableASTNode(metaclass=ExpressionAtomASTNodeType):
@@ -345,15 +365,15 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
                 in zip(self.arg_bindings, other.arg_bindings)
             )
 
-# Vector Literal Node Generation
+# Vector Node Generation
 
-class VectorLiteralExpressionASTNode(ExpressionASTNode):
+class VectorExpressionASTNode(ExpressionASTNode):
     
     def __init__(self, values: typing.List[ExpressionASTNode]) -> None:
         self.values = values
     
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'VectorLiteralExpressionASTNode':
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'VectorExpressionASTNode':
         values = tokens.asList()
         node_instance = cls(values)
         return node_instance
@@ -437,11 +457,36 @@ class AssignmentASTNode(StatementASTNode):
             self.identifier_type == other.identifier_type and \
             self.value == other.value
 
+# Return Statement Node Generation
+
+class ReturnStatementASTNode(StatementASTNode):
+    
+    def __init__(self, return_values: typing.List[ExpressionASTNode]) -> None:
+        self.return_values = return_values
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'AssignmentASTNode':
+        return_values = tokens.asList()
+        if len(return_values) is 0:
+            return_values = [NothingTypeLiteralASTNode()]
+        node_instance = cls(return_values)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            all(
+                self_return_value == other_return_value
+                for self_return_value, other_return_value
+                in zip(self.return_values, other.return_values)
+            )
+
 # Module Node Generation
 
 class ModuleASTNode(ASTNode):
     
-    def __init__(self, statements: typing.List[StatementASTNode]) -> None:
+    def __init__(self, statements: typing.List[typing.Union[StatementASTNode]]) -> None:
         self.statements: typing.List[StatementASTNode] = statements
     
     @classmethod
@@ -479,8 +524,9 @@ tensor_dimension_declaration_pe = Suppress('<') + Group(Optional(delimitedList(L
 boolean_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Boolean'](Literal('Boolean') + Optional(tensor_dimension_declaration_pe)).setName('boolean tensor type')
 integer_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Integer'](Literal('Integer') + Optional(tensor_dimension_declaration_pe)).setName('integer tensor type')
 float_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Float'](Literal('Float') + Optional(tensor_dimension_declaration_pe)).setName('float tensor type')
+nothing_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['NothingType'](Literal('NothingType') + Optional(tensor_dimension_declaration_pe)).setName('nothingg tensor type')
 
-tensor_type_pe = (boolean_tensor_type_pe | integer_tensor_type_pe | float_tensor_type_pe).setParseAction(TensorTypeASTNode.parse_action)
+tensor_type_pe = (boolean_tensor_type_pe | integer_tensor_type_pe | float_tensor_type_pe | nothing_tensor_type_pe).setParseAction(TensorTypeASTNode.parse_action)
 
 # Literal Parser Elements
 
@@ -489,6 +535,8 @@ boolean_pe = AtomicLiteralParserElementBaseTypeTracker['Boolean'](oneOf('True Fa
 integer_pe = AtomicLiteralParserElementBaseTypeTracker['Integer'](ppc.integer).setName('unsigned integer').setParseAction(ppc.convertToInteger, IntegerLiteralASTNode.parse_action)
 
 float_pe = AtomicLiteralParserElementBaseTypeTracker['Float'](ppc.real | ppc.sci_real).setName('floating point number').setParseAction(FloatLiteralASTNode.parse_action)
+
+nothing_pe = AtomicLiteralParserElementBaseTypeTracker['NothingType'](Suppress('Nothing')).setName('nothing type').setParseAction(NothingTypeLiteralASTNode.parse_action)
 
 # Arithmetic Operation Parser Elements
 
@@ -508,13 +556,22 @@ or_operation_pe = Suppress('or').setName('or operation')
 
 boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | or_operation_pe
 
-# Atom Parser Elements
+# Identifier Parser Elements
 
-identifier_pe = (~boolean_operation_pe + ~boolean_pe + ppc.identifier)
+# identifiers are not variables as identifiers can also be used as function names. Function names are not variables since functions are not first class citizens.
+
+return_statement_pe = Forward()
+
+# TODO using return_statement_pe here is more general than necessary since we only need to capture the emtpy return statement
+not_reserved_keyword_pe = ~boolean_operation_pe + ~boolean_pe + ~return_statement_pe + ~nothing_pe
+
+identifier_pe = (not_reserved_keyword_pe + ppc.identifier)
+
+# Atom Parser Elements
 
 variable_pe = identifier_pe.copy().setName('identifier').setParseAction(VariableASTNode.parse_action)
 
-atom_pe = (variable_pe | float_pe | integer_pe | boolean_pe).setName('atom')
+atom_pe = (variable_pe | float_pe | integer_pe | boolean_pe | nothing_pe).setName('atom')
 
 # Expression Parser Elements
 
@@ -544,12 +601,12 @@ function_variable_binding_pe = Group(variable_pe + Suppress(':=') + expression_p
 function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
 function_call_expression_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallExpressionASTNode.parse_action)
 
-vector_literal_pe = Forward()
-expression_pe <<= (function_call_expression_pe | arithmetic_expression_pe | boolean_expression_pe | atom_pe | vector_literal_pe).setName('expression')
+vector_pe = Forward()
+expression_pe <<= (function_call_expression_pe | arithmetic_expression_pe | boolean_expression_pe | atom_pe | vector_pe).setName('expression')
 
-# Vector Literal Parser Elements
+# Vector Parser Elements
 
-vector_literal_pe <<= (Suppress('{') + delimitedList(expression_pe, delim=',') + Suppress('}')).setName('tensor').setParseAction(VectorLiteralExpressionASTNode.parse_action)
+vector_pe <<= (Suppress('[') + delimitedList(expression_pe, delim=',') + Suppress(']')).setName('tensor').setParseAction(VectorExpressionASTNode.parse_action)
 
 # Assignment Parser Elements
 
@@ -557,11 +614,15 @@ assignment_type_declaration_pe = Optional(Suppress(':') + tensor_type_pe).setPar
 assignment_value_declaration_pe = Suppress('=') + expression_pe
 assignment_pe = (variable_pe + assignment_type_declaration_pe + assignment_value_declaration_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
 
+# Return Statement Parser Elements
+
+return_statement_pe <<= (Suppress('return') + Optional(delimitedList(expression_pe))).setParseAction( ReturnStatementASTNode.parse_action).setName('return statetment')
+
 # Module & Misc. Parser Elements
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
-atomic_statement_pe = Optional(assignment_pe | expression_pe)
+atomic_statement_pe = Optional(return_statement_pe | assignment_pe | expression_pe)
 
 non_atomic_statement_pe = atomic_statement_pe + Suppress(';') + delimitedList(atomic_statement_pe, delim=';')
 
