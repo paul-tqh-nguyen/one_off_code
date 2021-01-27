@@ -760,27 +760,31 @@ result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
 
-# def test_parser_function_definition():
-#     expected_input_output_pairs = [
-#         ('''
-# function f() {
-#     return {}
-# }
-# ''', NothingTypeLiteralASTNode()),
-#     ]
-#     for input_string, expected_result in expected_input_output_pairs:
-#         module_node = parser.parseSourceCode(input_string)
-#         assert isinstance(module_node, ModuleASTNode)
-#         assert isinstance(module_node.statements, list)
-#         function_definition_node = only_one(module_node.statements)
-#         assert isinstance(function_definition_node, FunctionDefinitionExpressionASTNode)
-#         assert function_definition_node.function_name == 'f'
-#         assert function_definition_node.function_signature == []
-#         return_statement_node = only_one(function_definition_node.function_body_statements)
-#         assert isinstance(return_statement_node, ReturnStatementASTNode)
-#         result = only_one(return_statement_node.return_values)
-#         assert result == expected_result, f'''
-# input_string: {repr(input_string)}
-# result: {repr(result)}
-# expected_result: {repr(expected_result)}
-# '''
+def test_parser_function_definition():
+    input_strings = ['function f() -> NothingType {}',
+        '''
+function f() -> NothingType {
+    True
+    x = Nothing
+    return 
+}
+''',
+        '''
+function f(a: Float<1,2,3>, b: NothingType) -> Float<1,2,3> {
+    0000
+    _var_ = Nothing
+    0123
+    return a
+}
+''',
+        '''
+function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> { # comment
+    x: NothingType = Nothing # comment
+    y: Boolean<?, 3, ?> = b
+    g(x:=x, y:=y)
+    return [[[1,2], [3, 4]], [[5,6], [7,8]]] # comment
+}
+''',
+    ]
+    for input_string in input_strings:
+        parser.parseSourceCode(input_string)

@@ -505,7 +505,7 @@ class FunctionDefinitionExpressionASTNode(ModuleStatementASTNode):
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionExpressionASTNode':
         function_name, function_signature, function_return_type, function_body_statements = tokens.asList()
-        function_signature = eager_map(tuple, function_signature)
+        function_signature = eager_zip(function_signature[::2], function_signature[1::2])
         node_instance = cls(function_name, function_signature, function_return_type, function_body_statements)
         return node_instance
 
