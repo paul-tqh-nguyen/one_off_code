@@ -20,6 +20,7 @@ from pyparsing import (
     Empty,
     Optional,
     Combine,
+    NotAny,
     Regex,
     ZeroOrMore,
     Suppress,
@@ -37,7 +38,7 @@ from pyparsing import (
 from abc import ABC, abstractmethod
 from functools import reduce
 from collections import defaultdict
-from operator import getitem
+import operator
 
 from .misc_utilities import *
 
@@ -57,7 +58,7 @@ BOGUS_TOKEN = object()
 
 BASE_TYPES = ('Boolean', 'Integer', 'Float', 'NothingType')
 
-BaseTypeName = getitem(typing_extensions.Literal, BASE_TYPES)
+BaseTypeName = operator.getitem(typing_extensions.Literal, BASE_TYPES)
 
 class BaseTypeTrackerType(type):
     
@@ -191,10 +192,13 @@ class AtomASTNodeType(type):
         assert all(hasattr(result_class, method_name) for method_name in method_names)
         return result_class
 
-class StatementASTNode(ASTNode):
+class FunctionStatementASTNode(ASTNode):
+    pass
+
+class ModuleStatementASTNode(FunctionStatementASTNode):
     pass
     
-class ExpressionASTNode(StatementASTNode):
+class ExpressionASTNode(ModuleStatementASTNode):
     pass
 
 class ExpressionAtomASTNodeType(AtomASTNodeType):
@@ -260,7 +264,7 @@ class NothingTypeLiteralASTNode(ExpressionASTNode):
         return
     
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionCallExpressionASTNode':
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'NothingTypeLiteralASTNode':
         assert len(tokens) is 0
         node_instance = cls()
         return node_instance
@@ -342,7 +346,7 @@ class OrExpressionASTNode(BinaryOperationExpressionASTNode):
 
 class FunctionCallExpressionASTNode(ExpressionASTNode):
     
-    def __init__(self, function_name: VariableASTNode, arg_bindings: typing.List[typing.Tuple[VariableASTNode, ExpressionASTNode]]) -> None:
+    def __init__(self, function_name: str, arg_bindings: typing.List[typing.Tuple[VariableASTNode, ExpressionASTNode]]) -> None:
         self.function_name = function_name
         self.arg_bindings = arg_bindings
     
@@ -425,7 +429,7 @@ class TensorTypeASTNode(ASTNode):
 
 # Assignment Node Generation
 
-def parse_assignment_type_declaration_pe(_s: str, _loc: int, type_label_tokens: pyparsing.ParseResults) -> TensorTypeASTNode:
+def parse_variable_type_declaration_pe(_s: str, _loc: int, type_label_tokens: pyparsing.ParseResults) -> TensorTypeASTNode:
     assert len(type_label_tokens) in (0, 1)
     if len(type_label_tokens) is 0:
         node_instance: TensorTypeASTNode = TensorTypeASTNode(None, None)
@@ -436,7 +440,7 @@ def parse_assignment_type_declaration_pe(_s: str, _loc: int, type_label_tokens: 
     assert isinstance(node_instance, TensorTypeASTNode)
     return node_instance
 
-class AssignmentASTNode(StatementASTNode):
+class AssignmentASTNode(ModuleStatementASTNode):
     
     def __init__(self, identifier: VariableASTNode, identifier_type: TensorTypeASTNode, value: ExpressionASTNode) -> None:
         self.identifier = identifier
@@ -459,7 +463,7 @@ class AssignmentASTNode(StatementASTNode):
 
 # Return Statement Node Generation
 
-class ReturnStatementASTNode(StatementASTNode):
+class ReturnStatementASTNode(FunctionStatementASTNode):
     
     def __init__(self, return_values: typing.List[ExpressionASTNode]) -> None:
         self.return_values = return_values
@@ -482,12 +486,41 @@ class ReturnStatementASTNode(StatementASTNode):
                 in zip(self.return_values, other.return_values)
             )
 
+# Function Definition Node Generation
+
+class FunctionDefinitionExpressionASTNode(ModuleStatementASTNode):
+    
+    def __init__(
+            self,
+            function_name: str,
+            function_signature: typing.List[typing.Tuple[VariableASTNode, TensorTypeASTNode]],
+            function_body_statements: typing.List[FunctionStatementASTNode]
+    ) -> None:
+        self.function_name = function_name
+        self.function_signature = function_signature
+        self.function_body_statements = function_body_statements
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionExpressionASTNode':
+        function_name, function_signature, function_body_statements = tokens.asList()
+        function_signature = eager_map(tuple, function_signature)
+        node_instance = cls(function_name, function_signature, function_body_statements)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            self.function_name == other.function_name and \
+            self.function_signature == other.function_signature and \
+            self.function_body_statements == other.function_body_statements
+
 # Module Node Generation
 
 class ModuleASTNode(ASTNode):
     
-    def __init__(self, statements: typing.List[typing.Union[StatementASTNode]]) -> None:
-        self.statements: typing.List[StatementASTNode] = statements
+    def __init__(self, statements: typing.List[ModuleStatementASTNode]) -> None:
+        self.statements: typing.List[ModuleStatementASTNode] = statements
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ModuleASTNode':
@@ -562,8 +595,16 @@ boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | 
 
 return_statement_pe = Forward()
 
+function_definition_keyword_pe = Suppress('function')
+
 # TODO using return_statement_pe here is more general than necessary since we only need to capture the emtpy return statement
-not_reserved_keyword_pe = ~boolean_operation_pe + ~boolean_pe + ~return_statement_pe + ~nothing_pe
+not_reserved_keyword_pe = reduce(operator.add, map(NotAny, map(Suppress, BASE_TYPES))) + \
+     ~nothing_pe + \
+     ~boolean_operation_pe + \
+     ~boolean_pe + \
+     ~function_definition_keyword_pe + \
+     ~return_statement_pe
+
 
 identifier_pe = (not_reserved_keyword_pe + ppc.identifier)
 
@@ -610,25 +651,38 @@ vector_pe <<= (Suppress('[') + delimitedList(expression_pe, delim=',') + Suppres
 
 # Assignment Parser Elements
 
-assignment_type_declaration_pe = Optional(Suppress(':') + tensor_type_pe).setParseAction(parse_assignment_type_declaration_pe)
+variable_type_declaration_pe = Optional(Suppress(':') + tensor_type_pe).setParseAction(parse_variable_type_declaration_pe)
 assignment_value_declaration_pe = Suppress('=') + expression_pe
-assignment_pe = (variable_pe + assignment_type_declaration_pe + assignment_value_declaration_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
-
-# Return Statement Parser Elements
-
-return_statement_pe <<= (Suppress('return') + Optional(delimitedList(expression_pe))).setParseAction( ReturnStatementASTNode.parse_action).setName('return statetment')
+assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_declaration_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
 
 # Module & Misc. Parser Elements
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
-atomic_statement_pe = Optional(return_statement_pe | assignment_pe | expression_pe)
+function_definition_pe = Forward()
+required_atomic_module_statement_pe = function_definition_pe | assignment_pe | expression_pe
+atomic_module_statement_pe = Optional(required_atomic_module_statement_pe)
 
-non_atomic_statement_pe = atomic_statement_pe + Suppress(';') + delimitedList(atomic_statement_pe, delim=';')
+non_atomic_module_statement_pe = atomic_module_statement_pe + Suppress(';') + delimitedList(atomic_module_statement_pe, delim=';')
 
-statement_pe = (non_atomic_statement_pe | atomic_statement_pe).setName('statement')
+module_statement_pe = (non_atomic_module_statement_pe | atomic_module_statement_pe).setName('module statement')
 
-module_pe = delimitedList(statement_pe, delim='\n').ignore(comment_pe).setParseAction(ModuleASTNode.parse_action)
+module_pe = delimitedList(module_statement_pe, delim='\n').ignore(comment_pe).setParseAction(ModuleASTNode.parse_action)
+
+# Return Statement Parser Elements
+
+return_statement_pe <<= (Suppress('return') + Optional(delimitedList(expression_pe))).setParseAction( ReturnStatementASTNode.parse_action).setName('return statetment')
+
+# Function Definition Parser Elements
+
+atomic_function_statement_pe = Optional(required_atomic_module_statement_pe | return_statement_pe)
+non_atomic_function_statement_pe = atomic_function_statement_pe + Suppress(';') + delimitedList(atomic_function_statement_pe, delim=';')
+function_statement_pe = (non_atomic_function_statement_pe | atomic_function_statement_pe).setName('function statement')
+
+function_signature_pe = Suppress('(') + Group(Optional(delimitedList(variable_pe + variable_type_declaration_pe))) + Suppress(')')
+function_body_pe = Suppress('{') + Group(Optional(delimitedList(function_statement_pe, delim='\n'))).setWhitespaceChars(' \t\n') + Suppress('}')
+
+function_definition_pe <<= (function_definition_keyword_pe + identifier_pe + function_signature_pe + function_body_pe).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
 
 ################
 # Entry Points #

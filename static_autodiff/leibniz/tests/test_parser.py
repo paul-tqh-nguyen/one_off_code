@@ -6,6 +6,7 @@ from leibniz.parser import (
     ExpressionASTNode,
     TensorTypeASTNode,
     VectorExpressionASTNode,
+    FunctionDefinitionExpressionASTNode,
     ReturnStatementASTNode,
     BooleanLiteralASTNode,
     IntegerLiteralASTNode,
@@ -40,6 +41,12 @@ x: Integer
 
 ''',
         'x = {}',
+        'x = {function}',
+        'x = {Nothing}',
+        'x = {Integer}',
+        'x = {Float}',
+        'x = {Boolean}',
+        'x: function = 1',
         'x: Nothing = 1',
         'x: True = 1',
         'x: False = 1',
@@ -53,21 +60,39 @@ x: Integer
         'x: / = 1',
         'x: + = 1',
         'x: - = 1',
-        # 'Float',
-        # 'Boolean',
-        # 'Integer',
-        # 'NothingType',
-        # 'Float = 1',
-        # 'Boolean = 1',
-        # 'Integer = 1',
-        # 'NothingType = 1',
-        # 'Float(x:=1)',
-        # 'Boolean(x:=1)',
-        # 'Integer(x:=1)',
-        # 'NothingType(x:=1)',
+        'Float',
+        'Boolean',
+        'Integer',
+        'NothingType',
+        'Float = 1',
+        'Boolean = 1',
+        'Integer = 1',
+        'NothingType = 1',
+        'Float(x:=1)',
+        'Boolean(x:=1)',
+        'Integer(x:=1)',
+        'NothingType(x:=1)',
+        'True = 1',
+        'False = 1',
+        'not = 1',
+        'and = 1',
+        'xor = 1',
+        'or = 1',
+        'return = 1',
+        'True(x:=1)',
+        'False(x:=1)',
+        'not(x:=1)',
+        'and(x:=1)',
+        'xor(x:=1)',
+        'or(x:=1)',
+        'return(x:=1)',
+        'return',
+        'function(x:=1)',
+        'function',
+        'function = 1',
+        'function: Integer = 1',
     ]
     for input_string in invalid_input_strings:
-        print(f"input_string {repr(input_string)}")
         with pytest.raises(parser.ParseError, match='Could not parse the following:'):
             parser.parseSourceCode(input_string)
 
@@ -649,6 +674,8 @@ def test_parser_module():
         ),
         ('''
 
+# comment
+
 x
 Nothing
 x = 1 # comment
@@ -673,6 +700,7 @@ x = 1 ; x: Integer = 1 # y = 123
         ),
     ]
     for input_string, expected_result in expected_input_output_pairs:
+        print('\n'*8) # TODO remove this
         result = parser.parseSourceCode(input_string)
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
@@ -682,43 +710,50 @@ expected_result: {repr(expected_result)}
 
 def test_parser_return_statement():
     expected_input_output_pairs = [
-        ('', [NothingTypeLiteralASTNode()]),
-        ('  \t # comment', [NothingTypeLiteralASTNode()]),
-        ('Nothing', [NothingTypeLiteralASTNode()]),
-        ('False', [BooleanLiteralASTNode(value=False)]),
-        ('123', [IntegerLiteralASTNode(value=123)]),
-        ('1E2', [FloatLiteralASTNode(value=100.0)]),
-        ('some_variable', [VariableASTNode(name='some_variable')]),
-        ('[f(x:=1), [2, 3], some_variable]',
-         [VectorExpressionASTNode(values=[
+        ('', NothingTypeLiteralASTNode()),
+        ('  \t # comment', NothingTypeLiteralASTNode()),
+        ('Nothing', NothingTypeLiteralASTNode()),
+        ('False', BooleanLiteralASTNode(value=False)),
+        ('123', IntegerLiteralASTNode(value=123)),
+        ('1E2', FloatLiteralASTNode(value=100.0)),
+        ('some_variable', VariableASTNode(name='some_variable')),
+        ('[f(x:=1), [2, 3], some_variable, Nothing]',
+         VectorExpressionASTNode(values=[
              FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'),
              VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)]),
-             VariableASTNode(name='some_variable')])]),
-        ('False or True', [OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True))]),
+             VariableASTNode(name='some_variable'),
+             NothingTypeLiteralASTNode()])),
+        ('False or True', OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True))),
         ('1 ** 2 ^ 3',
-         [ExponentExpressionASTNode(
+         ExponentExpressionASTNode(
              left_arg=IntegerLiteralASTNode(value=1),
              right_arg=ExponentExpressionASTNode(
                  left_arg=IntegerLiteralASTNode(value=2),
-                 right_arg=IntegerLiteralASTNode(value=3)))]),
-        ('f(a:=1, b:=2)',
-         [FunctionCallExpressionASTNode(
+                 right_arg=IntegerLiteralASTNode(value=3)))),
+        ('f(a:=1, b:=2, c:=Nothing)',
+         FunctionCallExpressionASTNode(
              arg_bindings=[
                  (VariableASTNode(name='a'), IntegerLiteralASTNode(value=1)),
-                 (VariableASTNode(name='b'), IntegerLiteralASTNode(value=2))
+                 (VariableASTNode(name='b'), IntegerLiteralASTNode(value=2)),
+                 (VariableASTNode(name='c'), NothingTypeLiteralASTNode()),
              ],
-             function_name='f')]),
+             function_name='f')),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        module_node = parser.parseSourceCode('return '+input_string)
+        module_node = parser.parseSourceCode(f'''
+function f() {{
+    return {input_string}
+}}
+''')
         assert isinstance(module_node, ModuleASTNode)
         assert isinstance(module_node.statements, list)
-        return_statement_node = only_one(module_node.statements)
+        function_definition_node = only_one(module_node.statements)
+        assert isinstance(function_definition_node, FunctionDefinitionExpressionASTNode)
+        assert function_definition_node.function_name == 'f'
+        assert function_definition_node.function_signature == []
+        return_statement_node = only_one(function_definition_node.function_body_statements)
         assert isinstance(return_statement_node, ReturnStatementASTNode)
-        return_values = return_statement_node.return_values
-        assert isinstance(return_values, list)
-        assert all(isinstance(return_value, ExpressionASTNode) for return_value in return_values)
-        result = return_values
+        result = only_one(return_statement_node.return_values)
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
