@@ -741,7 +741,7 @@ def test_parser_return_statement():
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(f'''
-function f() -> Nothing {{
+function f() -> NothingType {{
     return {input_string}
 }}
 ''')

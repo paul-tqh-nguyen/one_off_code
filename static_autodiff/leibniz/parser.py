@@ -494,17 +494,19 @@ class FunctionDefinitionExpressionASTNode(ModuleStatementASTNode):
             self,
             function_name: str,
             function_signature: typing.List[typing.Tuple[VariableASTNode, TensorTypeASTNode]],
+            function_return_type: TensorTypeASTNode, 
             function_body_statements: typing.List[FunctionStatementASTNode]
     ) -> None:
         self.function_name = function_name
         self.function_signature = function_signature
+        self.function_return_type = function_return_type
         self.function_body_statements = function_body_statements
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionExpressionASTNode':
-        function_name, function_signature, function_body_statements = tokens.asList()
+        function_name, function_signature, function_return_type, function_body_statements = tokens.asList()
         function_signature = eager_map(tuple, function_signature)
-        node_instance = cls(function_name, function_signature, function_body_statements)
+        node_instance = cls(function_name, function_signature, function_return_type, function_body_statements)
         return node_instance
 
     # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
@@ -513,6 +515,7 @@ class FunctionDefinitionExpressionASTNode(ModuleStatementASTNode):
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
             self.function_signature == other.function_signature and \
+            self.function_return_type == other.function_return_type and \
             self.function_body_statements == other.function_body_statements
 
 # Module Node Generation
@@ -680,8 +683,8 @@ non_atomic_function_statement_pe = atomic_function_statement_pe + Suppress(';') 
 function_statement_pe = (non_atomic_function_statement_pe | atomic_function_statement_pe).setName('function statement')
 
 function_signature_pe = Suppress('(') + Group(Optional(delimitedList(variable_pe + variable_type_declaration_pe))) + Suppress(')')
+function_return_type_pe = (Suppress('->') + tensor_type_pe).setParseAction(TensorTypeASTNode.parse_action)
 function_body_pe = Suppress('{') + Group(Optional(delimitedList(function_statement_pe, delim='\n'))).setWhitespaceChars(' \t\n') + Suppress('}')
-function_return_type_pe = Suppress('->') + tensor_type_pe
 
 function_definition_pe <<= (function_definition_keyword_pe + identifier_pe + function_signature_pe + function_return_type_pe + function_body_pe).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
 
