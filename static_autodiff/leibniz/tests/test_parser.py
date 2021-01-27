@@ -741,7 +741,7 @@ def test_parser_return_statement():
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(f'''
-function f() {{
+function f() -> Nothing {{
     return {input_string}
 }}
 ''')
@@ -759,3 +759,28 @@ input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
+
+# def test_parser_function_definition():
+#     expected_input_output_pairs = [
+#         ('''
+# function f() {
+#     return {}
+# }
+# ''', NothingTypeLiteralASTNode()),
+#     ]
+#     for input_string, expected_result in expected_input_output_pairs:
+#         module_node = parser.parseSourceCode(input_string)
+#         assert isinstance(module_node, ModuleASTNode)
+#         assert isinstance(module_node.statements, list)
+#         function_definition_node = only_one(module_node.statements)
+#         assert isinstance(function_definition_node, FunctionDefinitionExpressionASTNode)
+#         assert function_definition_node.function_name == 'f'
+#         assert function_definition_node.function_signature == []
+#         return_statement_node = only_one(function_definition_node.function_body_statements)
+#         assert isinstance(return_statement_node, ReturnStatementASTNode)
+#         result = only_one(return_statement_node.return_values)
+#         assert result == expected_result, f'''
+# input_string: {repr(input_string)}
+# result: {repr(result)}
+# expected_result: {repr(expected_result)}
+# '''

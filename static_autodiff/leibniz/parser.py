@@ -681,8 +681,9 @@ function_statement_pe = (non_atomic_function_statement_pe | atomic_function_stat
 
 function_signature_pe = Suppress('(') + Group(Optional(delimitedList(variable_pe + variable_type_declaration_pe))) + Suppress(')')
 function_body_pe = Suppress('{') + Group(Optional(delimitedList(function_statement_pe, delim='\n'))).setWhitespaceChars(' \t\n') + Suppress('}')
+function_return_type_pe = Suppress('->') + tensor_type_pe
 
-function_definition_pe <<= (function_definition_keyword_pe + identifier_pe + function_signature_pe + function_body_pe).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
+function_definition_pe <<= (function_definition_keyword_pe + identifier_pe + function_signature_pe + function_return_type_pe + function_body_pe).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
 
 ################
 # Entry Points #
