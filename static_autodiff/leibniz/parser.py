@@ -715,7 +715,7 @@ function_definition_pe <<= (
     function_return_type_pe +
     Optional(Suppress('\n')) + 
     required_atomic_statement_pe
-).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action).addParseAction(_trace_parse('function_definition_pe'))
+).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
 
 # Module & Misc. Parser Elements
 
