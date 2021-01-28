@@ -687,7 +687,9 @@ function_definition_pe = Forward()
 
 scoped_statement_sequence_pe = Forward()
 
-atomic_statement_pe = Optional(function_definition_pe | return_statement_pe | assignment_pe | expression_pe | scoped_statement_sequence_pe)
+required_atomic_statement_pe = function_definition_pe | return_statement_pe | assignment_pe | scoped_statement_sequence_pe | expression_pe
+
+atomic_statement_pe = Optional(required_atomic_statement_pe)
 
 non_atomic_statement_pe = atomic_statement_pe + Suppress(';') + delimitedList(atomic_statement_pe, delim=';')
 
@@ -711,8 +713,9 @@ function_definition_pe <<= (
     identifier_pe +
     function_signature_pe +
     function_return_type_pe +
-    scoped_statement_sequence_pe
-).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
+    Optional(Suppress('\n')) + 
+    required_atomic_statement_pe
+).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action).addParseAction(_trace_parse('function_definition_pe'))
 
 # Module & Misc. Parser Elements
 

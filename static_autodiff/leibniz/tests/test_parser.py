@@ -817,6 +817,16 @@ function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> { # comment
     return [[[1,2], [3, 4]], [[5,6], [7,8]]] # comment
 }
 ''',
+        '''function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> return 123''',
+        '''function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> 123''',
+        '''
+dummy_var # comment
+
+    # comment
+
+function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> 
+g(b:=1, a:=3, b:=123)
+''',
     ]
     for input_string in input_strings:
         parser.parseSourceCode(input_string)
