@@ -242,7 +242,7 @@ def raise_on_warn(func: Callable) -> Callable:
 
 TRACE_INDENT_LEVEL = 0
 TRACE_INDENTATION = '    '
-TRACE_VALUE_SIZE_LIMIT = 200
+TRACE_VALUE_SIZE_LIMIT = 1000
 from typing import Callable
 def trace(func: Callable) -> Callable:
     from inspect import signature

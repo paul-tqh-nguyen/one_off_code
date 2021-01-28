@@ -116,12 +116,15 @@ class LiteralASTNodeClassBaseTypeTracker(metaclass=BaseTypeTrackerType):
 # AST Functionality #
 #####################
 
-def _trace_parse(s: str, loc: int, tokens: pyparsing.ParseResults): # TODO remove this
-    print()
-    print(f"s {repr(s)}")
-    print(f"loc {repr(loc)}")
-    print(f"tokens {repr(tokens)}")
-
+def _trace_parse(name): # TODO remove this
+    def func(s: str, loc: int, tokens: pyparsing.ParseResults):
+        print()
+        print(f"name {repr(name)}")
+        print(f"s {repr(s)}")
+        print(f"loc {repr(loc)}")
+        print(f"tokens {repr(tokens)}")
+    return func
+    
 class ASTNode(ABC):
 
     @abstractmethod
@@ -192,13 +195,10 @@ class AtomASTNodeType(type):
         assert all(hasattr(result_class, method_name) for method_name in method_names)
         return result_class
 
-class FunctionStatementASTNode(ASTNode):
-    pass
-
-class ModuleStatementASTNode(FunctionStatementASTNode):
+class StatementASTNode(ASTNode):
     pass
     
-class ExpressionASTNode(ModuleStatementASTNode):
+class ExpressionASTNode(StatementASTNode):
     pass
 
 class ExpressionAtomASTNodeType(AtomASTNodeType):
@@ -440,7 +440,7 @@ def parse_variable_type_declaration_pe(_s: str, _loc: int, type_label_tokens: py
     assert isinstance(node_instance, TensorTypeASTNode)
     return node_instance
 
-class AssignmentASTNode(ModuleStatementASTNode):
+class AssignmentASTNode(StatementASTNode):
     
     def __init__(self, identifier: VariableASTNode, identifier_type: TensorTypeASTNode, value: ExpressionASTNode) -> None:
         self.identifier = identifier
@@ -463,13 +463,13 @@ class AssignmentASTNode(ModuleStatementASTNode):
 
 # Return Statement Node Generation
 
-class ReturnStatementASTNode(FunctionStatementASTNode):
+class ReturnStatementASTNode(StatementASTNode):
     
     def __init__(self, return_values: typing.List[ExpressionASTNode]) -> None:
         self.return_values = return_values
     
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'AssignmentASTNode':
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ReturnStatementASTNode':
         return_values = tokens.asList()
         if len(return_values) is 0:
             return_values = [NothingTypeLiteralASTNode()]
@@ -486,27 +486,46 @@ class ReturnStatementASTNode(FunctionStatementASTNode):
                 in zip(self.return_values, other.return_values)
             )
 
+# Scoped Statement Sequence Node Generation
+
+class ScopedStatementSequenceASTNode(StatementASTNode):
+    
+    def __init__(self, statements: typing.List[StatementASTNode]) -> None:
+        self.statements = statements
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ScopedStatementSequenceASTNode':
+        statements = tokens.asList()
+        node_instance = cls(statements)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            self.statements == other.statements
+
 # Function Definition Node Generation
 
-class FunctionDefinitionExpressionASTNode(ModuleStatementASTNode):
+class FunctionDefinitionExpressionASTNode(StatementASTNode):
     
     def __init__(
             self,
             function_name: str,
             function_signature: typing.List[typing.Tuple[VariableASTNode, TensorTypeASTNode]],
             function_return_type: TensorTypeASTNode, 
-            function_body_statements: typing.List[FunctionStatementASTNode]
+            function_body: StatementASTNode
     ) -> None:
         self.function_name = function_name
         self.function_signature = function_signature
         self.function_return_type = function_return_type
-        self.function_body_statements = function_body_statements
+        self.function_body = function_body
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionExpressionASTNode':
-        function_name, function_signature, function_return_type, function_body_statements = tokens.asList()
-        function_signature = eager_zip(function_signature[::2], function_signature[1::2])
-        node_instance = cls(function_name, function_signature, function_return_type, function_body_statements)
+        function_name, function_signature, function_return_type, function_body = tokens.asList()
+        function_signature = eager_map(tuple, function_signature)
+        node_instance = cls(function_name, function_signature, function_return_type, function_body)
         return node_instance
 
     # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
@@ -516,14 +535,14 @@ class FunctionDefinitionExpressionASTNode(ModuleStatementASTNode):
             self.function_name == other.function_name and \
             self.function_signature == other.function_signature and \
             self.function_return_type == other.function_return_type and \
-            self.function_body_statements == other.function_body_statements
+            self.function_body == other.function_body
 
 # Module Node Generation
 
 class ModuleASTNode(ASTNode):
     
-    def __init__(self, statements: typing.List[ModuleStatementASTNode]) -> None:
-        self.statements: typing.List[ModuleStatementASTNode] = statements
+    def __init__(self, statements: typing.List[StatementASTNode]) -> None:
+        self.statements: typing.List[StatementASTNode] = statements
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ModuleASTNode':
@@ -555,7 +574,7 @@ pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
 
 # Type Parser Elements
 
-tensor_dimension_declaration_pe = Suppress('<') + Group(Optional(delimitedList(Literal('???') | Literal('?') | ppc.integer))) + Suppress('>')
+tensor_dimension_declaration_pe = Suppress('<') + Group(Optional(Literal('???') | delimitedList(Literal('?') | ppc.integer))) + Suppress('>')
 
 boolean_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Boolean'](Literal('Boolean') + Optional(tensor_dimension_declaration_pe)).setName('boolean tensor type')
 integer_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Integer'](Literal('Integer') + Optional(tensor_dimension_declaration_pe)).setName('integer tensor type')
@@ -658,35 +677,46 @@ variable_type_declaration_pe = Optional(Suppress(':') + tensor_type_pe).setParse
 assignment_value_declaration_pe = Suppress('=') + expression_pe
 assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_declaration_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
 
-# Module & Misc. Parser Elements
+# Comment Parser Elements
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
+# Scoped Statement Sequence Parser Elements
+
 function_definition_pe = Forward()
-required_atomic_module_statement_pe = function_definition_pe | assignment_pe | expression_pe
-atomic_module_statement_pe = Optional(required_atomic_module_statement_pe)
 
-non_atomic_module_statement_pe = atomic_module_statement_pe + Suppress(';') + delimitedList(atomic_module_statement_pe, delim=';')
+scoped_statement_sequence_pe = Forward()
 
-module_statement_pe = (non_atomic_module_statement_pe | atomic_module_statement_pe).setName('module statement')
+atomic_statement_pe = Optional(function_definition_pe | return_statement_pe | assignment_pe | expression_pe | scoped_statement_sequence_pe)
 
-module_pe = delimitedList(module_statement_pe, delim='\n').ignore(comment_pe).setParseAction(ModuleASTNode.parse_action)
+non_atomic_statement_pe = atomic_statement_pe + Suppress(';') + delimitedList(atomic_statement_pe, delim=';')
+
+statement_pe = (non_atomic_statement_pe | atomic_statement_pe).setName('statement')
+
+statement_sequence_pe = Optional(delimitedList(statement_pe, delim='\n').ignore(comment_pe))
+
+scoped_statement_sequence_pe <<= (Suppress('{') + statement_sequence_pe + Suppress('}')).setParseAction(ScopedStatementSequenceASTNode.parse_action)
 
 # Return Statement Parser Elements
 
-return_statement_pe <<= (Suppress('return') + Optional(delimitedList(expression_pe))).setParseAction( ReturnStatementASTNode.parse_action).setName('return statetment')
+return_statement_pe <<= (Suppress('return') + Optional(delimitedList(expression_pe))).setParseAction(ReturnStatementASTNode.parse_action).setName('return statetment')
 
 # Function Definition Parser Elements
 
-atomic_function_statement_pe = Optional(required_atomic_module_statement_pe | return_statement_pe)
-non_atomic_function_statement_pe = atomic_function_statement_pe + Suppress(';') + delimitedList(atomic_function_statement_pe, delim=';')
-function_statement_pe = (non_atomic_function_statement_pe | atomic_function_statement_pe).setName('function statement')
-
-function_signature_pe = Suppress('(') + Group(Optional(delimitedList(variable_pe + variable_type_declaration_pe))) + Suppress(')')
+function_signature_pe = Suppress('(') + Group(Optional(delimitedList(Group(variable_pe + variable_type_declaration_pe)))) + Suppress(')')
 function_return_type_pe = (Suppress('->') + tensor_type_pe).setParseAction(TensorTypeASTNode.parse_action)
-function_body_pe = Suppress('{') + Group(Optional(delimitedList(function_statement_pe, delim='\n'))).setWhitespaceChars(' \t\n') + Suppress('}')
 
-function_definition_pe <<= (function_definition_keyword_pe + identifier_pe + function_signature_pe + function_return_type_pe + function_body_pe).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
+function_definition_pe <<= (
+    function_definition_keyword_pe +
+    identifier_pe +
+    function_signature_pe +
+    function_return_type_pe +
+    scoped_statement_sequence_pe
+).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
+
+# Module & Misc. Parser Elements
+
+module_pe = statement_sequence_pe.copy().setParseAction(ModuleASTNode.parse_action)
 
 ################
 # Entry Points #

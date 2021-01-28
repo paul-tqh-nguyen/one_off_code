@@ -7,6 +7,7 @@ from leibniz.parser import (
     TensorTypeASTNode,
     VectorExpressionASTNode,
     FunctionDefinitionExpressionASTNode,
+    ScopedStatementSequenceASTNode,
     ReturnStatementASTNode,
     BooleanLiteralASTNode,
     IntegerLiteralASTNode,
@@ -86,7 +87,6 @@ x: Integer
         'xor(x:=1)',
         'or(x:=1)',
         'return(x:=1)',
-        'return',
         'function(x:=1)',
         'function',
         'function = 1',
@@ -684,6 +684,15 @@ init_something()
 init_something(x:=x)
 x = 1 ; x: Integer = 1 # y = 123
 1 + 2
+{ x = 1 ; x: Integer = 1 } # y = 123
+{ x: Integer = 1 } ; 123 # y = 123
+x = 1 ; { x: Integer = 1 } ; 123 # y = 123
+x = 1 ; {
+    x: Integer = 1
+    x: Integer = 1 # comment
+} # y = 123
+x = 1 ; { x: Integer = 1
+} # y = 123
 
 ''',
          ModuleASTNode(statements=[
@@ -696,11 +705,31 @@ x = 1 ; x: Integer = 1 # y = 123
              AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
              AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1)),
              AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
-         ])
-        ),
+             ScopedStatementSequenceASTNode(statements=[
+                 AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
+                 AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))
+             ]),
+             ScopedStatementSequenceASTNode(statements=[
+                 AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))
+             ]),
+             IntegerLiteralASTNode(value=123),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
+             ScopedStatementSequenceASTNode(statements=[
+                 AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))
+             ]),
+             IntegerLiteralASTNode(value=123),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
+             ScopedStatementSequenceASTNode(statements=[
+                 AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1)),
+                 AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))
+             ]),
+             AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
+             ScopedStatementSequenceASTNode(statements=[
+                 AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))
+             ])
+         ])),
     ]
     for input_string, expected_result in expected_input_output_pairs:
-        print('\n'*8) # TODO remove this
         result = parser.parseSourceCode(input_string)
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
@@ -751,7 +780,10 @@ function f() -> NothingType {{
         assert isinstance(function_definition_node, FunctionDefinitionExpressionASTNode)
         assert function_definition_node.function_name == 'f'
         assert function_definition_node.function_signature == []
-        return_statement_node = only_one(function_definition_node.function_body_statements)
+        function_body = function_definition_node.function_body
+        assert isinstance(function_body, ScopedStatementSequenceASTNode)
+        return_statement_node = only_one(function_body.statements)
+        print(f"return_statement_node {repr(return_statement_node)}") # TODO remove this
         assert isinstance(return_statement_node, ReturnStatementASTNode)
         result = only_one(return_statement_node.return_values)
         assert result == expected_result, f'''
