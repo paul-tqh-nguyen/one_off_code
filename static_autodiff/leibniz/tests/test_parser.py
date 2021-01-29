@@ -8,6 +8,7 @@ from leibniz.parser import (
     VectorExpressionASTNode,
     FunctionDefinitionASTNode,
     ForLoopASTNode,
+    WhileLoopASTNode,
     ScopedStatementSequenceASTNode,
     ReturnStatementASTNode,
     BooleanLiteralASTNode,
@@ -98,6 +99,7 @@ x: Integer
         'x: Integer<???, 1> = 1',
         'x: for = 1',
         'for = 1',
+        'while 0 {return}',
     ]
     for input_string in invalid_input_strings:
         with pytest.raises(parser.ParseError, match='Could not parse the following:'):
@@ -130,7 +132,8 @@ def test_parser_invalid_keyword_use():
     ]
     syntactic_contruct_keywords = [
         'function',
-        'for'
+        'for',
+        'while'
     ]
     invalid_input_string_template_to_reserved_keywords = [
         ('{keyword} = 1', types + literals + operators + syntactic_contruct_keywords),
@@ -745,6 +748,11 @@ x = 1 ; {
 x = 1 ; { x: Integer = 1
 } # y = 123
 
+for x:(1,10, 2) {
+    True or True
+    return
+}
+
 ''',
          ModuleASTNode(statements=[
              VariableASTNode(name='x'),
@@ -777,7 +785,17 @@ x = 1 ; { x: Integer = 1
              AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name=None, shape=None), value=IntegerLiteralASTNode(value=1)),
              ScopedStatementSequenceASTNode(statements=[
                  AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))
-             ])
+             ]),
+             ForLoopASTNode(
+                 body=ScopedStatementSequenceASTNode(statements=[
+                     OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
+                     ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+                 ]),
+                 iterator_variable_name='x',
+                 minimum=IntegerLiteralASTNode(value=1),
+                 supremum=IntegerLiteralASTNode(value=10),
+                 delta=IntegerLiteralASTNode(value=2)
+             ),
          ])),
     ]
     for input_string, expected_result in expected_input_output_pairs:
@@ -876,6 +894,13 @@ function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> {
 }
 
 ''',
+        '''
+
+function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> {
+    for x:(1,10) return func(x:=1)
+}
+
+''',
         '''function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> return 123''',
         '''function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> 123''',
         '''
@@ -892,6 +917,15 @@ function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> g(b:=1, a:=3, b:
 
 def test_parser_for_loop():
     expected_input_output_pairs = [
+        ('for x:(1,10,y) func(x:=1)', ForLoopASTNode(
+            body=FunctionCallExpressionASTNode(
+                arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
+                function_name='func'
+            ),
+            iterator_variable_name='x',
+            minimum=IntegerLiteralASTNode(value=1),
+            supremum=IntegerLiteralASTNode(value=10),
+            delta=VariableASTNode(name='y'))),
         ('for x:(1,10) func(x:=1)', ForLoopASTNode(
             body=FunctionCallExpressionASTNode(
                 arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
@@ -920,7 +954,7 @@ for x:(1+0,10) {
              delta=IntegerLiteralASTNode(value=1))
         ),
         ('''
-for x:(1,10, 2) {
+for x:(1, -10, -1) {
     True or True
     return
 }
@@ -932,9 +966,17 @@ for x:(1,10, 2) {
              ]),
              iterator_variable_name='x',
              minimum=IntegerLiteralASTNode(value=1),
-             supremum=IntegerLiteralASTNode(value=10),
-             delta=IntegerLiteralASTNode(value=2)
+             supremum=NegativeExpressionASTNode(arg=IntegerLiteralASTNode(value=10)),
+             delta=NegativeExpressionASTNode(arg=IntegerLiteralASTNode(value=1))
          )),
+        ('for x:(1,10, 2) while False 1', ForLoopASTNode(
+            body=WhileLoopASTNode(
+                condition=BooleanLiteralASTNode(value=False),
+                body=IntegerLiteralASTNode(value=1)),
+            iterator_variable_name='x',
+            minimum=IntegerLiteralASTNode(value=1),
+            supremum=IntegerLiteralASTNode(value=10),
+            delta=IntegerLiteralASTNode(value=2))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(input_string)
@@ -942,6 +984,38 @@ for x:(1,10, 2) {
         assert isinstance(module_node.statements, list)
         result = only_one(module_node.statements)
         assert isinstance(result, ForLoopASTNode)
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_while_loop():
+    expected_input_output_pairs = [
+        ('while True func(x:=1)', WhileLoopASTNode(
+            condition=BooleanLiteralASTNode(value=True),
+            body=FunctionCallExpressionASTNode(
+                arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
+                function_name='func'
+            ))),
+        ('while False xor True return 3', WhileLoopASTNode(
+            condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
+            body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)]))),
+        ('''
+while not False {
+    Nothing
+}
+''',
+         WhileLoopASTNode(
+             condition=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=False)),
+             body=ScopedStatementSequenceASTNode(statements=[NothingTypeLiteralASTNode()]))),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        module_node = parser.parseSourceCode(input_string)
+        assert isinstance(module_node, ModuleASTNode)
+        assert isinstance(module_node.statements, list)
+        result = only_one(module_node.statements)
+        assert isinstance(result, WhileLoopASTNode)
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}

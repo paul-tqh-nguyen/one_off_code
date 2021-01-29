@@ -583,6 +583,31 @@ class ForLoopASTNode(StatementASTNode):
             self.delta == other.delta and \
             self.body == other.body
 
+# While Loop Node Generation
+
+class WhileLoopASTNode(StatementASTNode):
+    
+    def __init__(
+            self,
+            condition: typing.Union[VariableASTNode, BooleanExpressionASTNode],
+            body: StatementASTNode
+    ) -> None:
+        self.condition = condition
+        self.body = body
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'WhileLoopASTNode':
+        condition, body = tokens.asList()
+        node_instance = cls(condition, body)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            self.condition == other.condition and \
+            self.body == other.body
+
 # Module Node Generation
 
 class ModuleASTNode(ASTNode):
@@ -663,6 +688,8 @@ boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | 
 
 return_statement_pe = Forward()
 
+while_loop_keyword_pe = Suppress('while')
+
 for_loop_keyword_pe = Suppress('for')
 
 function_definition_keyword_pe = Suppress('function')
@@ -672,6 +699,7 @@ not_reserved_keyword_pe = reduce(operator.add, map(NotAny, map(Suppress, BASE_TY
      ~nothing_pe + \
      ~boolean_operation_pe + \
      ~boolean_pe + \
+     ~while_loop_keyword_pe + \
      ~for_loop_keyword_pe + \
      ~function_definition_keyword_pe + \
      ~return_statement_pe
@@ -732,13 +760,15 @@ comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
 # Statement Parser Elements 
 
+while_loop_pe = Forward()
+
 for_loop_pe = Forward()
 
 function_definition_pe = Forward()
 
 scoped_statement_sequence_pe = Forward()
 
-required_atomic_statement_pe = for_loop_pe | function_definition_pe | return_statement_pe | assignment_pe | scoped_statement_sequence_pe | expression_pe
+required_atomic_statement_pe = while_loop_pe | for_loop_pe | function_definition_pe | return_statement_pe | assignment_pe | scoped_statement_sequence_pe | expression_pe
 
 atomic_statement_pe = Optional(required_atomic_statement_pe)
 
@@ -785,6 +815,14 @@ for_loop_pe <<= (
     ) + 
     required_atomic_statement_pe
 ).ignore(comment_pe).setParseAction(ForLoopASTNode.parse_action)
+
+# While Loop Parser Elements
+
+while_loop_pe <<= (
+    while_loop_keyword_pe +
+    boolean_expression_pe +
+    required_atomic_statement_pe
+).ignore(comment_pe).setParseAction(WhileLoopASTNode.parse_action)
 
 # Module & Misc. Parser Elements
 
