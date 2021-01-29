@@ -6,7 +6,7 @@ from leibniz.parser import (
     ExpressionASTNode,
     TensorTypeASTNode,
     VectorExpressionASTNode,
-    FunctionDefinitionExpressionASTNode,
+    FunctionDefinitionASTNode,
     ScopedStatementSequenceASTNode,
     ReturnStatementASTNode,
     BooleanLiteralASTNode,
@@ -32,7 +32,7 @@ from leibniz.misc_utilities import *
 
 # TODO verify that the above imports are used
 
-def test_parser_invalid():
+def test_parser_invalid_misc():
     invalid_input_strings = [
         '''
 ###
@@ -90,11 +90,61 @@ x: Integer
         'function(x:=1)',
         'function',
         'function = 1',
+        'x: function = 1',
         'function: Integer = 1',
+        'x: Integer<??> = 1',
+        'x: Integer<1, ??> = 1',
+        'x: Integer<???, 1> = 1',
+        'x: for = 1',
+        'for = 1',
     ]
     for input_string in invalid_input_strings:
         with pytest.raises(parser.ParseError, match='Could not parse the following:'):
             parser.parseSourceCode(input_string)
+
+def test_parser_invalid_keyword_use():
+    types = [
+        'NothingType',
+        'Integer',
+        'Boolean',
+        'Float',
+    ]
+    literals = [
+        'Nothing',
+        'True',
+        'False',
+    ]
+    operators = [
+        'not',
+        'and',
+        'xor',
+        'or',
+        '**',
+        '^',
+        '*',
+        '/',
+        '+',
+        '-',
+        '=',
+    ]
+    syntactic_contruct_keywords = [
+        'function',
+        'for'
+    ]
+    invalid_input_string_template_to_reserved_keywords = [
+        ('{keyword} = 1', types + literals + operators + syntactic_contruct_keywords),
+        ('{keyword}(x:=1)', types + literals + operators + syntactic_contruct_keywords),
+        ('f({keyword}:=1)', types + literals + operators + syntactic_contruct_keywords),
+        ('x = {{{keyword}}}', types + operators + syntactic_contruct_keywords),
+        ('{keyword}', types + operators + syntactic_contruct_keywords),
+        ('x: {keyword} = 1', literals + operators + syntactic_contruct_keywords),
+    ]
+    for invalid_input_string_template, keywords in invalid_input_string_template_to_reserved_keywords:
+        for keyword in keywords:
+            input_string = invalid_input_string_template.format(keyword=keyword)
+            with pytest.raises(parser.ParseError, match='Could not parse the following:'):
+                print(f"input_string {repr(input_string)}")
+                parser.parseSourceCode(input_string)
 
 def test_parser_nothing_literal():
     module_node = parser.parseSourceCode('x = Nothing')
@@ -777,13 +827,12 @@ function f() -> NothingType {{
         assert isinstance(module_node, ModuleASTNode)
         assert isinstance(module_node.statements, list)
         function_definition_node = only_one(module_node.statements)
-        assert isinstance(function_definition_node, FunctionDefinitionExpressionASTNode)
+        assert isinstance(function_definition_node, FunctionDefinitionASTNode)
         assert function_definition_node.function_name == 'f'
         assert function_definition_node.function_signature == []
         function_body = function_definition_node.function_body
         assert isinstance(function_body, ScopedStatementSequenceASTNode)
         return_statement_node = only_one(function_body.statements)
-        print(f"return_statement_node {repr(return_statement_node)}") # TODO remove this
         assert isinstance(return_statement_node, ReturnStatementASTNode)
         result = only_one(return_statement_node.return_values)
         assert result == expected_result, f'''
@@ -815,7 +864,7 @@ function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> { # comment
     y: Boolean<?, 3, ?> = b
     g(x:=x, y:=y)
     return [[[1,2], [3, 4]], [[5,6], [7,8]]] # comment
-}
+} # comment
 ''',
         '''function f(a: NothingType, b: Boolean<???>) -> Integer<2,2> {}''',
         '''
@@ -832,8 +881,7 @@ dummy_var # comment
 
     # comment
 
-function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> 
-g(b:=1, a:=3, b:=123)
+function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> g(b:=1, a:=3, b:=123)
 ''',
     ]
     for input_string in input_strings:

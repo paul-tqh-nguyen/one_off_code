@@ -197,8 +197,14 @@ class AtomASTNodeType(type):
 
 class StatementASTNode(ASTNode):
     pass
-    
+
 class ExpressionASTNode(StatementASTNode):
+    pass
+
+class ArithmeticExpressionASTNode(ExpressionASTNode):
+    pass
+
+class BooleanExpressionASTNode(ExpressionASTNode):
     pass
 
 class ExpressionAtomASTNodeType(AtomASTNodeType):
@@ -282,22 +288,22 @@ class VariableASTNode(metaclass=ExpressionAtomASTNodeType):
 
 # Arithmetic Expression Node Generation
 
-class NegativeExpressionASTNode(UnaryOperationExpressionASTNode):
+class NegativeExpressionASTNode(UnaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
     pass
 
-class ExponentExpressionASTNode(BinaryOperationExpressionASTNode):
+class ExponentExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
     pass
 
-class MultiplicationExpressionASTNode(BinaryOperationExpressionASTNode):
+class MultiplicationExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
     pass
 
-class DivisionExpressionASTNode(BinaryOperationExpressionASTNode):
+class DivisionExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
     pass
 
-class AdditionExpressionASTNode(BinaryOperationExpressionASTNode):
+class AdditionExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
     pass
 
-class SubtractionExpressionASTNode(BinaryOperationExpressionASTNode):
+class SubtractionExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
     pass
 
 def parse_multiplication_or_division_expression_pe(_s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> typing.Union[MultiplicationExpressionASTNode, DivisionExpressionASTNode]:
@@ -330,16 +336,16 @@ def parse_addition_or_subtraction_expression_pe(_s: str, _loc: int, group_tokens
 
 # Boolean Expression Node Generation
 
-class NotExpressionASTNode(UnaryOperationExpressionASTNode):
+class NotExpressionASTNode(UnaryOperationExpressionASTNode, BooleanExpressionASTNode):
     pass
 
-class AndExpressionASTNode(BinaryOperationExpressionASTNode):
+class AndExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
     pass
 
-class XorExpressionASTNode(BinaryOperationExpressionASTNode):
+class XorExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
     pass
 
-class OrExpressionASTNode(BinaryOperationExpressionASTNode):
+class OrExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
     pass
 
 # Function Call Node Generation
@@ -507,7 +513,7 @@ class ScopedStatementSequenceASTNode(StatementASTNode):
 
 # Function Definition Node Generation
 
-class FunctionDefinitionExpressionASTNode(StatementASTNode):
+class FunctionDefinitionASTNode(StatementASTNode):
     
     def __init__(
             self,
@@ -522,7 +528,7 @@ class FunctionDefinitionExpressionASTNode(StatementASTNode):
         self.function_body = function_body
     
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionExpressionASTNode':
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionASTNode':
         function_name, function_signature, function_return_type, function_body = tokens.asList()
         function_signature = eager_map(tuple, function_signature)
         node_instance = cls(function_name, function_signature, function_return_type, function_body)
@@ -536,6 +542,40 @@ class FunctionDefinitionExpressionASTNode(StatementASTNode):
             self.function_signature == other.function_signature and \
             self.function_return_type == other.function_return_type and \
             self.function_body == other.function_body
+
+# For Loop Node Generation
+
+class ForLoopASTNode(StatementASTNode):
+    
+    def __init__(
+            self,
+            iterator_variable_name: str,
+            minimum: typing.Union[VariableASTNode, ArithmeticExpressionASTNode],
+            supremum: typing.Union[VariableASTNode, ArithmeticExpressionASTNode],
+            delta: typing.Union[VariableASTNode, ArithmeticExpressionASTNode],
+            body: StatementASTNode
+    ) -> None:
+        self.iterator_variable_name = iterator_variable_name
+        self.minimum = minimum
+        self.supremum = supremum
+        self.delta = delta
+        self.body = body
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ForLoopASTNode':
+        iterator_variable_name, minimum, supremum, delta, body = tokens.asList()
+        node_instance = cls(iterator_variable_name, minimum, supremum, delta, body)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            self.iterator_variable_name == other.iterator_variable_name and \
+            self.minimum == other.minimum and \
+            self.supremum == other.supremum and \
+            self.delta == other.delta and \
+            self.body == other.body
 
 # Module Node Generation
 
@@ -617,6 +657,8 @@ boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | 
 
 return_statement_pe = Forward()
 
+for_loop_keyword_pe = Suppress('for')
+
 function_definition_keyword_pe = Suppress('function')
 
 # TODO using return_statement_pe here is more general than necessary since we only need to capture the emtpy return statement
@@ -624,6 +666,7 @@ not_reserved_keyword_pe = reduce(operator.add, map(NotAny, map(Suppress, BASE_TY
      ~nothing_pe + \
      ~boolean_operation_pe + \
      ~boolean_pe + \
+     ~for_loop_keyword_pe + \
      ~function_definition_keyword_pe + \
      ~return_statement_pe
 
@@ -681,7 +724,9 @@ assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_d
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
-# Scoped Statement Sequence Parser Elements
+# Statement Parser Elements 
+
+for_loop_pe = Forward()
 
 function_definition_pe = Forward()
 
@@ -694,6 +739,8 @@ atomic_statement_pe = Optional(required_atomic_statement_pe)
 non_atomic_statement_pe = atomic_statement_pe + Suppress(';') + delimitedList(atomic_statement_pe, delim=';')
 
 statement_pe = (non_atomic_statement_pe | atomic_statement_pe).setName('statement')
+
+# Scoped Statement Sequence Parser Elements
 
 statement_sequence_pe = Optional(delimitedList(statement_pe, delim='\n').ignore(comment_pe))
 
@@ -713,9 +760,25 @@ function_definition_pe <<= (
     identifier_pe +
     function_signature_pe +
     function_return_type_pe +
-    Optional(Suppress('\n')) + 
     required_atomic_statement_pe
-).ignore(comment_pe).setParseAction(FunctionDefinitionExpressionASTNode.parse_action)
+).ignore(comment_pe).setParseAction(FunctionDefinitionASTNode.parse_action)
+
+# For Loop Parser Elements
+
+for_loop_pe <<= (
+    for_loop_keyword_pe +
+    identifier_pe +
+    Suppress(':') +
+    Group(
+        Suppress('(') +
+        arithmetic_expression_pe +
+        Suppress(',') +
+        arithmetic_expression_pe +
+        Optional(Suppress(',') + arithmetic_expression_pe) +
+        Suppress(')')
+    ) + 
+    required_atomic_statement_pe
+).ignore(comment_pe).setParseAction(ForLoopASTNode.parse_action)
 
 # Module & Misc. Parser Elements
 
