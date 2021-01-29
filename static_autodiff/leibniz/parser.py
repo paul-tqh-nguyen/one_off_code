@@ -563,7 +563,13 @@ class ForLoopASTNode(StatementASTNode):
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ForLoopASTNode':
-        iterator_variable_name, minimum, supremum, delta, body = tokens.asList()
+        iterator_variable_name, range_specification, body = tokens.asList()
+        assert len(range_specification) in (2, 3)
+        if len(range_specification) is 2:
+            minimum, supremum = range_specification
+            delta = IntegerLiteralASTNode(value=1)
+        elif len(range_specification) is 3:
+            minimum, supremum, delta = range_specification
         node_instance = cls(iterator_variable_name, minimum, supremum, delta, body)
         return node_instance
 
@@ -732,7 +738,7 @@ function_definition_pe = Forward()
 
 scoped_statement_sequence_pe = Forward()
 
-required_atomic_statement_pe = function_definition_pe | return_statement_pe | assignment_pe | scoped_statement_sequence_pe | expression_pe
+required_atomic_statement_pe = for_loop_pe | function_definition_pe | return_statement_pe | assignment_pe | scoped_statement_sequence_pe | expression_pe
 
 atomic_statement_pe = Optional(required_atomic_statement_pe)
 

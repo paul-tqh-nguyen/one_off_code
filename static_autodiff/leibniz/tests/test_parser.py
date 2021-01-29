@@ -7,6 +7,7 @@ from leibniz.parser import (
     TensorTypeASTNode,
     VectorExpressionASTNode,
     FunctionDefinitionASTNode,
+    ForLoopASTNode,
     ScopedStatementSequenceASTNode,
     ReturnStatementASTNode,
     BooleanLiteralASTNode,
@@ -842,7 +843,8 @@ expected_result: {repr(expected_result)}
 '''
 
 def test_parser_function_definition():
-    input_strings = ['function f() -> NothingType {}',
+    input_strings = [
+        'function f() -> NothingType {}',
         '''
 function f() -> NothingType {
     True
@@ -884,5 +886,64 @@ dummy_var # comment
 function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> g(b:=1, a:=3, b:=123)
 ''',
     ]
+    # TODO test that the parses are correct
     for input_string in input_strings:
         parser.parseSourceCode(input_string)
+
+def test_parser_for_loop():
+    expected_input_output_pairs = [
+        ('for x:(1,10) func(x:=1)', ForLoopASTNode(
+            body=FunctionCallExpressionASTNode(
+                arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
+                function_name='func'
+            ),
+            iterator_variable_name='x',
+            minimum=IntegerLiteralASTNode(value=1),
+            supremum=IntegerLiteralASTNode(value=10),
+            delta=IntegerLiteralASTNode(value=1))),
+        ('for x:(1,10, 2) func(x:=1)', ForLoopASTNode(
+            body=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='func'),
+            iterator_variable_name='x',
+            minimum=IntegerLiteralASTNode(value=1),
+            supremum=IntegerLiteralASTNode(value=10),
+            delta=IntegerLiteralASTNode(value=2))),
+        ('''
+for x:(1+0,10) {
+    Nothing
+}
+''',
+         ForLoopASTNode(
+             body=ScopedStatementSequenceASTNode(statements=[NothingTypeLiteralASTNode()]),
+             iterator_variable_name='x',
+             minimum=AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=0)),
+             supremum=IntegerLiteralASTNode(value=10),
+             delta=IntegerLiteralASTNode(value=1))
+        ),
+        ('''
+for x:(1,10, 2) {
+    True or True
+    return
+}
+''',
+         ForLoopASTNode(
+             body=ScopedStatementSequenceASTNode(statements=[
+                 OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
+                 ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+             ]),
+             iterator_variable_name='x',
+             minimum=IntegerLiteralASTNode(value=1),
+             supremum=IntegerLiteralASTNode(value=10),
+             delta=IntegerLiteralASTNode(value=2)
+         )),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        module_node = parser.parseSourceCode(input_string)
+        assert isinstance(module_node, ModuleASTNode)
+        assert isinstance(module_node.statements, list)
+        result = only_one(module_node.statements)
+        assert isinstance(result, ForLoopASTNode)
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
