@@ -1009,6 +1009,14 @@ while not False {
          WhileLoopASTNode(
              condition=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=False)),
              body=ScopedStatementSequenceASTNode(statements=[NothingTypeLiteralASTNode()]))),
+        ('while False for x:(1,10, 2) 1', WhileLoopASTNode(
+            condition=BooleanLiteralASTNode(value=False),
+            body=ForLoopASTNode(
+                body=IntegerLiteralASTNode(value=1),
+                iterator_variable_name='x',
+                minimum=IntegerLiteralASTNode(value=1),
+                supremum=IntegerLiteralASTNode(value=10),
+                delta=IntegerLiteralASTNode(value=2)))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(input_string)
