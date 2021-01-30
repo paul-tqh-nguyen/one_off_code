@@ -608,6 +608,40 @@ class WhileLoopASTNode(StatementASTNode):
             self.condition == other.condition and \
             self.body == other.body
 
+# Conditional Node Generation
+
+class ConditionalASTNode(StatementASTNode):
+    
+    def __init__(
+            self,
+            condition: typing.Union[VariableASTNode, BooleanExpressionASTNode],
+            then_body: StatementASTNode,
+            else_body: StatementASTNode,
+    ) -> None:
+        self.condition = condition
+        self.then_body = then_body
+        self.else_body = else_body
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ConditionalASTNode':
+        tokens = tokens.asList()
+        assert len(tokens) in (2,3)
+        if len(tokens) is 2:
+            condition, then_body = tokens
+            else_body = None
+        elif len(tokens) is 3:
+            condition, then_body, else_body = tokens
+        node_instance = cls(condition, then_body, else_body)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            self.condition == other.condition and \
+            self.then_body == other.then_body and \
+            self.else_body == other.else_body
+
 # Module Node Generation
 
 class ModuleASTNode(ASTNode):
@@ -688,6 +722,10 @@ boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | 
 
 return_statement_pe = Forward()
 
+if_keyword_pe = Suppress('if')
+
+else_keyword_pe = Suppress('else')
+
 while_loop_keyword_pe = Suppress('while')
 
 for_loop_keyword_pe = Suppress('for')
@@ -701,6 +739,8 @@ not_reserved_keyword_pe = reduce(operator.add, map(NotAny, map(Suppress, BASE_TY
      ~boolean_pe + \
      ~while_loop_keyword_pe + \
      ~for_loop_keyword_pe + \
+     ~if_keyword_pe + \
+     ~else_keyword_pe + \
      ~function_definition_keyword_pe + \
      ~return_statement_pe
 
@@ -758,17 +798,15 @@ assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_d
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
-# Statement Parser Elements 
+# Statement Parser Elements
 
+conditional_pe = Forward()
 while_loop_pe = Forward()
-
 for_loop_pe = Forward()
-
 function_definition_pe = Forward()
-
 scoped_statement_sequence_pe = Forward()
 
-required_atomic_statement_pe = while_loop_pe | for_loop_pe | function_definition_pe | return_statement_pe | assignment_pe | scoped_statement_sequence_pe | expression_pe
+required_atomic_statement_pe = conditional_pe | while_loop_pe | for_loop_pe | function_definition_pe | return_statement_pe | assignment_pe | scoped_statement_sequence_pe | expression_pe
 
 atomic_statement_pe = Optional(required_atomic_statement_pe)
 
@@ -823,6 +861,15 @@ while_loop_pe <<= (
     boolean_expression_pe +
     required_atomic_statement_pe
 ).ignore(comment_pe).setParseAction(WhileLoopASTNode.parse_action)
+
+# Conditional Parser Elements
+
+conditional_pe <<= (
+    if_keyword_pe +
+    boolean_expression_pe +
+    required_atomic_statement_pe +
+    Optional(else_keyword_pe + required_atomic_statement_pe)
+).ignore(comment_pe).setParseAction(ConditionalASTNode.parse_action)
 
 # Module & Misc. Parser Elements
 

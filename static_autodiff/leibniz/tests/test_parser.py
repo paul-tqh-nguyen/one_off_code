@@ -9,6 +9,7 @@ from leibniz.parser import (
     FunctionDefinitionASTNode,
     ForLoopASTNode,
     WhileLoopASTNode,
+    ConditionalASTNode,
     ScopedStatementSequenceASTNode,
     ReturnStatementASTNode,
     BooleanLiteralASTNode,
@@ -100,6 +101,9 @@ x: Integer
         'x: for = 1',
         'for = 1',
         'while 0 {return}',
+        'if 0 {return}',
+        'if 0 {return} then 123',
+        'if 0 {return} then if',
     ]
     for input_string in invalid_input_strings:
         with pytest.raises(parser.ParseError, match='Could not parse the following:'):
@@ -133,7 +137,9 @@ def test_parser_invalid_keyword_use():
     syntactic_contruct_keywords = [
         'function',
         'for',
-        'while'
+        'while',
+        'if',
+        'else'
     ]
     invalid_input_string_template_to_reserved_keywords = [
         ('{keyword} = 1', types + literals + operators + syntactic_contruct_keywords),
@@ -147,7 +153,6 @@ def test_parser_invalid_keyword_use():
         for keyword in keywords:
             input_string = invalid_input_string_template.format(keyword=keyword)
             with pytest.raises(parser.ParseError, match='Could not parse the following:'):
-                print(f"input_string {repr(input_string)}")
                 parser.parseSourceCode(input_string)
 
 def test_parser_nothing_literal():
@@ -1017,6 +1022,18 @@ while not False {
                 minimum=IntegerLiteralASTNode(value=1),
                 supremum=IntegerLiteralASTNode(value=10),
                 delta=IntegerLiteralASTNode(value=2)))),
+        ('while False for x:(1,10, 2) if True 1 else 2', WhileLoopASTNode(
+            condition=BooleanLiteralASTNode(value=False),
+            body=ForLoopASTNode(
+                body=ConditionalASTNode(
+                    condition=BooleanLiteralASTNode(value=True),
+                    then_body=IntegerLiteralASTNode(value=1),
+                    else_body=IntegerLiteralASTNode(value=2)
+                ),
+                iterator_variable_name='x',
+                minimum=IntegerLiteralASTNode(value=1),
+                supremum=IntegerLiteralASTNode(value=10),
+                delta=IntegerLiteralASTNode(value=2)))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(input_string)
@@ -1024,6 +1041,66 @@ while not False {
         assert isinstance(module_node.statements, list)
         result = only_one(module_node.statements)
         assert isinstance(result, WhileLoopASTNode)
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_conditional():
+    expected_input_output_pairs = [
+        ('if False while True func(x:=1)', ConditionalASTNode(
+            condition=BooleanLiteralASTNode(value=False),
+            then_body=WhileLoopASTNode(
+                condition=BooleanLiteralASTNode(value=True),
+                body=FunctionCallExpressionASTNode(
+                    arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
+                    function_name='func')),
+            else_body=None)),
+        ('if True xor False while False and True return 3 else 5', ConditionalASTNode(
+            condition=XorExpressionASTNode(
+                 left_arg=BooleanLiteralASTNode(value=True),
+                 right_arg=BooleanLiteralASTNode(value=False)
+             ),
+            then_body=WhileLoopASTNode(
+                condition=AndExpressionASTNode(
+                    left_arg=BooleanLiteralASTNode(value=False),
+                    right_arg=BooleanLiteralASTNode(value=True)
+                ),
+                body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)])),
+            else_body=IntegerLiteralASTNode(value=5))),
+        ('''
+if False {
+    while not False {
+        if True 1 else { f(x:=2) }
+    }
+}
+''',
+         ConditionalASTNode(
+             condition=BooleanLiteralASTNode(value=False),
+             then_body=ScopedStatementSequenceASTNode(statements=[
+                 WhileLoopASTNode(
+                     condition=NotExpressionASTNode(arg=BooleanLiteralASTNode(value=False)),
+                     body=ScopedStatementSequenceASTNode(statements=[
+                         ConditionalASTNode(
+                             condition=BooleanLiteralASTNode(value=True),
+                             then_body=IntegerLiteralASTNode(value=1),
+                             else_body=ScopedStatementSequenceASTNode(statements=[
+                                 FunctionCallExpressionASTNode(
+                                     arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=2))],
+                                     function_name='f')
+                             ])
+                         )
+                     ])
+                 )]),
+             else_body=None)),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        module_node = parser.parseSourceCode(input_string)
+        assert isinstance(module_node, ModuleASTNode)
+        assert isinstance(module_node.statements, list)
+        result = only_one(module_node.statements)
+        assert isinstance(result, ConditionalASTNode)
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
