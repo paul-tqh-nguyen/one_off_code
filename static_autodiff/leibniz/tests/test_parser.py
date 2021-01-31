@@ -319,7 +319,7 @@ def test_parser_atomic_identifier():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert assignment_node.value == IntegerLiteralASTNode(value=1) # TODO change this "==" to is_equivalent
+        assert assignment_node.value == IntegerLiteralASTNode(value=1)
         assert assignment_node.identifier_type.base_type_name is None
         assert assignment_node.identifier_type.shape is None
         identifier_node = assignment_node.identifier
