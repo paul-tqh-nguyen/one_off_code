@@ -8,7 +8,6 @@
 # Imports #
 ###########
 
-import typing_extensions
 import inspect
 import pyparsing
 from pyparsing import pyparsing_common as ppc
