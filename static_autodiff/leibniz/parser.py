@@ -90,6 +90,9 @@ from .ast_node import (
     WhileLoopASTNode,
     ConditionalASTNode,
     ModuleASTNode,
+    parse_multiplication_or_division_expression_pe,
+    parse_addition_or_subtraction_expression_pe,
+    parse_comparison_expression_pe
 )
 from .misc_utilities import *
 
