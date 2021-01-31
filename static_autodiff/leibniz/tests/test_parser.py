@@ -42,6 +42,7 @@ from leibniz.parser import (
 from leibniz.misc_utilities import *
 
 # TODO verify that the above imports are used
+# TODO make sure these imports are ordered in some way
 
 def test_parser_invalid_misc():
     invalid_input_strings = [
