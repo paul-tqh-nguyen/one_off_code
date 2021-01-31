@@ -182,7 +182,7 @@ def child_classes(obj) -> Tuple[type, ...]:
     cls = obj if inspect.isclass(obj) else type(obj)
     def _child_classes(cls):
         for subclass in cls.__subclasses__():
-            yield from get_subclasses(subclass)
+            yield from _child_classes(subclass)
             yield subclass
     return tuple(_child_classes(cls))
 
