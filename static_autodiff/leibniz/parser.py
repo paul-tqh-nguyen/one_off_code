@@ -511,6 +511,7 @@ class AssignmentASTNode(StatementASTNode):
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'AssignmentASTNode':
+        print(f"tokens {repr(tokens)}")
         assert len(tokens) is 3
         node_instance = cls(tokens[0], tokens[1], tokens[2])
         return node_instance
