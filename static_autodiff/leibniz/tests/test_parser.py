@@ -305,6 +305,8 @@ def test_parser_atomic_identifier():
         'VAR',
         'Var',
         'vAr213feEF',
+        'vAr21\
+3feEF',
     ]
     for input_string in valid_identifiers:
         module_node = parser.parseSourceCode(input_string+' = 1')
