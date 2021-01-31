@@ -336,11 +336,7 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
-            all(
-                self_arg_binding == other_arg_binding
-                for self_arg_binding, other_arg_binding
-                in zip(self.arg_bindings, other.arg_bindings)
-            )
+            self.arg_bindings == other.arg_bindings
 
 # Vector Node Generation
 
