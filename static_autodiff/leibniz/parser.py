@@ -66,15 +66,6 @@ pyparsing.ParserElement.enablePackrat()
 # AST Functionality #
 #####################
 
-def _trace_parse(name): # TODO remove this
-    def func(s: str, loc: int, tokens: pyparsing.ParseResults):
-        print()
-        print(f"name {repr(name)}")
-        print(f"s {repr(s)}")
-        print(f"loc {repr(loc)}")
-        print(f"tokens {repr(tokens)}")
-    return func
-
 class ASTNode(ABC):
 
     @abstractmethod
@@ -678,6 +669,15 @@ class ModuleASTNode(ASTNode):
 ###########
 # Grammar #
 ###########
+
+def _trace_parse(name): # TODO remove this
+    def func(s: str, loc: int, tokens: pyparsing.ParseResults):
+        print()
+        print(f"name {repr(name)}")
+        print(f"s {repr(s)}")
+        print(f"loc {repr(loc)}")
+        print(f"tokens {repr(tokens)}")
+    return func
 
 # Convention: The "_pe" suffix indicates an instance of pyparsing.ParserElement
 
