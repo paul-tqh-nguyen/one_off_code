@@ -176,6 +176,11 @@ def parent_classes(obj) -> Tuple[type, ...]:
     cls = obj if inspect.isclass(obj) else type(obj)
     return inspect.getmro(cls)
 
+def child_classes(cls):
+    for subclass in cls.__subclasses__():
+        yield from get_subclasses(subclass)
+        yield subclass
+
 from typing import Iterable
 def p1(iterable: Iterable) -> None:
     for e in iterable:
