@@ -1022,7 +1022,6 @@ for ast_node_class in child_classes(ASTNode):
         if issubclass(ast_node_class, ComparisonExpressionASTNode):
             assert return_annotation == 'ComparisonExpressionASTNode'
         elif issubclass(ast_node_class, ArithmeticExpressionASTNode) and issubclass(ast_node_class, (UnaryOperationExpressionASTNode, BinaryOperationExpressionASTNode)):
-            print(f"return_annotation {repr(return_annotation)}")
             assert return_annotation in ('UnaryOperationExpressionASTNode', 'BinaryOperationExpressionASTNode')
         else:
             assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
