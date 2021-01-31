@@ -125,7 +125,7 @@ def _trace_parse(name): # TODO remove this
         print(f"loc {repr(loc)}")
         print(f"tokens {repr(tokens)}")
     return func
-    
+
 class ASTNode(ABC):
 
     @abstractmethod
@@ -134,7 +134,7 @@ class ASTNode(ABC):
     
     @classmethod
     @abstractmethod
-    def parse_action(cls, s: str, loc: int, tokens: pyparsing.ParseResults):
+    def parse_action(cls, s: str, loc: int, tokens: pyparsing.ParseResults) -> 'ASTNode':
         raise NotImplementedError
 
     def __repr__(self):
