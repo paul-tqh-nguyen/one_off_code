@@ -1018,7 +1018,6 @@ def sanity_check_concrete_ast_node_subclass_method_annotations() -> None:
         parse_action_method = ast_node_class.parse_action
         if not getattr(parse_action_method, '__isabstractmethod__', False):
             return_annotation = inspect.signature(parse_action_method).return_annotation
-            print(f"return_annotation {repr(return_annotation)}")
             if issubclass(ast_node_class, ComparisonExpressionASTNode):
                 assert return_annotation == 'ComparisonExpressionASTNode'
             elif issubclass(ast_node_class, (ArithmeticExpressionASTNode, BooleanExpressionASTNode)):
