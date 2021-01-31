@@ -1015,7 +1015,8 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 
 sanity_check_base_types()
 for ast_node_class in child_classes(ASTNode):
-    ast_node_class.parse_action
+    print(f"ast_node_class.parse_action {repr(ast_node_class.parse_action)}")
+assert False
 
 ##########
 # Driver #
