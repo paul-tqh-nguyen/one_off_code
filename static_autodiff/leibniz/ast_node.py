@@ -9,6 +9,7 @@
 ###########
 
 from abc import ABC, abstractmethod
+import pyparsing
 
 from .misc_utilities import *
 
