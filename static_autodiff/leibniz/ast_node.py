@@ -13,6 +13,14 @@ import typing_extensions
 from abc import ABC, abstractmethod
 import pyparsing
 
+from .parser_utilities import (
+    BASE_TYPES,
+    BaseTypeName,
+    sanity_check_base_types,
+    TensorTypeParserElementBaseTypeTracker,
+    AtomicLiteralParserElementBaseTypeTracker,
+    LiteralASTNodeClassBaseTypeTracker
+)
 from .misc_utilities import *
 
 # TODO make sure imports are used
