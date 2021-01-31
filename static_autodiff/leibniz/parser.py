@@ -142,7 +142,6 @@ class ASTNode(ABC):
         attributes_string = ', '.join(f'{k}={repr(self.__dict__[k])}' for k in sorted(self.__dict__.keys()))
         return f'{self.__class__.__name__}({attributes_string})'
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: 'ASTNode') -> bool:
         '''Determines syntactic equivalence, not semantic equivalence or canonicality.'''
         raise NotImplementedError
@@ -154,7 +153,7 @@ class AtomASTNodeType(type):
     base_ast_node_class = ASTNode
     
     def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict) -> type:
-        method_names = ('__init__', 'parse_action', '__eq__') # TODO replace '__eq__' with 'is_equivalent'
+        method_names = ('__init__', 'parse_action', '__eq__')
         for method_name in method_names:
             assert method_name not in attributes.keys(), f'{method_name} already defined for class {class_name}'
 
@@ -181,7 +180,7 @@ class AtomASTNodeType(type):
             node_instance: cls = cls(value)
             return node_instance
         
-        def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' with 'is_equivalent'
+        def __eq__(self, other: ASTNode) -> bool:
             other_value = getattr(other, value_attribute_name, BOGUS_TOKEN)
             same_type = type(self) is type(other)
             
@@ -192,7 +191,7 @@ class AtomASTNodeType(type):
         
         updated_attributes['__init__'] = __init__
         updated_attributes['parse_action'] = parse_action
-        updated_attributes['__eq__'] = __eq__ # TODO replace '__eq__' with 'is_equivalent'
+        updated_attributes['__eq__'] = __eq__
         
         result_class = type(class_name, bases+(meta.base_ast_node_class,), updated_attributes)
         assert all(hasattr(result_class, method_name) for method_name in method_names)
