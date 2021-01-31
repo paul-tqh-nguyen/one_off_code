@@ -231,7 +231,7 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
         self.arg: ExpressionASTNode = arg
 
     @classmethod
-    def parse_action(cls, _s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> 'BinaryOperationExpressionASTNode':
+    def parse_action(cls, _s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> 'UnaryOperationExpressionASTNode':
         tokens = only_one(group_tokens)
         token = only_one(tokens)
         node_instance: cls = cls(token)
