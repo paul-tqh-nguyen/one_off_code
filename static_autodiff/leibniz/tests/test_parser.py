@@ -177,7 +177,6 @@ def test_parser_invalid_keyword_use():
     for invalid_input_string_template, keywords in invalid_input_string_template_to_reserved_keywords:
         for keyword in keywords:
             input_string = invalid_input_string_template.format(keyword=keyword)
-
             with pytest.raises(parser.ParseError, match='Could not parse the following:'):
                 parser.parseSourceCode(input_string)
 
