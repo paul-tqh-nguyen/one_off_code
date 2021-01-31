@@ -631,11 +631,7 @@ class ModuleASTNode(ASTNode):
         '''Order of statements matters here since this method determines syntactic equivalence.'''
         return type(self) is type(other) and \
             len(self.statements) == len(other.statements) and \
-            all(
-                self_statement == other_statement
-                for self_statement, other_statement
-                in zip(self.statements, other.statements)
-            )
+            self.statements == other.statements
 
 ##########
 # Driver #
