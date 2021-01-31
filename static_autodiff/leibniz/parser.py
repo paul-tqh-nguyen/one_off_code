@@ -897,6 +897,8 @@ assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_d
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 newline_escapes = Suppress('\\\n')
 
+ignorable_pe = comment_pe | newline_escapes
+
 # Return Statement Parser Elements
 
 return_statement_pe = (return_keyword_pe + Optional(delimitedList(expression_pe))).setParseAction(ReturnStatementASTNode.parse_action).setName('return statetment')
