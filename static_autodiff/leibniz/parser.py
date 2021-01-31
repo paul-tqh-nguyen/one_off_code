@@ -892,7 +892,7 @@ variable_type_declaration_pe = Optional(Suppress(':') + tensor_type_pe).setParse
 assignment_value_declaration_pe = Suppress('=') + expression_pe
 assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_declaration_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
 
-# Comment Parser Elements
+# Ignorable Parser Elements
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
