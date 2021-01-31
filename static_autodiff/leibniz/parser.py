@@ -1008,11 +1008,15 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 #     'parseSourceCode'
 # ]
 
+###################
+# Sanity Checking #
+###################
+
+sanity_check_base_types()
+
 ##########
 # Driver #
 ##########
-
-sanity_check_base_types()
 
 if __name__ == '__main__':
     print("TODO add something here")
