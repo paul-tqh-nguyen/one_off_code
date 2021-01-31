@@ -1014,20 +1014,20 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 ###################
 
 def sanity_check_parse_action_method_return_annotations() -> None:
-for ast_node_class in child_classes(ASTNode):
-    parse_action_method = ast_node_class.parse_action
-    if not getattr(parse_action_method, '__isabstractmethod__', False):
-        return_annotation = inspect.signature(parse_action_method).return_annotation
-        print(f"return_annotation {repr(return_annotation)}")
-        if issubclass(ast_node_class, ComparisonExpressionASTNode):
-            assert return_annotation == 'ComparisonExpressionASTNode'
-        elif issubclass(ast_node_class, (ArithmeticExpressionASTNode, BooleanExpressionASTNode)):
-            if issubclass(ast_node_class, UnaryOperationExpressionASTNode):
-                assert return_annotation == 'UnaryOperationExpressionASTNode'
-            elif issubclass(ast_node_class, BinaryOperationExpressionASTNode):
-                assert return_annotation == 'BinaryOperationExpressionASTNode'
-        else:
-            assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
+    for ast_node_class in child_classes(ASTNode):
+        parse_action_method = ast_node_class.parse_action
+        if not getattr(parse_action_method, '__isabstractmethod__', False):
+            return_annotation = inspect.signature(parse_action_method).return_annotation
+            print(f"return_annotation {repr(return_annotation)}")
+            if issubclass(ast_node_class, ComparisonExpressionASTNode):
+                assert return_annotation == 'ComparisonExpressionASTNode'
+            elif issubclass(ast_node_class, (ArithmeticExpressionASTNode, BooleanExpressionASTNode)):
+                if issubclass(ast_node_class, UnaryOperationExpressionASTNode):
+                    assert return_annotation == 'UnaryOperationExpressionASTNode'
+                elif issubclass(ast_node_class, BinaryOperationExpressionASTNode):
+                    assert return_annotation == 'BinaryOperationExpressionASTNode'
+            else:
+                assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
 
 sanity_check_base_types()
 sanity_check_parse_action_method_return_annotations()
