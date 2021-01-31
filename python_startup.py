@@ -191,7 +191,7 @@ def child_classes(obj) -> Tuple[type, ...]:
         for subclass in cls.__subclasses__():
             yield from get_subclasses(subclass)
             yield subclass
-    return tuple(cls)
+    return tuple(_child_classes(cls))
 
 from typing import Iterable
 def p1(iterable: Iterable) -> None:
