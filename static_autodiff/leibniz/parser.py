@@ -511,8 +511,10 @@ class AssignmentASTNode(StatementASTNode):
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'AssignmentASTNode':
-        print(f"tokens {repr(tokens)}")
-        assert len(tokens) is 3
+        assert len(tokens) is 2
+        variable_declarations = eager_map(pyparsing.ParseResults.asList, tokens[0])
+        value = tokens[1]
+        
         node_instance = cls(tokens[0], tokens[1], tokens[2])
         return node_instance
 
