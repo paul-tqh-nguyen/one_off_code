@@ -152,7 +152,7 @@ class AtomASTNodeType(type):
 
     base_ast_node_class = ASTNode
     
-    def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict):
+    def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict) -> type:
         method_names = ('__init__', 'parse_action', '__eq__') # TODO replace '__eq__' with 'is_equivalent'
         for method_name in method_names:
             assert method_name not in attributes.keys(), f'{method_name} already defined for class {class_name}'
