@@ -51,7 +51,7 @@ from .misc_utilities import *
 
 BOGUS_TOKEN = object()
 
-# pyparsing.ParserElement.enablePackrat() # TODO consider enabling this
+pyparsing.ParserElement.enablePackrat() # TODO consider enabling this
 
 #############################
 # Sanity Checking Utilities #
