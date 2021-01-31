@@ -104,8 +104,6 @@ from .misc_utilities import *
 # Globals #
 ###########
 
-BOGUS_TOKEN = object()
-
 pyparsing.ParserElement.enablePackrat()
 
 ###########
