@@ -1015,6 +1015,7 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 
 def sanity_check_concrete_ast_node_subclass_method_annotations() -> None:
     for ast_node_class in child_classes(ASTNode):
+
         # __init__ method
         init_method = ast_node_class.__init__
         if not getattr(init_method, '__isabstractmethod__', False):
