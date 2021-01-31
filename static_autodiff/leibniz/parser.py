@@ -222,7 +222,7 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
         node_instance: cls = reduce(cls, tokens)
         return node_instance
     
-    def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' and '==' with 'is_equivalent'
+    def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.left_arg == other.left_arg and \
             self.right_arg == other.right_arg 
@@ -240,7 +240,7 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
         node_instance: cls = cls(token)
         return node_instance
     
-    def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' and '==' with 'is_equivalent'
+    def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and self.arg == other.arg
 
 class ArithmeticExpressionASTNode(ExpressionASTNode):
