@@ -354,11 +354,7 @@ class VectorExpressionASTNode(ExpressionASTNode):
     
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
-            all(
-                self_value == other_value
-                for self_value, other_value
-                in zip(self.values, other.values)
-            )
+            self.values == other.values
 
 # Tensor Type Node Generation
 
