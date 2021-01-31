@@ -1000,7 +1000,7 @@ module_pe = statement_sequence_pe.copy().setParseAction(ModuleASTNode.parse_acti
 
 class ParseError(Exception):
 
-    def __init__(self, original_text, problematic_text, problem_column_number) -> None:
+    def __init__(self, original_text: str, problematic_text: str, problem_column_number: int) -> None:
         self.original_text = original_text
         self.problematic_text = problematic_text
         self.problem_column_number = problem_column_number
