@@ -233,6 +233,8 @@ def test_parser_atomic_integer():
         ('123', 123),
         ('0', 0),
         ('0000', 0),
+        ('''00\
+00''', 0),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
