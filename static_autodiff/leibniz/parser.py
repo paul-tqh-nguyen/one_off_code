@@ -11,6 +11,7 @@
 import typing
 import typing_extensions
 import weakref
+import inspect
 import pyparsing
 from pyparsing import pyparsing_common as ppc
 from pyparsing import (
