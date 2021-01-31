@@ -676,12 +676,11 @@ def test_parser_assignment():
         ('x: Integer = 1', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))),
         ('x: Integer<> = 1', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))),
         ('x: Integer<2,3,4> = 1', AssignmentASTNode(
-            identifier=VariableASTNode(name='x'),
-            identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[
+            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[
                 IntegerLiteralASTNode(value=2),
                 IntegerLiteralASTNode(value=3),
                 IntegerLiteralASTNode(value=4),
-            ]),
+            ]))]
             value=IntegerLiteralASTNode(value=1)
         )),
         ('x: Float<?> = value', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], identifier_type=TensorTypeASTNode(base_type_name='Float', shape=[None]), value=VariableASTNode(name='value'))),
