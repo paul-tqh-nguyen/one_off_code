@@ -693,7 +693,7 @@ def test_parser_assignment():
             value=VariableASTNode(name='value')
         )),
         ('x: Float<??\
-?> = value', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], identifier_type=TensorTypeASTNode(base_type_name='Float', shape=None), value=VariableASTNode(name='value'))),
+?> = value', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=None))], value=VariableASTNode(name='value'))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(input_string)
