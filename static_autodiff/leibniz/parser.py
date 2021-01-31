@@ -1013,7 +1013,7 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 # Sanity Checking Utilities #
 #############################
 
-def sanity_check_parse_action_method_return_annotations() -> None:
+def sanity_check_concrete_ast_node_subclass_method_annotations() -> None:
     for ast_node_class in child_classes(ASTNode):
         parse_action_method = ast_node_class.parse_action
         if not getattr(parse_action_method, '__isabstractmethod__', False):
@@ -1030,7 +1030,7 @@ def sanity_check_parse_action_method_return_annotations() -> None:
                 assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
 
 sanity_check_base_types()
-sanity_check_parse_action_method_return_annotations()
+sanity_check_concrete_ast_node_subclass_method_annotations()
 
 ##########
 # Driver #
