@@ -631,6 +631,10 @@ def test_parser_comparison_expression():
              left_arg=LessThanExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2))),
              right_arg=NotEqualToExpressionASTNode(left_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)), right_arg=NegativeExpressionASTNode(VariableASTNode(name='y'))))
         ),
+        ('1^3 == 3*\
+*-2', EqualToExpressionASTNode(
+            left_arg=ExponentExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=3)),
+            right_arg=ExponentExpressionASTNode(left_arg=IntegerLiteralASTNode(value=3), right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2))))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
