@@ -43,7 +43,8 @@ import operator
 
 from .misc_utilities import *
 
-# TODO make usure imports are used
+# TODO make sure imports are used
+# TODO make sure these imports are ordered in some way
 
 ###########
 # Globals #
@@ -65,7 +66,7 @@ class BaseTypeTrackerType(type):
     
     instantiated_base_type_tracker_classes: typing.List[weakref.ref] = []
     
-    def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict):
+    def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict) -> type:
         
         updated_attributes = dict(attributes)
         assert 'tracked_type' in updated_attributes
