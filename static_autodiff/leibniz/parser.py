@@ -1014,6 +1014,7 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 ###################
 
 sanity_check_base_types()
+
 for ast_node_class in child_classes(ASTNode):
     parse_action_method = ast_node_class.parse_action
     if not parse_action_method.__isabstractmethod__:
