@@ -177,6 +177,11 @@ def parent_classes(obj) -> Tuple[type, ...]:
     return inspect.getmro(cls)
 
 def child_classes(cls):
+    def _child_classes(cls):
+        for subclass in cls.__subclasses__():
+            yield from get_subclasses(subclass)
+            yield subclass
+
     for subclass in cls.__subclasses__():
         yield from get_subclasses(subclass)
         yield subclass
