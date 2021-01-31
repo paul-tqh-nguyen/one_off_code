@@ -42,6 +42,7 @@ from collections import defaultdict
 import operator
 
 from parser_utilities import (
+    BASE_TYPES
 )
 from .misc_utilities import *
 
