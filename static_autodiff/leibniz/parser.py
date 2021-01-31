@@ -137,7 +137,7 @@ class ASTNode(ABC):
     def parse_action(cls, s: str, loc: int, tokens: pyparsing.ParseResults) -> 'ASTNode':
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         attributes_string = ', '.join(f'{k}={repr(self.__dict__[k])}' for k in sorted(self.__dict__.keys()))
         return f'{self.__class__.__name__}({attributes_string})'
 
