@@ -3,6 +3,7 @@ import pytest
 
 from leibniz import parser
 from leibniz.parser import (
+    PrintStatementASTNode,
     ComparisonExpressionASTNode,
     ExpressionASTNode,
     TensorTypeASTNode,
@@ -51,7 +52,14 @@ init()
 x: Integer
 
 ''',
+        'print(return 3)',
+        'print(if True 1 else 2)',
+        'print(Boolean)',
+        'print({1;2;3})',
         'x = {}',
+        'x = print()',
+        'x = print(1, 2, 3)',
+        'x = print(1, "2", 3)',
         'x = {function}',
         'x = {Nothing}',
         'x = {Integer}',
@@ -92,6 +100,7 @@ x: Integer
         'return = 1',
         'True(x:=1)',
         'False(x:=1)',
+        'print(x:=1)',
         'not(x:=1)',
         'and(x:=1)',
         'xor(x:=1)',
@@ -110,6 +119,7 @@ x: Integer
         'while 0 {return}',
         'if 0 {return}',
         'if 0 {return} then 123',
+        'if print() {return} then 123',
         'if 0 {return} then if',
     ]
     for input_string in invalid_input_strings:
@@ -129,6 +139,7 @@ def test_parser_invalid_keyword_use():
         'False',
     ]
     operators = [
+        'print',
         'not',
         'and',
         'xor',
@@ -155,6 +166,7 @@ def test_parser_invalid_keyword_use():
         'else'
     ]
     invalid_input_string_template_to_reserved_keywords = [
+        ('print({keyword})', types + literals + operators + syntactic_contruct_keywords),
         ('{keyword} = 1', types + literals + operators + syntactic_contruct_keywords),
         ('{keyword}(x:=1)', types + literals + operators + syntactic_contruct_keywords),
         ('f({keyword}:=1)', types + literals + operators + syntactic_contruct_keywords),
@@ -165,6 +177,7 @@ def test_parser_invalid_keyword_use():
     for invalid_input_string_template, keywords in invalid_input_string_template_to_reserved_keywords:
         for keyword in keywords:
             input_string = invalid_input_string_template.format(keyword=keyword)
+            print(f"input_string {repr(input_string)}")
             with pytest.raises(parser.ParseError, match='Could not parse the following:'):
                 parser.parseSourceCode(input_string)
 
@@ -1153,6 +1166,40 @@ if False {
         assert isinstance(module_node.statements, list)
         result = only_one(module_node.statements)
         assert isinstance(result, ConditionalASTNode)
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_print_statement():
+    expected_input_output_pairs = [
+        ('print()', PrintStatementASTNode(values_to_print=[])),
+        ('''print("1
+2
+3")''', PrintStatementASTNode(values_to_print=['''1
+2
+3'''])),
+        ('print("1", 2, "3")', PrintStatementASTNode(values_to_print=['1', IntegerLiteralASTNode(value=2), '3'])),
+        ('print("1", -2, "3")', PrintStatementASTNode(values_to_print=['1', NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)), '3'])),
+        ('print("1", f(a:=1))', PrintStatementASTNode(values_to_print=[
+            '1',
+            FunctionCallExpressionASTNode(
+                arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=1))],
+                function_name='f')
+        ])),
+        ('print(True, False xor True, 3)', PrintStatementASTNode(values_to_print=[
+            BooleanLiteralASTNode(value=True),
+            XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
+            IntegerLiteralASTNode(value=3)
+        ])),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        module_node = parser.parseSourceCode(input_string)
+        assert isinstance(module_node, ModuleASTNode)
+        assert isinstance(module_node.statements, list)
+        result = only_one(module_node.statements)
+        assert isinstance(result, PrintStatementASTNode)
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}

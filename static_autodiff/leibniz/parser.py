@@ -24,6 +24,7 @@ from pyparsing import (
     Regex,
     ZeroOrMore,
     Suppress,
+    QuotedString,
     Group,
     FollowedBy,
     OneOrMore,
@@ -551,6 +552,25 @@ class ReturnStatementASTNode(StatementASTNode):
                 in zip(self.return_values, other.return_values)
             )
 
+# Print Statement Node Generation
+
+class PrintStatementASTNode(StatementASTNode):
+    
+    def __init__(self, values_to_print: typing.List[typing.Union[str, ExpressionASTNode]]) -> None:
+        self.values_to_print = values_to_print
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'PrintStatementASTNode':
+        values_to_print = tokens.asList()
+        node_instance = cls(values_to_print)
+        return node_instance
+
+    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    def __eq__(self, other: ASTNode) -> bool:
+        # TODO make the below use is_equivalent instead of "=="
+        return type(self) is type(other) and \
+            self.values_to_print == other.values_to_print
+
 # Scoped Statement Sequence Node Generation
 
 class ScopedStatementSequenceASTNode(StatementASTNode):
@@ -790,7 +810,9 @@ comparator_pe = greater_than_or_equal_to_comparator_keyword_pe | greater_than_co
 
 # identifiers are not variables as identifiers can also be used as function names. Function names are not variables since functions are not first class citizens.
 
-return_statement_pe = Forward()
+print_keyword_pe = Suppress('print')
+
+return_keyword_pe = Suppress('return')
 
 if_keyword_pe = Suppress('if')
 
@@ -802,19 +824,19 @@ for_loop_keyword_pe = Suppress('for')
 
 function_definition_keyword_pe = Suppress('function')
 
-# TODO using return_statement_pe here is more general than necessary since we only need to capture the emtpy return statement
-not_reserved_keyword_pe = reduce(operator.add, map(NotAny, map(Suppress, BASE_TYPES))) + \
-    ~comparator_pe + \
-    ~nothing_pe + \
-    ~boolean_operation_pe + \
-    ~boolean_pe + \
-    ~while_loop_keyword_pe + \
-    ~for_loop_keyword_pe + \
-    ~if_keyword_pe + \
-    ~else_keyword_pe + \
-    ~function_definition_keyword_pe + \
-    ~return_statement_pe
-
+not_reserved_keyword_pe = reduce(operator.add, map(NotAny, map(Suppress, BASE_TYPES))) + (
+    ~comparator_pe +
+    ~nothing_pe +
+    ~boolean_operation_pe +
+    ~boolean_pe +
+    ~print_keyword_pe +
+    ~while_loop_keyword_pe +
+    ~for_loop_keyword_pe +
+    ~if_keyword_pe +
+    ~else_keyword_pe +
+    ~function_definition_keyword_pe +
+    ~return_keyword_pe
+)
 
 identifier_pe = (not_reserved_keyword_pe + ppc.identifier)
 
@@ -874,6 +896,16 @@ assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_d
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 
+# Return Statement Parser Elements
+
+return_statement_pe = (return_keyword_pe + Optional(delimitedList(expression_pe))).setParseAction(ReturnStatementASTNode.parse_action).setName('return statetment')
+
+# Print Statement Parser Elements
+
+print_statement_pe = (print_keyword_pe + Suppress('(') + Optional(delimitedList(
+    QuotedString('"', escChar='\\', multiline=True) | expression_pe
+)) + Suppress(')')).setParseAction(PrintStatementASTNode.parse_action).setName('print statetment')
+
 # Statement Parser Elements
 
 conditional_pe = Forward()
@@ -882,7 +914,7 @@ for_loop_pe = Forward()
 function_definition_pe = Forward()
 scoped_statement_sequence_pe = Forward()
 
-required_atomic_statement_pe = scoped_statement_sequence_pe | conditional_pe | while_loop_pe | for_loop_pe | function_definition_pe | return_statement_pe | assignment_pe | expression_pe
+required_atomic_statement_pe = scoped_statement_sequence_pe | conditional_pe | while_loop_pe | for_loop_pe | function_definition_pe | return_statement_pe | print_statement_pe | assignment_pe | expression_pe
 
 atomic_statement_pe = Optional(required_atomic_statement_pe)
 
@@ -896,9 +928,6 @@ statement_sequence_pe = Optional(delimitedList(statement_pe, delim='\n').ignore(
 
 scoped_statement_sequence_pe <<= (Suppress('{') + statement_sequence_pe + Suppress('}')).setParseAction(ScopedStatementSequenceASTNode.parse_action)
 
-# Return Statement Parser Elements
-
-return_statement_pe <<= (Suppress('return') + Optional(delimitedList(expression_pe))).setParseAction(ReturnStatementASTNode.parse_action).setName('return statetment')
 
 # Function Definition Parser Elements
 
