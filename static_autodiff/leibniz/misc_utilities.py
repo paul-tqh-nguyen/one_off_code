@@ -178,6 +178,7 @@ def parent_classes(obj) -> Tuple[type, ...]:
 
 from typing import Tuple
 def child_classes(obj) -> Tuple[type, ...]:
+    import inspect
     cls = obj if inspect.isclass(obj) else type(obj)
     def _child_classes(cls):
         for subclass in cls.__subclasses__():
