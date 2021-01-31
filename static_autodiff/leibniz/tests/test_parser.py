@@ -701,9 +701,10 @@ def test_parser_assignment():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
+        variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+        assert isinstance(variable_node, VariableASTNode)
+        assert variable_node.name is 'x'
+        assert isinstance(tensor_type_node, TensorTypeASTNode)
         result = assignment_node
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
