@@ -1021,7 +1021,7 @@ for ast_node_class in child_classes(ASTNode):
         return_annotation = inspect.signature(parse_action_method).return_annotation
         if issubclass(ast_node_class, ComparisonExpressionASTNode):
             assert return_annotation == 'ComparisonExpressionASTNode'
-        elif issubclass(ast_node_class, ArithmeticExpressionASTNode):
+        elif issubclass(ast_node_class, ArithmeticExpressionASTNode) and issubclass(ast_node_class, (UnaryOperationExpressionASTNode, BinaryOperationExpressionASTNode)):
             print(f"return_annotation {repr(return_annotation)}")
             assert return_annotation == 'ArithmeticExpressionASTNode'
         else:
