@@ -504,8 +504,7 @@ def parse_variable_type_declaration_pe(_s: str, _loc: int, type_label_tokens: py
 class AssignmentASTNode(StatementASTNode):
     
     def __init__(self, variable_type_pairs: typing.List[typing.Tuple[VariableASTNode, TensorTypeASTNode]], value: ExpressionASTNode) -> None:
-        self.identifier = identifier
-        self.identifier_type = identifier_type
+        self.variable_type_pairs = variable_type_pairs
         self.value = value
         return
     
