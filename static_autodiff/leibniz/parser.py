@@ -1019,7 +1019,7 @@ for ast_node_class in child_classes(ASTNode):
     parse_action_method = ast_node_class.parse_action
     if not getattr(parse_action_method, '__isabstractmethod__', False):
         return_annotation = inspect.signature(parse_action_method).return_annotation
-        if isinstance(ast_node_class, ComparisonExpressionASTNode):
+        if issubclass(ast_node_class, ComparisonExpressionASTNode):
             assert return_annotation == 'ComparisonExpressionASTNode'
         else:
             assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
