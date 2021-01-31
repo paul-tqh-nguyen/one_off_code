@@ -872,7 +872,6 @@ vector_pe <<= (Suppress('[') + delimitedList(expression_pe, delim=',') + Suppres
 # Assignment Parser Elements
 
 variable_type_declaration_pe = Optional(Suppress(':') + tensor_type_pe).setParseAction(parse_variable_type_declaration_pe)
-assignment_value_declaration_pe = 
 assignment_pe = (variable_pe + variable_type_declaration_pe + Suppress('=') + expression_pe).setParseAction(AssignmentASTNode.parse_action).setName('assignment')
 
 # Ignorable Parser Elements
