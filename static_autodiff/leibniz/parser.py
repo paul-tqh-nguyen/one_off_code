@@ -536,9 +536,7 @@ class ReturnStatementASTNode(StatementASTNode):
         node_instance = cls(return_values)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             all(
                 self_return_value == other_return_value
@@ -560,9 +558,7 @@ class PrintStatementASTNode(StatementASTNode):
         node_instance = cls(values_to_print)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.values_to_print == other.values_to_print
 
@@ -580,9 +576,7 @@ class ScopedStatementSequenceASTNode(StatementASTNode):
         node_instance = cls(statements)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.statements == other.statements
 
@@ -610,9 +604,7 @@ class FunctionDefinitionASTNode(StatementASTNode):
         node_instance = cls(function_name, function_signature, function_return_type, function_body)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
             self.function_signature == other.function_signature and \
@@ -650,9 +642,7 @@ class ForLoopASTNode(StatementASTNode):
         node_instance = cls(iterator_variable_name, minimum, supremum, delta, body)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.iterator_variable_name == other.iterator_variable_name and \
             self.minimum == other.minimum and \
@@ -679,9 +669,7 @@ class WhileLoopASTNode(StatementASTNode):
         node_instance = cls(condition, body)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.condition == other.condition and \
             self.body == other.body
@@ -713,9 +701,7 @@ class ConditionalASTNode(StatementASTNode):
         node_instance = cls(condition, then_body, else_body)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.condition == other.condition and \
             self.then_body == other.then_body and \
@@ -735,10 +721,8 @@ class ModuleASTNode(ASTNode):
         node_instance = cls(statement_ast_nodes)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
         '''Order of statements matters here since this method determines syntactic equivalence.'''
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             len(self.statements) == len(other.statements) and \
             all(
