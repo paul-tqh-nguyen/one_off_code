@@ -445,10 +445,8 @@ class VectorExpressionASTNode(ExpressionASTNode):
         values = tokens.asList()
         node_instance = cls(values)
         return node_instance
-
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             all(
                 self_value == other_value
@@ -484,10 +482,8 @@ class TensorTypeASTNode(ASTNode):
             shape = []
         node_instance = cls(base_type_name, shape)
         return node_instance
-
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
+    
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.base_type_name is other.base_type_name and \
             self.shape == other.shape
@@ -519,9 +515,7 @@ class AssignmentASTNode(StatementASTNode):
         node_instance = cls(tokens[0], tokens[1], tokens[2])
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.identifier == other.identifier and \
             self.identifier_type == other.identifier_type and \
