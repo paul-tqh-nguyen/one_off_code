@@ -218,11 +218,12 @@ se', False),
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
         value_node = assignment_node.value
         assert isinstance(value_node, BooleanLiteralASTNode)
         result = value_node.value
@@ -246,11 +247,12 @@ def test_parser_atomic_integer():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
         value_node = assignment_node.value
         assert isinstance(value_node, IntegerLiteralASTNode)
         result = value_node.value
@@ -282,11 +284,12 @@ def test_parser_atomic_float():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
         value_node = assignment_node.value
         assert isinstance(value_node, FloatLiteralASTNode)
         result = value_node.value
@@ -374,11 +377,12 @@ def test_parser_vector_literal():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
         result = assignment_node.value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
@@ -468,11 +472,12 @@ def test_parser_boolean_expression():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
         result = assignment_node.value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
@@ -603,11 +608,12 @@ def test_parser_arithmetic_expression():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
         result = assignment_node.value
         assert isinstance(result, ExpressionASTNode)
         assert result == expected_result, f'''
@@ -646,11 +652,12 @@ def test_parser_comparison_expression():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
         result = assignment_node.value
         assert isinstance(result, (ComparisonExpressionASTNode, AndExpressionASTNode))
         assert result == expected_result, f'''
@@ -779,11 +786,12 @@ def test_parser_function_call():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        assert isinstance(assignment_node.identifier, VariableASTNode)
-        assert assignment_node.identifier.name is 'x'
-        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
         result = assignment_node.value
         assert isinstance(result, FunctionCallExpressionASTNode)
         assert result == expected_result, f'''
