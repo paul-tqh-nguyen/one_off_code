@@ -387,7 +387,7 @@ comparator_to_ast_node_class = {
     '!=': NotEqualToExpressionASTNode,
 }
 
-assert comparator_to_ast_node_class.values()
+assert set(comparator_to_ast_node_class.values()) == set(child_classes(ComparisonExpressionASTNode))
 
 def parse_comparison_expression_pe(_s: str, _loc: int, tokens: pyparsing.ParseResults) -> operator.getitem(typing.Union, tuple(comparator_to_ast_node_class.values)):
     tokens = tokens.asList()
