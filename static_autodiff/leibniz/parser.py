@@ -1047,6 +1047,7 @@ def sanity_check_concrete_ast_node_subclass_method_annotations() -> None:
 def perform_sanity_check() -> None:
     sanity_check_base_types()
     sanity_check_concrete_ast_node_subclass_method_annotations()
+    return
 
 perform_sanity_check()
 
