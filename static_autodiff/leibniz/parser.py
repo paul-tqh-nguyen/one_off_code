@@ -1000,6 +1000,7 @@ class ParseError(Exception):
 ''')
 
 def parseSourceCode(input_string: str) -> ModuleASTNode:
+    '''The returned ModuleASTNode may contain the same identical-in-memory nodes due to caching.'''
     try:
         result = only_one(module_pe.parseString(input_string, parseAll=True))
     except pyparsing.ParseException as exception:
