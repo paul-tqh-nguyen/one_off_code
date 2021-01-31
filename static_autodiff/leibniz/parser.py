@@ -49,7 +49,7 @@ from .parser_utilities import (
     AtomicLiteralParserElementBaseTypeTracker,
     LiteralASTNodeClassBaseTypeTracker
 )
-from ast_node import (
+from .ast_node import (
     ASTNode,
     AtomASTNodeType,
     StatementASTNode,
