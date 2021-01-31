@@ -897,7 +897,7 @@ assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_d
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
 newline_escapes = Suppress('\\\n')
 
-ignorable_pe = comment_pe | newline_escapes
+ignorable_pe = comment_pe# | newline_escapes
 
 # Return Statement Parser Elements
 
