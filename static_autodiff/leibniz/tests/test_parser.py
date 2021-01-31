@@ -166,12 +166,12 @@ def test_parser_invalid_keyword_use():
         'else'
     ]
     invalid_input_string_template_to_reserved_keywords = [
-        ('print({keyword})', types + literals + operators + syntactic_contruct_keywords),
         ('{keyword} = 1', types + literals + operators + syntactic_contruct_keywords),
         ('{keyword}(x:=1)', types + literals + operators + syntactic_contruct_keywords),
         ('f({keyword}:=1)', types + literals + operators + syntactic_contruct_keywords),
         ('x = {{{keyword}}}', types + operators + syntactic_contruct_keywords),
         ('{keyword}', types + operators + syntactic_contruct_keywords),
+        ('print({keyword})', types + operators + syntactic_contruct_keywords),
         ('x: {keyword} = 1', literals + operators + syntactic_contruct_keywords),
     ]
     for invalid_input_string_template, keywords in invalid_input_string_template_to_reserved_keywords:
