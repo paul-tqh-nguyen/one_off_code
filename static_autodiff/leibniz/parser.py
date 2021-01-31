@@ -153,7 +153,7 @@ class AtomASTNodeType(type):
     base_ast_node_class = ASTNode
     
     def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict) -> type:
-        method_names = ('__init__', 'parse_action', '__eq__') # TODO replace '__eq__' with 'is_equivalent'
+        method_names = ('__init__', 'parse_action', '__eq__')
         for method_name in method_names:
             assert method_name not in attributes.keys(), f'{method_name} already defined for class {class_name}'
 
@@ -180,7 +180,7 @@ class AtomASTNodeType(type):
             node_instance: cls = cls(value)
             return node_instance
         
-        def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' with 'is_equivalent'
+        def __eq__(self, other: ASTNode) -> bool:
             other_value = getattr(other, value_attribute_name, BOGUS_TOKEN)
             same_type = type(self) is type(other)
             
