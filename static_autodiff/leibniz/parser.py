@@ -1019,6 +1019,7 @@ for ast_node_class in child_classes(ASTNode):
     parse_action_method = ast_node_class.parse_action
     if not getattr(parse_action_method, '__isabstractmethod__', False):
         return_annotation = inspect.signature(parse_action_method).return_annotation
+        print(f"ast_node_class.__qualname__ {repr(ast_node_class.__qualname__)}")
         print(f"return_annotation {repr(return_annotation)}")
 assert False
 
