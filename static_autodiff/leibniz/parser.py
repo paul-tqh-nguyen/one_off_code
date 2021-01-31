@@ -995,6 +995,7 @@ class ParseError(Exception):
     {self.problematic_text}
     {(' '*(self.problem_column_number - 1))}^
 ''')
+        return
 
 def parseSourceCode(input_string: str) -> ModuleASTNode:
     '''The returned ModuleASTNode may contain the same identical-in-memory nodes due to caching.'''
