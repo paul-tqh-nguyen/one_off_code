@@ -731,8 +731,6 @@ class ModuleASTNode(ASTNode):
                 in zip(self.statements, other.statements)
             )
 
-# TODO use is_equivalent in the tests as well
-
 ###########
 # Grammar #
 ###########
