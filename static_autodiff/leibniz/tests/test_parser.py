@@ -320,13 +320,11 @@ def test_parser_atomic_identifier():
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
         assert assignment_node.value == IntegerLiteralASTNode(value=1)
-        
         variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
-        assert assignment_node.identifier_type.base_type_name is None
-        assert assignment_node.identifier_type.shape is None
-        identifier_node = assignment_node.identifier
-        assert isinstance(identifier_node, VariableASTNode)
-        result = identifier_node.name
+        assert tensor_type_node.base_type_name is None
+        assert tensor_type_node.shape is None
+        assert isinstance(variable_node, VariableASTNode)
+        result = variable_node.name
         assert type(result) is str
         assert result == input_string, f'''
 input_string: {repr(input_string)}
