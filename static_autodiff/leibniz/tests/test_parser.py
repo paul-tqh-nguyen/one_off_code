@@ -826,8 +826,7 @@ x = 1 ; x: Integer = 1 # y = 123
 1 + 2
 { x = 1 ; x: Integer = 1 } # y = 123
 { x: Integer = 1 } ; 123 # y = 123
-x = 1 ; { x: Integer = 1 \
-} ; 123 # y = 123
+x = 1 ; { x: Integer = 1 } ; 123 # y = 123
 x = 1 ; {
     x: Integer = 1
     x: Integer = 1 # comment
