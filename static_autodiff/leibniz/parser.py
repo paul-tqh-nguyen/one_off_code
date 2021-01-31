@@ -519,7 +519,6 @@ class AssignmentASTNode(StatementASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.identifier == other.identifier and \
-            self.identifier_type == other.identifier_type and \
             self.value == other.value
 
 # Return Statement Node Generation
