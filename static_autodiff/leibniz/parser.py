@@ -55,9 +55,9 @@ BOGUS_TOKEN = object()
 
 pyparsing.ParserElement.enablePackrat()
 
-#############################
-# Sanity Checking Utilities #
-#############################
+#######################################
+# Base Type Sanity Checking Utilities #
+#######################################
 
 BASE_TYPES = ('Boolean', 'Integer', 'Float', 'NothingType')
 
