@@ -328,6 +328,8 @@ result: {repr(result)}
 
 def test_parser_vector_literal():
     expected_input_output_pairs = [
+        ('[1,2,\
+3]', VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1), IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)])),
         ('[1,2,3]', VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1), IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)])),
         ('[[1,2,3], [4,5,6], [7,8,9]]',
          VectorExpressionASTNode(values=[
