@@ -464,7 +464,7 @@ class VectorExpressionASTNode(ExpressionASTNode):
 
 class TensorTypeASTNode(ASTNode):
 
-    def __init__(self, base_type_name: typing.Optional[BaseTypeName], shape: typing.Optional[typing.List[int]]) -> None:
+    def __init__(self, base_type_name: typing.Optional[BaseTypeName], shape: typing.Optional[typing.List[typing.Union[typing_extensions.Literal['?', '???'], int]]]) -> None:
         '''
         shape == [IntegerLiteralASTNode(value=1), IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)] means this tensor has 3 dimensions with the given sizes
         shape == [None, IntegerLiteralASTNode(value=2)] means this tensor has 2 dimensions with an unspecified size for the first dimension size and a fixed size for the second dimension 
