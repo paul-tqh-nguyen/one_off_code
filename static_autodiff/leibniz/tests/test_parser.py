@@ -716,7 +716,7 @@ def test_parser_comments():
     expected_input_output_pairs = [
         ('x = 1 # comment', ModuleASTNode(statements=[AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1))])),
         ('x: Integer \
-= 1 # comment', ModuleASTNode(statements=[AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))])),
+= 1 # comment', ModuleASTNode(statements=[AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))])),
         ('Nothing # comment', ModuleASTNode(statements=[NothingTypeLiteralASTNode()])),
     ]
     for input_string, expected_result in expected_input_output_pairs:
