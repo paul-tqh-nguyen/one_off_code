@@ -171,6 +171,7 @@ class AtomASTNodeType(type):
             value: value_type = args[0] if len(args) == 1 else kwargs[value_attribute_name]
             assert isinstance(value, value_type)
             setattr(self, value_attribute_name, value)
+            return
 
         @classmethod
         def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> class_name:
@@ -213,6 +214,7 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
     def __init__(self, left_arg: ExpressionASTNode, right_arg: ExpressionASTNode) -> None:
         self.left_arg: ExpressionASTNode = left_arg
         self.right_arg: ExpressionASTNode = right_arg
+        return
 
     @classmethod
     def parse_action(cls, _s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> 'BinaryOperationExpressionASTNode':
@@ -230,6 +232,7 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
 
     def __init__(self, arg: ExpressionASTNode) -> None:
         self.arg: ExpressionASTNode = arg
+        return
 
     @classmethod
     def parse_action(cls, _s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> 'UnaryOperationExpressionASTNode':
@@ -412,6 +415,7 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
     def __init__(self, function_name: str, arg_bindings: typing.List[typing.Tuple[VariableASTNode, ExpressionASTNode]]) -> None:
         self.function_name = function_name
         self.arg_bindings = arg_bindings
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionCallExpressionASTNode':
@@ -438,6 +442,7 @@ class VectorExpressionASTNode(ExpressionASTNode):
     
     def __init__(self, values: typing.List[ExpressionASTNode]) -> None:
         self.values = values
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'VectorExpressionASTNode':
@@ -469,6 +474,7 @@ class TensorTypeASTNode(ASTNode):
         assert implies(base_type_name is None, shape is None)
         self.base_type_name = base_type_name
         self.shape = shape
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'TensorTypeASTNode':
@@ -509,6 +515,7 @@ class AssignmentASTNode(StatementASTNode):
         self.identifier = identifier
         self.identifier_type = identifier_type
         self.value = value
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'AssignmentASTNode':
@@ -555,6 +562,7 @@ class PrintStatementASTNode(StatementASTNode):
     
     def __init__(self, values_to_print: typing.List[typing.Union[str, ExpressionASTNode]]) -> None:
         self.values_to_print = values_to_print
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'PrintStatementASTNode':
@@ -574,6 +582,7 @@ class ScopedStatementSequenceASTNode(StatementASTNode):
     
     def __init__(self, statements: typing.List[StatementASTNode]) -> None:
         self.statements = statements
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ScopedStatementSequenceASTNode':
@@ -602,6 +611,7 @@ class FunctionDefinitionASTNode(StatementASTNode):
         self.function_signature = function_signature
         self.function_return_type = function_return_type
         self.function_body = function_body
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionASTNode':
@@ -636,6 +646,7 @@ class ForLoopASTNode(StatementASTNode):
         self.supremum = supremum
         self.delta = delta
         self.body = body
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ForLoopASTNode':
@@ -670,6 +681,7 @@ class WhileLoopASTNode(StatementASTNode):
     ) -> None:
         self.condition = condition
         self.body = body
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'WhileLoopASTNode':
@@ -697,6 +709,7 @@ class ConditionalASTNode(StatementASTNode):
         self.condition = condition
         self.then_body = then_body
         self.else_body = else_body
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ConditionalASTNode':
@@ -724,6 +737,7 @@ class ModuleASTNode(ASTNode):
     
     def __init__(self, statements: typing.List[StatementASTNode]) -> None:
         self.statements: typing.List[StatementASTNode] = statements
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ModuleASTNode':
