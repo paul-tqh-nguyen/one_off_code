@@ -1020,7 +1020,6 @@ for ast_node_class in child_classes(ASTNode):
     if not getattr(parse_action_method, '__isabstractmethod__', False):
         return_annotation = inspect.signature(parse_action_method).return_annotation
         assert ast_node_class.__qualname__ == return_annotation, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
-assert False
 
 ##########
 # Driver #
