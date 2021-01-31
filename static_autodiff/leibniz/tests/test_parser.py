@@ -687,7 +687,7 @@ def test_parser_assignment():
         )),
         ('x: Float<?> = value', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=[None]))], value=VariableASTNode(name='value'))),
         ('x: Float<???> = value', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=None))], value=VariableASTNode(name='value'))),
-        ('x: Float<?, ?, ?> = value', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], identifier_type=TensorTypeASTNode(base_type_name='Float', shape=[None, None, None]), value=VariableASTNode(name='value'))),
+        ('x: Float<?, ?, ?> = value', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=[None, None, None]))], value=VariableASTNode(name='value'))),
         ('x: Boolean<?, 3, ?> = value', AssignmentASTNode(
             identifier=VariableASTNode(name='x'),
             identifier_type=TensorTypeASTNode(base_type_name='Boolean', shape=[None, IntegerLiteralASTNode(value=3), None]),
