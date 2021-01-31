@@ -912,7 +912,8 @@ expected_result: {repr(expected_result)}
 def test_parser_return_statement():
     expected_input_output_pairs = [
         ('', NothingTypeLiteralASTNode()),
-        ('  \t # comment', NothingTypeLiteralASTNode()),
+        ('  \
+\t # comment', NothingTypeLiteralASTNode()),
         ('Nothing', NothingTypeLiteralASTNode()),
         ('False', BooleanLiteralASTNode(value=False)),
         ('123', IntegerLiteralASTNode(value=123)),
