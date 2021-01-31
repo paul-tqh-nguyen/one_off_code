@@ -387,14 +387,7 @@ comparator_to_ast_node_class = {
     '!=': NotEqualToExpressionASTNode,
 }
 
-def parse_comparison_expression_pe(_s: str, _loc: int, tokens: pyparsing.ParseResults) -> typing.Union[
-        GreaterThanExpressionASTNode,
-        GreaterThanOrEqualToExpressionASTNode,
-        LessThanExpressionASTNode,
-        LessThanOrEqualToExpressionASTNode,
-        EqualToExpressionASTNode,
-        NotEqualToExpressionASTNode
-]:
+def parse_comparison_expression_pe(_s: str, _loc: int, tokens: pyparsing.ParseResults) -> operator.getitem(typing.Union, tuple(comparator_to_ast_node_class.values)):
     tokens = tokens.asList()
     assert len(tokens) >= 3
     assert len(tokens) % 2 == 1
