@@ -1015,6 +1015,7 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 
 sanity_check_base_types()
 
+def sanity_check_parse_action_method_return_annotations() -> None:
 for ast_node_class in child_classes(ASTNode):
     parse_action_method = ast_node_class.parse_action
     if not getattr(parse_action_method, '__isabstractmethod__', False):
