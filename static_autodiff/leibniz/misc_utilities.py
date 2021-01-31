@@ -176,6 +176,7 @@ def parent_classes(obj) -> Tuple[type, ...]:
     cls = obj if inspect.isclass(obj) else type(obj)
     return inspect.getmro(cls)
 
+from typing import Tuple
 def child_classes(obj) -> Tuple[type, ...]:
     cls = obj if inspect.isclass(obj) else type(obj)
     def _child_classes(cls):
