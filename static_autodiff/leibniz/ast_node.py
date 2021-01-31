@@ -12,6 +12,7 @@ import typing
 import typing_extensions
 from abc import ABC, abstractmethod
 import pyparsing
+from functools import reduce
 
 from .parser_utilities import (
     BASE_TYPES,
