@@ -1009,9 +1009,9 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 #     'parseSourceCode'
 # ]
 
-###################
-# Sanity Checking #
-###################
+#############################
+# Sanity Checking Utilities #
+#############################
 
 def sanity_check_parse_action_method_return_annotations() -> None:
     for ast_node_class in child_classes(ASTNode):
