@@ -357,7 +357,7 @@ class VectorExpressionASTNode(ExpressionASTNode):
             all(
                 self_value == other_value
                 for self_value, other_value
-                in zip()
+                in zip(self.values, other.values)
             )
 
 # Tensor Type Node Generation
