@@ -375,7 +375,17 @@ class LessThanOrEqualToExpressionASTNode(ComparisonExpressionASTNode):
 class EqualToExpressionASTNode(ComparisonExpressionASTNode):
     pass
 
-class NotEqualToExpressionASTNode(ComparisonExpressionASTNode):
+class NotEqualToExpressionASTNode(ComparisonExpressionASTNode
+from typing import Tuple
+def child_classes(obj) -> Tuple[type, ...]:
+    import inspect
+    cls = obj if inspect.isclass(obj) else type(obj)
+    def _child_classes(cls):
+        for subclass in cls.__subclasses__():
+            yield from get_subclasses(subclass)
+            yield subclass
+    return tuple(_child_classes(cls))
+):
     pass
 
 comparator_to_ast_node_class = {
