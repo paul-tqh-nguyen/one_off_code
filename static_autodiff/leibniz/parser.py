@@ -153,7 +153,7 @@ class AtomASTNodeType(type):
     base_ast_node_class = ASTNode
     
     def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict) -> type:
-        method_names = ('__init__', 'parse_action', '__eq__')
+        method_names = ('__init__', 'parse_action', '__eq__') # TODO replace '__eq__' with 'is_equivalent'
         for method_name in method_names:
             assert method_name not in attributes.keys(), f'{method_name} already defined for class {class_name}'
 
@@ -180,7 +180,7 @@ class AtomASTNodeType(type):
             node_instance: cls = cls(value)
             return node_instance
         
-        def __eq__(self, other: ASTNode) -> bool:
+        def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' with 'is_equivalent'
             other_value = getattr(other, value_attribute_name, BOGUS_TOKEN)
             same_type = type(self) is type(other)
             
@@ -191,7 +191,7 @@ class AtomASTNodeType(type):
         
         updated_attributes['__init__'] = __init__
         updated_attributes['parse_action'] = parse_action
-        updated_attributes['__eq__'] = __eq__
+        updated_attributes['__eq__'] = __eq__ # TODO replace '__eq__' with 'is_equivalent'
         
         result_class = type(class_name, bases+(meta.base_ast_node_class,), updated_attributes)
         assert all(hasattr(result_class, method_name) for method_name in method_names)
@@ -222,7 +222,7 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
         node_instance: cls = reduce(cls, tokens)
         return node_instance
     
-    def __eq__(self, other: ASTNode) -> bool:
+    def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' and '==' with 'is_equivalent'
         return type(self) is type(other) and \
             self.left_arg == other.left_arg and \
             self.right_arg == other.right_arg 
@@ -240,7 +240,7 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
         node_instance: cls = cls(token)
         return node_instance
     
-    def __eq__(self, other: ASTNode) -> bool:
+    def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' and '==' with 'is_equivalent'
         return type(self) is type(other) and self.arg == other.arg
 
 class ArithmeticExpressionASTNode(ExpressionASTNode):
