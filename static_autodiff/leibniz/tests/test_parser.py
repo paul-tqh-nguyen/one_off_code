@@ -205,8 +205,8 @@ def test_parser_atomic_boolean():
     expected_input_output_pairs = [
         ('True', True),
         ('False', False),
-        ('''Fal\
-se''', False),
+        ('Fal\
+se', False),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
@@ -233,8 +233,8 @@ def test_parser_atomic_integer():
         ('123', 123),
         ('0', 0),
         ('0000', 0),
-        ('''00\
-00''', 0),
+        ('00\
+00', 0),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
@@ -269,8 +269,8 @@ def test_parser_atomic_float():
         ('1E-2', 0.01),
         # ('.23E2', 23.0),
         # ('1.23e-2', 0.0123),
-        ('''.\
-123''', 0.123),
+        ('.\
+123', 0.123),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
