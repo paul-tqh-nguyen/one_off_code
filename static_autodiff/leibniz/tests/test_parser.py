@@ -192,8 +192,8 @@ def test_parser_nothing_literal():
     assert isinstance(variable_node, VariableASTNode)
     assert variable_node.name is 'x'
     assert isinstance(tensor_type_node, TensorTypeASTNode)
-    assert assignment_node.identifier_type.base_type_name is None
-    assert assignment_node.identifier_type.shape is None
+    assert tensor_type_node.base_type_name is None
+    assert tensor_type_node.shape is None
     value_node = assignment_node.value
     assert isinstance(value_node, NothingTypeLiteralASTNode)
     result = value_node
