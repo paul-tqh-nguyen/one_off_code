@@ -191,7 +191,7 @@ class AtomASTNodeType(type):
         
         updated_attributes['__init__'] = __init__
         updated_attributes['parse_action'] = parse_action
-        updated_attributes['__eq__'] = __eq__ # TODO replace '__eq__' with 'is_equivalent'
+        updated_attributes['__eq__'] = __eq__
         
         result_class = type(class_name, bases+(meta.base_ast_node_class,), updated_attributes)
         assert all(hasattr(result_class, method_name) for method_name in method_names)
@@ -222,7 +222,7 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
         node_instance: cls = reduce(cls, tokens)
         return node_instance
     
-    def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' and '==' with 'is_equivalent'
+    def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.left_arg == other.left_arg and \
             self.right_arg == other.right_arg 
@@ -240,7 +240,7 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
         node_instance: cls = cls(token)
         return node_instance
     
-    def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' and '==' with 'is_equivalent'
+    def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and self.arg == other.arg
 
 class ArithmeticExpressionASTNode(ExpressionASTNode):
@@ -288,7 +288,6 @@ class NothingTypeLiteralASTNode(ExpressionASTNode):
         node_instance = cls()
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other)
 
@@ -424,9 +423,7 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
         node_instance = cls(function_name, arg_bindings)
         return node_instance
 
-    # def is_equivalent(self, other: 'ASTNode') -> bool: # TODO Enable this
     def __eq__(self, other: ASTNode) -> bool:
-        # TODO make the below use is_equivalent instead of "=="
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
             all(
