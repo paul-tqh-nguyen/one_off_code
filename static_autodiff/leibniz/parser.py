@@ -42,7 +42,12 @@ from collections import defaultdict
 import operator
 
 from parser_utilities import (
-    BASE_TYPES
+    BASE_TYPES,
+    BaseTypeName,
+    sanity_check_base_types,
+    TensorTypeParserElementBaseTypeTracker,
+    AtomicLiteralParserElementBaseTypeTracker,
+    LiteralASTNodeClassBaseTypeTracker
 )
 from .misc_utilities import *
 
