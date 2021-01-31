@@ -895,6 +895,7 @@ assignment_pe = (variable_pe + variable_type_declaration_pe + assignment_value_d
 # Ignorable Parser Elements
 
 comment_pe = Regex(r"#(?:\\\n|[^\n])*").setName('comment')
+newline_escapes = Suppress('\\\n')
 
 # Return Statement Parser Elements
 
@@ -924,7 +925,7 @@ statement_pe = (non_atomic_statement_pe | atomic_statement_pe).setName('statemen
 
 # Scoped Statement Sequence Parser Elements
 
-statement_sequence_pe = Optional(delimitedList(statement_pe, delim='\n').ignore(comment_pe))
+statement_sequence_pe = Optional(delimitedList(statement_pe, delim='\n').ignore(ignorable_pe))
 
 scoped_statement_sequence_pe <<= (Suppress('{') + statement_sequence_pe + Suppress('}')).setParseAction(ScopedStatementSequenceASTNode.parse_action)
 
@@ -940,7 +941,7 @@ function_definition_pe <<= (
     function_signature_pe +
     function_return_type_pe +
     required_atomic_statement_pe
-).ignore(comment_pe).setParseAction(FunctionDefinitionASTNode.parse_action)
+).ignore(ignorable_pe).setParseAction(FunctionDefinitionASTNode.parse_action)
 
 # For Loop Parser Elements
 
@@ -957,7 +958,7 @@ for_loop_pe <<= (
         Suppress(')')
     ) + 
     required_atomic_statement_pe
-).ignore(comment_pe).setParseAction(ForLoopASTNode.parse_action)
+).ignore(ignorable_pe).setParseAction(ForLoopASTNode.parse_action)
 
 # While Loop Parser Elements
 
@@ -965,7 +966,7 @@ while_loop_pe <<= (
     while_loop_keyword_pe +
     boolean_expression_pe +
     required_atomic_statement_pe
-).ignore(comment_pe).setParseAction(WhileLoopASTNode.parse_action)
+).ignore(ignorable_pe).setParseAction(WhileLoopASTNode.parse_action)
 
 # Conditional Parser Elements
 
@@ -974,7 +975,7 @@ conditional_pe <<= (
     boolean_expression_pe +
     required_atomic_statement_pe +
     Optional(else_keyword_pe + required_atomic_statement_pe)
-).ignore(comment_pe).setParseAction(ConditionalASTNode.parse_action)
+).ignore(ignorable_pe).setParseAction(ConditionalASTNode.parse_action)
 
 # Module & Misc. Parser Elements
 
