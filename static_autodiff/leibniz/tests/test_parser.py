@@ -839,6 +839,13 @@ for x:(1,10, 2) {
     return
 }
 
+for x\
+:\
+(1,10, 2) {
+    True or True
+    return
+}
+
 ''',
          ModuleASTNode(statements=[
              VariableASTNode(name='x'),
@@ -872,6 +879,16 @@ for x:(1,10, 2) {
              ScopedStatementSequenceASTNode(statements=[
                  AssignmentASTNode(identifier=VariableASTNode(name='x'), identifier_type=TensorTypeASTNode(base_type_name='Integer', shape=[]), value=IntegerLiteralASTNode(value=1))
              ]),
+             ForLoopASTNode(
+                 body=ScopedStatementSequenceASTNode(statements=[
+                     OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
+                     ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+                 ]),
+                 iterator_variable_name='x',
+                 minimum=IntegerLiteralASTNode(value=1),
+                 supremum=IntegerLiteralASTNode(value=10),
+                 delta=IntegerLiteralASTNode(value=2)
+             ),
              ForLoopASTNode(
                  body=ScopedStatementSequenceASTNode(statements=[
                      OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
