@@ -63,7 +63,6 @@ BaseTypeName = operator.getitem(typing_extensions.Literal, BASE_TYPES)
 class BaseTypeTrackerType(type):
     
     instantiated_base_type_tracker_classes: typing.List[weakref.ref] = []
-    # TODO track weak references to instances of this metaclass ; use that to sanity check later on ; also, assert that these weak instances are still valid at sanity-checking-time
     
     def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict):
         
@@ -201,12 +200,6 @@ class StatementASTNode(ASTNode):
 class ExpressionASTNode(StatementASTNode):
     pass
 
-class ArithmeticExpressionASTNode(ExpressionASTNode):
-    pass
-
-class BooleanExpressionASTNode(ExpressionASTNode):
-    pass
-
 class ExpressionAtomASTNodeType(AtomASTNodeType):
     '''The atomic bases that make up expressions.'''
 
@@ -244,6 +237,21 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
     
     def __eq__(self, other: ASTNode) -> bool: # TODO replace '__eq__' and '==' with 'is_equivalent'
         return type(self) is type(other) and self.arg == other.arg
+
+class ArithmeticExpressionASTNode(ExpressionASTNode):
+    pass
+
+class BooleanExpressionASTNode(ExpressionASTNode):
+    pass
+
+class ComparisonExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
+    
+    @classmethod
+    def parse_action(cls, _s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> 'ComparisonExpressionASTNode':
+        tokens = only_one(group_tokens).asList()
+        left_arg, right_arg = tokens
+        node_instance: cls = cls(left_arg, right_arg)
+        return node_instance
 
 # Literal Node Generation
 
@@ -347,6 +355,57 @@ class XorExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionAS
 
 class OrExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
     pass
+
+# Comparison Expression Node Generation
+
+class GreaterThanExpressionASTNode(ComparisonExpressionASTNode):
+    pass
+
+class GreaterThanOrEqualToExpressionASTNode(ComparisonExpressionASTNode):
+    pass
+
+class LessThanExpressionASTNode(ComparisonExpressionASTNode):
+    pass
+
+class LessThanOrEqualToExpressionASTNode(ComparisonExpressionASTNode):
+    pass
+
+class EqualToExpressionASTNode(ComparisonExpressionASTNode):
+    pass
+
+class NotEqualToExpressionASTNode(ComparisonExpressionASTNode):
+    pass
+
+comparator_to_ast_node_class = {
+    '>': GreaterThanExpressionASTNode,
+    '>=': GreaterThanOrEqualToExpressionASTNode,
+    '<': LessThanExpressionASTNode,
+    '<=': LessThanOrEqualToExpressionASTNode,
+    '==': EqualToExpressionASTNode,
+    '!=': NotEqualToExpressionASTNode,
+}
+
+def parse_comparison_expression_pe(_s: str, _loc: int, tokens: pyparsing.ParseResults) -> typing.Union[
+        GreaterThanExpressionASTNode,
+        GreaterThanOrEqualToExpressionASTNode,
+        LessThanExpressionASTNode,
+        LessThanOrEqualToExpressionASTNode,
+        EqualToExpressionASTNode,
+        NotEqualToExpressionASTNode
+]:
+    tokens = tokens.asList()
+    assert len(tokens) >= 3
+    assert len(tokens) % 2 == 1
+    node_instance = comparator_to_ast_node_class[tokens[1]](left_arg=tokens[0], right_arg=tokens[2])
+    prev_operand = tokens[2]
+    comparators = tokens[3::2]
+    operands = tokens[4::2]
+    for comparator, operand in zip(comparators, operands):
+        cls = comparator_to_ast_node_class[comparator]
+        comparison_ast_node = cls(prev_operand, operand)
+        node_instance = AndExpressionASTNode(left_arg=node_instance, right_arg=comparison_ast_node)
+        prev_operand =  operand
+    return node_instance
 
 # Function Call Node Generation
 
@@ -716,6 +775,17 @@ or_operation_pe = Suppress('or').setName('or operation')
 
 boolean_operation_pe = not_operation_pe | and_operation_pe | xor_operation_pe | or_operation_pe
 
+# Comparison Operation Parser Elements
+
+greater_than_comparator_keyword_pe = Literal('>').setName('greater than operation')
+greater_than_or_equal_to_comparator_keyword_pe = Literal('>=').setName('greater than or equal to operation')
+less_than_comparator_keyword_pe = Literal('<').setName('less than operation')
+less_than_or_equal_to_comparator_keyword_pe = Literal('<=').setName('less than or equal to operation')
+equal_to_comparator_keyword_pe = Literal('==').setName('equal to operation')
+not_equal_to_comparator_keyword_pe = Literal('!=').setName('not equal to operation')
+
+comparator_pe = greater_than_or_equal_to_comparator_keyword_pe | greater_than_comparator_keyword_pe | less_than_or_equal_to_comparator_keyword_pe | less_than_comparator_keyword_pe | equal_to_comparator_keyword_pe | not_equal_to_comparator_keyword_pe
+
 # Identifier Parser Elements
 
 # identifiers are not variables as identifiers can also be used as function names. Function names are not variables since functions are not first class citizens.
@@ -734,15 +804,16 @@ function_definition_keyword_pe = Suppress('function')
 
 # TODO using return_statement_pe here is more general than necessary since we only need to capture the emtpy return statement
 not_reserved_keyword_pe = reduce(operator.add, map(NotAny, map(Suppress, BASE_TYPES))) + \
-     ~nothing_pe + \
-     ~boolean_operation_pe + \
-     ~boolean_pe + \
-     ~while_loop_keyword_pe + \
-     ~for_loop_keyword_pe + \
-     ~if_keyword_pe + \
-     ~else_keyword_pe + \
-     ~function_definition_keyword_pe + \
-     ~return_statement_pe
+    ~comparator_pe + \
+    ~nothing_pe + \
+    ~boolean_operation_pe + \
+    ~boolean_pe + \
+    ~while_loop_keyword_pe + \
+    ~for_loop_keyword_pe + \
+    ~if_keyword_pe + \
+    ~else_keyword_pe + \
+    ~function_definition_keyword_pe + \
+    ~return_statement_pe
 
 
 identifier_pe = (not_reserved_keyword_pe + ppc.identifier)
@@ -777,12 +848,17 @@ boolean_expression_pe = infixNotation(
     ],
 ).setName('boolean expression')
 
+comparison_expression_pe = (
+    arithmetic_expression_pe +
+    OneOrMore(comparator_pe + arithmetic_expression_pe)
+).setName('comparison expression').setParseAction(parse_comparison_expression_pe)
+
 function_variable_binding_pe = Group(variable_pe + Suppress(':=') + expression_pe)
 function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
 function_call_expression_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallExpressionASTNode.parse_action)
 
 vector_pe = Forward()
-expression_pe <<= (function_call_expression_pe | arithmetic_expression_pe | boolean_expression_pe | atom_pe | vector_pe).setName('expression')
+expression_pe <<= (function_call_expression_pe | (comparison_expression_pe ^ arithmetic_expression_pe) | boolean_expression_pe | atom_pe | vector_pe).setName('expression')
 
 # Vector Parser Elements
 
@@ -806,7 +882,7 @@ for_loop_pe = Forward()
 function_definition_pe = Forward()
 scoped_statement_sequence_pe = Forward()
 
-required_atomic_statement_pe = conditional_pe | while_loop_pe | for_loop_pe | function_definition_pe | return_statement_pe | assignment_pe | scoped_statement_sequence_pe | expression_pe
+required_atomic_statement_pe = scoped_statement_sequence_pe | conditional_pe | while_loop_pe | for_loop_pe | function_definition_pe | return_statement_pe | assignment_pe | expression_pe
 
 atomic_statement_pe = Optional(required_atomic_statement_pe)
 

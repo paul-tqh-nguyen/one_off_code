@@ -3,6 +3,7 @@ import pytest
 
 from leibniz import parser
 from leibniz.parser import (
+    ComparisonExpressionASTNode,
     ExpressionASTNode,
     TensorTypeASTNode,
     VectorExpressionASTNode,
@@ -27,6 +28,12 @@ from leibniz.parser import (
     AndExpressionASTNode,
     XorExpressionASTNode,
     OrExpressionASTNode,
+    GreaterThanExpressionASTNode,
+    GreaterThanOrEqualToExpressionASTNode,
+    LessThanExpressionASTNode,
+    LessThanOrEqualToExpressionASTNode,
+    EqualToExpressionASTNode,
+    NotEqualToExpressionASTNode,
     FunctionCallExpressionASTNode,
     AssignmentASTNode,
     ModuleASTNode,
@@ -133,6 +140,12 @@ def test_parser_invalid_keyword_use():
         '+',
         '-',
         '=',
+        '>',
+        '>=',
+        '<',
+        '<=',
+        '==',
+        '!=',
     ]
     syntactic_contruct_keywords = [
         'function',
@@ -571,6 +584,45 @@ def test_parser_arithmetic_expression():
         assert assignment_node.identifier_type.shape is None
         result = assignment_node.value
         assert isinstance(result, ExpressionASTNode)
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_comparison_expression():
+    expected_input_output_pairs = [
+        ('1 < -2', LessThanExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)))),
+        ('1 <= 3-2', LessThanOrEqualToExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=SubtractionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=3), right_arg=IntegerLiteralASTNode(value=2)))),
+        ('1/10 > -2', GreaterThanExpressionASTNode(
+            left_arg=DivisionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=10)),
+            right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)))),
+        ('1*3 >= -2', GreaterThanOrEqualToExpressionASTNode(
+            left_arg=MultiplicationExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=3)),
+            right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)))),
+        ('1^3 == 3**-2', EqualToExpressionASTNode(
+            left_arg=ExponentExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=3)),
+            right_arg=ExponentExpressionASTNode(left_arg=IntegerLiteralASTNode(value=3), right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2))))),
+        ('01 != -y', NotEqualToExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=NegativeExpressionASTNode(VariableASTNode(name='y')))),
+        ('1 < -2 != -y',
+         AndExpressionASTNode(
+             left_arg=LessThanExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2))),
+             right_arg=NotEqualToExpressionASTNode(left_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)), right_arg=NegativeExpressionASTNode(VariableASTNode(name='y'))))
+        ),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        module_node = parser.parseSourceCode('x = '+input_string)
+        assert isinstance(module_node, ModuleASTNode)
+        assert isinstance(module_node.statements, list)
+        assignment_node = only_one(module_node.statements)
+        assert isinstance(assignment_node, AssignmentASTNode)
+        assert isinstance(assignment_node.identifier, VariableASTNode)
+        assert assignment_node.identifier.name is 'x'
+        assert isinstance(assignment_node.identifier_type, TensorTypeASTNode)
+        assert assignment_node.identifier_type.base_type_name is None
+        assert assignment_node.identifier_type.shape is None
+        result = assignment_node.value
+        assert isinstance(result, (ComparisonExpressionASTNode, AndExpressionASTNode))
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
