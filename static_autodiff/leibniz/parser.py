@@ -512,7 +512,7 @@ class AssignmentASTNode(StatementASTNode):
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'AssignmentASTNode':
         assert len(tokens) is 2
-        variable_declarations: typing.List[typing.Tuple[VariableASTNode, TensorTypeASTNode]] = [(group[0], ) if len(group) is 1 else () group in map(pyparsing.ParseResults.asList, tokens[0]))
+        variable_declarations: typing.List[typing.Tuple[VariableASTNode, TensorTypeASTNode]] = eager_map(tuple, map(pyparsing.ParseResults.asList, tokens[0]))
         value = tokens[1]
         
         node_instance = cls(tokens[0], tokens[1], tokens[2])
