@@ -1026,7 +1026,7 @@ def sanity_check_concrete_ast_node_subclass_method_annotations() -> None:
         eq_method = ast_node_class.__init__
         if not getattr(eq_method, '__isabstractmethod__', False):
             if not getattr(eq_method, '__isabstractmethod__', False):
-                assert inspect.signature(eq_method).return_annotation is None
+                assert inspect.signature(eq_method).return_annotation is bool
         
         # parse_action method
         parse_action_method = ast_node_class.parse_action
