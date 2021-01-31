@@ -538,11 +538,7 @@ class ReturnStatementASTNode(StatementASTNode):
 
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
-            all(
-                self_return_value == other_return_value
-                for self_return_value, other_return_value
-                in zip(self.return_values, other.return_values)
-            )
+            self.return_values == other.return_values
 
 # Print Statement Node Generation
 
