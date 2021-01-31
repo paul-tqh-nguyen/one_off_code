@@ -1013,8 +1013,6 @@ def parseSourceCode(input_string: str) -> ModuleASTNode:
 # Sanity Checking #
 ###################
 
-sanity_check_base_types()
-
 def sanity_check_parse_action_method_return_annotations() -> None:
 for ast_node_class in child_classes(ASTNode):
     parse_action_method = ast_node_class.parse_action
@@ -1030,6 +1028,9 @@ for ast_node_class in child_classes(ASTNode):
                 assert return_annotation == 'BinaryOperationExpressionASTNode'
         else:
             assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
+
+sanity_check_base_types()
+sanity_check_parse_action_method_return_annotations()
 
 ##########
 # Driver #
