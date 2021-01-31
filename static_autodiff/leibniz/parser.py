@@ -38,7 +38,7 @@ from pyparsing import (
     pythonStyleComment,
 )
 from abc import ABC, abstractmethod
-from functools import reduce
+from functools import reduce, lru_cache
 from collections import defaultdict
 import operator
 
