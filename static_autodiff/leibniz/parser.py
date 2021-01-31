@@ -1042,8 +1042,11 @@ def sanity_check_concrete_ast_node_subclass_method_annotations() -> None:
             else:
                 assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
 
-sanity_check_base_types()
-sanity_check_concrete_ast_node_subclass_method_annotations()
+def perform_sanity_check() -> None:
+    sanity_check_base_types()
+    sanity_check_concrete_ast_node_subclass_method_annotations()
+
+perform_sanity_check()
 
 ##########
 # Driver #
