@@ -77,3 +77,11 @@ class AtomicLiteralParserElementBaseTypeTracker(metaclass=BaseTypeTrackerType):
 
 class LiteralASTNodeClassBaseTypeTracker(metaclass=BaseTypeTrackerType):
     tracked_type: type = type
+
+##########
+# Driver #
+##########
+
+if __name__ == '__main__':
+    print("TODO add something here")
+
