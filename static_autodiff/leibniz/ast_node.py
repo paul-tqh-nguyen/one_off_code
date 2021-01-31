@@ -352,7 +352,7 @@ class VectorExpressionASTNode(ExpressionASTNode):
         node_instance = cls(values)
         return node_instance
     
-    def __eq__(self, other: ASTNode) -> bool:
+    def __eq__(self, other: ASTNode) -> bool:e
         return type(self) is type(other) and \
             all(
                 self_value == other_value
