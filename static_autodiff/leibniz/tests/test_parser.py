@@ -205,8 +205,8 @@ def test_parser_atomic_boolean():
     expected_input_output_pairs = [
         ('True', True),
         ('False', False),
-#         ('''Fal\
-# se''', False),
+        ('''Fal\
+se''', False),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
