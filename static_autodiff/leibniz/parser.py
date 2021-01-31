@@ -41,7 +41,7 @@ from functools import reduce, lru_cache
 from collections import defaultdict
 import operator
 
-from parser_utilities import (
+from .parser_utilities import (
     BASE_TYPES,
     BaseTypeName,
     sanity_check_base_types,
