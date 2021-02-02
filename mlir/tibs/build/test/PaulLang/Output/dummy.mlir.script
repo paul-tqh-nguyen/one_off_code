@@ -1,0 +1,1 @@
+set -o pipefail;{ : 'RUN: at line 1';   /home/pnguyen/code/one_off_code/mlir/tibs/build/bin/paullang-opt /home/pnguyen/code/one_off_code/mlir/tibs/test/PaulLang/dummy.mlir | /home/pnguyen/code/one_off_code/mlir/tibs/build/bin/paullang-opt | /home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/FileCheck /home/pnguyen/code/one_off_code/mlir/tibs/test/PaulLang/dummy.mlir; }

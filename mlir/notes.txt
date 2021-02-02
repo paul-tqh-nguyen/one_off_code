@@ -1,4 +1,25 @@
 
+========================================================================================================================
+
+# Tibs
+
+export PATH=/home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/:$PATH
+export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/mlir/lib:$LD_LIBRARY_PATH
+export BUILD_DIR=/home/pnguyen/code/one_off_code/mlir/llvm-project/build
+export PREFIX=/home/pnguyen/code/one_off_code/mlir/llvm-project/build
+
+cd /home/pnguyen/code/one_off_code/mlir/llvm-project/mlir/examples/tibs
+mkdir build
+cd build
+
+cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit
+cmake --build . --target check-standalone
+ninja
+
+cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit && cmake --build . --target check-paullang && ninja && ./paullang-main/paullang-main
+
+========================================================================================================================
+
 # Misc. Links
 
 https://mlir.llvm.org/docs/Tutorials/Toy/
