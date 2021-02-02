@@ -1,14 +1,7 @@
-//===- PaulLangPasses.cpp - PaulLang passes -------------------*- C++ -*-===//
-//
-// This file is licensed under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
 
-#include "PaulLang/PaulLangDialect.h"
-#include "PaulLang/PaulLangPasses.h"
-#include "PaulLang/PaulLangOps.h"
+#include "Tibs/TibsDialect.h"
+#include "Tibs/TibsPasses.h"
+#include "Tibs/TibsOps.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
@@ -29,23 +22,23 @@
 #include <boost/type_index.hpp>
 
 using namespace mlir;
-using namespace mlir::paullang;
+using namespace mlir::tibs;
 
 //===----------------------------------------------------------------------===//
-// PaulLang canonicalization passes.
+// Tibs canonicalization passes.
 //===----------------------------------------------------------------------===//
 
-struct SimplifyRedundantTranspose : public mlir::OpRewritePattern<mlir::paullang::TransposeOp> {
-  SimplifyRedundantTranspose(mlir::MLIRContext *context) : OpRewritePattern<mlir::paullang::TransposeOp>(context, /*benefit=*/1) {}
+struct SimplifyRedundantTranspose : public mlir::OpRewritePattern<mlir::tibs::TransposeOp> {
+  SimplifyRedundantTranspose(mlir::MLIRContext *context) : OpRewritePattern<mlir::tibs::TransposeOp>(context, /*benefit=*/1) {}
 
-  mlir::LogicalResult matchAndRewrite(mlir::paullang::TransposeOp op, mlir::PatternRewriter &rewriter) const override {
+  mlir::LogicalResult matchAndRewrite(mlir::tibs::TransposeOp op, mlir::PatternRewriter &rewriter) const override {
     
     // std::cout << "\n";
-    // std::cout << "mlir::LogicalResult matchAndRewrite(mlir::paullang::TransposeOp op, mlir::PatternRewriter &rewriter) const override: " << "\n";
+    // std::cout << "mlir::LogicalResult matchAndRewrite(mlir::tibs::TransposeOp op, mlir::PatternRewriter &rewriter) const override: " << "\n";
     
     mlir::Value transposeInput = op.getOperand();
     
-    mlir::paullang::TransposeOp transposeInputOp = transposeInput.getDefiningOp<mlir::paullang::TransposeOp>();
+    mlir::tibs::TransposeOp transposeInputOp = transposeInput.getDefiningOp<mlir::tibs::TransposeOp>();
 
     // using namespace boost::typeindex;
     // std::cout << "type_id_with_cvr<decltype(op)>().pretty_name(): " << type_id_with_cvr<decltype(op)>().pretty_name() << "\n";
@@ -63,19 +56,19 @@ struct SimplifyRedundantTranspose : public mlir::OpRewritePattern<mlir::paullang
   }
 };
 
-void mlir::paullang::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternList &results, MLIRContext *context) {
-  // std::cout << "void mlir::paullang::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternList &results, MLIRContext *context): " << "\n";
+void mlir::tibs::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternList &results, MLIRContext *context) {
+  // std::cout << "void mlir::tibs::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternList &results, MLIRContext *context): " << "\n";
   results.insert<SimplifyRedundantTranspose>(context);
 }
 
 // TODO get DRRs working
-// void mlir::paullang::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternList &results, MLIRContext *context) {
-//   std::cout << "void mlir::paullang::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternList &results, MLIRContext *context): " << "\n";
-//   results.insert<mlir::paullang::TransposeTransposeOptPattern, DoubleTransposeOptPattern, FoldDoubleTransposeOptPattern>(context);
+// void mlir::tibs::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternList &results, MLIRContext *context) {
+//   std::cout << "void mlir::tibs::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternList &results, MLIRContext *context): " << "\n";
+//   results.insert<mlir::tibs::TransposeTransposeOptPattern, DoubleTransposeOptPattern, FoldDoubleTransposeOptPattern>(context);
 // }
 
 //===----------------------------------------------------------------------===//
-// PaulLang->Affine Lowering Helpers
+// Tibs->Affine Lowering Helpers
 //===----------------------------------------------------------------------===//
 
 static MemRefType convertTensorToMemRef(TensorType type) {
@@ -96,14 +89,14 @@ static Value insertAllocAndDealloc(MemRefType type, Location loc, PatternRewrite
 }
 
 //===----------------------------------------------------------------------===//
-// PaulLang->Affine Constant Operation Lowering Rewrite Pattern
+// Tibs->Affine Constant Operation Lowering Rewrite Pattern
 //===----------------------------------------------------------------------===//
 
-struct ConstantOpLowering : public OpRewritePattern<mlir::paullang::ConstantOp> {
-  using OpRewritePattern<mlir::paullang::ConstantOp>::OpRewritePattern;
+struct ConstantOpLowering : public OpRewritePattern<mlir::tibs::ConstantOp> {
+  using OpRewritePattern<mlir::tibs::ConstantOp>::OpRewritePattern;
 
-  LogicalResult matchAndRewrite(paullang::ConstantOp op, PatternRewriter &rewriter) const final {
-    // std::cout << "Calling matchAndRewrite(paullang::ConstantOp op, PatternRewriter &rewriter): " << "\n";
+  LogicalResult matchAndRewrite(tibs::ConstantOp op, PatternRewriter &rewriter) const final {
+    // std::cout << "Calling matchAndRewrite(tibs::ConstantOp op, PatternRewriter &rewriter): " << "\n";
     DenseElementsAttr constantValue = op.value();
     Location loc = op.getLoc();
 
@@ -154,25 +147,25 @@ struct ConstantOpLowering : public OpRewritePattern<mlir::paullang::ConstantOp> 
 };
 
 //===----------------------------------------------------------------------===//
-// PaulLang->Standard Return Operation Lowering Rewrite Pattern
+// Tibs->Standard Return Operation Lowering Rewrite Pattern
 //===----------------------------------------------------------------------===//
 
-struct ReturnOpLowering : public OpRewritePattern<mlir::paullang::ReturnOp> {
-  using OpRewritePattern<mlir::paullang::ReturnOp>::OpRewritePattern;
+struct ReturnOpLowering : public OpRewritePattern<mlir::tibs::ReturnOp> {
+  using OpRewritePattern<mlir::tibs::ReturnOp>::OpRewritePattern;
 
-  LogicalResult matchAndRewrite(mlir::paullang::ReturnOp op, PatternRewriter &rewriter) const final {
+  LogicalResult matchAndRewrite(mlir::tibs::ReturnOp op, PatternRewriter &rewriter) const final {
     rewriter.replaceOpWithNewOp<mlir::ReturnOp>(op);
     return success();
   }
 };
 
 //===----------------------------------------------------------------------===//
-// PaulLang->Affine lowering passes.
+// Tibs->Affine lowering passes.
 //===----------------------------------------------------------------------===//
 
 namespace {
   
-  struct PaulLangToAffineLoweringPass : public PassWrapper<PaulLangToAffineLoweringPass, FunctionPass> {
+  struct TibsToAffineLoweringPass : public PassWrapper<TibsToAffineLoweringPass, FunctionPass> {
     
     void getDependentDialects(DialectRegistry &registry) const override {
       // std::cout << "Calling getDependentDialects(DialectRegistry &registry)" << "\n";
@@ -184,14 +177,14 @@ namespace {
   
 } // end anonymous namespace.
 
-void PaulLangToAffineLoweringPass::runOnFunction() {
-  // std::cout << "Calling PaulLangToAffineLoweringPass::runOnFunction()" << "\n";
+void TibsToAffineLoweringPass::runOnFunction() {
+  // std::cout << "Calling TibsToAffineLoweringPass::runOnFunction()" << "\n";
   mlir::FuncOp function = getFunction();
   
   // using namespace boost::typeindex;
   // std::cout << "type_id_with_cvr<decltype(function.getName())>().pretty_name(): " << type_id_with_cvr<decltype(function.getName())>().pretty_name() << "\n";
   
-  if (function.getName() != "paulMLIRFunc") {
+  if (function.getName() != "tibsMLIRFunc") {
     return;
   }
   
@@ -204,9 +197,9 @@ void PaulLangToAffineLoweringPass::runOnFunction() {
 
   target.addLegalDialect<AffineDialect, StandardOpsDialect>();
 
-  target.addIllegalDialect<mlir::paullang::PaulLangDialect>();
-  target.addLegalOp<mlir::paullang::PrintOp>();
-  //target.addLegalOp<mlir::paullang::ReturnOp>(); // TODO remove this
+  target.addIllegalDialect<mlir::tibs::TibsDialect>();
+  target.addLegalOp<mlir::tibs::PrintOp>();
+  //target.addLegalOp<mlir::tibs::ReturnOp>(); // TODO remove this
 
   OwningRewritePatternList patterns;
   patterns.insert<ConstantOpLowering, ReturnOpLowering >(&getContext()); // TODO add other op lowerings
@@ -217,13 +210,13 @@ void PaulLangToAffineLoweringPass::runOnFunction() {
   }
 }
 
-std::unique_ptr<Pass> mlir::paullang::createLowerToAffinePass() {
-  // std::cout << "Calling mlir::paullang::createLowerToAffinePass(): " << "\n";
-  return std::make_unique<PaulLangToAffineLoweringPass>();
+std::unique_ptr<Pass> mlir::tibs::createLowerToAffinePass() {
+  // std::cout << "Calling mlir::tibs::createLowerToAffinePass(): " << "\n";
+  return std::make_unique<TibsToAffineLoweringPass>();
 }
 
 //===----------------------------------------------------------------------===//
-// PaulLang->LLVM Print Operation Lowering Rewrite Pattern
+// Tibs->LLVM Print Operation Lowering Rewrite Pattern
 //===----------------------------------------------------------------------===//
 
 namespace {
@@ -231,7 +224,7 @@ namespace {
   class PrintOpLowering : public ConversionPattern {
     
   public:
-    explicit PrintOpLowering(MLIRContext *context) : ConversionPattern(mlir::paullang::PrintOp::getOperationName(), 1, context) {}
+    explicit PrintOpLowering(MLIRContext *context) : ConversionPattern(mlir::tibs::PrintOp::getOperationName(), 1, context) {}
 
     LogicalResult matchAndRewrite(Operation *op, ArrayRef<Value> operands, ConversionPatternRewriter &rewriter) const override {
       auto memRefType = (*op->operand_type_begin()).cast<MemRefType>();
@@ -264,7 +257,7 @@ namespace {
 	rewriter.setInsertionPointToStart(loop.getBody());
       }
       
-      mlir::paullang::PrintOp printOp = cast<mlir::paullang::PrintOp>(op);
+      mlir::tibs::PrintOp printOp = cast<mlir::tibs::PrintOp>(op);
       auto elementLoad = rewriter.create<LoadOp>(loc, printOp.input(), loopIvs); // TODO add explicit namespace to LoadOp
       rewriter.create<CallOp>(loc, printfRef, rewriter.getIntegerType(32), ArrayRef<Value>({formatSpecifierCst, elementLoad}));
       
@@ -311,12 +304,12 @@ namespace {
 } // end anonymous namespace
 
 //===----------------------------------------------------------------------===//
-// PaulLang->LLVM lowering passes.
+// Tibs->LLVM lowering passes.
 //===----------------------------------------------------------------------===//
 
 namespace {
   
-  struct PaulLangToLLVMLoweringPass : public PassWrapper<PaulLangToLLVMLoweringPass, OperationPass<ModuleOp>> { // TODO add explicit namespace to ModuleOp
+  struct TibsToLLVMLoweringPass : public PassWrapper<TibsToLLVMLoweringPass, OperationPass<ModuleOp>> { // TODO add explicit namespace to ModuleOp
     
     void getDependentDialects(DialectRegistry &registry) const override {
       registry.insert<LLVM::LLVMDialect, scf::SCFDialect>();
@@ -328,9 +321,9 @@ namespace {
   
 } // end anonymous namespace
 
-void PaulLangToLLVMLoweringPass::runOnOperation() {
+void TibsToLLVMLoweringPass::runOnOperation() {
   
-  std::cout << "////PaulLangToLLVMLoweringPass::runOnOperation" << std::endl;
+  std::cout << "////TibsToLLVMLoweringPass::runOnOperation" << std::endl;
   
   LLVMConversionTarget target(getContext());
   target.addLegalOp<ModuleOp, ModuleTerminatorOp>(); // TODO add explicit namespaces
@@ -370,6 +363,6 @@ void PaulLangToLLVMLoweringPass::runOnOperation() {
   std::cout << "\n\n\n" << std::endl;
 }
 
-std::unique_ptr<mlir::Pass> mlir::paullang::createLowerToLLVMPass() {
-  return std::make_unique<PaulLangToLLVMLoweringPass>();
+std::unique_ptr<mlir::Pass> mlir::tibs::createLowerToLLVMPass() {
+  return std::make_unique<TibsToLLVMLoweringPass>();
 }

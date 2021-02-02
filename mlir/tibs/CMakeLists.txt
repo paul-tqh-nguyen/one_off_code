@@ -13,7 +13,7 @@ if(POLICY CMP0077)
   cmake_policy(SET CMP0077 NEW)
 endif()
 
-project(paul-dialect LANGUAGES CXX C)
+project(tibs-dialect LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard to conform to")
 
@@ -43,6 +43,6 @@ add_definitions(${LLVM_DEFINITIONS})
 add_subdirectory(include)
 add_subdirectory(lib)
 add_subdirectory(test)
-add_subdirectory(paullang-opt)
-add_subdirectory(paullang-translate)
-add_subdirectory(paullang-main)
+add_subdirectory(tibs-opt)
+add_subdirectory(tibs-translate)
+add_subdirectory(tibs-main)

@@ -1,4 +1,4 @@
-add_mlir_dialect(PaulLangOps paullang)
-add_mlir_doc(PaulLangDialect -gen-dialect-doc PaulLangDialect PaulLang/)
-add_mlir_doc(PaulLangOps -gen-op-doc PaulLangOps PaulLang/)
-add_mlir_doc(PaulLangPasses -gen-pass-doc PaulLangPasses PaulLang/)
+add_mlir_dialect(TibsOps tibs)
+add_mlir_doc(TibsDialect -gen-dialect-doc TibsDialect Tibs/)
+add_mlir_doc(TibsOps -gen-op-doc TibsOps Tibs/)
+add_mlir_doc(TibsPasses -gen-pass-doc TibsPasses Tibs/)

@@ -1,31 +1,23 @@
-//===- PaulLangOps.td - PaulLang dialect ops ----------------*- tablegen -*-===//
-//
-// This file is licensed under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
 
-#ifndef PAULLANG_OPS
-#define PAULLANG_OPS
+#ifndef TIBS_OPS
+#define TIBS_OPS
 
-include "PaulLangDialect.td"
-include "PaulLangPasses.td"
+include "TibsDialect.td"
+include "TibsPasses.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
-//include "mlir/Interfaces/CallInterfaces.td"
 
 //===----------------------------------------------------------------------===//
-// PaulLang operations.
+// Tibs operations.
 //===----------------------------------------------------------------------===//
 
-def PaulLang_FooOp : PaulLang_Op<"foo", [NoSideEffect, SameOperandsAndResultType]> {
+def Tibs_FooOp : Tibs_Op<"foo", [NoSideEffect, SameOperandsAndResultType]> {
     let summary = "constant";
     let description = [{
     Constant operation turns a literal into an SSA value. The data is attached
     to the operation as an attribute. For example:
 
     ```mlir
-      %0 = paullang.constant dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]>
+      %0 = tibs.constant dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]>
                         : tensor<2x3xf64>
     ```
   }];
@@ -38,14 +30,14 @@ def PaulLang_FooOp : PaulLang_Op<"foo", [NoSideEffect, SameOperandsAndResultType
     }];
 }
 
-def ConstantOp : PaulLang_Op<"constant", [NoSideEffect]> {
+def ConstantOp : Tibs_Op<"constant", [NoSideEffect]> {
   let summary = "constant";
   let description = [{
     Constant operation turns a literal into an SSA value. The data is attached
     to the operation as an attribute. For example:
 
     ```mlir
-      %0 = paullang.constant dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]>
+      %0 = tibs.constant dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]>
                         : tensor<2x3xf64>
     ```
   }];
@@ -60,7 +52,7 @@ def ConstantOp : PaulLang_Op<"constant", [NoSideEffect]> {
 
 }
 
-def PrintOp : PaulLang_Op<"print"> {
+def PrintOp : Tibs_Op<"print"> {
   let summary = "print operation";
   let description = [{
     The "print" builtin operation prints a given input tensor, and produces
@@ -73,7 +65,7 @@ def PrintOp : PaulLang_Op<"print"> {
   let assemblyFormat = "$input attr-dict `:` type($input)";
 }
 
-def ReturnOp : PaulLang_Op<"return", [NoSideEffect, HasParent<"FuncOp">, Terminator]> {
+def ReturnOp : Tibs_Op<"return", [NoSideEffect, HasParent<"FuncOp">, Terminator]> {
   let summary = "return operation";
   let description = [{
     The "return" operation represents a return operation within a function.
@@ -84,7 +76,7 @@ def ReturnOp : PaulLang_Op<"return", [NoSideEffect, HasParent<"FuncOp">, Termina
     ```mlir
       func @foo() -> tensor<2xf64> {
         ...
-        paullang.return %0 : tensor<2xf64>
+        tibs.return %0 : tensor<2xf64>
       }
     ```
   }];
@@ -102,7 +94,7 @@ def ReturnOp : PaulLang_Op<"return", [NoSideEffect, HasParent<"FuncOp">, Termina
   }];
 }
 
-def TransposeOp : PaulLang_Op<"transpose", [NoSideEffect, SameOperandsAndResultType]> {
+def TransposeOp : Tibs_Op<"transpose", [NoSideEffect, SameOperandsAndResultType]> {
   let summary = "transpose";
   let description = [{
   Transpose description.
@@ -118,16 +110,4 @@ def TransposeOp : PaulLang_Op<"transpose", [NoSideEffect, SameOperandsAndResultT
   }];
 }
 
-//===----------------------------------------------------------------------===//
-// PaulLang Passes.
-//===----------------------------------------------------------------------===//
-
-// TODO move this to examples/paul/include/PaulLang/PaulLangPasses.td
-
-// def TransposeTransposeOptPattern : Pat<(TransposeOp(TransposeOp $arg)), (TransposeOp $arg)>;
-
-// def DoubleTransposeOptPattern : Pat<(TransposeOp:$res $arg), (replaceWithValue $arg), []>;
-
-// def FoldDoubleTransposeOptPattern : Pat<(TransposeOp:$res (ConstantOp $arg)), (ConstantOp (TransposeOp $arg, $res))>;
-
-#endif // PAULLANG_OPS
+#endif // TIBS_OPS

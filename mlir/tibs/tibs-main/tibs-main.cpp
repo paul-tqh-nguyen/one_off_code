@@ -1,8 +1,3 @@
-//===- paullang-main.cpp ----------------------------------------*- C++ -*-===//
-//
-// Main driver.
-//
-//===----------------------------------------------------------------------===//
 
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/Builders.h"
@@ -14,43 +9,17 @@
 
 #include "llvm/Support/TargetSelect.h"
 
-#include "PaulLang/PaulLangDialect.h"
-#include "PaulLang/PaulLangOps.h"
-#include "PaulLang/PaulLangPasses.h"
+#include "Tibs/TibsDialect.h"
+#include "Tibs/TibsOps.h"
+#include "Tibs/TibsPasses.h"
 
 #include <iostream>
 #include <boost/type_index.hpp>
 #include <tuple>
 
-//////////////////////////////////////////////////////// TODO remove these.
-
-#include "mlir/ExecutionEngine/ExecutionEngine.h"
-#include "mlir/ExecutionEngine/OptUtils.h"
-#include "mlir/IR/AsmState.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/MLIRContext.h"
-#include "mlir/IR/Verifier.h"
-#include "mlir/InitAllDialects.h"
-#include "mlir/Parser.h"
-#include "mlir/Pass/Pass.h"
-#include "mlir/Pass/PassManager.h"
-#include "mlir/Target/LLVMIR.h"
-#include "mlir/Transforms/Passes.h"
-
-#include "llvm/ADT/StringRef.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/ErrorOr.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h"
-
-////////////////////////////////////////////////////////
-
 void generateModule(mlir::MLIRContext &context, mlir::ModuleOp &theModule) {
   
-  context.getOrLoadDialect<mlir::paullang::PaulLangDialect>();
+  context.getOrLoadDialect<mlir::tibs::TibsDialect>();
   mlir::OpBuilder builder = mlir::OpBuilder(&context);
   
   // Create an MLIR module
@@ -73,7 +42,7 @@ void generateModule(mlir::MLIRContext &context, mlir::ModuleOp &theModule) {
     mlir::RankedTensorType inputTensorType = mlir::RankedTensorType::get(inputArrayShape, builder.getF64Type());
     llvm::SmallVector<mlir::Type, 4> arg_types(numberOfArgs, inputTensorType); // TODO Figure out what the 4 denotes
     mlir::FunctionType func_type = builder.getFunctionType(arg_types, llvm::None);
-    llvm::StringRef funcName("paulMLIRFunc");
+    llvm::StringRef funcName("tibsMLIRFunc");
     mlir::FuncOp funcOp = mlir::FuncOp::create(location, funcName, func_type);
 
     // Add function body
@@ -87,14 +56,14 @@ void generateModule(mlir::MLIRContext &context, mlir::ModuleOp &theModule) {
     mlir::RankedTensorType constantDataType = mlir::RankedTensorType::get(constantArrayShape, constantElementType);
     mlir::DenseElementsAttr constantDataAttribute = mlir::DenseElementsAttr::get(constantDataType, llvm::makeArrayRef(constantData));
     mlir::RankedTensorType constantTensorType = mlir::RankedTensorType::get(constantArrayShape, builder.getF64Type());
-    mlir::Value constantOperation = builder.create<mlir::paullang::ConstantOp>(location, constantTensorType, constantDataAttribute);
+    mlir::Value constantOperation = builder.create<mlir::tibs::ConstantOp>(location, constantTensorType, constantDataAttribute);
 
     // Add print to function body
-    builder.create<mlir::paullang::PrintOp>(location, constantOperation);
+    builder.create<mlir::tibs::PrintOp>(location, constantOperation);
 
     // Add emtpy return statement to function body
-    mlir::paullang::ReturnOp returnOperation;
-    builder.create<mlir::paullang::ReturnOp>(location);
+    mlir::tibs::ReturnOp returnOperation;
+    builder.create<mlir::tibs::ReturnOp>(location);
   
     // Add function to module
     theModule.push_back(funcOp);
@@ -118,7 +87,7 @@ void compileAndExecuteModule(mlir::ModuleOp module) {
   assert(maybeEngine && "failed to construct an execution engine");
   std::unique_ptr<mlir::ExecutionEngine> &engine = maybeEngine.get();
   
-  llvm::Error invocationResult = engine->invoke("paulMLIRFunc");
+  llvm::Error invocationResult = engine->invoke("tibsMLIRFunc");
   if (invocationResult) {
     std::cout << "Compilation failed" << std::endl;
     return;
@@ -155,10 +124,10 @@ void runAllPasses() {
   pm.addPass(mlir::createCanonicalizerPass());
   // Lower to Affine Dialect
   mlir::OpPassManager &optPM = pm.nest<mlir::FuncOp>();
-  optPM.addPass(mlir::paullang::createLowerToAffinePass());
+  optPM.addPass(mlir::tibs::createLowerToAffinePass());
   optPM.addPass(mlir::createCanonicalizerPass());
   // Lower to LLVM
-  pm.addPass(mlir::paullang::createLowerToLLVMPass());
+  pm.addPass(mlir::tibs::createLowerToLLVMPass());
 
   // Final MLIR
   runPassManager();

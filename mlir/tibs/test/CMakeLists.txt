@@ -5,16 +5,16 @@ configure_lit_site_cfg(
         ${CMAKE_CURRENT_SOURCE_DIR}/lit.cfg.py
 )
 
-set(PAULLANG_TEST_DEPENDS
+set(TIBS_TEST_DEPENDS
         FileCheck count not
-        paullang-opt
-        paullang-translate
+        tibs-opt
+        tibs-translate
         )
 
-add_lit_testsuite(check-paullang "Running the paullang regression tests"
+add_lit_testsuite(check-tibs "Running the tibs regression tests"
         ${CMAKE_CURRENT_BINARY_DIR}
-        DEPENDS ${PAULLANG_TEST_DEPENDS}
+        DEPENDS ${TIBS_TEST_DEPENDS}
         )
-set_target_properties(check-paullang PROPERTIES FOLDER "Tests")
+set_target_properties(check-tibs PROPERTIES FOLDER "Tests")
 
-add_lit_testsuites(PAULLANG ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS ${PAULLANG_TEST_DEPENDS})
+add_lit_testsuites(TIBS ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS ${TIBS_TEST_DEPENDS})

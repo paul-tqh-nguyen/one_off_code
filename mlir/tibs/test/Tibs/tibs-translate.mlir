@@ -1,4 +1,4 @@
-// RUN: paullang-translate --help | FileCheck %s
+// RUN: tibs-translate --help | FileCheck %s
 // CHECK: --avx512-mlir-to-llvmir
 // CHECK: --deserialize-spirv
 // CHECK: --import-llvm

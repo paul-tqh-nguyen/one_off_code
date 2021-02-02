@@ -5,11 +5,11 @@ set(LLVM_LINK_COMPONENTS
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(translation_libs GLOBAL PROPERTY MLIR_TRANSLATION_LIBS)
 
-add_llvm_executable(paullang-translate
-  paullang-translate.cpp
+add_llvm_executable(tibs-translate
+  tibs-translate.cpp
   )
-llvm_update_compile_flags(paullang-translate)
-target_link_libraries(paullang-translate
+llvm_update_compile_flags(tibs-translate)
+target_link_libraries(tibs-translate
   PRIVATE
   ${dialect_libs}
   ${translation_libs}
@@ -21,4 +21,4 @@ target_link_libraries(paullang-translate
   MLIRSupport
   )
 
-mlir_check_link_libraries(paullang-translate)
+mlir_check_link_libraries(tibs-translate)

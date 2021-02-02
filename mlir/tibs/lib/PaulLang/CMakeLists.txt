@@ -1,13 +1,13 @@
-add_mlir_dialect_library(MLIRPaulLang
-        PaulLangDialect.cpp
-        PaulLangPasses.cpp
-        PaulLangOps.cpp
+add_mlir_dialect_library(MLIRTibs
+        TibsDialect.cpp
+        TibsPasses.cpp
+        TibsOps.cpp
 
         ADDITIONAL_HEADER_DIRS
-        ${PROJECT_SOURCE_DIR}/include/PaulLang
+        ${PROJECT_SOURCE_DIR}/include/Tibs
 
         DEPENDS
-        MLIRPaulLangOpsIncGen
+        MLIRTibsOpsIncGen
 
 	LINK_LIBS PUBLIC
 	MLIRIR

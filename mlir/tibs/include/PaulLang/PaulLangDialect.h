@@ -1,16 +1,9 @@
-//===- PaulLangDialect.h - PaulLang dialect ----------------------*- C++ -*-===//
-//
-// This file is licensed under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
 
-#ifndef PAULLANG_PAULLANGDIALECT_H
-#define PAULLANG_PAULLANGDIALECT_H
+#ifndef TIBS_TIBSDIALECT_H
+#define TIBS_TIBSDIALECT_H
 
 #include "mlir/IR/Dialect.h"
 
-#include "PaulLang/PaulLangOpsDialect.h.inc"
+#include "Tibs/TibsOpsDialect.h.inc"
 
-#endif // PAULLANG_PAULLANGDIALECT_H
+#endif // TIBS_TIBSDIALECT_H

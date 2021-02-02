@@ -4,19 +4,19 @@ set(LIBS
         ${dialect_libs}
         ${conversion_libs}
         MLIROptLib
-        MLIRPaulLang
+        MLIRTibsLang
         )
-add_llvm_executable(paullang-opt paullang-opt.cpp)
+add_llvm_executable(tibs-opt tibs-opt.cpp)
 
-llvm_update_compile_flags(paullang-opt)
-target_link_libraries(paullang-opt PRIVATE ${LIBS})
+llvm_update_compile_flags(tibs-opt)
+target_link_libraries(tibs-opt PRIVATE ${LIBS})
 
-mlir_check_all_link_libraries(paullang-opt)
+mlir_check_all_link_libraries(tibs-opt)
 
 #message(STATUS "=======================================")
-#message(STATUS "paullang-opt")
+#message(STATUS "tibs-opt")
 #message(STATUS "=======================================")
-#message(STATUS "examples/paul/paullang-opt/CMakeLists.txt")
+#message(STATUS "tibs-opt/CMakeLists.txt")
 #message(STATUS "dialect_libs " ${dialect_libs})
 #message(STATUS "conversion_libs " ${conversion_libs})
 #message(STATUS "LIBS " ${LIBS})

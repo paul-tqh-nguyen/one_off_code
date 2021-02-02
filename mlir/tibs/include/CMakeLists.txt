@@ -1,1 +1,1 @@
-add_subdirectory(PaulLang)
+add_subdirectory(Tibs)

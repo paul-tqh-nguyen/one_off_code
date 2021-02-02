@@ -1,36 +1,27 @@
-//===- PaulLangDialect.td - PaulLang dialect ---------------*- tablegen -*-===//
-//
-// This file is licensed under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
 
-#ifndef PAULLANG_DIALECT
-#define PAULLANG_DIALECT
+#ifndef TIBS_DIALECT
+#define TIBS_DIALECT
 
 include "mlir/IR/OpBase.td"
 
 //===----------------------------------------------------------------------===//
-// PaulLang dialect definition.
+// Tibs dialect definition.
 //===----------------------------------------------------------------------===//
 
-def PaulLang_Dialect : Dialect {
-    let name = "paullang";
-    let summary = "An out-of-tree MLIR dialect.";
+def Tibs_Dialect : Dialect {
+    let name = "tibs";
+    let summary = "Tibs MLIR dialect."; // TODO update this documentation
     let description = [{
-        This dialect is an example of an out-of-tree MLIR dialect designed to
-        illustrate the basic setup required to develop MLIR-based tools without
-        working inside of the LLVM source tree.
+        Tibs MLIR dialect.
     }];
-    let cppNamespace = "::mlir::paullang";
+    let cppNamespace = "::mlir::tibs";
 }
 
 //===----------------------------------------------------------------------===//
-// Base paullang operation definition.
+// Base tibs operation definition.
 //===----------------------------------------------------------------------===//
 
-class PaulLang_Op<string mnemonic, list<OpTrait> traits = []> :
-        Op<PaulLang_Dialect, mnemonic, traits>;
+class Tibs_Op<string mnemonic, list<OpTrait> traits = []> :
+        Op<Tibs_Dialect, mnemonic, traits>;
 
-#endif // PAULLANG_DIALECT
+#endif // TIBS_DIALECT
