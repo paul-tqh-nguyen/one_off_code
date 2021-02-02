@@ -4,7 +4,6 @@ set(LIBS
         ${dialect_libs}
         ${conversion_libs}
         MLIROptLib
-        MLIRTibsLang
         )
 add_llvm_executable(tibs-opt tibs-opt.cpp)
 

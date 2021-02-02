@@ -8,15 +8,14 @@ export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/mlir/lib:$LD_LIBRARY_PATH
 export BUILD_DIR=/home/pnguyen/code/one_off_code/mlir/llvm-project/build
 export PREFIX=/home/pnguyen/code/one_off_code/mlir/llvm-project/build
 
-cd /home/pnguyen/code/one_off_code/mlir/llvm-project/mlir/examples/tibs
+cd /home/pnguyen/code/one_off_code/mlir/tibs/
 mkdir build
 cd build
 
 cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit
-cmake --build . --target check-standalone
 ninja
 
-cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit && cmake --build . --target check-paullang && ninja && ./paullang-main/paullang-main
+cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit && ninja && ./tibs-main/tibs-main
 
 ========================================================================================================================
 
