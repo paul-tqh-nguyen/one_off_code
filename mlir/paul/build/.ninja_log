@@ -1,0 +1,19 @@
+# ninja log v5
+7514	10792	1609812425864769047	bin/paullang-opt	7b9e442e0d9c3256
+3	20	1609393260048876514	include/PaulLang/PaulLangOps.h.inc	2bc82e7c03504411
+21	1899	1609393261924854394	lib/PaulLang/CMakeFiles/obj.MLIRPaulLang.dir/PaulLangDialect.cpp.o	7308a4aec1817a9e
+5	2923	1609811349789501131	paullang-main/CMakeFiles/paullang-main.dir/paullang-main.cpp.o	31432819fdb1641a
+4	18	1609393260044876561	include/PaulLang/PaulLangOpsTypes.cpp.inc	de02d25a56a59ea7
+7515	9532	1609812424612782569	bin/paullang-translate	e605d4c4efe58330
+1	175	1612215698921048803	build.ninja	73fb733334bd9c27
+7450	7514	1609812422600804294	lib/libMLIRPaulLang.a	29490e0476db769a
+10792	11048	0	test/CMakeFiles/check-paullang	488ac91e22e8d86b
+4	19	1609393260048876514	include/PaulLang/PaulLangOpsTypes.h.inc	4bed9b22f54f3a80
+4	21	1609393260048876514	include/PaulLang/PaulLangOps.cpp.inc	2176d8154889fef1
+22	1569	1609393261596858261	paullang-translate/CMakeFiles/paullang-translate.dir/paullang-translate.cpp.o	6da552e15e3a5eb3
+5	1671	1609812427808748045	paullang-main/paullang-main	ae908de92f8e2206
+21	2175	1609393262200851140	lib/PaulLang/CMakeFiles/obj.MLIRPaulLang.dir/PaulLangOps.cpp.o	1c54f971a83b62c3
+4	7449	1609812422532805029	lib/PaulLang/CMakeFiles/obj.MLIRPaulLang.dir/PaulLangPasses.cpp.o	adbb7cc19e6dc1af
+5	18	1609393260048876514	include/PaulLang/PaulLangOpsDialect.h.inc	fa648b0390efd3e
+22	11979	1609393272004735542	paullang-opt/CMakeFiles/paullang-opt.dir/paullang-opt.cpp.o	8275870ef5ba2761
+5	257	0	test/CMakeFiles/check-paullang	488ac91e22e8d86b
