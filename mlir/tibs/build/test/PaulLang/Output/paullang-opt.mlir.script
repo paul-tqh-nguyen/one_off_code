@@ -1,1 +1,0 @@
-set -o pipefail;{ : 'RUN: at line 1';   /home/pnguyen/code/one_off_code/mlir/tibs/build/bin/paullang-opt --show-dialects | /home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/FileCheck /home/pnguyen/code/one_off_code/mlir/tibs/test/PaulLang/paullang-opt.mlir; }
