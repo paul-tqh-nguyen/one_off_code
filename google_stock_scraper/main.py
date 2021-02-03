@@ -166,6 +166,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
                 time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
                 whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
                 if whole_time_string not in seen_whole_time_strings:
+                    print(f"whole_time_string {repr(whole_time_string)}")
                     time_string, period = whole_time_string.split(' ')
                     hour, minute = eager_map(int, time_string.split(':'))
                     assert period in ('AM', 'PM')
