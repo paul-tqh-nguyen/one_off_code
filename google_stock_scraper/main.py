@@ -21,8 +21,9 @@ import tqdm
 import datetime
 import sqlite3
 import pandas as pd
+import multiprocessing as mp
 from collections import OrderedDict
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from functools import lru_cache
 from typing import Union, List, Tuple, Iterable, Callable, Awaitable, Coroutine
 
@@ -34,14 +35,15 @@ from misc_utilities import *
 # Globals #
 ###########
 
-MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
 MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
 
 HEADLESS = True
 
 ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
 
-STOCK_DATA_DB_FILE = './stock_data.db'
+STOCK_DATA_DB_FILE = f'./stock_data{time.time()}.db'
+
+MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
 
 ###########
 # Logging #
@@ -70,8 +72,7 @@ _initialize_logger()
 EVENT_LOOP = asyncio.new_event_loop()
 asyncio.set_event_loop(EVENT_LOOP)
 
-@asynccontextmanager
-async def new_browser(*args, **kwargs) -> Generator:
+async def launch_browser(*args, **kwargs) -> pyppeteer.browser.Browser:
     sentinel = object()
     browser = sentinel
     while browser is sentinel:
@@ -79,12 +80,38 @@ async def new_browser(*args, **kwargs) -> Generator:
             browser: pyppeteer.browser.Browser = await pyppeteer.launch(kwargs, args=args)
         except Exception as browser_launch_error:
             pass
+    return browser
+    
+@asynccontextmanager
+async def new_browser(*args, **kwargs) -> Generator:
+    browser = await launch_browser(*args, **kwargs)
     try:
         yield browser
         await browser.close()
     except Exception as error:
         await browser.close()
         raise error
+    return
+
+BROWSER_POOL_SIZE = MAX_NUMBER_OF_CONCURRENT_BROWSERS
+BROWSER_POOL: List[pyppeteer.browser.Browser] = []
+BROWSER_POOL_ID_QUEUE = mp.Queue()
+
+async def initialize_browser_pool() -> None:
+    for browser_pool_id in range(BROWSER_POOL_SIZE):
+        BROWSER_POOL_ID_QUEUE.put(browser_pool_id)
+        browser = await launch_browser(headless=HEADLESS)
+        BROWSER_POOL.append(browser)
+    return
+
+EVENT_LOOP.run_until_complete(initialize_browser_pool())
+
+@contextmanager
+def pool_browser() -> Generator:
+    browser_pool_id = BROWSER_POOL_ID_QUEUE.get()
+    browser = BROWSER_POOL[browser_pool_id]
+    yield browser
+    BROWSER_POOL_ID_QUEUE.put(browser_pool_id)
     return
 
 def multi_attempt_scrape_function(func: Awaitable) -> Awaitable:
@@ -168,7 +195,8 @@ async def _gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[dat
     year = now.year
     month = now.month
     day = now.day
-    async with new_browser(headless=HEADLESS) as browser:
+    # async with new_browser(headless=HEADLESS) as browser:
+    with pool_browser() as browser:
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
