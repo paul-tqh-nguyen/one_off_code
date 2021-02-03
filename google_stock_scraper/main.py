@@ -239,7 +239,6 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[date
     
 async def update_stock_db(cursor: sqlite3.Cursor) -> None:
     ticker_symbols = await gather_ticker_symbols()
-    ticker_symbols = ['URG']
     LOGGER.info(f'{len(ticker_symbols)} ticker symbols gathered.')
     total_execution_time = 0
     semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
