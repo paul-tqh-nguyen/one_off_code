@@ -9,6 +9,7 @@
 # Imports #
 ###########
 
+import argparse
 import tempfile
 import time
 import logging
@@ -40,31 +41,7 @@ MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
 
 HEADLESS = True
 
-ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
-
-STOCK_DATA_DB_FILE_BASE_NAME = 'stock_data.db'
-
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
-
-###########
-# Logging #
-###########
-
-LOGGER_NAME = 'scraping_logger'
-LOGGER = logging.getLogger(LOGGER_NAME)
-LOGGER_OUTPUT_FILE = './logs.txt'
-LOGGER_STREAM_HANDLER = logging.StreamHandler(stream=sys.stdout)
-
-def _initialize_logger() -> None:
-    LOGGER.setLevel(logging.INFO)
-    logging_formatter = logging.Formatter('{asctime} - pid: {process} - threadid: {thread} - func: {funcName} - {levelname}: {message}', style='{')
-    logging_file_handler = logging.FileHandler(LOGGER_OUTPUT_FILE)
-    logging_file_handler.setFormatter(logging_formatter)
-    LOGGER.addHandler(logging_file_handler)
-    LOGGER.addHandler(LOGGER_STREAM_HANDLER)
-    return
-
-_initialize_logger()
 
 ##########################
 # Web Scraping Utilities #
@@ -105,10 +82,22 @@ async def initialize_browser_pool() -> None:
         BROWSER_POOL.append(browser)
     return
 
-EVENT_LOOP.run_until_complete(initialize_browser_pool())
+async def close_browser_pool() -> None:
+    for _ in range(len(BROWSER_POOL)):
+        browser = BROWSER_POOL.pop()
+        await browser.close()
+    return
+
+@contextmanager
+def browser_pool_initialized() -> Generator:
+    assert len(BROWSER_POOL) == 0, f'Browser pool already initialized.'
+    EVENT_LOOP.run_until_complete(initialize_browser_pool())
+    yield
+    EVENT_LOOP.run_until_complete(close_browser_pool())
 
 @contextmanager
 def pool_browser() -> Generator:
+    assert len(BROWSER_POOL) > 0, f'Browser pool is empty (it is likely uninitialized).'
     browser_pool_id = BROWSER_POOL_ID_QUEUE.get()
     browser = BROWSER_POOL[browser_pool_id]
     yield browser
@@ -171,21 +160,6 @@ setattr(pyppeteer.page.Page, 'safelyWaitForNavigation', _safelyWaitForNavigation
 ###########
 # Scraper #
 ###########
-
-async def gather_ticker_symbols() -> List[str]:
-    async with new_browser(headless=HEADLESS) as browser:
-        page = only_one(await browser.pages())
-        await page.goto(ALL_TICKER_SYMBOLS_URL)
-        main = await page.get_sole_element('main#main.site-main')
-        article = await main.get_sole_element('article.page.type-page.status-publish')
-        inside_article_div = await article.get_sole_element('div.inside-article')
-        entry_content_div = await inside_article_div.get_sole_element('div.entry-content')
-        ul = await page.get_sole_element('ul.no-spacing')
-        ul_html_string = await page.evaluate('(element) => element.innerHTML', ul)
-        soup = bs4.BeautifulSoup(ul_html_string, 'html.parser')
-        li_elements = soup.findAll('li')
-        ticker_symbols = [only_one(li_element.findAll('a')).getText().split(' - ')[0] for li_element in li_elements]
-    return ticker_symbols
 
 @multi_attempt_scrape_function
 async def _gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[datetime.datetime, str, float]], str]:
@@ -266,15 +240,19 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[date
     rows, zero_result_explanation = await _gather_ticker_symbol_rows(ticker_symbol)
     return rows, zero_result_explanation, ticker_symbol
     
-async def update_stock_db(cursor: sqlite3.Cursor) -> None:
-    ticker_symbols = await gather_ticker_symbols()
-    LOGGER.info(f'{len(ticker_symbols)} ticker symbols gathered.')
+async def update_stock_db(stock_data_db_file: str, ticker_symbols: List[str]) -> None:
+    connection = sqlite3.connect(stock_data_db_file)
+    cursor = connection.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)')
+        
     total_execution_time = 0
+    
     semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
     async def semaphore_task(task: Awaitable):
         async with semaphore:
             return await task
     tasks = asyncio.as_completed(eager_map(semaphore_task, map(gather_ticker_symbol_rows, ticker_symbols)))
+    
     for index, task in enumerate(tasks):
         execution_time_container = []
         with timer(exitCallback=lambda time: execution_time_container.append(time)):
@@ -283,26 +261,25 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
         total_execution_time += execution_time
         LOGGER.info(f'[{index+1:4}/{len(ticker_symbols):4}] [{total_execution_time/(index+1):6.2f} s/iter] [{execution_time:6.2f}s] {ticker_symbol:5} yielded {len(rows):4} results. {zero_result_explanation}')
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
+        connection.commit();
+    
+    connection.close()
     return
 
 ##########
 # Driver #
 ##########
-
-def main() -> None:
-    with tempfile.TemporaryDirectory() as temporary_directory:
-        stock_data_db_file = os.path.join(temporary_directory, STOCK_DATA_DB_FILE_BASE_NAME)
-        
-        connection = sqlite3.connect(stock_data_db_file)
-        cursor = connection.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)''')
-        
-        with timer('Data gathering'):
-            EVENT_LOOP.run_until_complete(update_stock_db(cursor))
-        
-        df = pd.read_sql_query('SELECT * from stocks', connection)
-        breakpoint()
-    return
     
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
+    parser.add_argument('-output-file', type=str, default='stock_data.db', help='Output DB file.')
+    parser.add_argument('-ticker-symbol-file', type=str, help='Newline-delimited file of ticker symbols.', required=True)
+    args = parser.parse_args()
+
+    stock_data_db_file = args.output_file
+    with open(args.ticker_symbol_file, 'r') as f:
+        ticker_symbols = f.read().split('\n')
+    with timer('Data gathering'):
+        with browser_pool_initialized():
+            EVENT_LOOP.run_until_complete(update_stock_db(stock_data_db_file, ticker_symbols))
+

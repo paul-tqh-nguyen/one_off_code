@@ -4,6 +4,8 @@ dependencies:
   - tqdm
   - beautifulsoup4
   - pandas
+  - requests
+  - more-itertools
   - pip
   - pip:
     - pyppeteer

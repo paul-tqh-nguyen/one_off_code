@@ -1,4 +1,22 @@
 
+# Logging
+
+import logging
+
+LOGGER_NAME = 'scraping_logger'
+LOGGER = logging.getLogger(LOGGER_NAME)
+LOGGER_OUTPUT_FILE = './logs.txt'
+
+def _initialize_logger() -> None:
+    LOGGER.setLevel(logging.INFO)
+    logging_formatter = logging.Formatter('{asctime} - pid: {process} - threadid: {thread} - func: {funcName} - {levelname}: {message}', style='{')
+    logging_file_handler = logging.FileHandler(LOGGER_OUTPUT_FILE)
+    logging_file_handler.setFormatter(logging_formatter)
+    LOGGER.addHandler(logging_file_handler)
+    return
+
+_initialize_logger()
+
 # Debugging Utilities
 
 from typing import Generator
