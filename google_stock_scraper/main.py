@@ -97,7 +97,7 @@ def multi_attempt_scrape_function(func: Awaitable) -> Awaitable:
                 break
             except Exception as e:
                 failure_message = f'{func.__qualname__} with the args {args} and kwargs {kwargs} failed due to the following error: {repr(e)}'
-                print(failure_message+'\nTrying again.')
+                LOGGER.info(failure_message+'\nTrying again.')
                 pass
         if result == unique_bogus_result_identifier:
             raise RuntimeError(failure_message)
@@ -176,7 +176,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         
         chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
         if not chart_found:
-            print(f'Chart not found for {ticker_symbol}')
+            LOGGER.info(f'Chart not found for {ticker_symbol}')
             return rows
 
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
@@ -188,7 +188,7 @@ return [top, left, width, height];
 
         chart_svgs = await chart_div.get_elements('svg')
         if len(chart_svgs) == 0:
-            print(f'SVG not found for {ticker_symbol}')
+            LOGGER.info(f'SVG not found for {ticker_symbol}')
             return rows
         assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs within the chart.'
 
@@ -199,7 +199,7 @@ return [top, left, width, height];
                 time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
                 whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
         if whole_time_string == '10:30PM':
-            print(f'{ticker_symbol} could not load properly.')
+            LOGGER.info(f'{ticker_symbol} could not load properly.')
             return rows
 
         y = (top + top + height) / 2
@@ -222,7 +222,7 @@ return [top, left, width, height];
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
                 
                 if not price_string.endswith(' USD'):
-                    print(f'Cannot handle price string {repr(price_string)} for {ticker_symbol}')
+                    LOGGER.info(f'Cannot handle price string {repr(price_string)} for {ticker_symbol}')
                     return rows
                 price = float(price_string.replace(' USD', '').replace(',', ''))
     
@@ -250,9 +250,9 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
             rows = await coroutine
         execution_time = only_one(execution_time_container)
         total_execution_time += execution_time
-        print()
-        print(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time:.3f} seconds ({total_execution_time/(index+1):.3f} seconds per iteration on average).')
-        print()
+        LOGGER.info()
+        LOGGER.info(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time:.3f} seconds ({total_execution_time/(index+1):.3f} seconds per iteration on average).')
+        LOGGER.info()
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
     return
 
