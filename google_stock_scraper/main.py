@@ -183,7 +183,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
             LOGGER.info(f'Chart not found for {ticker_symbol}')
             return rows
         
-        LOGGER.info(f"{ticker_symbol} 5") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 5 chart_found {repr(chart_found)}") # TODO remove this
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
         top, left, width, height = await page.evaluate('''
 (element) => {
