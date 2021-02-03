@@ -225,8 +225,6 @@ def main() -> None:
         EVENT_LOOP.run_until_complete(update_stock_db(cursor))
     
     df = pd.read_sql_query("SELECT * from stocks", connection)
-    print(f"df.ticker_symbol.unique() {repr(df.ticker_symbol.unique())}")
-    print(f"len(df) {repr(len(df))}")
     breakpoint()
     return
 
