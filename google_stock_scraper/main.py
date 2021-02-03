@@ -218,11 +218,10 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
         async with semaphore:
             return await task
     coroutines = asyncio.as_completed(eager_map(semaphore_task, map(gather_ticker_symbol_rows, ticker_symbols)))
+    total_execution_time = 0
     for index, (ticker_symbol, coroutine) in enumerate(zip(ticker_symbols, coroutines)):
-        execution_time_container = [1]
-        def note_approximate_execution_time(time: float) -> None:
-            execution_time_container[0] = time
-        with timer(exitCallback=
+        execution_time_container = []
+        with timer(exitCallback=execution_time_container
         rows = await coroutine
         print()
         print(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points.')
