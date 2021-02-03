@@ -161,16 +161,16 @@ async def gather_ticker_symbols() -> List[str]:
 
 @multi_attempt_scrape_function
 async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.datetime, str, float]]:
-    LOGGER.info(f"{ticker_symbol} 1 {time.time()}") # TODO remove this
+    # LOGGER.info(f"{ticker_symbol} 1 {time.time()}") # TODO remove this
     seen_whole_time_strings = set()
     rows = []
     now = datetime.datetime.now()
     year = now.year
     month = now.month
     day = now.day
-    LOGGER.info(f"{ticker_symbol} 2") # TODO remove this
+    # LOGGER.info(f"{ticker_symbol} 2") # TODO remove this
     async with new_browser(headless=HEADLESS) as browser:
-        LOGGER.info(f"{ticker_symbol} 3") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} 3") # TODO remove this
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
@@ -179,7 +179,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         search_div = await page.get_sole_element('div#search')
         
         chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
-        LOGGER.info(f"{ticker_symbol} 4 chart_found {repr(chart_found)}") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} 4 chart_found {repr(chart_found)}") # TODO remove this
         if not chart_found:
             LOGGER.info(f'Chart not found for {ticker_symbol}')
             return rows
@@ -190,20 +190,20 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
 const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div)
-        LOGGER.info(f"{ticker_symbol} 5 top {repr(top)}")
-        LOGGER.info(f"{ticker_symbol} 5 left {repr(left)}")
-        LOGGER.info(f"{ticker_symbol} 5 width {repr(width)}")
-        LOGGER.info(f"{ticker_symbol} 5 height {repr(height)}")
-        LOGGER.info(f"{ticker_symbol} 5 {time.time()}") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} 5 top {repr(top)}")
+        # LOGGER.info(f"{ticker_symbol} 5 left {repr(left)}")
+        # LOGGER.info(f"{ticker_symbol} 5 width {repr(width)}")
+        # LOGGER.info(f"{ticker_symbol} 5 height {repr(height)}")
+        # LOGGER.info(f"{ticker_symbol} 5 {time.time()}") # TODO remove this
 
         chart_svgs = await chart_div.get_elements('svg')
-        LOGGER.info(f"{ticker_symbol} 6 len(chart_svgs) {repr(len(chart_svgs))}") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} 6 len(chart_svgs) {repr(len(chart_svgs))}") # TODO remove this
         if len(chart_svgs) == 0:
             LOGGER.info(f'SVG not found for {ticker_symbol}')
             return rows
         assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs within the chart.'
 
-        LOGGER.info(f"{ticker_symbol} 7") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} 7") # TODO remove this
         whole_time_string = '10:30PM'
         with timeout(30):
             while whole_time_string == '10:30PM':
@@ -214,9 +214,9 @@ return [top, left, width, height];
             LOGGER.info(f'{ticker_symbol} could not load properly.')
             return rows
 
-        LOGGER.info(f"{ticker_symbol} 8 {time.time()}") # TODO remove this
-        LOGGER.info(f"{ticker_symbol} left {repr(left)}") # TODO remove this
-        LOGGER.info(f"{ticker_symbol} left+width {repr(left+width)}") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} 8 {time.time()}") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} left {repr(left)}") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} left+width {repr(left+width)}") # TODO remove this
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
@@ -226,34 +226,34 @@ return [top, left, width, height];
             
             if whole_time_string not in seen_whole_time_strings:
 
-                LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
+                # LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
                 time_string, period = whole_time_string.split(' ')
                 hour, minute = eager_map(int, time_string.split(':'))
-                LOGGER.info(f"{ticker_symbol} 10 hour {repr(hour)}")
-                LOGGER.info(f"{ticker_symbol} 10 minute {repr(minute)}")
-                LOGGER.info(f"{ticker_symbol} 10 period {repr(period)}")
-                LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
+                # LOGGER.info(f"{ticker_symbol} 10 hour {repr(hour)}")
+                # LOGGER.info(f"{ticker_symbol} 10 minute {repr(minute)}")
+                # LOGGER.info(f"{ticker_symbol} 10 period {repr(period)}")
+                # LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
                 assert period in ('AM', 'PM')
                 if period == 'PM' and hour != 12:
                     hour += 12
                 date_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
 
-                LOGGER.info(f"{ticker_symbol} 11 date_time {repr(date_time)}")
-                LOGGER.info(f"{ticker_symbol} 11") # TODO remove this
+                # LOGGER.info(f"{ticker_symbol} 11 date_time {repr(date_time)}")
+                # LOGGER.info(f"{ticker_symbol} 11") # TODO remove this
                 price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
 
-                LOGGER.info(f"{ticker_symbol} 12 price_string {repr(price_string)}")
-                LOGGER.info(f"{ticker_symbol} 12") # TODO remove this
+                # LOGGER.info(f"{ticker_symbol} 12 price_string {repr(price_string)}")
+                # LOGGER.info(f"{ticker_symbol} 12") # TODO remove this
                 if not price_string.endswith(' USD'):
                     LOGGER.info(f'Cannot handle price string {repr(price_string)} for {ticker_symbol}')
                     return rows
                 price = float(price_string.replace(' USD', '').replace(',', ''))
 
-                LOGGER.info(f"{ticker_symbol} 13") # TODO remove this
+                # LOGGER.info(f"{ticker_symbol} 13") # TODO remove this
                 row = (date_time, ticker_symbol, price)
-                LOGGER.info(f"ticker_symbol {repr(ticker_symbol)}") # TODO remove this
-                LOGGER.info(f"{ticker_symbol} 13 row {repr(row)}") # TODO remove this
+                # LOGGER.info(f"ticker_symbol {repr(ticker_symbol)}") # TODO remove this
+                # LOGGER.info(f"{ticker_symbol} 13 row {repr(row)}") # TODO remove this
                 rows.append(row)
                 seen_whole_time_strings.add(whole_time_string)
                 LOGGER.info(f"{ticker_symbol} 14 {time.time()}") # TODO remove this
