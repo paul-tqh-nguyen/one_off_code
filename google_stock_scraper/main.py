@@ -172,6 +172,8 @@ return [top, left, width, height];
         whole_time_string = '10:30PM'
         with timeout(30):
             while whole_time_string == '10:30PM':
+                info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
+                time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
                 whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
         if whole_time_string == '10:30PM':
             print(f'{ticker_symbol} could not load properly.')
