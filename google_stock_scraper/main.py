@@ -46,7 +46,7 @@ STOCK_DATA_DB_FILE = './stock_data.db'
 # Logging #
 ###########
 
-LOGGER_NAME = 'mutag_logger'
+LOGGER_NAME = 'scraping_logger'
 LOGGER = logging.getLogger(LOGGER_NAME)
 LOGGER_OUTPUT_FILE = './logs.txt'
 LOGGER_STREAM_HANDLER = logging.StreamHandler(stream=sys.stdout)
