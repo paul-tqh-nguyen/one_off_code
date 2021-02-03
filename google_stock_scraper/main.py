@@ -205,7 +205,7 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
         async with semaphore:
             return await task
     coroutines = asyncio.as_completed(eager_map(semaphore_task, map(gather_ticker_symbol_rows, ticker_symbols)))
-    for ticker_symbol, coroutine in tqdm.tqdm(zip(ticker_symbols, coroutines), total=len(ticker_symbols), bar_format='{l_bar}{bar:50}{r_bar}'):
+    for ticker_symbol, coroutine in enumerate(zip(ticker_symbols, coroutines)):
         rows = await coroutine
         print()
         print(f'{ticker_symbol} yielded {len(rows)} data points.')
