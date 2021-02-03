@@ -39,7 +39,7 @@ from misc_utilities import *
 
 MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
 
-HEADLESS = True
+HEADLESS = False
 
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
 
@@ -241,6 +241,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[date
     return rows, zero_result_explanation, ticker_symbol
     
 async def update_stock_db(stock_data_db_file: str, ticker_symbols: List[str]) -> None:
+    print(f"ticker_symbols {repr(ticker_symbols)}")
     connection = sqlite3.connect(stock_data_db_file)
     cursor = connection.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)')
@@ -280,6 +281,6 @@ if __name__ == '__main__':
     with open(args.ticker_symbol_file, 'r') as f:
         ticker_symbols = eager_filter(len, map(str.strip,  f.read().split('\n')))
     with timer('Data gathering'):
-        with browser_pool_initialized():
-            EVENT_LOOP.run_until_complete(update_stock_db(stock_data_db_file, ticker_symbols))
+        # with browser_pool_initialized():
+        EVENT_LOOP.run_until_complete(update_stock_db(stock_data_db_file, ticker_symbols))
 
