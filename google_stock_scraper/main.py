@@ -201,7 +201,7 @@ return [top, left, width, height];
         if len(chart_svgs) == 0:
             LOGGER.info(f'SVG not found for {ticker_symbol}')
             return rows
-        assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs within the chart.'
+        assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs ({len(chart_svgs)}) within the chart.'
 
         # LOGGER.info(f"{ticker_symbol} 7") # TODO remove this
         whole_time_string = '10:30PM'
