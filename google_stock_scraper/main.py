@@ -268,12 +268,7 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
     ticker_symbols = ticker_symbols[:100] # TODO remove this
     LOGGER.info(f'{len(ticker_symbols)} ticker symbols gathered.')
     semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
-    # async def semaphore_task(task: Awaitable):
-    #     async with semaphore:
-    #         return await task
-    # coroutines = asyncio.as_completed(eager_map(semaphore_task, map(gather_ticker_symbol_rows, ticker_symbols)))
     total_execution_time = 0
-    # for index, (ticker_symbol, coroutine) in enumerate(zip(ticker_symbols, coroutines)):
     for index, ticker_symbol in enumerate(ticker_symbols):
         execution_time_container = []
         with timer(exitCallback=lambda time: execution_time_container.append(time)):
