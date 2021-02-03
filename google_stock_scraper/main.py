@@ -223,7 +223,7 @@ def main() -> None:
     with timer('Data gathering'):
         EVENT_LOOP.run_until_complete(update_stock_db(cursor))
     
-    df = pd.read_sql_query("SELECT * from stocks", connection)
+    df = pd.read_sql_query('SELECT * from stocks', connection)
     breakpoint()
     return
 
