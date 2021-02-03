@@ -195,8 +195,8 @@ return [top, left, width, height];
         LOGGER.info(f"{ticker_symbol} 5 height {repr(height)}")
         LOGGER.info(f"{ticker_symbol} 5 ") # TODO remove this
 
-        LOGGER.info(f"{ticker_symbol} 6") # TODO remove this
         chart_svgs = await chart_div.get_elements('svg')
+        LOGGER.info(f"{ticker_symbol} 6 len(chart_svgs) {repr(len(chart_svgs))}") # TODO remove this
         if len(chart_svgs) == 0:
             LOGGER.info(f'SVG not found for {ticker_symbol}')
             return rows
