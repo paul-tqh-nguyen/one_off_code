@@ -161,7 +161,7 @@ async def gather_ticker_symbols() -> List[str]:
 
 @multi_attempt_scrape_function
 async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.datetime, str, float]]:
-    # LOGGER.info(f"{ticker_symbol} 1 {time.time()}") # TODO remove this
+    LOGGER.info(f"{ticker_symbol} 1 {time.time()}") # TODO remove this
     seen_whole_time_strings = set()
     rows = []
     now = datetime.datetime.now()
