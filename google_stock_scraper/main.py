@@ -182,7 +182,8 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         if not chart_found:
             LOGGER.info(f'Chart not found for {ticker_symbol}')
             return rows
-
+        
+        LOGGER.info(f"5") # TODO remove this
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
         top, left, width, height = await page.evaluate('''
 (element) => {
@@ -190,6 +191,7 @@ const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div) 
 
+        LOGGER.info(f"6") # TODO remove this
         chart_svgs = await chart_div.get_elements('svg')
         if len(chart_svgs) == 0:
             LOGGER.info(f'SVG not found for {ticker_symbol}')
