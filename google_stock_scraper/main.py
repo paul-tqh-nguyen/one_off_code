@@ -177,7 +177,7 @@ async def _gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[dat
 
         chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 2_000})
         if not chart_found:
-            zero_result_explanation = f'Chart not found for {ticker_symbol}'
+            zero_result_explanation = f'Chart not found for {ticker_symbol}.'
             return rows, zero_result_explanation
         
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
@@ -189,7 +189,7 @@ return [top, left, width, height];
 
         chart_svgs = await chart_div.get_elements('svg')
         if len(chart_svgs) == 0:
-            zero_result_explanation = f'SVG not found for {ticker_symbol}'
+            zero_result_explanation = f'SVG not found for {ticker_symbol}.'
             return rows, zero_result_explanation
         assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs ({len(chart_svgs)}) within the whole.'
 
@@ -223,7 +223,7 @@ return [top, left, width, height];
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
 
                 if not price_string.endswith(' USD'):
-                    zero_result_explanation = f'Cannot handle price string {repr(price_string)} for {ticker_symbol}'
+                    zero_result_explanation = f'Cannot handle price string {repr(price_string)} for {ticker_symbol}.'
                     return rows, zero_result_explanation
                 price = float(price_string.replace(' USD', '').replace(',', ''))
 
