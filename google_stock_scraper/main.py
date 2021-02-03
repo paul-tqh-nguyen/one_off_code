@@ -160,30 +160,30 @@ async def gather_ticker_symbols() -> List[str]:
 
 @multi_attempt_scrape_function
 async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.datetime, str, float]]:
-    LOGGER.info(f"1") # TODO remove this
+    LOGGER.info(f"{ticker_symbol} 1") # TODO remove this
     seen_whole_time_strings = set()
     rows = []
     now = datetime.datetime.now()
     year = now.year
     month = now.month
     day = now.day
-    LOGGER.info(f"2") # TODO remove this
+    LOGGER.info(f"{ticker_symbol} 2") # TODO remove this
     async with new_browser(headless=HEADLESS) as browser:
-        LOGGER.info(f"3") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 3") # TODO remove this
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
         await page.goto(google_url)
         await asyncio.sleep(1) # TODO this is a hack
         search_div = await page.get_sole_element('div#search')
-        LOGGER.info(f"4") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 4") # TODO remove this
         
         chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
         if not chart_found:
             LOGGER.info(f'Chart not found for {ticker_symbol}')
             return rows
         
-        LOGGER.info(f"5") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 5") # TODO remove this
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
         top, left, width, height = await page.evaluate('''
 (element) => {
@@ -191,14 +191,14 @@ const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div) 
 
-        LOGGER.info(f"6") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 6") # TODO remove this
         chart_svgs = await chart_div.get_elements('svg')
         if len(chart_svgs) == 0:
             LOGGER.info(f'SVG not found for {ticker_symbol}')
             return rows
         assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs within the chart.'
 
-        LOGGER.info(f"7") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 7") # TODO remove this
         whole_time_string = '10:30PM'
         with timeout(30):
             while whole_time_string == '10:30PM':
@@ -209,9 +209,9 @@ return [top, left, width, height];
             LOGGER.info(f'{ticker_symbol} could not load properly.')
             return rows
 
-        LOGGER.info(f"8") # TODO remove this
-        LOGGER.info(f"left {repr(left)}") # TODO remove this
-        LOGGER.info(f"left+width {repr(left+width)}") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 8") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} left {repr(left)}") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} left+width {repr(left+width)}") # TODO remove this
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
@@ -221,7 +221,7 @@ return [top, left, width, height];
             
             if whole_time_string not in seen_whole_time_strings:
 
-                LOGGER.info(f"10") # TODO remove this
+                LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
                 time_string, period = whole_time_string.split(' ')
                 hour, minute = eager_map(int, time_string.split(':'))
                 assert period in ('AM', 'PM')
@@ -229,24 +229,24 @@ return [top, left, width, height];
                     hour += 12
                 time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
 
-                LOGGER.info(f"11") # TODO remove this
+                LOGGER.info(f"{ticker_symbol} 11") # TODO remove this
                 price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
 
-                LOGGER.info(f"12") # TODO remove this
+                LOGGER.info(f"{ticker_symbol} 12") # TODO remove this
                 if not price_string.endswith(' USD'):
                     LOGGER.info(f'Cannot handle price string {repr(price_string)} for {ticker_symbol}')
                     return rows
                 price = float(price_string.replace(' USD', '').replace(',', ''))
 
-                LOGGER.info(f"13") # TODO remove this
+                LOGGER.info(f"{ticker_symbol} 13") # TODO remove this
                 row = (time, ticker_symbol, price)
                 LOGGER.info(f"ticker_symbol {repr(ticker_symbol)}") # TODO remove this
-                LOGGER.info(f"row {repr(row)}") # TODO remove this
+                LOGGER.info(f"{ticker_symbol} row {repr(row)}") # TODO remove this
                 rows.append(row)
                 seen_whole_time_strings.add(whole_time_string)
-                LOGGER.info(f"14") # TODO remove this
-    LOGGER.info(f"15") # TODO remove this
+                LOGGER.info(f"{ticker_symbol} 14") # TODO remove this
+    LOGGER.info(f"{ticker_symbol} 15") # TODO remove this
     assert len(rows) != 0
     return rows
 
