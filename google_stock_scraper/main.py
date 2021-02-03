@@ -179,6 +179,7 @@ return [top, left, width, height];
                 whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
                 if whole_time_string != '10:30PM':
                     break
+                print(f"whole_time_string {repr(whole_time_string)}")
             if whole_time_string not in seen_whole_time_strings:
 
                 time_string, period = whole_time_string.split(' ')
