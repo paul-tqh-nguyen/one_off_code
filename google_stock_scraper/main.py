@@ -171,8 +171,7 @@ return [top, left, width, height];
             whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
             print(f"whole_time_string {repr(whole_time_string)}")
             if whole_time_string == '10:30PM':
-                print(f"whole_time_string {repr(whole_time_string)}")
-                exit()
+                print(f'Waiting to load for {ticker_symbol}')
                 await asyncio.sleep(1)
         
         y = (top + top + height) / 2
