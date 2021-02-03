@@ -166,7 +166,7 @@ const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div) 
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(1) # TODO this is a hack
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
