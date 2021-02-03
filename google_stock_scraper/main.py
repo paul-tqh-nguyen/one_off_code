@@ -229,20 +229,25 @@ return [top, left, width, height];
                 if period == 'PM' and hour != 12:
                     hour += 12
                 time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
-                
+
+                LOGGER.info(f"11") # TODO remove this
                 price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
-                
+
+                LOGGER.info(f"12") # TODO remove this
                 if not price_string.endswith(' USD'):
                     LOGGER.info(f'Cannot handle price string {repr(price_string)} for {ticker_symbol}')
                     return rows
                 price = float(price_string.replace(' USD', '').replace(',', ''))
-    
+
+                LOGGER.info(f"13") # TODO remove this
                 row = (time, ticker_symbol, price)
                 LOGGER.info(f"ticker_symbol {repr(ticker_symbol)}") # TODO remove this
                 LOGGER.info(f"row {repr(row)}") # TODO remove this
                 rows.append(row)
                 seen_whole_time_strings.add(whole_time_string)
+                LOGGER.info(f"14") # TODO remove this
+    LOGGER.info(f"15") # TODO remove this
     assert len(rows) != 0
     return rows
 
