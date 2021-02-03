@@ -186,6 +186,8 @@ return [top, left, width, height];
                 
                 price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
+                if price_string.endswith(' CAD'):
+                    return rows
                 assert price_string.endswith(' USD'), f'Bad price string: {repr(price_string)}'
                 price = float(price_string.replace(' USD', '').replace(',', ''))
     
