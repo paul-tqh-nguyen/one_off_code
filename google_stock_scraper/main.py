@@ -32,7 +32,7 @@ from misc_utilities import *
 ###########
 
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 10
-MAX_NUMBER_OF_CONCURRENT_BROWSERS = 30
+MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
 
 HEADLESS = True
 
@@ -211,6 +211,7 @@ return [top, left, width, height];
 async def update_stock_db(cursor: sqlite3.Cursor) -> None:    
     semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
     ticker_symbols = await gather_ticker_symbols()
+    ticker_symbols = ticker_symbols[:1] # TODO remove this
     print(f'{len(ticker_symbols)} ticker symbols gathered.')
     async def semaphore_task(task: Awaitable):
         async with semaphore:
