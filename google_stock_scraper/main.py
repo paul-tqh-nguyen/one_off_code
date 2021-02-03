@@ -179,6 +179,8 @@ return [top, left, width, height];
             with timeout(30):
                 while whole_time_string == '10:30PM':
                     whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
+            if whole_time_string == '10:30PM':
+                print(f'{ticker_symbol} could not load properly.')
             
             if whole_time_string not in seen_whole_time_strings:
 
