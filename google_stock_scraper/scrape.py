@@ -170,7 +170,8 @@ async def _gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[dat
     year = now.year
     month = now.month
     day = now.day
-    with pool_browser() as browser:
+    #with pool_browser() as browser:
+    async with new_browser(headless=HEADLESS) as browser:
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
@@ -277,7 +278,7 @@ if __name__ == '__main__':
 
     stock_data_db_file = args.output_file
     with open(args.ticker_symbol_file, 'r') as f:
-        ticker_symbols = f.read().split('\n')
+        ticker_symbols = eager_filter(len, map(str.strip,  f.read().split('\n')))
     with timer('Data gathering'):
         with browser_pool_initialized():
             EVENT_LOOP.run_until_complete(update_stock_db(stock_data_db_file, ticker_symbols))

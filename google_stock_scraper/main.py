@@ -27,7 +27,7 @@ from misc_utilities import *
 # Globals #
 ###########
 
-NUMBER_OF_SUBPROCESSES = 4
+NUMBER_OF_SUBPROCESSES = 8
 
 SUBPROCESS_COMMAND_TEMPLATE = 'python3 scrape.py -output {stock_data_db_file} -ticker-symbol-file {ticker_symbol_file}'
 
@@ -54,7 +54,6 @@ def gather_ticker_symbols() -> List[str]:
 def poll_scraping_subprocess(process: subprocess.Popen, pids: Set[int]) -> None:
     last_message = ''
     while process.poll() is None:
-        time.sleep(1)
         with open(LOGGER_OUTPUT_FILE, 'r') as f:
             lines = f.readlines()
         pid_to_message_line = {}
@@ -101,7 +100,7 @@ if __name__ == '__main__':
             stock_data_db_file = os.path.join(temporary_directory, f'stock_data_{subprocess_id}.db')
             ticker_symbol_file = os.path.join(temporary_directory, f'ticker_symbols_{subprocess_id}.txt')
             with open(ticker_symbol_file, 'w') as f:
-                f.write('\n'.join(ticker_symbols))
+                f.write('\n'.join(ticker_symbol_batch))
             command = SUBPROCESS_COMMAND_TEMPLATE.format(
                 stock_data_db_file=stock_data_db_file,
                 ticker_symbol_file=ticker_symbol_file
