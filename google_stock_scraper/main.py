@@ -157,7 +157,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
             return rows
 
         chart_svgs = await chart_found.get_elements('svg', {'timeout': 5_000})
-        if not chart_svg_found:
+        if len(chart_svgs) == 0:
             print(f'SVG not found for {ticker_symbol}')
             return rows
         
