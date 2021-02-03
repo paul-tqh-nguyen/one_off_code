@@ -1,0 +1,9 @@
+name: stock_scraper
+dependencies:
+  - python=3.7
+  - tqdm
+  - beautifulsoup4
+  - pandas
+  - pip
+  - pip:
+    - pyppeteer
