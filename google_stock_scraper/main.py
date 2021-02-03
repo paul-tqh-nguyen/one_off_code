@@ -167,6 +167,7 @@ return [top, left, width, height];
             search_div_html = await page.evaluate('(element) => element.innerHTML', search_div)
             if 'No chart available' in search_div_html:
                 return rows
+            raise RuntimeError(f'Unhandled ticker symbol {ticker}')
         
         y = (top + top + height) / 2
         for x in range(left, left+width):
