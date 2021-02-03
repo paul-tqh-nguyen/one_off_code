@@ -208,7 +208,7 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
     for index, (ticker_symbol, coroutine) in enumerate(zip(ticker_symbols, coroutines)):
         rows = await coroutine
         print()
-        print(f'{ticker_symbol} yielded {len(rows)} data points.')
+        print(f'[{index+1}/{len(ticker_symbols)}]{ticker_symbol} yielded {len(rows)} data points.')
         print()
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
     return
