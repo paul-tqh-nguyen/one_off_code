@@ -212,7 +212,8 @@ return [top, left, width, height];
 async def update_stock_db(cursor: sqlite3.Cursor) -> None:    
     semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
     ticker_symbols = await gather_ticker_symbols()
-    ticker_symbols = ticker_symbols[:100]
+    # ticker_symbols = ticker_symbols[:100]
+    ticker_symbols = ['AACQ']
     print(f'{len(ticker_symbols)} ticker symbols gathered.')
     async def semaphore_task(task: Awaitable):
         async with semaphore:
