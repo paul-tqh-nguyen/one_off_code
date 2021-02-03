@@ -169,12 +169,14 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
     day = now.day
     LOGGER.info(f"2") # TODO remove this
     async with new_browser(headless=HEADLESS) as browser:
+        LOGGER.info(f"3") # TODO remove this
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
         await page.goto(google_url)
         await asyncio.sleep(1) # TODO this is a hack
         search_div = await page.get_sole_element('div#search')
+        LOGGER.info(f"4") # TODO remove this
         
         chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
         if not chart_found:
