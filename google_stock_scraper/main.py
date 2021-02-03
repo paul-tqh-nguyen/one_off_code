@@ -276,7 +276,7 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
                 rows = await gather_ticker_symbol_rows(ticker_symbol)
         execution_time = only_one(execution_time_container)
         total_execution_time += execution_time
-        LOGGER.info(f"{ticker_symbol} id(rows) {repr(id(rows))}")
+        # LOGGER.info(f"{ticker_symbol} id(rows) {repr(id(rows))}")
         LOGGER.info(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time:.3f} seconds ({total_execution_time/(index+1):.3f} seconds per iteration on average). {time.time()}')
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
     return
