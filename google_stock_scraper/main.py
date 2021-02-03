@@ -154,7 +154,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         if not chart_found:
             return rows
 
-        chart_svg_found = await chart_found.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
+        chart_svg_found = await chart_found.safelyWaitForSelector('svg', {'timeout': 5_000})
         if not chart_svg_found:
             return rows
         
