@@ -154,6 +154,14 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         if not chart_found:
             return rows
         
+        if whole_time_string == '10:30PM':
+            await asyncio.sleep(1)
+        if whole_time_string == '10:30PM':
+            search_div_html = await page.evaluate('(element) => element.innerHTML', search_div)
+            if 'No chart available' in search_div_html:
+                return rows
+            raise RuntimeError(f'Unhandled ticker symbol {ticker}')
+        
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
         top, left, width, height = await page.evaluate('''
 (element) => {
