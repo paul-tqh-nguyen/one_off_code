@@ -198,6 +198,7 @@ return [top, left, width, height];
                 row = (time, ticker_symbol, price)
                 rows.append(row)
                 seen_whole_time_strings.add(whole_time_string)
+    assert len(rows) != 0
     return rows
 
 async def update_stock_db(cursor: sqlite3.Cursor) -> None:    
