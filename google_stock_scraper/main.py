@@ -146,7 +146,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
     day = now.day
     async with new_browser(headless=HEADLESS) as browser:
         page = only_one(await browser.pages())
-        await page.setViewport({'width': 1000, 'height': 1000 });
+        await page.setViewport({'width': 2000, 'height': 2000});
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
         await page.goto(google_url)
         search_div = await page.get_sole_element('div#search')
