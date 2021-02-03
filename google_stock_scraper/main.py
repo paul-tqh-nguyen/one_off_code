@@ -171,6 +171,7 @@ return [top, left, width, height];
             whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
             if whole_time_string == '10:30PM':
                 await asyncio.sleep(1)
+        
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
