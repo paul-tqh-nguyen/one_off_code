@@ -176,9 +176,9 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         await page.goto(google_url)
         await asyncio.sleep(1) # TODO this is a hack
         search_div = await page.get_sole_element('div#search')
-        LOGGER.info(f"{ticker_symbol} 4") # TODO remove this
         
         chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
+        LOGGER.info(f"{ticker_symbol} 4 chart_found {repr(chart_found)}") # TODO remove this
         if not chart_found:
             LOGGER.info(f'Chart not found for {ticker_symbol}')
             return rows
