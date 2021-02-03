@@ -9,6 +9,7 @@
 # Imports #
 ###########
 
+import time
 import logging
 import sys
 import os
@@ -160,7 +161,7 @@ async def gather_ticker_symbols() -> List[str]:
 
 @multi_attempt_scrape_function
 async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.datetime, str, float]]:
-    LOGGER.info(f"{ticker_symbol} 1") # TODO remove this
+    LOGGER.info(f"{ticker_symbol} 1 {time.time()}") # TODO remove this
     seen_whole_time_strings = set()
     rows = []
     now = datetime.datetime.now()
@@ -193,7 +194,7 @@ return [top, left, width, height];
         LOGGER.info(f"{ticker_symbol} 5 left {repr(left)}")
         LOGGER.info(f"{ticker_symbol} 5 width {repr(width)}")
         LOGGER.info(f"{ticker_symbol} 5 height {repr(height)}")
-        LOGGER.info(f"{ticker_symbol} 5 ") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 5 {time.time()}") # TODO remove this
 
         chart_svgs = await chart_div.get_elements('svg')
         LOGGER.info(f"{ticker_symbol} 6 len(chart_svgs) {repr(len(chart_svgs))}") # TODO remove this
@@ -213,7 +214,7 @@ return [top, left, width, height];
             LOGGER.info(f'{ticker_symbol} could not load properly.')
             return rows
 
-        LOGGER.info(f"{ticker_symbol} 8") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 8 {time.time()}") # TODO remove this
         LOGGER.info(f"{ticker_symbol} left {repr(left)}") # TODO remove this
         LOGGER.info(f"{ticker_symbol} left+width {repr(left+width)}") # TODO remove this
         y = (top + top + height) / 2
@@ -235,12 +236,14 @@ return [top, left, width, height];
                 assert period in ('AM', 'PM')
                 if period == 'PM' and hour != 12:
                     hour += 12
-                time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
+                date_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
 
+                LOGGER.info(f"{ticker_symbol} 11 date_time {repr(date_time)}")
                 LOGGER.info(f"{ticker_symbol} 11") # TODO remove this
                 price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
 
+                LOGGER.info(f"{ticker_symbol} 12 price_string {repr(price_string)}")
                 LOGGER.info(f"{ticker_symbol} 12") # TODO remove this
                 if not price_string.endswith(' USD'):
                     LOGGER.info(f'Cannot handle price string {repr(price_string)} for {ticker_symbol}')
@@ -248,33 +251,38 @@ return [top, left, width, height];
                 price = float(price_string.replace(' USD', '').replace(',', ''))
 
                 LOGGER.info(f"{ticker_symbol} 13") # TODO remove this
-                row = (time, ticker_symbol, price)
+                row = (date_time, ticker_symbol, price)
                 LOGGER.info(f"ticker_symbol {repr(ticker_symbol)}") # TODO remove this
-                LOGGER.info(f"{ticker_symbol} row {repr(row)}") # TODO remove this
+                LOGGER.info(f"{ticker_symbol} 13 row {repr(row)}") # TODO remove this
                 rows.append(row)
                 seen_whole_time_strings.add(whole_time_string)
-                LOGGER.info(f"{ticker_symbol} 14") # TODO remove this
-    LOGGER.info(f"{ticker_symbol} 15") # TODO remove this
-    assert len(rows) != 0
-    return rows
+                LOGGER.info(f"{ticker_symbol} 14 {time.time()}") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 15 {time.time()}") # TODO remove this
+        LOGGER.info(f"{ticker_symbol} 15 len(rows) {repr(len(rows))}")
+        LOGGER.info(f"{ticker_symbol} 15 id(rows) {repr(id(rows))}")
+        assert len(rows) != 0
+        return rows
 
 async def update_stock_db(cursor: sqlite3.Cursor) -> None:    
-    semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
     ticker_symbols = await gather_ticker_symbols()
     ticker_symbols = ticker_symbols[:100] # TODO remove this
     LOGGER.info(f'{len(ticker_symbols)} ticker symbols gathered.')
-    async def semaphore_task(task: Awaitable):
-        async with semaphore:
-            return await task
-    coroutines = asyncio.as_completed(eager_map(semaphore_task, map(gather_ticker_symbol_rows, ticker_symbols)))
+    semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
+    # async def semaphore_task(task: Awaitable):
+    #     async with semaphore:
+    #         return await task
+    # coroutines = asyncio.as_completed(eager_map(semaphore_task, map(gather_ticker_symbol_rows, ticker_symbols)))
     total_execution_time = 0
-    for index, (ticker_symbol, coroutine) in enumerate(zip(ticker_symbols, coroutines)):
+    # for index, (ticker_symbol, coroutine) in enumerate(zip(ticker_symbols, coroutines)):
+    for index, ticker_symbol in enumerate(ticker_symbols):
         execution_time_container = []
         with timer(exitCallback=lambda time: execution_time_container.append(time)):
-            rows = await coroutine
+            async with semaphore:
+                rows = await gather_ticker_symbol_rows(ticker_symbol)
         execution_time = only_one(execution_time_container)
         total_execution_time += execution_time
-        LOGGER.info(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time:.3f} seconds ({total_execution_time/(index+1):.3f} seconds per iteration on average).')
+        LOGGER.info(f"{ticker_symbol} id(rows) {repr(id(rows))}")
+        LOGGER.info(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time:.3f} seconds ({total_execution_time/(index+1):.3f} seconds per iteration on average). {time.time()}')
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
     return
 
