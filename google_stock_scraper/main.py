@@ -77,7 +77,7 @@ def multi_attempt_scrape_function(func: Awaitable) -> Awaitable:
                 failure_message = f'{func.__qualname__} with the args {args} and kwargs {kwargs} failed due to the following error: {repr(e)}'
                 pass
         if result == unique_bogus_result_identifier:
-            raise RuntimeError(f'{func.__qualname__} with the args {args} and kwargs {kwargs} failed due to the following error: {failure_message}')
+            raise RuntimeError(failure_message)
         return result
     return decorating_function
 
