@@ -170,7 +170,6 @@ async def _gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[dat
     year = now.year
     month = now.month
     day = now.day
-    # async with new_browser(headless=HEADLESS) as browser:
     with pool_browser() as browser:
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
@@ -215,7 +214,7 @@ return [top, left, width, height];
             
             if whole_time_string not in seen_whole_time_strings:
 
-                time_string, period = whole_time_string.split(' ')
+                time_string, period = whole_time_string.split(' ')[-2:]
                 hour, minute = eager_map(int, time_string.split(':'))
                 assert period in ('AM', 'PM')
                 if period == 'PM' and hour != 12:

@@ -76,7 +76,7 @@ def poll_scraping_subprocess(process: subprocess.Popen, pids: Set[int]) -> None:
             breaker_text = max(map(len, pid_to_message_line.values())) * '='
             message = '\n'.join([pid_to_message_line[pid] for pid in sorted(pid_to_message_line.keys())])
             message += '\n' + f'Mean process speed: {mean_speed:.2} s/iter.'
-            message += '\n' + f'Tota process speed: {mean_speed/len(pids):.2} s/iter.'
+            message += '\n' + f'Total process speed: {mean_speed/len(pids):.2} s/iter.'
             message = '\n' + breaker_text + '\n' + message + '\n' + breaker_text
             if message != last_message:
                 print(message)
