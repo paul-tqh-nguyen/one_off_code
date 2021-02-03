@@ -164,8 +164,8 @@ return [top, left, width, height];
         if whole_time_string == '10:30PM':
             await asyncio.sleep(1)
         if whole_time_string == '10:30PM':
-            info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
-            assert 
+            search_div_html = await page.evaluate('(element) => element.innerHTML', search_div)
+            if 'No chart available' in search_div_html
         
         y = (top + top + height) / 2
         for x in range(left, left+width):
