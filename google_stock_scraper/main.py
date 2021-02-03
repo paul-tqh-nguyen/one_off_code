@@ -34,7 +34,7 @@ from misc_utilities import *
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 10
 MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
 
-HEADLESS = False
+HEADLESS = True
 
 ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
 
