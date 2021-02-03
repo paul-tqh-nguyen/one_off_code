@@ -250,9 +250,7 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
             rows = await coroutine
         execution_time = only_one(execution_time_container)
         total_execution_time += execution_time
-        LOGGER.info()
         LOGGER.info(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time:.3f} seconds ({total_execution_time/(index+1):.3f} seconds per iteration on average).')
-        LOGGER.info()
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
     return
 
