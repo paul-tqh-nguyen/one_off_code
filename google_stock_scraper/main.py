@@ -9,6 +9,9 @@
 # Imports #
 ###########
 
+import logging
+import sys
+
 import os
 import json
 import asyncio
@@ -43,9 +46,6 @@ STOCK_DATA_DB_FILE = './stock_data.db'
 ###########
 # Logging #
 ###########
-
-import logging
-import sys
 
 LOGGER_NAME = 'mutag_logger'
 LOGGER = logging.getLogger(LOGGER_NAME)
