@@ -151,37 +151,40 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         await page.goto(google_url)
         search_div = await page.get_sole_element('div#search')
         chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
-        if chart_found:
-            chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
-            top, left, width, height = await page.evaluate('''
-(element) => {
-    const { top, left, width, height } = element.getBoundingClientRect();
-    return [top, left, width, height];
-}''', chart_div)
-            await asyncio.sleep(1) # TODO get rid of this wait
-            y = (top + top + height) / 2
-            for x in range(left, left+width):
-                await page.mouse.move(x, y);
-                info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
-                time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
-                whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
-                if whole_time_string not in seen_whole_time_strings:
-                    print(f"whole_time_string {repr(whole_time_string)}")
-                    time_string, period = whole_time_string.split(' ')
-                    hour, minute = eager_map(int, time_string.split(':'))
-                    assert period in ('AM', 'PM')
-                    if period == 'PM' and hour != 12:
-                        hour += 12
-                    time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
-                    
-                    price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
-                    price_string = await page.evaluate('(element) => element.innerHTML', price_span)
-                    assert price_string.endswith(' USD'), f'Bad price string: {repr(price_string)}'
-                    price = float(price_string.replace(' USD', '').replace(',', ''))
+        if not chart_found:
+            return rows
         
-                    row = (time, ticker_symbol, price)
-                    rows.append(row)
-                    seen_whole_time_strings.add(whole_time_string)
+        chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
+        top, left, width, height = await page.evaluate('''
+(element) => {
+const { top, left, width, height } = element.getBoundingClientRect();
+return [top, left, width, height];
+}''', chart_div)
+        await asyncio.sleep(1) # TODO get rid of this wait
+        '10:30PM'
+        y = (top + top + height) / 2
+        for x in range(left, left+width):
+            await page.mouse.move(x, y);
+            info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
+            time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
+            whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
+            if whole_time_string not in seen_whole_time_strings:
+                print(f"whole_time_string {repr(whole_time_string)}")
+                time_string, period = whole_time_string.split(' ')
+                hour, minute = eager_map(int, time_string.split(':'))
+                assert period in ('AM', 'PM')
+                if period == 'PM' and hour != 12:
+                    hour += 12
+                time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
+                
+                price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
+                price_string = await page.evaluate('(element) => element.innerHTML', price_span)
+                assert price_string.endswith(' USD'), f'Bad price string: {repr(price_string)}'
+                price = float(price_string.replace(' USD', '').replace(',', ''))
+    
+                row = (time, ticker_symbol, price)
+                rows.append(row)
+                seen_whole_time_strings.add(whole_time_string)
     return rows
 
 async def update_stock_db(cursor: sqlite3.Cursor) -> None:    
