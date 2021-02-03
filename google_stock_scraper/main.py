@@ -75,10 +75,10 @@ def multi_attempt_scrape_function(func: Awaitable) -> Awaitable:
                 break
             except Exception as e:
                 failure_message = repr(e)
-                print(f'{func} with the args {args} and kwargs {kwargs} failed due to the following error: {failure_message}')
+                print(f'{func.__qualname__} with the args {args} and kwargs {kwargs} failed due to the following error: {failure_message}')
                 pass
         if result == unique_bogus_result_identifier:
-            raise RuntimeError(f'{func} with the args {args} and kwargs {kwargs} failed due to the following error: {failure_message}')
+            raise RuntimeError(f'{func.__qualname__} with the args {args} and kwargs {kwargs} failed due to the following error: {failure_message}')
         return result
     return decorating_function
 
