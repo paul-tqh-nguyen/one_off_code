@@ -165,12 +165,12 @@ const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div) 
 
-        
-        info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
-        time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
-        whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
-        if whole_time_string == '10:30PM':
-            await asyncio.sleep(1) # TODO this is a hack
+        if True: # TODO this is a hack
+            info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
+            time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
+            whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
+            if whole_time_string == '10:30PM':
+                await asyncio.sleep(1)
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
