@@ -160,12 +160,14 @@ async def gather_ticker_symbols() -> List[str]:
 
 @multi_attempt_scrape_function
 async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.datetime, str, float]]:
+    LOGGER.info(f"1") # TODO remove this
     seen_whole_time_strings = set()
     rows = []
     now = datetime.datetime.now()
     year = now.year
     month = now.month
     day = now.day
+    LOGGER.info(f"2") # TODO remove this
     async with new_browser(headless=HEADLESS) as browser:
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
