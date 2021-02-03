@@ -198,6 +198,7 @@ return [top, left, width, height];
             return rows
         assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs within the chart.'
 
+        LOGGER.info(f"7") # TODO remove this
         whole_time_string = '10:30PM'
         with timeout(30):
             while whole_time_string == '10:30PM':
@@ -208,6 +209,7 @@ return [top, left, width, height];
             LOGGER.info(f'{ticker_symbol} could not load properly.')
             return rows
 
+        LOGGER.info(f"8") # TODO remove this
         LOGGER.info(f"left {repr(left)}") # TODO remove this
         LOGGER.info(f"left+width {repr(left+width)}") # TODO remove this
         y = (top + top + height) / 2
