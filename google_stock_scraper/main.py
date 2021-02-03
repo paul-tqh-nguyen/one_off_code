@@ -166,6 +166,7 @@ return [top, left, width, height];
 }''', chart_div) 
 
         if True: # TODO this is a hack
+            svg = await chart_div.get_sole_element('svg')
             info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
             time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
             whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
@@ -173,6 +174,10 @@ return [top, left, width, height];
             if whole_time_string == '10:30PM':
                 print(f'Waiting to load for {ticker_symbol}')
                 await asyncio.sleep(1)
+            info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
+            time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
+            whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
+            if whole_time_string == '10:30PM':
         
         y = (top + top + height) / 2
         for x in range(left, left+width):
