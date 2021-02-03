@@ -219,8 +219,10 @@ return [top, left, width, height];
             time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
             whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
             
+            LOGGER.info(f"9") # TODO remove this
             if whole_time_string not in seen_whole_time_strings:
 
+                LOGGER.info(f"10") # TODO remove this
                 time_string, period = whole_time_string.split(' ')
                 hour, minute = eager_map(int, time_string.split(':'))
                 assert period in ('AM', 'PM')
