@@ -168,20 +168,20 @@ return [top, left, width, height];
             print(f'SVG not found for {ticker_symbol}')
             return rows
         assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs within the chart.'
-                
+
+        whole_time_string = '10:30PM'
+        with timeout(30):
+            while whole_time_string == '10:30PM':
+                whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
+        if whole_time_string == '10:30PM':
+            print(f'{ticker_symbol} could not load properly.')
+            return rows
+        
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
             info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
             time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
-            
-            whole_time_string = '10:30PM'
-            with timeout(30):
-                while whole_time_string == '10:30PM':
-                    whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
-            if whole_time_string == '10:30PM':
-                print(f'{ticker_symbol} could not load properly.')
-                return rows
             
             if whole_time_string not in seen_whole_time_strings:
 
