@@ -156,6 +156,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         
         search_div_html = await page.evaluate('(element) => element.innerHTML', search_div)
         if 'No chart available' in search_div_html:
+            print(f"\nticker_symbol {repr(ticker_symbol)} search_div_html {repr(search_div_html)}")
             return rows
         
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
