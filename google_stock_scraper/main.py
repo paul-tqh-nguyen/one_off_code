@@ -160,9 +160,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         if len(chart_svgs) == 0:
             print(f'SVG not found for {ticker_symbol}')
             return rows
-        elif len(chart_svgs) > 1:
-            print(f'Too many AVGs found.')
-            return rows
+        assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs within the chart.'
         
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
         top, left, width, height = await page.evaluate('''
