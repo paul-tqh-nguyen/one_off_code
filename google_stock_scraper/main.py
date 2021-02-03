@@ -163,7 +163,7 @@ const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div) 
 
-        chart_svgs = await chart_div.get_elements('svg', {'timeout': 5_000})
+        chart_svgs = await chart_div.get_elements('svg')
         if len(chart_svgs) == 0:
             print(f'SVG not found for {ticker_symbol}')
             return rows
