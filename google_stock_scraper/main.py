@@ -200,6 +200,7 @@ return [top, left, width, height];
                 
                 if not price_string.endswith(' USD'):
                     print(f'Cannot handle price string {repr(price_string)} for {ticker_symbol}')
+                    return rows
                 price = float(price_string.replace(' USD', '').replace(',', ''))
     
                 row = (time, ticker_symbol, price)
