@@ -202,7 +202,6 @@ return [top, left, width, height];
             LOGGER.info(f'{ticker_symbol} could not load properly.')
             return rows
 
-        LOGGER.info(f"row {repr(row)}") # TODO remove this
         LOGGER.info(f"left {repr(left)}") # TODO remove this
         LOGGER.info(f"left+width {repr(left+width)}") # TODO remove this
         y = (top + top + height) / 2
