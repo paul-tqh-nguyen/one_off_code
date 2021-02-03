@@ -191,7 +191,7 @@ return [top, left, width, height];
         if len(chart_svgs) == 0:
             zero_result_explanation = f'SVG not found for {ticker_symbol}.'
             return rows, zero_result_explanation
-        assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs ({len(chart_svgs)}) within the whole.'
+        assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs ({len(chart_svgs)}) within the chart.'
 
         whole_time_string = '10:30PM'
         with timeout(30):
