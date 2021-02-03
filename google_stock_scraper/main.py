@@ -180,12 +180,6 @@ return [top, left, width, height];
             print(f'{ticker_symbol} could not load properly.')
             return rows
 
-        print(f"ticker_symbol {repr(ticker_symbol)}")
-        print(f"top {repr(top)}")
-        print(f"left {repr(left)}")
-        print(f"width {repr(width)}")
-        print(f"height  {repr(height )}")
-
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
