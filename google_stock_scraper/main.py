@@ -34,7 +34,7 @@ from misc_utilities import *
 # Globals #
 ###########
 
-MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 10
+MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
 MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
 
 HEADLESS = True
@@ -160,29 +160,25 @@ async def gather_ticker_symbols() -> List[str]:
     return ticker_symbols
 
 @multi_attempt_scrape_function
-async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.datetime, str, float]]:
-    # LOGGER.info(f"{ticker_symbol} 1 {time.time()}") # TODO remove this
+async def _gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[datetime.datetime, str, float]], str]:
+    zero_result_explanation = ''
     seen_whole_time_strings = set()
     rows = []
     now = datetime.datetime.now()
     year = now.year
     month = now.month
     day = now.day
-    # LOGGER.info(f"{ticker_symbol} 2") # TODO remove this
     async with new_browser(headless=HEADLESS) as browser:
-        # LOGGER.info(f"{ticker_symbol} 3") # TODO remove this
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
         await page.goto(google_url)
-        await asyncio.sleep(1) # TODO this is a hack
         search_div = await page.get_sole_element('div#search')
-        
-        chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
-        # LOGGER.info(f"{ticker_symbol} 4 chart_found {repr(chart_found)}") # TODO remove this
+
+        chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 2_000})
         if not chart_found:
-            LOGGER.info(f'Chart not found for {ticker_symbol}')
-            return rows
+            zero_result_explanation = f'Chart not found for {ticker_symbol}'
+            return rows, zero_result_explanation
         
         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
         top, left, width, height = await page.evaluate('''
@@ -190,20 +186,13 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
 const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div)
-        # LOGGER.info(f"{ticker_symbol} 5 top {repr(top)}")
-        # LOGGER.info(f"{ticker_symbol} 5 left {repr(left)}")
-        # LOGGER.info(f"{ticker_symbol} 5 width {repr(width)}")
-        # LOGGER.info(f"{ticker_symbol} 5 height {repr(height)}")
-        # LOGGER.info(f"{ticker_symbol} 5 {time.time()}") # TODO remove this
 
         chart_svgs = await chart_div.get_elements('svg')
-        # LOGGER.info(f"{ticker_symbol} 6 len(chart_svgs) {repr(len(chart_svgs))}") # TODO remove this
         if len(chart_svgs) == 0:
-            LOGGER.info(f'SVG not found for {ticker_symbol}')
-            return rows
-        assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs ({len(chart_svgs)}) within the chart.'
+            zero_result_explanation = f'SVG not found for {ticker_symbol}'
+            return rows, zero_result_explanation
+        assert len(chart_svgs) > 1, f'{ticker_symbol} has an unexpected number of SVGs ({len(chart_svgs)}) within the whole.'
 
-        # LOGGER.info(f"{ticker_symbol} 7") # TODO remove this
         whole_time_string = '10:30PM'
         with timeout(30):
             while whole_time_string == '10:30PM':
@@ -211,12 +200,9 @@ return [top, left, width, height];
                 time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
                 whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
         if whole_time_string == '10:30PM':
-            LOGGER.info(f'{ticker_symbol} could not load properly.')
-            return rows
+            zero_result_explanation = f'{ticker_symbol} could not load properly.'
+            return rows, zero_result_explanation
 
-        # LOGGER.info(f"{ticker_symbol} 8 {time.time()}") # TODO remove this
-        # LOGGER.info(f"{ticker_symbol} left {repr(left)}") # TODO remove this
-        # LOGGER.info(f"{ticker_symbol} left+width {repr(left+width)}") # TODO remove this
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
@@ -226,58 +212,47 @@ return [top, left, width, height];
             
             if whole_time_string not in seen_whole_time_strings:
 
-                # LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
                 time_string, period = whole_time_string.split(' ')
                 hour, minute = eager_map(int, time_string.split(':'))
-                # LOGGER.info(f"{ticker_symbol} 10 hour {repr(hour)}")
-                # LOGGER.info(f"{ticker_symbol} 10 minute {repr(minute)}")
-                # LOGGER.info(f"{ticker_symbol} 10 period {repr(period)}")
-                # LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
                 assert period in ('AM', 'PM')
                 if period == 'PM' and hour != 12:
                     hour += 12
                 date_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
 
-                # LOGGER.info(f"{ticker_symbol} 11 date_time {repr(date_time)}")
-                # LOGGER.info(f"{ticker_symbol} 11") # TODO remove this
                 price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
 
-                # LOGGER.info(f"{ticker_symbol} 12 price_string {repr(price_string)}")
-                # LOGGER.info(f"{ticker_symbol} 12") # TODO remove this
                 if not price_string.endswith(' USD'):
-                    LOGGER.info(f'Cannot handle price string {repr(price_string)} for {ticker_symbol}')
-                    return rows
+                    zero_result_explanation = f'Cannot handle price string {repr(price_string)} for {ticker_symbol}'
+                    return rows, zero_result_explanation
                 price = float(price_string.replace(' USD', '').replace(',', ''))
 
-                # LOGGER.info(f"{ticker_symbol} 13") # TODO remove this
                 row = (date_time, ticker_symbol, price)
-                # LOGGER.info(f"ticker_symbol {repr(ticker_symbol)}") # TODO remove this
-                # LOGGER.info(f"{ticker_symbol} 13 row {repr(row)}") # TODO remove this
                 rows.append(row)
                 seen_whole_time_strings.add(whole_time_string)
-        #         LOGGER.info(f"{ticker_symbol} 14 {time.time()}") # TODO remove this
-        # LOGGER.info(f"{ticker_symbol} 15 {time.time()}") # TODO remove this
-        # LOGGER.info(f"{ticker_symbol} 15 len(rows) {repr(len(rows))}")
-        # LOGGER.info(f"{ticker_symbol} 15 id(rows) {repr(id(rows))}")
         assert len(rows) != 0
-        return rows
+        return rows, zero_result_explanation
 
-async def update_stock_db(cursor: sqlite3.Cursor) -> None:    
+async def gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[datetime.datetime, str, float]], str]:
+    rows, zero_result_explanation = await _gather_ticker_symbol_rows(ticker_symbol)
+    return rows, zero_result_explanation, ticker_symbol
+    
+async def update_stock_db(cursor: sqlite3.Cursor) -> None:
     ticker_symbols = await gather_ticker_symbols()
-    ticker_symbols = ticker_symbols[:100] # TODO remove this
     LOGGER.info(f'{len(ticker_symbols)} ticker symbols gathered.')
-    semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
     total_execution_time = 0
-    for index, ticker_symbol in enumerate(ticker_symbols):
+    semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
+    async def semaphore_task(task: Awaitable):
+        async with semaphore:
+            return await task
+    tasks = asyncio.as_completed(eager_map(semaphore_task, map(gather_ticker_symbol_rows, ticker_symbols)))
+    for index, task in enumerate(tasks):
         execution_time_container = []
         with timer(exitCallback=lambda time: execution_time_container.append(time)):
-            async with semaphore:
-                rows = await gather_ticker_symbol_rows(ticker_symbol)
+            rows, zero_result_explanation, ticker_symbol = await task
         execution_time = only_one(execution_time_container)
         total_execution_time += execution_time
-        # LOGGER.info(f"{ticker_symbol} id(rows) {repr(id(rows))}")
-        LOGGER.info(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time:.3f} seconds ({total_execution_time/(index+1):.3f} seconds per iteration on average). {time.time()}')
+        LOGGER.info(f'[{index+1:4}/{len(ticker_symbols):4}] [{total_execution_time/(index+1):6.2f} s/iter] [{execution_time:6.2f}s] {ticker_symbol:5} yielded {len(rows):4} results. {zero_result_explanation}')
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
     return
 
