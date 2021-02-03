@@ -228,6 +228,10 @@ return [top, left, width, height];
                 LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
                 time_string, period = whole_time_string.split(' ')
                 hour, minute = eager_map(int, time_string.split(':'))
+                LOGGER.info(f"{ticker_symbol} 10 hour {repr(hour)}")
+                LOGGER.info(f"{ticker_symbol} 10 minute {repr(minute)}")
+                LOGGER.info(f"{ticker_symbol} 10 period {repr(period)}")
+                LOGGER.info(f"{ticker_symbol} 10") # TODO remove this
                 assert period in ('AM', 'PM')
                 if period == 'PM' and hour != 12:
                     hour += 12
