@@ -40,6 +40,29 @@ ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
 
 STOCK_DATA_DB_FILE = './stock_data.db'
 
+###########
+# Logging #
+###########
+
+import logging
+import sys
+
+LOGGER_NAME = 'mutag_logger'
+LOGGER = logging.getLogger(LOGGER_NAME)
+LOGGER_OUTPUT_FILE = './logs.txt'
+LOGGER_STREAM_HANDLER = logging.StreamHandler(stream=sys.stdout)
+
+def _initialize_logger() -> None:
+    LOGGER.setLevel(logging.INFO)
+    logging_formatter = logging.Formatter('{asctime} - pid: {process} - threadid: {thread} - func: {funcName} - {levelname}: {message}', style='{')
+    logging_file_handler = logging.FileHandler(LOGGER_OUTPUT_FILE)
+    logging_file_handler.setFormatter(logging_formatter)
+    LOGGER.addHandler(logging_file_handler)
+    LOGGER.addHandler(LOGGER_STREAM_HANDLER)
+    return
+
+_initialize_logger()
+
 ##########################
 # Web Scraping Utilities #
 ##########################
