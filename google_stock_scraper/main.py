@@ -187,7 +187,7 @@ const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div)
 
-        chart_svgs = await chart_div.get_elements('svg')
+        chart_svgs = await chart_div.get_elements('svg.uch-psvg')
         if len(chart_svgs) == 0:
             zero_result_explanation = f'SVG not found for {ticker_symbol}.'
             return rows, zero_result_explanation
