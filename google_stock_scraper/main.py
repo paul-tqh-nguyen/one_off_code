@@ -187,6 +187,7 @@ return [top, left, width, height];
                 price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
                 if price_string.endswith(' CAD'):
+                    print(f'')
                     return rows
                 assert price_string.endswith(' USD'), f'Bad price string: {repr(price_string)}'
                 price = float(price_string.replace(' USD', '').replace(',', ''))
@@ -206,7 +207,7 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
     coroutines = asyncio.as_completed(eager_map(semaphore_task, map(gather_ticker_symbol_rows, ticker_symbols)))
     for ticker_symbol, coroutine in tqdm.tqdm(zip(ticker_symbols, coroutines), total=len(ticker_symbols), bar_format='{l_bar}{bar:50}{r_bar}'):
         rows = await coroutine
-        print(f"{ticker_symbol) yielded {len(rows)} data points.")
+        print(f'{ticker_symbol) yielded {len(rows)} data points.')
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
     return
 
