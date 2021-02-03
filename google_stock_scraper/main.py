@@ -146,7 +146,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
     day = now.day
     async with new_browser(headless=HEADLESS) as browser:
         page = only_one(await browser.pages())
-        await page.setViewport({'width': 1000, 'height': 800 });
+        await page.setViewport({'width': 1000, 'height': 1000 });
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
         await page.goto(google_url)
         search_div = await page.get_sole_element('div#search')
@@ -201,6 +201,7 @@ return [top, left, width, height];
 async def update_stock_db(cursor: sqlite3.Cursor) -> None:    
     semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
     ticker_symbols = await gather_ticker_symbols()
+    ticker_symbols = ['CDZI']
     async def semaphore_task(task: Awaitable):
         async with semaphore:
             return await task
