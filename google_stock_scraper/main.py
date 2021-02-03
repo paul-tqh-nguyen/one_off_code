@@ -256,10 +256,10 @@ return [top, left, width, height];
                 # LOGGER.info(f"{ticker_symbol} 13 row {repr(row)}") # TODO remove this
                 rows.append(row)
                 seen_whole_time_strings.add(whole_time_string)
-                LOGGER.info(f"{ticker_symbol} 14 {time.time()}") # TODO remove this
-        LOGGER.info(f"{ticker_symbol} 15 {time.time()}") # TODO remove this
-        LOGGER.info(f"{ticker_symbol} 15 len(rows) {repr(len(rows))}")
-        LOGGER.info(f"{ticker_symbol} 15 id(rows) {repr(id(rows))}")
+        #         LOGGER.info(f"{ticker_symbol} 14 {time.time()}") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} 15 {time.time()}") # TODO remove this
+        # LOGGER.info(f"{ticker_symbol} 15 len(rows) {repr(len(rows))}")
+        # LOGGER.info(f"{ticker_symbol} 15 id(rows) {repr(id(rows))}")
         assert len(rows) != 0
         return rows
 
