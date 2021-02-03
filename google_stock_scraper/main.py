@@ -186,6 +186,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
 async def update_stock_db(cursor: sqlite3.Cursor) -> None:    
     semaphore = asyncio.Semaphore(MAX_NUMBER_OF_CONCURRENT_BROWSERS)
     ticker_symbols = await gather_ticker_symbols()
+    ticker_symbols = ['HMG'] # TODO remove this
     async def semaphore_task(task: Awaitable):
         async with semaphore:
             return await task
