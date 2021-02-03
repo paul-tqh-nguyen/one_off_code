@@ -205,6 +205,7 @@ return [top, left, width, height];
                 price = float(price_string.replace(' USD', '').replace(',', ''))
     
                 row = (time, ticker_symbol, price)
+                print(f"ticker_symbol {repr(ticker_symbol)}")
                 print(f"row {repr(row)}")
                 rows.append(row)
                 seen_whole_time_strings.add(whole_time_string)
