@@ -31,9 +31,8 @@ from misc_utilities import *
 # Globals #
 ###########
 
-MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
-
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 10
+MAX_NUMBER_OF_CONCURRENT_BROWSERS = 1
 
 HEADLESS = True
 
