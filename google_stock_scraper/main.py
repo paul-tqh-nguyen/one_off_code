@@ -221,7 +221,7 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
     total_execution_time = 0
     for index, (ticker_symbol, coroutine) in enumerate(zip(ticker_symbols, coroutines)):
         execution_time_container = []
-        with timer(exitCallback=execution_time_container
+        with timer(exitCallback=lambda time: execution_time_container.append(time))
         rows = await coroutine
         print()
         print(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points.')
