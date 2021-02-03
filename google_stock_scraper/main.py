@@ -154,7 +154,6 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
         if not chart_found:
             return rows
         
-        await asyncio.sleep(1)
         if whole_time_string == '10:30PM':
             search_div_html = await page.evaluate('(element) => element.innerHTML', search_div)
             if 'No chart available' in search_div_html:
@@ -166,8 +165,9 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
 (element) => {
 const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
-}''', chart_div)
-                
+}''', chart_div) 
+
+        await asyncio.sleep(1)               
         y = (top + top + height) / 2
         for x in range(left, left+width):
             await page.mouse.move(x, y);
