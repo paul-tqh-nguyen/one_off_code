@@ -160,7 +160,12 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
 const { top, left, width, height } = element.getBoundingClientRect();
 return [top, left, width, height];
 }''', chart_div)
-        await asyncio.sleep(1) # TODO get rid of this wait
+        
+        if whole_time_string == '10:30PM':
+            await asyncio.sleep(1)
+        if whole_time_string == '10:30PM':
+            info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
+            assert 
         
         y = (top + top + height) / 2
         for x in range(left, left+width):
