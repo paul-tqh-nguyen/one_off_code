@@ -9,6 +9,7 @@
 # Imports #
 ###########
 
+import tempfile
 import time
 import logging
 import sys
@@ -41,7 +42,7 @@ HEADLESS = True
 
 ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
 
-STOCK_DATA_DB_FILE = f'./stock_data{time.time()}.db'
+STOCK_DATA_DB_FILE_BASE_NAME = 'stock_data.db'
 
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
 
@@ -289,16 +290,19 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
 ##########
 
 def main() -> None:
-    connection = sqlite3.connect(STOCK_DATA_DB_FILE)
-    cursor = connection.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)''')
-    
-    with timer('Data gathering'):
-        EVENT_LOOP.run_until_complete(update_stock_db(cursor))
-    
-    df = pd.read_sql_query('SELECT * from stocks', connection)
-    breakpoint()
+    with tempfile.TemporaryDirectory() as temporary_directory:
+        stock_data_db_file = os.path.join(temporary_directory, STOCK_DATA_DB_FILE_BASE_NAME)
+        
+        connection = sqlite3.connect(stock_data_db_file)
+        cursor = connection.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)''')
+        
+        with timer('Data gathering'):
+            EVENT_LOOP.run_until_complete(update_stock_db(cursor))
+        
+        df = pd.read_sql_query('SELECT * from stocks', connection)
+        breakpoint()
     return
-
+    
 if __name__ == '__main__':
     main()
