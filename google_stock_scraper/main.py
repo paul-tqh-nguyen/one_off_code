@@ -33,7 +33,9 @@ from misc_utilities import *
 
 MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
 
-HEADLESS = True
+MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 10
+
+HEADLESS = False
 
 ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
 
@@ -62,6 +64,23 @@ async def new_browser(*args, **kwargs) -> Generator:
         await browser.close()
         raise error
     return
+
+def multi_attempt_scrape_function(func: Awaitable) -> Awaitable:
+    async def decorating_function(*args, **kwargs):
+        unique_bogus_result_identifier = object()
+        result = unique_bogus_result_identifier
+        failure_message = unique_bogus_result_identifier
+        for _ in range(MAX_NUMBER_OF_SCRAPE_ATTEMPTS):
+            try:
+                result = await func(*args, **kwargs)
+                break
+            except Exception as e:
+                failure_message = repr(e)
+                pass
+        if result == unique_bogus_result_identifier:
+            raise RuntimeError(f'{func} failed due to the following error: {failure_message}')
+        return result
+    return decorating_function
 
 ########################
 # Pyppeteer Extensions #
@@ -117,6 +136,7 @@ async def gather_ticker_symbols() -> List[str]:
         ticker_symbols = [only_one(li_element.findAll('a')).getText().split(' - ')[0] for li_element in li_elements]
     return ticker_symbols
 
+@multi_attempt_scrape_function
 async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.datetime, str, float]]:
     seen_whole_time_strings = set()
     rows = []
@@ -126,26 +146,26 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
     day = now.day
     async with new_browser(headless=HEADLESS) as browser:
         page = only_one(await browser.pages())
+        await page.setViewport({'width': 1000, 'height': 800 });
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
         await page.goto(google_url)
         search_div = await page.get_sole_element('div#search')
-        char_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
-        if char_found:
+        chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 5_000})
+        if chart_found:
             chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
             top, left, width, height = await page.evaluate('''
 (element) => {
     const { top, left, width, height } = element.getBoundingClientRect();
     return [top, left, width, height];
 }''', chart_div)
+            await asyncio.sleep(1) # TODO get rid of this wait
             y = (top + top + height) / 2
             for x in range(left, left+width):
                 await page.mouse.move(x, y);
                 info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
-                
                 time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
                 whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
                 if whole_time_string not in seen_whole_time_strings:
-                    
                     time_string, period = whole_time_string.split(' ')
                     hour, minute = eager_map(int, time_string.split(':'))
                     assert period in ('AM', 'PM')
@@ -156,7 +176,7 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> List[Tuple[datetime.d
                     price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
                     price_string = await page.evaluate('(element) => element.innerHTML', price_span)
                     assert price_string.endswith(' USD'), f'Bad price string: {repr(price_string)}'
-                    price = float(price_string.replace(' USD', ''))
+                    price = float(price_string.replace(' USD', '').replace(',', ''))
         
                     row = (time, ticker_symbol, price)
                     rows.append(row)
