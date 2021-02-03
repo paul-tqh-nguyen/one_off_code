@@ -224,7 +224,7 @@ async def update_stock_db(cursor: sqlite3.Cursor) -> None:
         execution_time = only_one(execution_time_container)
         total_execution_time += execution_time
         print()
-        print(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time} seconds ({total_execution_time/(index+1)} seconds per iteration on average).')
+        print(f'[{index+1}/{len(ticker_symbols)}] {ticker_symbol} yielded {len(rows)} data points in {execution_time:.3f} seconds ({total_execution_time/(index+1):.3f} seconds per iteration on average).')
         print()
         cursor.executemany('INSERT INTO stocks VALUES(?,?,?);', rows);
     return
