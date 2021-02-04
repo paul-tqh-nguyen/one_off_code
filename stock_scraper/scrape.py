@@ -100,7 +100,7 @@ async def _gather_ticker_symbol_rows_via_rh(ticker_symbol: str) -> Tuple[List[Tu
             price_span_string = await page.evaluate('(element) => element.innerText', price_spans[0])
             price_span_string = price_span_string.split('\n')[0]
             assert price_span_string.startswith('$')
-            price = float(price_span_string.replace('$', ''))
+            price = float(price_span_string.replace('$', '').replace(',', ''))
 
             row = (date_time, ticker_symbol, price)
             rows.append(row)

@@ -6,6 +6,7 @@ import logging
 LOGGER_NAME = 'scraping_logger'
 LOGGER = logging.getLogger(LOGGER_NAME)
 LOGGER_OUTPUT_FILE = './logs.txt'
+LOGGER_STREAM_HANDLER = logging.StreamHandler()
 
 def _initialize_logger() -> None:
     LOGGER.setLevel(logging.INFO)
@@ -13,6 +14,7 @@ def _initialize_logger() -> None:
     logging_file_handler = logging.FileHandler(LOGGER_OUTPUT_FILE)
     logging_file_handler.setFormatter(logging_formatter)
     LOGGER.addHandler(logging_file_handler)
+    LOGGER.addHandler(LOGGER_STREAM_HANDLER)
     return
 
 _initialize_logger()
