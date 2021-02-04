@@ -18,7 +18,7 @@ import bs4
 from more_itertools import distribute
 from  typing import Set
 
-from scrape import gather_ticker_symbols 
+from scrape import gather_all_ticker_symbols 
 
 from misc_utilities import *
 
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     cursor = connection.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)')
     
-    ticker_symbols = gather_ticker_symbols()
+    ticker_symbols = gather_all_ticker_symbols()
     LOGGER.info(f'{len(ticker_symbols)} ticker symbols gathered.')
 
     with tempfile.TemporaryDirectory() as temporary_directory:
