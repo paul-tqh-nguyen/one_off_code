@@ -18,7 +18,7 @@ import bs4
 from more_itertools import distribute
 from  typing import Set
 
-from scrape_utilities import gather_all_ticker_symbols 
+from scrape_utilities import *
 
 from misc_utilities import *
 
@@ -31,8 +31,6 @@ from misc_utilities import *
 NUMBER_OF_SUBPROCESSES = 2
 
 SUBPROCESS_COMMAND_TEMPLATE = 'python3 scrape.py -output {stock_data_db_file} -ticker-symbol-file {ticker_symbol_file}'
-
-STOCK_DATA_DB_FILE = './stock_data.db'
 
 ##########
 # Driver #
@@ -73,7 +71,7 @@ def poll_scraping_subprocess(process: subprocess.Popen, pids: Set[int]) -> None:
     return
     
 if __name__ == '__main__':
-    connection = sqlite3.connect(STOCK_DATA_DB_FILE)
+    connection = sqlite3.connect(DEFFAULT_OUTPUT_DB_FILE)
     cursor = connection.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)')
     

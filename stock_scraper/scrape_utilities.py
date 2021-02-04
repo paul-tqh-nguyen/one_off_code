@@ -38,11 +38,13 @@ from misc_utilities import *
 # Globals #
 ###########
 
-MAX_NUMBER_OF_CONCURRENT_BROWSERS = 2
+MAX_NUMBER_OF_CONCURRENT_BROWSERS = 1
 
-HEADLESS = False
+HEADLESS = True
 
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
+
+DEFFAULT_OUTPUT_DB_FILE = './stock_data.db'
 
 ##########################
 # Web Scraping Utilities #
@@ -158,17 +160,65 @@ async def _safelyWaitForNavigation(self: pyppeteer.page.Page, *args, **kwargs) -
     return success
 setattr(pyppeteer.page.Page, 'safelyWaitForNavigation', _safelyWaitForNavigation)
 
+########################
+# Threadsafe Utilities #
+########################
+
+class ThreadSafeCounter():
+    def __init__(self):
+        self.val = mp.RawValue('i', 0)
+        self.lock = mp.Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+
+    @property
+    def value(self):
+        with self.lock:
+            return self.val.value
+
+
 #########################
 # Gather Ticker Symbols #
 #########################
 
+RH_LIST_URLS = [
+    'https://robinhood.com/collections/100-most-popular',
+    # 'https://robinhood.com/collections/internet',
+    # 'https://robinhood.com/collections/manufacturing',
+    # 'https://robinhood.com/collections/computer-software',
+    # 'https://robinhood.com/collections/software-service',
+    # 'https://robinhood.com/collections/retail',
+    # 'https://robinhood.com/collections/e-commerce',
+    # 'https://robinhood.com/collections/hospitality',
+    # 'https://robinhood.com/collections/food',
+    # 'https://robinhood.com/collections/medical',
+    # 'https://robinhood.com/collections/technology',
+    # 'https://robinhood.com/collections/biotechnology',
+    # 'https://robinhood.com/collections/credit-card',
+    # 'https://robinhood.com/collections/payment',
+]
+
+def gather_rh_ticker_symbols() -> Iterable[str]:
+    all_ticker_symbols = set()
+    for rh_list_url in RH_LIST_URLS:
+        response = requests.get(rh_list_url)
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+        ticker_symbols = {
+            anchor.get('href').replace('/stocks/', '')
+            for anchor in soup.select('html body main section table.table tbody tr a')
+        }
+        all_ticker_symbols |= ticker_symbols
+    return all_ticker_symbols
+
 ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
 
-def gather_all_ticker_symbols() -> List[str]:
+def gather_all_ticker_symbols() -> Iterable[str]:
     response = requests.get(ALL_TICKER_SYMBOLS_URL)
     soup = bs4.BeautifulSoup(response.text, "html.parser")
     ticker_links = soup.select('main.site-main article.page.type-page.status-publish div.inside-article div.entry-content ul.no-spacing li a')
-    ticker_symbols = [ticker_link.text.split(' - ')[0] for ticker_link in ticker_links]    
+    ticker_symbols = [ticker_link.text.split(' - ')[0] for ticker_link in ticker_links]
     return ticker_symbols
 
 ##########

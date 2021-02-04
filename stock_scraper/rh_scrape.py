@@ -44,23 +44,6 @@ HEADLESS = False
 
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
 
-RH_LIST_URLS = [
-    'https://robinhood.com/collections/100-most-popular',
-    'https://robinhood.com/collections/internet',
-    'https://robinhood.com/collections/manufacturing',
-    'https://robinhood.com/collections/computer-software',
-    'https://robinhood.com/collections/software-service',
-    'https://robinhood.com/collections/retail',
-    'https://robinhood.com/collections/e-commerce',
-    'https://robinhood.com/collections/hospitality',
-    'https://robinhood.com/collections/food',
-    'https://robinhood.com/collections/medical',
-    'https://robinhood.com/collections/technology',
-    'https://robinhood.com/collections/biotechnology',
-    'https://robinhood.com/collections/credit-card',
-    'https://robinhood.com/collections/payment',
-]
-
 ##########################
 # Web Scraping Utilities #
 ##########################
@@ -282,22 +265,6 @@ async def update_stock_db(stock_data_db_file: str, ticker_symbols: List[str]) ->
     
     connection.close()
     return
-
-#########################
-# Gather Ticker Symbols #
-#########################
-
-def gather_rh_ticker_symbols() -> Set[str]:
-    all_ticker_symbols = set()
-    for rh_list_url in RH_LIST_URLS:
-        response = requests.get(rh_list_url)
-        soup = bs4.BeautifulSoup(response.text, "html.parser")
-        ticker_symbols = {
-            anchor.get('href').replace('/stocks/', '')
-            for anchor in soup.select('html body main section table.table tbody tr a')
-        }
-        all_ticker_symbols |= ticker_symbols
-    return all_ticker_symbols
 
 ##########
 # Driver #
