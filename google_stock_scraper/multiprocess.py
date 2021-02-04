@@ -15,9 +15,10 @@ import time
 import tempfile
 import sqlite3
 import bs4
-import requests
 from more_itertools import distribute
 from  typing import Set
+
+from scrape import gather_ticker_symbols 
 
 from misc_utilities import *
 
@@ -27,24 +28,11 @@ from misc_utilities import *
 # Globals #
 ###########
 
-NUMBER_OF_SUBPROCESSES = 8
+NUMBER_OF_SUBPROCESSES = 2
 
 SUBPROCESS_COMMAND_TEMPLATE = 'python3 scrape.py -output {stock_data_db_file} -ticker-symbol-file {ticker_symbol_file}'
 
-ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
-
 STOCK_DATA_DB_FILE = './stock_data.db'
-
-#########################
-# Gather Ticker Symbols #
-#########################
-
-def gather_ticker_symbols() -> List[str]:
-    response = requests.get(ALL_TICKER_SYMBOLS_URL)
-    soup = bs4.BeautifulSoup(response.text, "html.parser")
-    ticker_links = soup.select('main.site-main article.page.type-page.status-publish div.inside-article div.entry-content ul.no-spacing li a')
-    ticker_symbols = [ticker_link.text.split(' - ')[0] for ticker_link in ticker_links]    
-    return ticker_symbols
 
 ##########
 # Driver #

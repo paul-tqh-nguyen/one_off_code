@@ -22,6 +22,7 @@ import bs4
 import tqdm
 import datetime
 import sqlite3
+import requests
 import pandas as pd
 import multiprocessing as mp
 from collections import OrderedDict
@@ -37,11 +38,13 @@ from misc_utilities import *
 # Globals #
 ###########
 
-MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
+MAX_NUMBER_OF_CONCURRENT_BROWSERS = 2
 
 HEADLESS = False
 
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
+
+ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
 
 ##########################
 # Web Scraping Utilities #
@@ -170,8 +173,7 @@ async def _gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[dat
     year = now.year
     month = now.month
     day = now.day
-    #with pool_browser() as browser:
-    async with new_browser(headless=HEADLESS) as browser:
+    with pool_browser() as browser:
         page = only_one(await browser.pages())
         await page.setViewport({'width': 2000, 'height': 2000});
         google_url = f'https://www.google.com/search?q={ticker_symbol}+stock'
@@ -241,7 +243,6 @@ async def gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[date
     return rows, zero_result_explanation, ticker_symbol
     
 async def update_stock_db(stock_data_db_file: str, ticker_symbols: List[str]) -> None:
-    print(f"ticker_symbols {repr(ticker_symbols)}")
     connection = sqlite3.connect(stock_data_db_file)
     cursor = connection.cursor()
     cursor.execute('CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)')
@@ -267,20 +268,33 @@ async def update_stock_db(stock_data_db_file: str, ticker_symbols: List[str]) ->
     connection.close()
     return
 
+#########################
+# Gather Ticker Symbols #
+#########################
+
+def gather_ticker_symbols() -> List[str]:
+    response = requests.get(ALL_TICKER_SYMBOLS_URL)
+    soup = bs4.BeautifulSoup(response.text, "html.parser")
+    ticker_links = soup.select('main.site-main article.page.type-page.status-publish div.inside-article div.entry-content ul.no-spacing li a')
+    ticker_symbols = [ticker_link.text.split(' - ')[0] for ticker_link in ticker_links]    
+    return ticker_symbols
+
 ##########
 # Driver #
 ##########
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='tool', formatter_class = lambda prog: argparse.HelpFormatter(prog, max_help_position = 9999))
-    parser.add_argument('-output-file', type=str, default='stock_data.db', help='Output DB file.')
-    parser.add_argument('-ticker-symbol-file', type=str, help='Newline-delimited file of ticker symbols.', required=True)
+    parser.add_argument('-output-file', type=str, default='stock_data.db', help='Output DB file.', required=True)
+    parser.add_argument('-ticker-symbol-file', type=str, help='Newline-delimited file of ticker symbols.')
     args = parser.parse_args()
 
     stock_data_db_file = args.output_file
-    with open(args.ticker_symbol_file, 'r') as f:
-        ticker_symbols = eager_filter(len, map(str.strip,  f.read().split('\n')))
+    ticker_symbol_file = args.ticker_symbol_file
+    if ticker_symbol_file:
+        with open(args.ticker_symbol_file, 'r') as f:
+            ticker_symbols = eager_filter(len, map(str.strip, f.read().split('\n')))
     with timer('Data gathering'):
-        # with browser_pool_initialized():
-        EVENT_LOOP.run_until_complete(update_stock_db(stock_data_db_file, ticker_symbols))
+        with browser_pool_initialized():
+            EVENT_LOOP.run_until_complete(update_stock_db(stock_data_db_file, ticker_symbols))
 
