@@ -189,9 +189,9 @@ async def _gather_ticker_symbol_rows_via_rh(ticker_symbol: str) -> Tuple[List[Tu
 #         assert len(rows) != 0
 #         return rows, zero_result_explanation
 
-# ###########
-# # Scraper #
-# ###########
+###########
+# Scraper #
+###########
 
 async def gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[datetime.datetime, str, float]], str]:
     coroutine = get_coroutine_to_gather_ticker_symbol_row()
