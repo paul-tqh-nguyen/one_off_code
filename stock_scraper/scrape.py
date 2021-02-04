@@ -89,22 +89,23 @@ async def _gather_ticker_symbol_rows_via_rh(ticker_symbol: str) -> Tuple[List[Tu
             await page.mouse.move(x, y)
             whole_time_string = await page.evaluate('(element) => element.parentElement.parentElement.querySelector("span").innerHTML', svg)
 
-            time_string, period = whole_time_string.split(' ')[-2:]
-            hour, minute = eager_map(int, time_string.split(':'))
-            assert period in ('AM', 'PM')
-            if period == 'PM' and hour != 12:
-                hour += 12
-            date_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
-
-            price_spans = await page.get_elements('body main.app main.main-container div.row section[data-testid="ChartSection"] header')
-            price_span_string = await page.evaluate('(element) => element.innerText', price_spans[0])
-            price_span_string = price_span_string.split('\n')[0]
-            assert price_span_string.startswith('$')
-            price = float(price_span_string.replace('$', '').replace(',', ''))
-
-            row = (date_time, ticker_symbol, price)
-            rows.append(row)
-            seen_whole_time_strings.add(whole_time_string)
+            if whole_time_string not in seen_whole_time_strings:
+                time_string, period = whole_time_string.split(' ')[-2:]
+                hour, minute = eager_map(int, time_string.split(':'))
+                assert period in ('AM', 'PM')
+                if period == 'PM' and hour != 12:
+                    hour += 12
+                date_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
+    
+                price_spans = await page.get_elements('body main.app main.main-container div.row section[data-testid="ChartSection"] header')
+                price_span_string = await page.evaluate('(element) => element.innerText', price_spans[0])
+                price_span_string = price_span_string.split('\n')[0]
+                assert price_span_string.startswith('$')
+                price = float(price_span_string.replace('$', '').replace(',', ''))
+    
+                row = (date_time, ticker_symbol, price)
+                rows.append(row)
+                seen_whole_time_strings.add(whole_time_string)
         
         assert len(rows) != 0
         return rows, zero_result_explanation
@@ -113,84 +114,84 @@ async def _gather_ticker_symbol_rows_via_rh(ticker_symbol: str) -> Tuple[List[Tu
 # Google Scraper #
 ##################
 
-@coroutines_to_gather_ticker_symbol_row
-@multi_attempt_scrape_function
-async def _gather_ticker_symbol_rows_via_google(ticker_symbol: str) -> Tuple[List[Tuple[datetime.datetime, str, float]], str]:
-    zero_result_explanation = ''
-    seen_whole_time_strings = set()
-    rows = []
-    now = datetime.datetime.now()
-    year = now.year
-    month = now.month
-    day = now.day
-    with pool_browser() as browser:
-        page = only_one(await browser.pages())
-        await page.setViewport({'width': 2000, 'height': 2000})
-        url = f'https://www.google.com/search?q={ticker_symbol}+stock'
-        await page.goto(url)
-        search_div = await page.get_sole_element('div#search')
+# @coroutines_to_gather_ticker_symbol_row
+# @multi_attempt_scrape_function
+# async def _gather_ticker_symbol_rows_via_google(ticker_symbol: str) -> Tuple[List[Tuple[datetime.datetime, str, float]], str]:
+#     zero_result_explanation = ''
+#     seen_whole_time_strings = set()
+#     rows = []
+#     now = datetime.datetime.now()
+#     year = now.year
+#     month = now.month
+#     day = now.day
+#     with pool_browser() as browser:
+#         page = only_one(await browser.pages())
+#         await page.setViewport({'width': 2000, 'height': 2000})
+#         url = f'https://www.google.com/search?q={ticker_symbol}+stock'
+#         await page.goto(url)
+#         search_div = await page.get_sole_element('div#search')
 
-        chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 2_000})
-        if not chart_found:
-            zero_result_explanation = f'Chart not found for {ticker_symbol}.'
-            return rows, zero_result_explanation
+#         chart_found = await page.safelyWaitForSelector('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch', {'timeout': 2_000})
+#         if not chart_found:
+#             zero_result_explanation = f'Chart not found for {ticker_symbol}.'
+#             return rows, zero_result_explanation
         
-        chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
-        top, left, width, height = await page.evaluate('''
-(element) => {
-    const { top, left, width, height } = element.getBoundingClientRect();
-    return [top, left, width, height];
-}''', chart_div)
+#         chart_div = await search_div.get_sole_element('div[jscontroller].knowledge-finance-wholepage-chart__fw-uch')
+#         top, left, width, height = await page.evaluate('''
+# (element) => {
+#     const { top, left, width, height } = element.getBoundingClientRect();
+#     return [top, left, width, height];
+# }''', chart_div)
 
-        chart_svgs = await chart_div.get_elements('svg.uch-psvg')
-        if len(chart_svgs) == 0:
-            zero_result_explanation = f'SVG not found for {ticker_symbol}.'
-            return rows, zero_result_explanation
-        assert len(chart_svgs) == 1, f'{ticker_symbol} has an unexpected number of SVGs ({len(chart_svgs)}) within the chart.'
+#         chart_svgs = await chart_div.get_elements('svg.uch-psvg')
+#         if len(chart_svgs) == 0:
+#             zero_result_explanation = f'SVG not found for {ticker_symbol}.'
+#             return rows, zero_result_explanation
+#         assert len(chart_svgs) == 1, f'{ticker_symbol} has an unexpected number of SVGs ({len(chart_svgs)}) within the chart.'
 
-        whole_time_string = '10:30PM'
-        with timeout(30):
-            while whole_time_string == '10:30PM':
-                info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
-                time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
-                whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
-        if whole_time_string == '10:30PM':
-            zero_result_explanation = f'{ticker_symbol} could not load properly.'
-            return rows, zero_result_explanation
+#         whole_time_string = '10:30PM'
+#         with timeout(30):
+#             while whole_time_string == '10:30PM':
+#                 info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
+#                 time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
+#                 whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
+#         if whole_time_string == '10:30PM':
+#             zero_result_explanation = f'{ticker_symbol} could not load properly.'
+#             return rows, zero_result_explanation
 
-        y = (top + top + height) / 2
-        for x in range(left, left+width):
-            await page.mouse.move(x, y)
-            info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
-            time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
-            whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
+#         y = (top + top + height) / 2
+#         for x in range(left, left+width):
+#             await page.mouse.move(x, y)
+#             info_card = await chart_div.get_sole_element('div.knowledge-finance-wholepage-chart__hover-card')
+#             time_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-time')
+#             whole_time_string = await page.evaluate('(element) => element.innerHTML', time_span)
             
-            if whole_time_string not in seen_whole_time_strings:
+#             if whole_time_string not in seen_whole_time_strings:
 
-                time_string, period = whole_time_string.split(' ')[-2:]
-                hour, minute = eager_map(int, time_string.split(':'))
-                assert period in ('AM', 'PM')
-                if period == 'PM' and hour != 12:
-                    hour += 12
-                date_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
+#                 time_string, period = whole_time_string.split(' ')[-2:]
+#                 hour, minute = eager_map(int, time_string.split(':'))
+#                 assert period in ('AM', 'PM')
+#                 if period == 'PM' and hour != 12:
+#                     hour += 12
+#                 date_time = datetime.datetime(year=year, month=month, day=day, hour=hour, minute=minute)
 
-                price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
-                price_string = await page.evaluate('(element) => element.innerHTML', price_span)
+#                 price_span = await info_card.get_sole_element('span.knowledge-finance-wholepage-chart__hover-card-value')
+#                 price_string = await page.evaluate('(element) => element.innerHTML', price_span)
 
-                if not price_string.endswith(' USD'):
-                    zero_result_explanation = f'Cannot handle price string {repr(price_string)} for {ticker_symbol}.'
-                    return rows, zero_result_explanation
-                price = float(price_string.replace(' USD', '').replace(',', ''))
+#                 if not price_string.endswith(' USD'):
+#                     zero_result_explanation = f'Cannot handle price string {repr(price_string)} for {ticker_symbol}.'
+#                     return rows, zero_result_explanation
+#                 price = float(price_string.replace(' USD', '').replace(',', ''))
 
-                row = (date_time, ticker_symbol, price)
-                rows.append(row)
-                seen_whole_time_strings.add(whole_time_string)
-        assert len(rows) != 0
-        return rows, zero_result_explanation
+#                 row = (date_time, ticker_symbol, price)
+#                 rows.append(row)
+#                 seen_whole_time_strings.add(whole_time_string)
+#         assert len(rows) != 0
+#         return rows, zero_result_explanation
 
-###########
-# Scraper #
-###########
+# ###########
+# # Scraper #
+# ###########
 
 async def gather_ticker_symbol_rows(ticker_symbol: str) -> Tuple[List[Tuple[datetime.datetime, str, float]], str]:
     coroutine = get_coroutine_to_gather_ticker_symbol_row()
