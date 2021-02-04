@@ -36,12 +36,6 @@ from misc_utilities import *
 # TODO make sure these imports are used
 
 ###########
-# Globals #
-###########
-
-ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
-
-###########
 # Scraper #
 ###########
 

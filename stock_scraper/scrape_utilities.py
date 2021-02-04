@@ -162,6 +162,8 @@ setattr(pyppeteer.page.Page, 'safelyWaitForNavigation', _safelyWaitForNavigation
 # Gather Ticker Symbols #
 #########################
 
+ALL_TICKER_SYMBOLS_URL = 'https://stockanalysis.com/stocks/'
+
 def gather_all_ticker_symbols() -> List[str]:
     response = requests.get(ALL_TICKER_SYMBOLS_URL)
     soup = bs4.BeautifulSoup(response.text, "html.parser")
