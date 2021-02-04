@@ -18,7 +18,7 @@ import bs4
 from more_itertools import distribute
 from  typing import Set
 
-from scrape import gather_all_ticker_symbols 
+from scrape_utilities import gather_all_ticker_symbols 
 
 from misc_utilities import *
 
