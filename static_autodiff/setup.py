@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup( # TODO add more here
-    name="leibniz",
-    description="A domain-specific language for automatic differentiation via static computation graphs.",
+    name="TIBS",
+    description="TIBS (Tensor Instruction Based Semantics) Programming Language",
     author="Paul Nguyen",
-    packages=["leibniz"],
+    packages=["tibs"],
     python_requires=">=3.7",
 )

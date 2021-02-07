@@ -1,8 +1,8 @@
 
 import pytest
 
-from leibniz import parser
-from leibniz.parser import (
+from tibs import parser
+from tibs.parser import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
     ExpressionASTNode,
@@ -39,7 +39,7 @@ from leibniz.parser import (
     AssignmentASTNode,
     ModuleASTNode,
 ) # TODO reorder these in according to their declaration
-from leibniz.misc_utilities import *
+from tibs.misc_utilities import *
 
 # TODO verify that the above imports are used
 # TODO make sure these imports are ordered in some way
