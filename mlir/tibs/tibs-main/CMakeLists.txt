@@ -1,4 +1,6 @@
 
+add_library(tibs-shared SHARED tibs-shared.hpp tibs-shared.cpp)
+
 add_executable(tibs-main tibs-main.cpp)
 
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS) # makes it so we include llvm-project/mlir/lib/Dialect
@@ -18,16 +20,18 @@ set(LIBS
 #	MLIRTargetLLVMIR
 #	MLIRTransforms
 	)
+llvm_update_compile_flags(tibs-shared) # TODO figure out what this does
+target_link_libraries(tibs-shared PRIVATE ${LIBS})
+
 llvm_update_compile_flags(tibs-main) # TODO figure out what this does
-target_link_libraries(tibs-main PRIVATE ${LIBS})
+target_link_libraries(tibs-main PRIVATE tibs-shared)
 
-message(STATUS "=======================================")
-message(STATUS "tibs-main")
-message(STATUS "=======================================")
-message(STATUS "dialect_libs: ${dialect_libs}")
-message(STATUS "=======================================")
-message(STATUS "conversion_libs: ${conversion_libs}")
-message(STATUS "=======================================")
-message(STATUS "LLVM_LINK_COMPONENTS: ${LLVM_LINK_COMPONENTS}")
-message(STATUS "=======================================")
-
+# message(STATUS "=======================================")
+# message(STATUS "tibs-main")
+# message(STATUS "=======================================")
+# message(STATUS "dialect_libs: ${dialect_libs}")
+# message(STATUS "=======================================")
+# message(STATUS "conversion_libs: ${conversion_libs}")
+# message(STATUS "=======================================")
+# message(STATUS "LLVM_LINK_COMPONENTS: ${LLVM_LINK_COMPONENTS}")
+# message(STATUS "=======================================")
