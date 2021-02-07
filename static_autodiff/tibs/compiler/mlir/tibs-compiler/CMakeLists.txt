@@ -1,7 +1,5 @@
 
-add_library(tibs-shared SHARED tibs-shared.hpp tibs-shared.cpp)
-
-add_executable(tibs-main tibs-main.cpp)
+add_library(tibs-compiler SHARED tibs-compiler.hpp tibs-compiler.cpp)
 
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS) # makes it so we include llvm-project/mlir/lib/Dialect
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS) # makes it so we include llvm-project/mlir/lib/Conversion
@@ -20,11 +18,8 @@ set(LIBS
 #	MLIRTargetLLVMIR
 #	MLIRTransforms
 	)
-llvm_update_compile_flags(tibs-shared) # TODO figure out what this does
-target_link_libraries(tibs-shared PRIVATE ${LIBS})
-
-llvm_update_compile_flags(tibs-main) # TODO figure out what this does
-target_link_libraries(tibs-main PRIVATE tibs-shared)
+llvm_update_compile_flags(tibs-compiler) # TODO figure out what this does
+target_link_libraries(tibs-compiler PRIVATE ${LIBS})
 
 # message(STATUS "=======================================")
 # message(STATUS "tibs-main")
