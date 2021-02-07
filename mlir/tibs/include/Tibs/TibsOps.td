@@ -10,26 +10,6 @@ include "mlir/Interfaces/SideEffectInterfaces.td"
 // Tibs operations */
 /*******************/
 
-def Tibs_FooOp : Tibs_Op<"foo", [NoSideEffect, SameOperandsAndResultType]> {
-    let summary = "constant";
-    let description = [{
-    Constant operation turns a literal into an SSA value. The data is attached
-    to the operation as an attribute. For example:
-
-    ```mlir
-      %0 = tibs.constant dense<[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]>
-                        : tensor<2x3xf64>
-    ```
-  }];
-
-    let arguments = (ins I32:$input);
-    let results = (outs I32:$res);
-
-    let assemblyFormat = [{
-        $input attr-dict `:` type($input)
-    }];
-}
-
 def ConstantOp : Tibs_Op<"constant", [NoSideEffect]> {
   let summary = "constant";
   let description = [{
