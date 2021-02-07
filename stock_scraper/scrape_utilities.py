@@ -38,9 +38,9 @@ from misc_utilities import *
 # Globals #
 ###########
 
-MAX_NUMBER_OF_CONCURRENT_BROWSERS = 10
+MAX_NUMBER_OF_CONCURRENT_BROWSERS = 1
 
-HEADLESS = True
+HEADLESS = False
 
 MAX_NUMBER_OF_SCRAPE_ATTEMPTS = 1
 
@@ -184,32 +184,32 @@ class ThreadSafeCounter():
 
 RH_LIST_URLS = [
     'https://robinhood.com/collections/100-most-popular',
-    'https://robinhood.com/collections/internet',
-    'https://robinhood.com/collections/entertainment',
-    'https://robinhood.com/collections/video-game',
-    'https://robinhood.com/collections/manufacturing',
-    'https://robinhood.com/collections/computer-software',
-    'https://robinhood.com/collections/software-service',
-    'https://robinhood.com/collections/retail',
-    'https://robinhood.com/collections/e-commerce',
-    'https://robinhood.com/collections/hospitality',
-    'https://robinhood.com/collections/food',
-    'https://robinhood.com/collections/medical',
-    'https://robinhood.com/collections/technology',
-    'https://robinhood.com/collections/biotechnology',
-    'https://robinhood.com/collections/credit-card',
-    'https://robinhood.com/collections/payment',
-    'https://robinhood.com/collections/data-service',
-    'https://robinhood.com/collections/finance',
-    'https://robinhood.com/collections/banking',
-    'https://robinhood.com/collections/advertising-and-marketing',
-    'https://robinhood.com/collections/engineering',
-    'https://robinhood.com/collections/utilities',
-    'https://robinhood.com/collections/electronics',
-    'https://robinhood.com/collections/defense',
-    'https://robinhood.com/collections/energy',
-    'https://robinhood.com/collections/consulting',
-    'https://robinhood.com/collections/telecommunications',
+    # 'https://robinhood.com/collections/internet',
+    # 'https://robinhood.com/collections/entertainment',
+    # 'https://robinhood.com/collections/video-game',
+    # 'https://robinhood.com/collections/manufacturing',
+    # 'https://robinhood.com/collections/computer-software',
+    # 'https://robinhood.com/collections/software-service',
+    # 'https://robinhood.com/collections/retail',
+    # 'https://robinhood.com/collections/e-commerce',
+    # 'https://robinhood.com/collections/hospitality',
+    # 'https://robinhood.com/collections/food',
+    # 'https://robinhood.com/collections/medical',
+    # 'https://robinhood.com/collections/technology',
+    # 'https://robinhood.com/collections/biotechnology',
+    # 'https://robinhood.com/collections/credit-card',
+    # 'https://robinhood.com/collections/payment',
+    # 'https://robinhood.com/collections/data-service',
+    # 'https://robinhood.com/collections/finance',
+    # 'https://robinhood.com/collections/banking',
+    # 'https://robinhood.com/collections/advertising-and-marketing',
+    # 'https://robinhood.com/collections/engineering',
+    # 'https://robinhood.com/collections/utilities',
+    # 'https://robinhood.com/collections/electronics',
+    # 'https://robinhood.com/collections/defense',
+    # 'https://robinhood.com/collections/energy',
+    # 'https://robinhood.com/collections/consulting',
+    # 'https://robinhood.com/collections/telecommunications',
 ]
 
 def gather_rh_ticker_symbols() -> Iterable[str]:
