@@ -6,9 +6,9 @@ include "TibsDialect.td"
 include "TibsPasses.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-//===----------------------------------------------------------------------===//
-// Tibs operations.
-//===----------------------------------------------------------------------===//
+/*******************/
+// Tibs operations */
+/*******************/
 
 def Tibs_FooOp : Tibs_Op<"foo", [NoSideEffect, SameOperandsAndResultType]> {
     let summary = "constant";

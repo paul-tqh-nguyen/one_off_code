@@ -42,7 +42,6 @@ add_definitions(${LLVM_DEFINITIONS})
 
 add_subdirectory(include)
 add_subdirectory(lib)
-add_subdirectory(test)
 add_subdirectory(tibs-opt)
 add_subdirectory(tibs-translate)
 add_subdirectory(tibs-main)

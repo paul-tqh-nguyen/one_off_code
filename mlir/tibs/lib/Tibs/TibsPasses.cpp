@@ -24,9 +24,9 @@
 using namespace mlir;
 using namespace mlir::tibs;
 
-//===----------------------------------------------------------------------===//
-// Tibs canonicalization passes.
-//===----------------------------------------------------------------------===//
+/********************************/
+/* Tibs canonicalization passes */
+/********************************/
 
 struct SimplifyRedundantTranspose : public mlir::OpRewritePattern<mlir::tibs::TransposeOp> {
   SimplifyRedundantTranspose(mlir::MLIRContext *context) : OpRewritePattern<mlir::tibs::TransposeOp>(context, /*benefit=*/1) {}
@@ -67,9 +67,9 @@ void mlir::tibs::TransposeOp::getCanonicalizationPatterns(OwningRewritePatternLi
 //   results.insert<mlir::tibs::TransposeTransposeOptPattern, DoubleTransposeOptPattern, FoldDoubleTransposeOptPattern>(context);
 // }
 
-//===----------------------------------------------------------------------===//
-// Tibs->Affine Lowering Helpers
-//===----------------------------------------------------------------------===//
+/*********************************/
+/* Tibs->Affine Lowering Helpers */
+/*********************************/
 
 static MemRefType convertTensorToMemRef(TensorType type) {
   assert(type.hasRank() && "expected only ranked shapes");
@@ -88,9 +88,10 @@ static Value insertAllocAndDealloc(MemRefType type, Location loc, PatternRewrite
   return alloc;
 }
 
-//===----------------------------------------------------------------------===//
-// Tibs->Affine Constant Operation Lowering Rewrite Pattern
-//===----------------------------------------------------------------------===//
+
+/************************************************************/
+/* Tibs->Affine Constant Operation Lowering Rewrite Pattern */
+/************************************************************/
 
 struct ConstantOpLowering : public OpRewritePattern<mlir::tibs::ConstantOp> {
   using OpRewritePattern<mlir::tibs::ConstantOp>::OpRewritePattern;
@@ -146,9 +147,9 @@ struct ConstantOpLowering : public OpRewritePattern<mlir::tibs::ConstantOp> {
   }
 };
 
-//===----------------------------------------------------------------------===//
-// Tibs->Standard Return Operation Lowering Rewrite Pattern
-//===----------------------------------------------------------------------===//
+/************************************************************/
+/* Tibs->Standard Return Operation Lowering Rewrite Pattern */
+/************************************************************/
 
 struct ReturnOpLowering : public OpRewritePattern<mlir::tibs::ReturnOp> {
   using OpRewritePattern<mlir::tibs::ReturnOp>::OpRewritePattern;
@@ -159,9 +160,9 @@ struct ReturnOpLowering : public OpRewritePattern<mlir::tibs::ReturnOp> {
   }
 };
 
-//===----------------------------------------------------------------------===//
-// Tibs->Affine lowering passes.
-//===----------------------------------------------------------------------===//
+/********************************/
+/* Tibs->Affine lowering passes */
+/********************************/
 
 namespace {
   
@@ -215,9 +216,9 @@ std::unique_ptr<Pass> mlir::tibs::createLowerToAffinePass() {
   return std::make_unique<TibsToAffineLoweringPass>();
 }
 
-//===----------------------------------------------------------------------===//
-// Tibs->LLVM Print Operation Lowering Rewrite Pattern
-//===----------------------------------------------------------------------===//
+/*******************************************************/
+/* Tibs->LLVM Print Operation Lowering Rewrite Pattern */
+/*******************************************************/
 
 namespace {
   
@@ -303,9 +304,9 @@ namespace {
   };
 } // end anonymous namespace
 
-//===----------------------------------------------------------------------===//
-// Tibs->LLVM lowering passes.
-//===----------------------------------------------------------------------===//
+/******************************/
+/* Tibs->LLVM lowering passes */
+/******************************/
 
 namespace {
   

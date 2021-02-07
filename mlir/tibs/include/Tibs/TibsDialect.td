@@ -4,9 +4,9 @@
 
 include "mlir/IR/OpBase.td"
 
-//===----------------------------------------------------------------------===//
-// Tibs dialect definition.
-//===----------------------------------------------------------------------===//
+/***************************/
+/* Tibs dialect definition */
+/***************************/
 
 def Tibs_Dialect : Dialect {
     let name = "tibs";
@@ -17,9 +17,10 @@ def Tibs_Dialect : Dialect {
     let cppNamespace = "::mlir::tibs";
 }
 
-//===----------------------------------------------------------------------===//
-// Base tibs operation definition.
-//===----------------------------------------------------------------------===//
+
+/**********************************/
+/* Base tibs operation definition */
+/**********************************/
 
 class Tibs_Op<string mnemonic, list<OpTrait> traits = []> :
         Op<Tibs_Dialect, mnemonic, traits>;

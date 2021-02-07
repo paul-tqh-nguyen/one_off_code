@@ -3,6 +3,7 @@
 
 # Tibs
 
+for i in $(seq 1 10); do conda deactivate  ; done ; conda activate mlir
 export PATH=/home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/:$PATH
 export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/mlir/lib:$LD_LIBRARY_PATH
 export BUILD_DIR=/home/pnguyen/code/one_off_code/mlir/llvm-project/build

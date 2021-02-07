@@ -5,9 +5,9 @@
 using namespace mlir;
 using namespace mlir::tibs;
 
-//===----------------------------------------------------------------------===//
-// Tibs dialect.
-//===----------------------------------------------------------------------===//
+/****************/
+/* Tibs dialect */
+/****************/
 
 void TibsDialect::initialize() {
   addOperations<
