@@ -1,4 +1,6 @@
 
+#include "tibs-shared.hpp"
+
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"

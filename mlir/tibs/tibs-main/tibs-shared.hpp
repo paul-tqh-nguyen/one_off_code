@@ -1,2 +1,2 @@
 
-void runAllPasses();
+extern "C" void runAllPasses();
