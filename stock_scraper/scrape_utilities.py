@@ -74,14 +74,13 @@ async def new_browser(*args, **kwargs) -> Generator:
         raise error
     return
 
-BROWSER_POOL_SIZE = MAX_NUMBER_OF_CONCURRENT_BROWSERS
 BROWSER_POOL: List[pyppeteer.browser.Browser] = []
 BROWSER_POOL_ID_QUEUE = mp.Queue()
 
-async def initialize_browser_pool() -> None:
-    for browser_pool_id in range(BROWSER_POOL_SIZE):
+async def initialize_browser_pool(browser_pool_size: int, headless: bool = HEADLESS) -> None:
+    for browser_pool_id in range(browser_pool_size):
         BROWSER_POOL_ID_QUEUE.put(browser_pool_id)
-        browser = await launch_browser(headless=HEADLESS)
+        browser = await launch_browser(headless=headless)
         BROWSER_POOL.append(browser)
     return
 
@@ -92,9 +91,9 @@ async def close_browser_pool() -> None:
     return
 
 @contextmanager
-def browser_pool_initialized() -> Generator:
+def browser_pool_initialized(browser_pool_size: int = MAX_NUMBER_OF_CONCURRENT_BROWSERS, headless: bool = HEADLESS) -> Generator:
     assert len(BROWSER_POOL) == 0, f'Browser pool already initialized.'
-    EVENT_LOOP.run_until_complete(initialize_browser_pool())
+    EVENT_LOOP.run_until_complete(initialize_browser_pool(browser_pool_size, headless))
     yield
     EVENT_LOOP.run_until_complete(close_browser_pool())
 

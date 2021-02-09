@@ -6,6 +6,8 @@ dependencies:
   - pandas
   - requests
   - more-itertools
+  - conda-forge::bidict
   - pip
   - pip:
     - pyppeteer
+    - aioprocessing
