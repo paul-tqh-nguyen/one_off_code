@@ -9,6 +9,7 @@
 # Imports #
 ###########
 
+import atexit
 import argparse
 import tempfile
 import time
@@ -77,6 +78,7 @@ def start_thread_for_event_loop():
     global EVENT_LOOP_THREAD
     assert EVENT_LOOP_THREAD is None or not EVENT_LOOP_THREAD.isAlive()
     EVENT_LOOP_THREAD = threading.Thread(target=_run_event_loop_in_thread, args=())
+    EVENT_LOOP_THREAD.daemon = True
     EVENT_LOOP_THREAD.start()
     return
 
@@ -129,6 +131,20 @@ def event_loop_func(func: Callable) -> Callable:
 
 start_thread_for_event_loop()
 
+##########################
+# Web Scraping Utilities #
+##########################
+
+async def launch_browser(*args, **kwargs) -> pyppeteer.browser.Browser:
+    sentinel = object()
+    browser = sentinel
+    while browser is sentinel:
+        try:
+            browser: pyppeteer.browser.Browser = await pyppeteer.launch(kwargs, args=args)
+        except Exception as browser_launch_error:
+            pass
+    return browser
+
 ######################
 # Vanguard Utilities #
 ######################
@@ -138,7 +154,12 @@ VANGUARD_LOGIN_URL = 'https://investor.vanguard.com/my-account/log-on'
 VANGUARD_BROWSER = None
 
 async def _initialize_vanguard_browser() -> pyppeteer.browser.Browser:
-    browser = await launch_browser(headless=False)
+    browser = await launch_browser(
+        headless=False, 
+        handleSIGINT=False,
+        handleSIGTERM=False,
+        handleSIGHUP=False
+    )
     page = only_one(await browser.pages())
     await page.goto(VANGUARD_LOGIN_URL)
     return browser
@@ -151,28 +172,46 @@ def initialize_vanguard_browser() -> pyppeteer.browser.Browser:
     VANGUARD_BROWSER = browser
     return browser
 
+@event_loop_func
+def close_vanguard_browser() -> None:
+    global VANGUARD_BROWSER
+    assert VANGUARD_BROWSER is not None, f'Browser already closed.'
+    run_awaitable(VANGUARD_BROWSER._closeCallback())
+    VANGUARD_BROWSER = None
+    return 
+
 ################
 # RH Utilities #
 ################
 
-# RH_BROWSER = None
+RH_BROWSER = None
 
-# TRACKED_TICKER_SYMBOL_TO_PAGE: Dict[str, pyppeteer.page.Page] = dict()
+TRACKED_TICKER_SYMBOL_TO_PAGE: Dict[str, pyppeteer.page.Page] = dict()
 
-# RH_SCRAPER_THREAD = None
+async def _initialize_rh_browser() -> pyppeteer.browser.Browser:
+    browser = await launch_browser(
+        headless=False, 
+        handleSIGINT=False,
+        handleSIGTERM=False,
+        handleSIGHUP=False
+    ) # TODO make this headless
+    return browser
 
-# RH_SCRAPER_TASK = None
+@event_loop_func
+def initialize_rh_browser() -> pyppeteer.browser.Browser:
+    global RH_BROWSER
+    assert RH_BROWSER is None, f'Browser already initialized.'
+    browser = run_awaitable(_initialize_rh_browser())
+    RH_BROWSER = browser
+    return browser
 
-# async def _initialize_rh_browser() -> pyppeteer.browser.Browser:
-#     browser = await launch_browser(headless=False) # TODO make this headless
-#     return browser
-
-# def initialize_rh_browser() -> pyppeteer.browser.Browser:
-#     global RH_BROWSER
-#     assert RH_BROWSER is None, f'Browser already initialized.'
-#     browser = EVENT_LOOP.run_until_complete(_initialize_rh_browser())
-#     RH_BROWSER = browser
-#     return browser
+@event_loop_func
+def close_rh_browser() -> None:
+    global RH_BROWSER
+    assert RH_BROWSER is not None, f'Browser already closed.'
+    run_awaitable(RH_BROWSER._closeCallback())
+    RH_BROWSER = None
+    return 
 
 # async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
 #     ticker_symbols = eager_map(str.upper, ticker_symbols)
@@ -277,43 +316,30 @@ def initialize_vanguard_browser() -> pyppeteer.browser.Browser:
 #     print(f"RH_SCRAPER_THREAD {repr(RH_SCRAPER_THREAD)}")
 #     return
 
-# def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
-#     assert RH_BROWSER is not None, f'RH browser not initialized.'
-#     EVENT_LOOP.run_until_complete(open_pages_for_ticker_symbols(ticker_symbols))
-#     restart_scraping_ticker_symbols()
-#     return
+@event_loop_func
+def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
+    assert RH_BROWSER is not None, f'RH browser not initialized.'
+    run_awaitable(open_pages_for_ticker_symbols(ticker_symbols))
+    restart_scraping_ticker_symbols()
+    return
 
 ##########
 # Driver #
 ##########
 
-# initialize_vanguard_browser()
-# initialize_rh_browser()
+def initialize_browsers() -> None:
+    initialize_vanguard_browser()
+    initialize_rh_browser()
+    return
 
-async def _insert_new_row() -> None:
-    #while True:
-    for _ in range(10):
-        DB_CURSOR.executemany('INSERT INTO stocks VALUES(?,?,?)', [(get_local_datetime(), 'TEST', 1)])
-        DB_CONNECTION.commit()
-        num_rows = only_one(only_one(DB_CURSOR.execute('SELECT COUNT(*) FROM stocks').fetchall()))
-        print(f"num_rows {repr(num_rows)}")
-        await asyncio.sleep(1)
-    return 444
+initialize_browsers()
 
-async def _print_constantly() -> int:
-    for _ in range(16):
-        print(f"print {repr(print)}")
-        await asyncio.sleep(0.25)
-    return 123
+@atexit.register
+def module_exit_callback() -> None:
+    close_vanguard_browser()
+    close_rh_browser()
+    stop_thread_for_event_loop()
+    return
 
 if __name__ == '__main__':
-    with safe_event_loop_thread():
-        insert_task = enqueue_awaitable(_insert_new_row())
-        time.sleep(2)
-        print_result = run_awaitable(_print_constantly())
-        assert print_result is 123
-        insert_result = join_awaitable(insert_task)
-        assert insert_result is 444
-        stop_thread_for_event_loop()
-        print('done')
-    
+    pass # TODO do something here
