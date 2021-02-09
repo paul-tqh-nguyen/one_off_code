@@ -145,6 +145,41 @@ async def launch_browser(*args, **kwargs) -> pyppeteer.browser.Browser:
             pass
     return browser
 
+########################
+# Pyppeteer Extensions #
+########################
+
+async def _get_elements(self: Union[pyppeteer.page.Page, pyppeteer.element_handle.ElementHandle], selector: str) -> List[pyppeteer.element_handle.ElementHandle]:
+    if isinstance(self, pyppeteer.page.Page):
+        await self.waitForSelector(selector)
+    elements = await self.querySelectorAll(selector)
+    return elements
+setattr(pyppeteer.page.Page, 'get_elements', _get_elements)
+setattr(pyppeteer.element_handle.ElementHandle, 'get_elements', _get_elements)
+
+async def _get_sole_element(self: Union[pyppeteer.page.Page, pyppeteer.element_handle.ElementHandle], selector: str) -> pyppeteer.element_handle.ElementHandle:
+    return only_one(await self.get_elements(selector))
+setattr(pyppeteer.page.Page, 'get_sole_element', _get_sole_element)
+setattr(pyppeteer.element_handle.ElementHandle, 'get_sole_element', _get_sole_element)
+
+async def _safelyWaitForSelector(self: pyppeteer.page.Page, *args, **kwargs) -> bool:
+    try:
+        await self.waitForSelector(*args, **kwargs)
+        success = True
+    except pyppeteer.errors.TimeoutError:
+        success = False
+    return success
+setattr(pyppeteer.page.Page, 'safelyWaitForSelector', _safelyWaitForSelector)
+
+async def _safelyWaitForNavigation(self: pyppeteer.page.Page, *args, **kwargs) -> bool:
+    try:
+        await self.waitForNavigation(*args, **kwargs)
+        success = True
+    except pyppeteer.errors.TimeoutError:
+        success = False
+    return success
+setattr(pyppeteer.page.Page, 'safelyWaitForNavigation', _safelyWaitForNavigation)
+
 ######################
 # Vanguard Utilities #
 ######################
@@ -190,11 +225,11 @@ TRACKED_TICKER_SYMBOL_TO_PAGE: Dict[str, pyppeteer.page.Page] = dict()
 
 async def _initialize_rh_browser() -> pyppeteer.browser.Browser:
     browser = await launch_browser(
-        headless=False, 
+        headless=True, 
         handleSIGINT=False,
         handleSIGTERM=False,
         handleSIGHUP=False
-    ) # TODO make this headless
+    )
     return browser
 
 @event_loop_func
@@ -213,114 +248,81 @@ def close_rh_browser() -> None:
     RH_BROWSER = None
     return 
 
-# async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
-#     ticker_symbols = eager_map(str.upper, ticker_symbols)
-#     # Add new pages
-#     current_pages = await RH_BROWSER.pages()
-#     for _ in range(len(ticker_symbols) - len(current_pages)):
-#         page = await RH_BROWSER.newPage()
-#     # Close unneccessary pages
-#     current_pages = await RH_BROWSER.pages()
-#     for index in range(len(current_pages) - len(ticker_symbols)):
-#         await current_pages[index].close()
+RH_SCRAPER_TASK = None
+
+async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
+    ticker_symbols = eager_map(str.upper, ticker_symbols)
+    
+    # Add new pages
+    current_pages = await RH_BROWSER.pages()
+    for _ in range(len(ticker_symbols) - len(current_pages)):
+        page = await RH_BROWSER.newPage()
+    
+    # Close unneccessary pages
+    current_pages = await RH_BROWSER.pages()
+    for index in range(len(current_pages) - len(ticker_symbols)):
+        await current_pages[index].close()
         
-#     current_pages = await RH_BROWSER.pages()
-#     assert len(current_pages) == len(ticker_symbols)
+    current_pages = await RH_BROWSER.pages()
+    assert len(current_pages) == len(ticker_symbols)
 
-#     page_opening_tasks = []
-#     for page, ticker_symbol in zip(current_pages, ticker_symbols):
-#         url = f'https://robinhood.com/stocks/{ticker_symbol}'
-#         page_opening_task = EVENT_LOOP.create_task(page.goto(url))
-#         page_opening_tasks.append(page_opening_task)
-#         TRACKED_TICKER_SYMBOL_TO_PAGE[ticker_symbol] = page
-#     for page_opening_task in page_opening_tasks:
-#         await page_opening_task
-#     return
+    page_opening_tasks = []
+    for page, ticker_symbol in zip(current_pages, ticker_symbols):
+        url = f'https://robinhood.com/stocks/{ticker_symbol}'
+        page_opening_task = EVENT_LOOP.create_task(page.goto(url))
+        page_opening_tasks.append(page_opening_task)
+        TRACKED_TICKER_SYMBOL_TO_PAGE[ticker_symbol] = page
+    for page_opening_task in page_opening_tasks:
+        await page_opening_task
+    return
 
-# async def _scrape_ticker_symbols() -> None:
-#     LOGGER.info('0')
-#     while True:
-#         LOGGER.info('0-1')
-#         rows = []
-#         LOGGER.info('0-2')
-#         for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
-#             LOGGER.info('0-3')
-#             assert page.url.split('/')[-1].lower() == ticker_symbol.lower()
-#             LOGGER.info(f"ticker_symbol {repr(ticker_symbol)}")
-#             LOGGER.info(f"page {repr(page)}")
-#             await page.bringToFront()
-#             LOGGER.info('1')
-            
-#             svg = await page.get_sole_element('body main.app main.main-container div.row section[data-testid="ChartSection"] svg:not([role="img"])')
-#             LOGGER.info('2')
-#             top, left, width, height = await page.evaluate('''
-# (element) => {
-#     const { top, left, width, height } = element.getBoundingClientRect();
-#     return [top, left, width, height];
-# }''', svg)
-
-#             LOGGER.info('3')
-#             for _ in range(10):
-#                 y = top + (top + height) * random.random()
-#                 x = left + (left+width) * random.random()
-#                 await page.mouse.move(x, y)
-#             LOGGER.info('4')
-#             await page.mouse.move(1, 1)
-#             LOGGER.info('5')
-            
-#             price_spans = await page.get_elements('body main.app main.main-container div.row section[data-testid="ChartSection"] header')
-#             price_span_string = await page.evaluate('(element) => element.innerText', price_spans[0])
-#             price_span_string = price_span_string.split('\n')[0]
-#             assert price_span_string.startswith('$')
-#             price = float(price_span_string.replace('$', '').replace(',', ''))
-#             LOGGER.info('6')
-            
-#             date_time = get_local_datetime()
-#             LOGGER.info('7')
-#             row = (date_time, ticker_symbol, price)
-#             LOGGER.info('8')
-#             rows.append(row)
-#             LOGGER.info('9')
-#         DB_CURSOR.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
-#         LOGGER.info('10')
-#         DB_CONNECTION.commit()
-#         LOGGER.info('11')
-#     return
-
-# def stop_scraping_ticker_symbols() -> None:
-#     global RH_SCRAPER_TASK
-#     assert bool(RH_SCRAPER_THREAD) == bool(RH_SCRAPER_TASK)
-#     if RH_SCRAPER_TASK is not None:
-#         RH_SCRAPER_TASK.cancel()
-#         EVENT_LOOP.stop()
-#     if RH_SCRAPER_THREAD is not None:
-#         RH_SCRAPER_THREAD.join()
-#     return
-
-# def _start_scraping_ticker_symbols() -> None:
-#     LOGGER.info(f"1 _start_scraping_ticker_symbols()")
-#     EVENT_LOOP.run_forever()
-#     LOGGER.info(f"2 _start_scraping_ticker_symbols()")
-#     return
-
-# def restart_scraping_ticker_symbols() -> None:
-#     stop_scraping_ticker_symbols()
-#     global RH_SCRAPER_TASK
-#     print(f"RH_SCRAPER_TASK {repr(RH_SCRAPER_TASK)}")
-#     RH_SCRAPER_TASK = EVENT_LOOP.create_task(_scrape_ticker_symbols())
-#     print(f"RH_SCRAPER_TASK {repr(RH_SCRAPER_TASK)}")
-#     # RH_SCRAPER_PROCESS = mp.Process(target=_start_scraping_ticker_symbols, args=())
-#     global RH_SCRAPER_THREAD
-#     print(f"RH_SCRAPER_THREAD {repr(RH_SCRAPER_THREAD)}")
-#     RH_SCRAPER_THREAD = threading.Thread(target=_start_scraping_ticker_symbols, args=())
-#     print(f"RH_SCRAPER_THREAD {repr(RH_SCRAPER_THREAD)}")
-#     return
+async def scrape_ticker_symbols() -> None:
+    try:
+        while True:
+            rows = []
+            for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
+                assert page.url.split('/')[-1].lower() == ticker_symbol.lower()
+                await page.bringToFront()
+                
+                svg = await page.get_sole_element('body main.app main.main-container div.row section[data-testid="ChartSection"] svg:not([role="img"])')
+                top, left, width, height = await page.evaluate(
+                    '(element) => {'
+                    '    const { top, left, width, height } = element.getBoundingClientRect();'
+                    '    return [top, left, width, height];'
+                    '}', svg)
+    
+                for _ in range(10):
+                    y = top + (top + height) * random.random()
+                    x = left + (left+width) * random.random()
+                    await page.mouse.move(x, y)
+                await page.mouse.move(1, 1)
+                await asyncio.sleep(2)
+                
+                price_spans = await page.get_elements('body main.app main.main-container div.row section[data-testid="ChartSection"] header')
+                price_span_string = await page.evaluate('(element) => element.innerText', price_spans[0])
+                price_span_string = price_span_string.split('\n')[0]
+                assert price_span_string.startswith('$')
+                price = float(price_span_string.replace('$', '').replace(',', ''))
+                
+                date_time = get_local_datetime()
+                row = (date_time, ticker_symbol, price)
+                print(f"row {repr(row)}")
+                rows.append(row)
+            DB_CURSOR.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
+            DB_CONNECTION.commit()
+    except asyncio.CancelledError:
+        pass
+    return
 
 @event_loop_func
 def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
+    global RH_BROWSER
+    global RH_SCRAPER_TASK
     assert RH_BROWSER is not None, f'RH browser not initialized.'
+    if RH_SCRAPER_TASK is not None:
+        RH_SCRAPER_TASK.cancel()
     run_awaitable(open_pages_for_ticker_symbols(ticker_symbols))
-    restart_scraping_ticker_symbols()
+    RH_SCRAPER_TASK = enqueue_awaitable(scrape_ticker_symbols())
     return
 
 ##########
