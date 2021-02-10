@@ -51,15 +51,22 @@ def get_local_datetime() -> datetime.datetime:
 # DB Utilities #
 ################
 
-CURRENT_DATE = get_local_datetime()
+class DB_INFO:
 
-DAILY_DB_FILE = f'stock_data_{CURRENT_DATE.month}_{CURRENT_DATE.day}_{CURRENT_DATE.year}.db'
+    daily_db_file = (lambda current_date: f'stock_data_{current_date.month}_{current_date.day}_{current_date.year}.db')(get_local_datetime())
+    db_lock = mp.Lock()
+    db_connection = sqlite3.connect(daily_db_file, check_same_thread=False)
+    db_cursor = db_connection.cursor()
+    
+    @classmethod
+    @contextmanager
+    def db_access(cls) -> Generator[Tuple[sqlite3.Connection, sqlite3.Cursor], None, None]:
+        with cls.db_lock:
+            yield cls.db_connection, cls.db_cursor
+        return
 
-DB_CONNECTION = sqlite3.connect(DAILY_DB_FILE, check_same_thread=False)
-
-DB_CURSOR = DB_CONNECTION.cursor()
-
-DB_CURSOR.execute('CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)')
+with DB_INFO.db_access() as (_, db_cursor):
+    db_cursor.execute('CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)')
 
 ###################
 # Async Utilities #
@@ -215,9 +222,9 @@ def close_vanguard_browser() -> None:
     VANGUARD_BROWSER = None
     return 
 
-################
-# RH Utilities #
-################
+########################
+# RH Browser Utilities #
+########################
 
 RH_BROWSER = None
 
@@ -225,7 +232,7 @@ TRACKED_TICKER_SYMBOL_TO_PAGE: Dict[str, pyppeteer.page.Page] = dict()
 
 async def _initialize_rh_browser() -> pyppeteer.browser.Browser:
     browser = await launch_browser(
-        headless=True, 
+        headless=False, # TODO make this headless
         handleSIGINT=False,
         handleSIGTERM=False,
         handleSIGHUP=False
@@ -247,6 +254,10 @@ def close_rh_browser() -> None:
     run_awaitable(RH_BROWSER._closeCallback())
     RH_BROWSER = None
     return 
+
+########################
+# RH Scraper Utilities #
+########################
 
 RH_SCRAPER_TASK = None
 
@@ -308,8 +319,9 @@ async def scrape_ticker_symbols() -> None:
                 row = (date_time, ticker_symbol, price)
                 print(f"row {repr(row)}")
                 rows.append(row)
-            DB_CURSOR.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
-            DB_CONNECTION.commit()
+            with DB_INFO.db_access() as (db_connection, db_cursor):
+                db_cursor.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
+                db_connection.commit()
     except asyncio.CancelledError:
         pass
     return
