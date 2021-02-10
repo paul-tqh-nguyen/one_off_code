@@ -326,11 +326,8 @@ async def scrape_ticker_symbols() -> None:
                 await page.mouse.move(1, 1)
 
             sleep_time = time.time() - animation_triggering_time
-            print()
-            print(f"sleep_time {repr(sleep_time)}")
             sleep_time = 1-sleep_time
             sleep_time = max(sleep_time, 0)
-            print(f"sleep_time {repr(sleep_time)}")
             await asyncio.sleep(sleep_time) # let animations settle for all tabs
             
             # Perform actual scraping
