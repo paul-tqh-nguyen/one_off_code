@@ -6,6 +6,7 @@ dependencies:
   - pandas
   - requests
   - more-itertools
+  - keyring
   - conda-forge::bidict
   - conda-forge::typing_extensions
   - pip

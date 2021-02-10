@@ -1,6 +1,12 @@
 
 '''
 
+rm *db
+conda activate stock_scraper
+python3
+import vanguard
+from vanguard import *
+
 '''
 
 # TODO fill in doc string
@@ -27,6 +33,7 @@ import datetime
 import sqlite3
 import requests
 import threading
+import keyring
 import aioprocessing
 import pandas as pd
 import multiprocessing as mp
@@ -215,6 +222,25 @@ async def _initialize_vanguard_browser() -> pyppeteer.browser.Browser:
     )
     page = only_one(await browser.pages())
     await page.goto(VANGUARD_LOGIN_URL)
+    
+    username_input_selector = 'input#username'
+    password_input_selector = 'input#password'
+    submit_button_selector = 'vui-button button.vui-button[type="submit"]'
+    
+    await page.waitForSelector(username_input_selector)
+    await page.waitForSelector(password_input_selector)
+    await page.waitForSelector(submit_button_selector)
+
+    # import keyring, getpass
+    # keyring.set_password('vanguard_stock_scraper', 'un', getpass.getpass(prompt='Username: ', stream=None))
+    # keyring.set_password('vanguard_stock_scraper', 'pw', getpass.getpass(prompt='Password: ', stream=None))
+        
+    await page.focus(username_input_selector)
+    await page.keyboard.type(keyring.get_password('vanguard_stock_scraper', 'un'));
+    await page.focus(password_input_selector)
+    await page.keyboard.type(keyring.get_password('vanguard_stock_scraper', 'pw'));
+    await page.keyboard.press('Enter');
+
     return browser
 
 @event_loop_func
@@ -231,7 +257,8 @@ def close_vanguard_browser() -> None:
     assert VANGUARD_BROWSER is not None, f'Vanguard browser already closed.'
     run_awaitable(VANGUARD_BROWSER._closeCallback())
     VANGUARD_BROWSER = None
-    return 
+    return
+
 ##############################
 # Vanguard Scraper Utilities #
 ##############################
@@ -270,7 +297,7 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
 
     need_to_click_ok_button = await page.safelyWaitForSelector('input#okButtonInput', {'timeout': 1_000})
     if need_to_click_ok_button:
-        await page.evaluate(f'''() => document.querySelector('input#okButtonInput').click()''');
+        await page.evaluate(f'''() => document.querySelector('input#okButtonInput').click()''')
     
     # Select Account
     account_dropdown_selector = ' '.join([
@@ -301,7 +328,32 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
         )
     )
     assert account_selection_success
+
+    await page.waitForSelector(' '.join([
+        'div[id="baseForm:accountDetailTabBox:fundsAvailableNavBox"]',
+        'table[id="baseForm:accountDetailTabBox:fundsAvailableTable"]',
+        'tbody[id="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]',
+        'tr[tbodyid="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]'
+    ]))
     
+    # Insert Ticker Symbol Text
+    await page.waitForSelector('input[id="baseForm:investmentTextField"]')
+    ticker_symbol_insertion_success = await page.evaluate(f'''
+() => {{
+
+const ticker_symbol_inputs = document.querySelectorAll('input[id="baseForm:investmentTextField"]');
+
+if (ticker_symbol_inputs.length != 1) {{
+    return false;
+}}
+
+ticker_symbol_inputs[0].value = '{ticker_symbol}'
+
+return true;
+}}
+''')
+    assert ticker_symbol_insertion_success
+
     # Select Transaction Type
     transaction_type_dropdown_selector = ' '.join([
         'body',
@@ -333,12 +385,6 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
             'td[id="baseForm:transactionTypeSelectOne:2"]',
         ]).replace(':', '\\\\:')
         expected_inner_text = 'Sell'
-    await page.waitForSelector(' '.join([
-        'div[id="baseForm:accountDetailTabBox:fundsAvailableNavBox"]',
-        'table[id="baseForm:accountDetailTabBox:fundsAvailableTable"]',
-        'tbody[id="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]',
-        'tr[tbodyid="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]'
-    ]))
     transaction_type_selection_success = await page.evaluate(
         get_js_func_string_for_clicking_buy_sell_dropdowns(
             transaction_type_dropdown_selector,
@@ -405,21 +451,19 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
         )
     )
     assert order_type_selection_success
-
-    # Insert Input Box Text
+    
+    # Insert Number of Shares and Limit Price Text
     await page.waitForSelector('input[id="baseForm:limitPriceTextField"]')
     text_insertion_success = await page.evaluate(f'''
 () => {{
 
-const ticker_symbol_inputs = document.querySelectorAll('input[id="baseForm:investmentTextField"]');
 const number_of_shares_inputs = document.querySelectorAll('input[id="baseForm:shareQuantityTextField"]')
 const limit_price_inputs = document.querySelectorAll('input[id="baseForm:limitPriceTextField"]')
 
-if (ticker_symbol_inputs.length != 1 || number_of_shares_inputs.length != 1 || limit_price_inputs.length != 1) {{
+if (number_of_shares_inputs.length != 1 || limit_price_inputs.length != 1) {{
     return false;
 }}
 
-ticker_symbol_inputs[0].value = '{ticker_symbol}'
 number_of_shares_inputs[0].value = '{number_of_shares}'
 limit_price_inputs[0].value = '{limit_price}'
 
@@ -427,45 +471,80 @@ return true;
 }}
 ''')
     assert text_insertion_success
+
+    # Select Cost Basis Method
+    if transaction_type == 'sell':
+        await page.waitForSelector('a[id="baseForm:costBasisMethodLearnMoreLink"]')
+        cost_basis_method_dropdown_selector = ' '.join([
+            'body',
+            'table[id="baseForm:costBasisMethodTable"]',
+            'div[id="baseForm:costBasisMethodSelectOne_label"]',
+            'div[id="baseForm:costBasisMethodSelectOne_cont"]',
+            'table[id="baseForm:costBasisMethodSelectOne-border"]',
+            'tbody',
+            'tr.vg-SelOneMenuVisRow',
+            'td.vg-SelOneMenuIconCell',
+        ])
+        cost_basis_method_selector = ' '.join([
+            'body',
+            'div[id="menu-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+            'div[id="scroll-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDownScroll',
+            'table',
+            'tbody',
+            'tr',
+            'td[id="baseForm:costBasisMethodSelectOne:2"]'
+        ])
+        cost_basis_method_selection_success = await page.evaluate(
+            get_js_func_string_for_clicking_buy_sell_dropdowns(
+                cost_basis_method_dropdown_selector,
+                cost_basis_method_selector,
+                'First In, First Out (FIFO)'
+            )
+        )
+        assert cost_basis_method_selection_success
+
+#     continue_button_selector = 'input[id="baseForm:reviewButtonInput"]'
+#     page.waitForSelector(continue_button_selector)
+#     continue_button_press_success = await page.evaluate(f'''
+# () => {{
+
+# const continue_buttons = document.querySelectorAll('{continue_button_selector}');
+
+# if (continue_buttons.length != 1) {{
+#     return false;
+# }}
+
+# continue_buttons[0].click();
+
+# return true;
+# }}
+# ''')
+#     assert continue_button_press_success
+
+#     need_to_click_yes_button = await page.safelyWaitForSelector('span[id="comp-orderCaptureWarningLayerForm:yesButton"]', {'timeout': 1_000})
+#     if need_to_click_yes_button:
+#         await page.evaluate(f'''() => document.querySelector('span[id="comp-orderCaptureWarningLayerForm:yesButton"] input').click()''')
+
+#     await page.safelyWaitForNavigation({'timeout': 1_000})
     
-    continue_button_selector = 'input[id="baseForm:reviewButtonInput"]'
-    page.waitForSelector(continue_button_selector)
-    continue_button_press_success = await page.evaluate(f'''
-() => {{
+#     submit_button_selector = 'input[id="baseForm:submitButtonInput"]'
+#     page.waitForSelector(submit_button_selector)
+#     submit_button_press_success = await page.evaluate(f'''
+# () => {{
 
-const continue_buttons = document.querySelectorAll('{continue_button_selector}');
+# const submission_buttons = document.querySelectorAll('{submit_button_selector}');
 
-if (continue_buttons.length != 1) {{
-    return false;
-}}
+# if (submission_buttons.length != 1) {{
+#     return false;
+# }}
 
-continue_buttons[0].click();
+# submission_buttons[0].click();
 
-return true;
-}}
-''')
-    assert continue_button_press_success
+# return true;
+# }}
+# ''')
+#     assert submit_button_press_success
 
-    await page.waitForNavigation({'timeout': 5_000}) # TODO This needs to be done simulltaneously with the click (see https://docs.python.org/3/library/asyncio-task.html)
-    
-    submit_button_selector = 'input[id="baseForm:submitButtonInput"]'
-    page.waitForSelector(submit_button_selector)
-    submit_button_press_success = await page.evaluate(f'''
-() => {{
-
-const submission_buttons = document.querySelectorAll('{submit_button_selector}');
-
-if (submission_buttons.length != 1) {{
-    return false;
-}}
-
-submission_buttons[0].click();
-
-return true;
-}}
-''')
-    assert submit_button_press_success
-    
     return
 
 def load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
@@ -485,132 +564,16 @@ def load_sell_url(ticker_symbol: str, number_of_shares: int, limit_price: float)
 # RH Browser Utilities #
 ########################
 
-RH_BROWSER = None
-
-TRACKED_TICKER_SYMBOL_TO_PAGE: Dict[str, pyppeteer.page.Page] = dict()
-
-async def _initialize_rh_browser() -> pyppeteer.browser.Browser:
-    browser = await launch_browser(
-        headless=True,
-        handleSIGINT=False,
-        handleSIGTERM=False,
-        handleSIGHUP=False
-    )
-    return browser
-
-@event_loop_func
-def initialize_rh_browser() -> pyppeteer.browser.Browser:
-    global RH_BROWSER
-    assert RH_BROWSER is None, f'RH browser already initialized.'
-    browser = run_awaitable(_initialize_rh_browser())
-    RH_BROWSER = browser
-    return browser
-
-@event_loop_func
-def close_rh_browser() -> None:
-    global RH_BROWSER
-    assert RH_BROWSER is not None, f'RH browser already closed.'
-    run_awaitable(RH_BROWSER._closeCallback())
-    RH_BROWSER = None
-    return 
-
-########################
-# RH Scraper Utilities #
-########################
-
-RH_SCRAPER_TASK = None
-
-async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
-    global TRACKED_TICKER_SYMBOL_TO_PAGE
-    ticker_symbols = eager_map(str.upper, ticker_symbols)
-    current_pages = await RH_BROWSER.pages()
-    
-    # Add new pages
-    for _ in range(len(ticker_symbols) - len(current_pages)):
-        await RH_BROWSER.newPage()
-    
-    # Close unneccessary pages
-    for index in range(len(current_pages) - len(ticker_symbols)):
-        await current_pages[index].close()
-    
-    more_itertools.consume((TRACKED_TICKER_SYMBOL_TO_PAGE.popitem() for _ in range(len(TRACKED_TICKER_SYMBOL_TO_PAGE))))
-    assert len(TRACKED_TICKER_SYMBOL_TO_PAGE) == 0
-    
-    current_pages = await RH_BROWSER.pages()
-    assert len(current_pages) == len(ticker_symbols)
-    
-    page_opening_tasks = []
-    for page, ticker_symbol in zip(current_pages, ticker_symbols):
-        url = f'https://robinhood.com/stocks/{ticker_symbol}'
-        page_opening_task = EVENT_LOOP.create_task(page.goto(url))
-        page_opening_tasks.append(page_opening_task)
-        TRACKED_TICKER_SYMBOL_TO_PAGE[ticker_symbol] = page
-    for page_opening_task in page_opening_tasks:
-        await page_opening_task
-    
-    return
-
-async def scrape_ticker_symbols() -> None:
-    try:
-        while True:
-            rows = []
-            
-            # Trigger page updates via mouse movements first
-            animation_triggering_time = time.time()
-            for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
-                assert page.url.split('/')[-1].lower() == ticker_symbol.lower()
-                await page.bringToFront()
-                
-                svg = await page.get_sole_element('body main.app main.main-container div.row section[data-testid="ChartSection"] svg:not([role="img"])')
-                top, left, width, height = await page.evaluate(
-                    '(element) => {'
-                    '    const { top, left, width, height } = element.getBoundingClientRect();'
-                    '    return [top, left, width, height];'
-                    '}', svg)
-    
-                for _ in range(10):
-                    y = top + (top + height) * random.random()
-                    x = left + (left+width) * random.random()
-                    await page.mouse.move(x, y)
-                await page.mouse.move(1, 1)
-
-            sleep_time = time.time() - animation_triggering_time
-            sleep_time = 1-sleep_time
-            sleep_time = max(sleep_time, 0)
-            await asyncio.sleep(sleep_time) # let animations settle for all tabs
-            
-            # Perform actual scraping
-            for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
-                await page.bringToFront()
-                
-                price_spans = await page.get_elements('body main.app main.main-container div.row section[data-testid="ChartSection"] header')
-                price_span_string = await page.evaluate('(element) => element.innerText', price_spans[0])
-                price_span_string = price_span_string.split('\n')[0]
-                assert price_span_string.startswith('$')
-                price = float(price_span_string.replace('$', '').replace(',', ''))
-                
-                date_time = get_local_datetime()
-                row = (date_time, ticker_symbol, price)
-                rows.append(row)
-
-            with DB_INFO.db_access() as (db_connection, db_cursor):
-                db_cursor.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
-                db_connection.commit()
-            
-    except asyncio.CancelledError:
-        pass
-    return
-
-@event_loop_func
-def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
-    global RH_BROWSER
-    global RH_SCRAPER_TASK
-    assert RH_BROWSER is not None, f'RH browser not initialized.'
-    if RH_SCRAPER_TASK is not None:
-        RH_SCRAPER_TASK.cancel()
-    run_awaitable(open_pages_for_ticker_symbols(ticker_symbols))
-    RH_SCRAPER_TASK = enqueue_awaitable(scrape_ticker_symbols())
-    return
+# @event_loop_func
+# def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
+#     global RH_BROWSER
+#     global RH_SCRAPER_TASK
+#     assert RH_BROWSER is not None, f'RH browser not initialized.'
+#     if RH_SCRAPER_TASK is not None:
+#         RH_SCRAPER_TASK.cancel()
+#     run_awaitable(open_pages_for_ticker_symbols(ticker_symbols))
+#     RH_SCRAPER_TASK = enqueue_awaitable(scrape_ticker_symbols())
+#     return
 
 ##########
 # Driver #
@@ -621,14 +584,12 @@ DEFAULT_TICKER_SYMBOLS = ('TWTR', 'TSLA', "IT", "T", "F", "COF", "GOOGL", "AAPL"
 @one_time_execution
 def initialize_browsers() -> None:
     initialize_vanguard_browser()
-    initialize_rh_browser()
-    track_ticker_symbols(*DEFAULT_TICKER_SYMBOLS)
+    # track_ticker_symbols(*DEFAULT_TICKER_SYMBOLS)
     return
 
 @atexit.register
 def module_exit_callback() -> None:
     close_vanguard_browser()
-    close_rh_browser()
     stop_thread_for_event_loop()
     return
 
