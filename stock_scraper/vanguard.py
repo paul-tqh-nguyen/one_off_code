@@ -72,6 +72,11 @@ class DB_INFO:
 with DB_INFO.db_access() as (_, db_cursor):
     db_cursor.execute('CREATE TABLE IF NOT EXISTS stocks(date timestamp, ticker_symbol text, price real)')
 
+def execute_query(sql_query: str) -> List[Tuple]:
+    with DB_INFO.db_access() as (db_connection, db_cursor):
+        result = db_cursor.execute(sql_query).fetchall()
+    return result
+    
 ###################
 # Async Utilities #
 ###################
@@ -295,6 +300,8 @@ async def scrape_ticker_symbols() -> None:
     try:
         while True:
             rows = []
+            
+            # Trigger page updates via mouse movements first
             for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
                 assert page.url.split('/')[-1].lower() == ticker_symbol.lower()
                 await page.bringToFront()
@@ -311,7 +318,12 @@ async def scrape_ticker_symbols() -> None:
                     x = left + (left+width) * random.random()
                     await page.mouse.move(x, y)
                 await page.mouse.move(1, 1)
-                await asyncio.sleep(2)
+            
+            await asyncio.sleep(1)
+            
+            # Perform actual scraping
+            for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
+                await page.bringToFront()
                 
                 price_spans = await page.get_elements('body main.app main.main-container div.row section[data-testid="ChartSection"] header')
                 price_span_string = await page.evaluate('(element) => element.innerText', price_spans[0])
@@ -321,11 +333,12 @@ async def scrape_ticker_symbols() -> None:
                 
                 date_time = get_local_datetime()
                 row = (date_time, ticker_symbol, price)
-                print(f"row {repr(row)}")
                 rows.append(row)
+
             with DB_INFO.db_access() as (db_connection, db_cursor):
                 db_cursor.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
                 db_connection.commit()
+            
     except asyncio.CancelledError:
         pass
     return
