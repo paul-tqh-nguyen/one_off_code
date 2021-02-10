@@ -34,6 +34,7 @@ from collections import OrderedDict, namedtuple
 from contextlib import asynccontextmanager, contextmanager
 from functools import lru_cache
 from typing import Any, Union, List, Set, Tuple, Iterable, Callable, Awaitable, Coroutine, Dict, Generator
+from typing_extensions import Literal
 
 # from scrape_utilities import *
 from misc_utilities import *
@@ -197,9 +198,9 @@ async def _safelyWaitForNavigation(self: pyppeteer.page.Page, *args, **kwargs) -
     return success
 setattr(pyppeteer.page.Page, 'safelyWaitForNavigation', _safelyWaitForNavigation)
 
-######################
-# Vanguard Utilities #
-######################
+##############################
+# Vanguard Browser Utilities #
+##############################
 
 VANGUARD_LOGIN_URL = 'https://investor.vanguard.com/my-account/log-on'
 
@@ -219,7 +220,7 @@ async def _initialize_vanguard_browser() -> pyppeteer.browser.Browser:
 @event_loop_func
 def initialize_vanguard_browser() -> pyppeteer.browser.Browser:
     global VANGUARD_BROWSER
-    assert VANGUARD_BROWSER is None, f'Browser already initialized.'
+    assert VANGUARD_BROWSER is None, f'Vanguard Browser already initialized.'
     browser = run_awaitable(_initialize_vanguard_browser())
     VANGUARD_BROWSER = browser
     return browser
@@ -227,10 +228,258 @@ def initialize_vanguard_browser() -> pyppeteer.browser.Browser:
 @event_loop_func
 def close_vanguard_browser() -> None:
     global VANGUARD_BROWSER
-    assert VANGUARD_BROWSER is not None, f'Browser already closed.'
+    assert VANGUARD_BROWSER is not None, f'Vanguard browser already closed.'
     run_awaitable(VANGUARD_BROWSER._closeCallback())
     VANGUARD_BROWSER = None
     return 
+##############################
+# Vanguard Scraper Utilities #
+##############################
+
+VANGUARD_BUY_SELL_URL = 'https://personal.vanguard.com/us/TradeTicket?investmentType=EQUITY'
+
+def get_js_func_string_for_clicking_buy_sell_dropdowns(dropdown_selector: str, choice_selector: str, expected_inner_text: str) -> str:
+    program_string = f'''
+() => {{
+
+const account_dropdowns = document.querySelectorAll('{dropdown_selector}');
+
+if (account_dropdowns.length != 1) {{
+    return false;
+}}
+
+account_dropdowns[0].click();
+
+const account_elems = document.querySelectorAll('{choice_selector}');
+
+if ((account_elems.length != 1) || (account_elems[0].innerText != "{expected_inner_text}")) {{
+    return false;
+}}
+
+account_elems[0].click();
+
+return true;
+}}
+'''
+    return program_string
+
+async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
+    assert transaction_type in ('buy', 'sell')
+    page = only_one(await VANGUARD_BROWSER.pages())
+    await page.goto(VANGUARD_BUY_SELL_URL)
+
+    need_to_click_ok_button = await page.safelyWaitForSelector('input#okButtonInput', {'timeout': 1_000})
+    if need_to_click_ok_button:
+        await page.evaluate(f'''() => document.querySelector('input#okButtonInput').click()''');
+    
+    # Select Account
+    account_dropdown_selector = ' '.join([
+        'body',
+        'table[id="baseForm:accountTable"]',
+        'div[id="baseForm:accountSelectOne_label"]',
+        'div[id="baseForm:accountSelectOne_cont"]',
+        'table[id="baseForm:accountSelectOne-border"]',
+        'tbody',
+        'tr.vg-SelOneMenuVisRow',
+        'td.vg-SelOneMenuIconCell',
+    ])
+    account_selector = ' '.join([
+        'body',
+        'div[id="menu-baseForm:accountSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+        'div[id="scroll-baseForm:accountSelectOne"].vg-SelOneMenuDropDownScroll',
+        'table',
+        'tbody',
+        'tr',
+        'td[id="baseForm:accountSelectOne:1"]',
+    ])
+    await page.waitForSelector(account_selector)
+    account_selection_success = await page.evaluate(
+        get_js_func_string_for_clicking_buy_sell_dropdowns(
+            account_dropdown_selector,
+            account_selector,
+            'Paul Nguyen—Brokerage Account—74046904 (Margin)'
+        )
+    )
+    assert account_selection_success
+    
+    # Select Transaction Type
+    transaction_type_dropdown_selector = ' '.join([
+        'body',
+        'table[id="baseForm:transactionTypeTable"]',
+        'div[id="baseForm:transactionTypeSelectOne_label"]',
+        'div[id="baseForm:transactionTypeSelectOne_cont"]',
+        'table[id="baseForm:transactionTypeSelectOne-border"]',
+        'tbody',
+        'tr.vg-SelOneMenuVisRow',
+        'td.vg-SelOneMenuIconCell',
+    ])
+    if transaction_type == 'buy':
+        transaction_selector = ' '.join([
+            'body',
+            'div[id="menu-baseForm:transactionTypeSelectOne"]',
+            'table',
+            'tbody',
+            'tr',
+            'td[id="baseForm:transactionTypeSelectOne:1"]',
+        ]).replace(':', '\\\\:')
+        expected_inner_text = 'Buy'
+    elif transaction_type == 'sell':
+        transaction_selector = ' '.join([
+            'body',
+            'div[id="menu-baseForm:transactionTypeSelectOne"]',
+            'table',
+            'tbody',
+            'tr',
+            'td[id="baseForm:transactionTypeSelectOne:2"]',
+        ]).replace(':', '\\\\:')
+        expected_inner_text = 'Sell'
+    await page.waitForSelector(' '.join([
+        'div[id="baseForm:accountDetailTabBox:fundsAvailableNavBox"]',
+        'table[id="baseForm:accountDetailTabBox:fundsAvailableTable"]',
+        'tbody[id="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]',
+        'tr[tbodyid="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]'
+    ]))
+    transaction_type_selection_success = await page.evaluate(
+        get_js_func_string_for_clicking_buy_sell_dropdowns(
+            transaction_type_dropdown_selector,
+            transaction_selector,
+            expected_inner_text
+        )
+    )
+    assert transaction_type_selection_success
+    
+    # Select Duration
+    duration_dropdown_selector = ' '.join([
+        'body',
+        'table[id="baseForm:durationTypeTable"]',
+        'div[id="baseForm:durationTypeSelectOne_label"]',
+        'div[id="baseForm:durationTypeSelectOne_cont"]',
+        'table[id="baseForm:durationTypeSelectOne-border"]',
+        'tbody',
+        'tr.vg-SelOneMenuVisRow',
+        'td.vg-SelOneMenuIconCell',
+    ])
+    duration_selector = ' '.join([
+        'body',
+        'div[id="menu-baseForm:durationTypeSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+        'div[id="scroll-baseForm:durationTypeSelectOne"].vg-SelOneMenuDropDownScroll',
+        'table',
+        'tbody',
+        'tr',
+        'td[id="baseForm:durationTypeSelectOne:1"]'
+    ])
+    duration_selection_success = await page.evaluate(
+        get_js_func_string_for_clicking_buy_sell_dropdowns(
+            duration_dropdown_selector,
+            duration_selector,
+            'Day'
+        )
+    )
+    assert duration_selection_success
+
+    # Select Order Type
+    order_type_dropdown_selector = ' '.join([
+        'body',
+        'table[id="baseForm:orderTypeTable"]',
+        'div[id="baseForm:orderTypeSelectOne_label"]',
+        'div[id="baseForm:orderTypeSelectOne_cont"]',
+        'table[id="baseForm:orderTypeSelectOne-border"]',
+        'tbody',
+        'tr.vg-SelOneMenuVisRow',
+        'td.vg-SelOneMenuIconCell',
+    ])
+    order_type_selector = ' '.join([
+        'body',
+        'div[id="menu-baseForm:orderTypeSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+        'div[id="scroll-baseForm:orderTypeSelectOne"].vg-SelOneMenuDropDownScroll',
+        'table',
+        'tbody',
+        'tr',
+        'td[id="baseForm:orderTypeSelectOne:2"]'
+    ])
+    order_type_selection_success = await page.evaluate(
+        get_js_func_string_for_clicking_buy_sell_dropdowns(
+            order_type_dropdown_selector,
+            order_type_selector,
+            'Limit'
+        )
+    )
+    assert order_type_selection_success
+
+    # Insert Input Box Text
+    await page.waitForSelector('input[id="baseForm:limitPriceTextField"]')
+    text_insertion_success = await page.evaluate(f'''
+() => {{
+
+const ticker_symbol_inputs = document.querySelectorAll('input[id="baseForm:investmentTextField"]');
+const number_of_shares_inputs = document.querySelectorAll('input[id="baseForm:shareQuantityTextField"]')
+const limit_price_inputs = document.querySelectorAll('input[id="baseForm:limitPriceTextField"]')
+
+if (ticker_symbol_inputs.length != 1 || number_of_shares_inputs.length != 1 || limit_price_inputs.length != 1) {{
+    return false;
+}}
+
+ticker_symbol_inputs[0].value = '{ticker_symbol}'
+number_of_shares_inputs[0].value = '{number_of_shares}'
+limit_price_inputs[0].value = '{limit_price}'
+
+return true;
+}}
+''')
+    assert text_insertion_success
+    
+    continue_button_selector = 'input[id="baseForm:reviewButtonInput"]'
+    page.waitForSelector(continue_button_selector)
+    continue_button_press_success = await page.evaluate(f'''
+() => {{
+
+const continue_buttons = document.querySelectorAll('{continue_button_selector}');
+
+if (continue_buttons.length != 1) {{
+    return false;
+}}
+
+continue_buttons[0].click();
+
+return true;
+}}
+''')
+    assert continue_button_press_success
+
+    await page.waitForNavigation({'timeout': 5_000}) # TODO This needs to be done simulltaneously with the click (see https://docs.python.org/3/library/asyncio-task.html)
+    
+    submit_button_selector = 'input[id="baseForm:submitButtonInput"]'
+    page.waitForSelector(submit_button_selector)
+    submit_button_press_success = await page.evaluate(f'''
+() => {{
+
+const submission_buttons = document.querySelectorAll('{submit_button_selector}');
+
+if (submission_buttons.length != 1) {{
+    return false;
+}}
+
+submission_buttons[0].click();
+
+return true;
+}}
+''')
+    assert submit_button_press_success
+    
+    return
+
+def load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
+    assert VANGUARD_BROWSER is not None, f'Vanguard browser not initialized.'
+    run_awaitable(_load_buy_sell_url(transaction_type))
+    return
+
+def load_buy_url(ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
+    run_awaitable(_load_buy_sell_url('buy', ticker_symbol, number_of_shares, limit_price))
+    return
+
+def load_sell_url(ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
+    run_awaitable(_load_buy_sell_url('sell', ticker_symbol, number_of_shares, limit_price))
+    return
 
 ########################
 # RH Browser Utilities #
@@ -252,7 +501,7 @@ async def _initialize_rh_browser() -> pyppeteer.browser.Browser:
 @event_loop_func
 def initialize_rh_browser() -> pyppeteer.browser.Browser:
     global RH_BROWSER
-    assert RH_BROWSER is None, f'Browser already initialized.'
+    assert RH_BROWSER is None, f'RH browser already initialized.'
     browser = run_awaitable(_initialize_rh_browser())
     RH_BROWSER = browser
     return browser
@@ -260,7 +509,7 @@ def initialize_rh_browser() -> pyppeteer.browser.Browser:
 @event_loop_func
 def close_rh_browser() -> None:
     global RH_BROWSER
-    assert RH_BROWSER is not None, f'Browser already closed.'
+    assert RH_BROWSER is not None, f'RH browser already closed.'
     run_awaitable(RH_BROWSER._closeCallback())
     RH_BROWSER = None
     return 
@@ -367,15 +616,18 @@ def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
 # Driver #
 ##########
 
+DEFAULT_TICKER_SYMBOLS = ('TWTR', 'TSLA', "IT", "T", "F", "COF", "GOOGL", "AAPL", "ZM", "SAVE", "AMC", "BB", "COF", "CMG", "XOM", "TGT", "NKE", "ULTA", "NFLX")
+
 @one_time_execution
 def initialize_browsers() -> None:
-    # initialize_vanguard_browser()
+    initialize_vanguard_browser()
     initialize_rh_browser()
+    track_ticker_symbols(*DEFAULT_TICKER_SYMBOLS)
     return
 
 @atexit.register
 def module_exit_callback() -> None:
-    # close_vanguard_browser()
+    close_vanguard_browser()
     close_rh_browser()
     stop_thread_for_event_loop()
     return

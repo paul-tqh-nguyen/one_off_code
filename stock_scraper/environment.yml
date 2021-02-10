@@ -7,6 +7,7 @@ dependencies:
   - requests
   - more-itertools
   - conda-forge::bidict
+  - conda-forge::typing_extensions
   - pip
   - pip:
     - pyppeteer
