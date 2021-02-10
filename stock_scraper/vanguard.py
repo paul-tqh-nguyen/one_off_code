@@ -40,9 +40,13 @@ from misc_utilities import *
 # TODO make sure these imports are used
 # TODO review type hints of all functions below
 
-################
-# Date Helpers #
-################
+#################
+# Misc. Helpers #
+#################
+
+def one_time_execution(func: Callable[[], None]) -> None:
+    func()
+    return
 
 def get_local_datetime() -> datetime.datetime:
     return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).astimezone(tz=None)
@@ -232,7 +236,7 @@ TRACKED_TICKER_SYMBOL_TO_PAGE: Dict[str, pyppeteer.page.Page] = dict()
 
 async def _initialize_rh_browser() -> pyppeteer.browser.Browser:
     browser = await launch_browser(
-        headless=False, # TODO make this headless
+        headless=True,
         handleSIGINT=False,
         handleSIGTERM=False,
         handleSIGHUP=False
@@ -341,12 +345,11 @@ def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
 # Driver #
 ##########
 
+@one_time_execution
 def initialize_browsers() -> None:
     initialize_vanguard_browser()
     initialize_rh_browser()
     return
-
-initialize_browsers()
 
 @atexit.register
 def module_exit_callback() -> None:
