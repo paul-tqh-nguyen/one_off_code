@@ -328,32 +328,7 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
         )
     )
     assert account_selection_success
-
-    await page.waitForSelector(' '.join([
-        'div[id="baseForm:accountDetailTabBox:fundsAvailableNavBox"]',
-        'table[id="baseForm:accountDetailTabBox:fundsAvailableTable"]',
-        'tbody[id="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]',
-        'tr[tbodyid="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]'
-    ]))
     
-    # Insert Ticker Symbol Text
-    await page.waitForSelector('input[id="baseForm:investmentTextField"]')
-    ticker_symbol_insertion_success = await page.evaluate(f'''
-() => {{
-
-const ticker_symbol_inputs = document.querySelectorAll('input[id="baseForm:investmentTextField"]');
-
-if (ticker_symbol_inputs.length != 1) {{
-    return false;
-}}
-
-ticker_symbol_inputs[0].value = '{ticker_symbol}'
-
-return true;
-}}
-''')
-    assert ticker_symbol_insertion_success
-
     # Select Transaction Type
     transaction_type_dropdown_selector = ' '.join([
         'body',
@@ -385,6 +360,12 @@ return true;
             'td[id="baseForm:transactionTypeSelectOne:2"]',
         ]).replace(':', '\\\\:')
         expected_inner_text = 'Sell'
+    await page.waitForSelector(' '.join([
+        'div[id="baseForm:accountDetailTabBox:fundsAvailableNavBox"]',
+        'table[id="baseForm:accountDetailTabBox:fundsAvailableTable"]',
+        'tbody[id="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]',
+        'tr[tbodyid="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]'
+    ]))
     transaction_type_selection_success = await page.evaluate(
         get_js_func_string_for_clicking_buy_sell_dropdowns(
             transaction_type_dropdown_selector,
@@ -452,18 +433,20 @@ return true;
     )
     assert order_type_selection_success
     
-    # Insert Number of Shares and Limit Price Text
+    # Insert Input Box Text
     await page.waitForSelector('input[id="baseForm:limitPriceTextField"]')
     text_insertion_success = await page.evaluate(f'''
 () => {{
 
+const ticker_symbol_inputs = document.querySelectorAll('input[id="baseForm:investmentTextField"]');
 const number_of_shares_inputs = document.querySelectorAll('input[id="baseForm:shareQuantityTextField"]')
 const limit_price_inputs = document.querySelectorAll('input[id="baseForm:limitPriceTextField"]')
 
-if (number_of_shares_inputs.length != 1 || limit_price_inputs.length != 1) {{
+if (ticker_symbol_inputs.length != 1 || number_of_shares_inputs.length != 1 || limit_price_inputs.length != 1) {{
     return false;
 }}
 
+ticker_symbol_inputs[0].value = '{ticker_symbol}'
 number_of_shares_inputs[0].value = '{number_of_shares}'
 limit_price_inputs[0].value = '{limit_price}'
 
@@ -472,37 +455,68 @@ return true;
 ''')
     assert text_insertion_success
 
-    # Select Cost Basis Method
-    if transaction_type == 'sell':
-        await page.waitForSelector('a[id="baseForm:costBasisMethodLearnMoreLink"]')
-        cost_basis_method_dropdown_selector = ' '.join([
+    # Select Account Type
+    security_account_type_dropdown_selector = ' '.join([
+        'body',
+        'table[id="baseForm:securityAccountTypeTable"]',
+        'div[id="baseForm:securityAccountTypeSelectOne_label"]',
+        'div[id="baseForm:securityAccountTypeSelectOne_cont"]',
+        'table[id="baseForm:securityAccountTypeSelectOne-border"]',
+        'tbody',
+        'tr.vg-SelOneMenuVisRow',
+        'td.vg-SelOneMenuIconCell',
+    ])
+    need_to_select_account_type = await page.safelyWaitForSelector(security_account_type_dropdown_selector, {'timeout': 1_000})
+    if need_to_select_account_type:
+        security_account_type_selector = ' '.join([
             'body',
-            'table[id="baseForm:costBasisMethodTable"]',
-            'div[id="baseForm:costBasisMethodSelectOne_label"]',
-            'div[id="baseForm:costBasisMethodSelectOne_cont"]',
-            'table[id="baseForm:costBasisMethodSelectOne-border"]',
-            'tbody',
-            'tr.vg-SelOneMenuVisRow',
-            'td.vg-SelOneMenuIconCell',
-        ])
-        cost_basis_method_selector = ' '.join([
-            'body',
-            'div[id="menu-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
-            'div[id="scroll-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDownScroll',
+            'div[id="menu-baseForm:securityAccountTypeSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+            'div[id="scroll-baseForm:securityAccountTypeSelectOne"].vg-SelOneMenuDropDownScroll',
             'table',
             'tbody',
             'tr',
-            'td[id="baseForm:costBasisMethodSelectOne:2"]'
+            'td[id="baseForm:securityAccountTypeSelectOne:2"]'
         ])
-        cost_basis_method_selection_success = await page.evaluate(
+        security_account_type_selection_success = await page.evaluate(
             get_js_func_string_for_clicking_buy_sell_dropdowns(
-                cost_basis_method_dropdown_selector,
-                cost_basis_method_selector,
-                'First In, First Out (FIFO)'
+                security_account_type_dropdown_selector,
+                security_account_type_selector,
+                'Margin'
             )
         )
-        assert cost_basis_method_selection_success
-
+        assert security_account_type_selection_success
+    
+    # Select Cost Basis Method
+    if transaction_type == 'sell':
+        if await page.safelyWaitForSelector('a[id="baseForm:costBasisMethodLearnMoreLink"]', {'timeout': 1_000}):
+            cost_basis_method_dropdown_selector = ' '.join([
+                'body',
+                'table[id="baseForm:costBasisMethodTable"]',
+                'div[id="baseForm:costBasisMethodSelectOne_label"]',
+                'div[id="baseForm:costBasisMethodSelectOne_cont"]',
+                'table[id="baseForm:costBasisMethodSelectOne-border"]',
+                'tbody',
+                'tr.vg-SelOneMenuVisRow',
+                'td.vg-SelOneMenuIconCell',
+            ])
+            cost_basis_method_selector = ' '.join([
+                'body',
+                'div[id="menu-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+                'div[id="scroll-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDownScroll',
+                'table',
+                'tbody',
+                'tr',
+                'td[id="baseForm:costBasisMethodSelectOne:2"]'
+            ])
+            cost_basis_method_selection_success = await page.evaluate(
+                get_js_func_string_for_clicking_buy_sell_dropdowns(
+                    cost_basis_method_dropdown_selector,
+                    cost_basis_method_selector,
+                    'First In, First Out (FIFO)'
+                )
+            )
+            assert cost_basis_method_selection_success
+    
 #     continue_button_selector = 'input[id="baseForm:reviewButtonInput"]'
 #     page.waitForSelector(continue_button_selector)
 #     continue_button_press_success = await page.evaluate(f'''
