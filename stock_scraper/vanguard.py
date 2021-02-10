@@ -15,6 +15,7 @@ import tempfile
 import time
 import random
 import logging
+import more_itertools
 import sys
 import os
 import json
@@ -271,21 +272,24 @@ def close_rh_browser() -> None:
 RH_SCRAPER_TASK = None
 
 async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
+    global TRACKED_TICKER_SYMBOL_TO_PAGE
     ticker_symbols = eager_map(str.upper, ticker_symbols)
+    current_pages = await RH_BROWSER.pages()
     
     # Add new pages
-    current_pages = await RH_BROWSER.pages()
     for _ in range(len(ticker_symbols) - len(current_pages)):
-        page = await RH_BROWSER.newPage()
+        await RH_BROWSER.newPage()
     
     # Close unneccessary pages
-    current_pages = await RH_BROWSER.pages()
     for index in range(len(current_pages) - len(ticker_symbols)):
         await current_pages[index].close()
-        
+    
+    more_itertools.consume((TRACKED_TICKER_SYMBOL_TO_PAGE.popitem() for _ in range(len(TRACKED_TICKER_SYMBOL_TO_PAGE))))
+    assert len(TRACKED_TICKER_SYMBOL_TO_PAGE) == 0
+    
     current_pages = await RH_BROWSER.pages()
     assert len(current_pages) == len(ticker_symbols)
-
+    
     page_opening_tasks = []
     for page, ticker_symbol in zip(current_pages, ticker_symbols):
         url = f'https://robinhood.com/stocks/{ticker_symbol}'
@@ -294,6 +298,7 @@ async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
         TRACKED_TICKER_SYMBOL_TO_PAGE[ticker_symbol] = page
     for page_opening_task in page_opening_tasks:
         await page_opening_task
+    
     return
 
 async def scrape_ticker_symbols() -> None:
@@ -302,6 +307,7 @@ async def scrape_ticker_symbols() -> None:
             rows = []
             
             # Trigger page updates via mouse movements first
+            animation_triggering_time = time.time()
             for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
                 assert page.url.split('/')[-1].lower() == ticker_symbol.lower()
                 await page.bringToFront()
@@ -318,8 +324,14 @@ async def scrape_ticker_symbols() -> None:
                     x = left + (left+width) * random.random()
                     await page.mouse.move(x, y)
                 await page.mouse.move(1, 1)
-            
-            await asyncio.sleep(1)
+
+            sleep_time = time.time() - animation_triggering_time
+            print()
+            print(f"sleep_time {repr(sleep_time)}")
+            sleep_time = 1-sleep_time
+            sleep_time = max(sleep_time, 0)
+            print(f"sleep_time {repr(sleep_time)}")
+            await asyncio.sleep(sleep_time) # let animations settle for all tabs
             
             # Perform actual scraping
             for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
@@ -360,13 +372,13 @@ def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
 
 @one_time_execution
 def initialize_browsers() -> None:
-    initialize_vanguard_browser()
+    # initialize_vanguard_browser()
     initialize_rh_browser()
     return
 
 @atexit.register
 def module_exit_callback() -> None:
-    close_vanguard_browser()
+    # close_vanguard_browser()
     close_rh_browser()
     stop_thread_for_event_loop()
     return
