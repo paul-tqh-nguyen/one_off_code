@@ -5,6 +5,9 @@ load_buy_url('cgc', 1, 0.40)
 load_sell_url('cgc', 1, 4321.0)
 track_ticker_symbols('TSLA', 'f')
 
+get_all_rows()
+track_ticker_symbols('tsla','googl', 'f', 't')
+
 rm *db
 conda activate stock_scraper
 python3
@@ -44,7 +47,7 @@ import multiprocessing as mp
 from collections import OrderedDict, namedtuple
 from contextlib import asynccontextmanager, contextmanager
 from functools import lru_cache
-from typing import Any, Union, List, Set, Tuple, Iterable, Callable, Awaitable, Coroutine, Dict, Generator
+from typing import Any, Union, List, Set, Tuple, Iterable, Callable, Awaitable, Coroutine, Dict, Generator, Optional
 from typing_extensions import Literal
 
 # from scrape_utilities import *
@@ -547,6 +550,24 @@ def load_sell_url(ticker_symbol: str, number_of_shares: int, limit_price: float)
     run_awaitable(_load_buy_sell_url('sell', ticker_symbol, number_of_shares, limit_price))
     return
 
+###########################
+# Ticker Symbol Utilities #
+###########################
+
+@lru_cache(maxsize=1)
+def gather_popular_ticker_symbols(maximum: Optional[int] = None) -> List[str]:
+    '''Ordered from most popullar to least popular.'''
+    ticker_symbols = []
+    for i in range(3):
+        url = f'https://finance.yahoo.com/most-active/?count=100&offset={i*100}'
+        response = requests.get(url)
+        soup = bs4.BeautifulSoup(response.text, 'html.parser')
+        for anchor in soup.select('div#fin-scr-res-table a.Fw\\(600\\)'):
+            ticker_symbols.append(anchor.text)
+            if maximum is not None and len(ticker_symbols) >= maximum:
+                return ticker_symbols
+    return ticker_symbols
+
 ############################
 # Price Scraping Utilities #
 ############################
@@ -579,17 +600,18 @@ async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
     assert len(TRACKED_TICKER_SYMBOL_TO_PAGE) == 0
 
     # We have to visit the wrapping page before visiting the iframe source page
-    page = await VANGUARD_BROWSER.newPage()
-    url = f'https://personal.vanguard.com/us/secfunds/stocks/snapshot?Ticker=voo'
-    await page.goto(url)
-    await page.waitForSelector('iframe')
-    await page.close()
-
+    if len(ticker_symbols):
+        page = await VANGUARD_BROWSER.newPage()
+        url = f'https://personal.vanguard.com/us/secfunds/stocks/snapshot?Ticker=voo'
+        await page.goto(url)
+        await page.waitForSelector('iframe')
+        await page.close()
+    
     # load source pages
     page_opening_tasks = []
     for page, ticker_symbol in zip(new_pages, ticker_symbols):
         url = f'https://vanguard.factsetdigitalsolutions.com/stocks/overview?symbol={ticker_symbol}'
-        page_opening_task = EVENT_LOOP.create_task(page.goto(url))
+        page_opening_task = EVENT_LOOP.create_task(page.goto(url, {'timeout': 1_000*len(ticker_symbols)} ))
         page_opening_tasks.append(page_opening_task)
         TRACKED_TICKER_SYMBOL_TO_PAGE[ticker_symbol] = page
     for page_opening_task in page_opening_tasks:
@@ -600,8 +622,7 @@ async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
 async def scrape_ticker_symbols() -> None:
     try:
         while True:
-            mean_time = -time.time()
-            rows = []
+            elapsed_time = -time.time()
             
             # Refresh pages
             for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
@@ -609,6 +630,7 @@ async def scrape_ticker_symbols() -> None:
                 await page.evaluate('''() => {{ location.reload(true) }} ''')
                 
             # Perform actual scraping
+            rows = []
             for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
                 price_selector = 'div.idc-modulecontent table.idc-quotetable tr.idc-lastrow td.idc-td-last'
                 await page.waitForSelector(price_selector)
@@ -618,15 +640,15 @@ async def scrape_ticker_symbols() -> None:
                 date_time = get_local_datetime()
                 row = (date_time, ticker_symbol, price)
                 rows.append(row)
-            
-            mean_time += time.time()
-            mean_time = mean_time / len(rows)
-            print(f"mean_time {repr(mean_time)}")
-                
+                            
             with DB_INFO.db_access() as (db_connection, db_cursor):
                 db_cursor.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
                 db_connection.commit()
                 
+            elapsed_time += time.time()
+            sleep_time = max(0, 1-elapsed_time)
+            await asyncio.sleep(sleep_time)
+            
     except asyncio.CancelledError:
         pass
     return
