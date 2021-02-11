@@ -7,6 +7,7 @@ track_ticker_symbols('TSLA', 'f')
 
 get_all_rows()
 track_ticker_symbols('tsla','googl', 'f', 't')
+track_ticker_symbols(*gather_popular_ticker_symbols())
 
 rm *db
 conda activate stock_scraper
