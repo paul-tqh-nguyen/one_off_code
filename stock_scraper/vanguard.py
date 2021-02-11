@@ -262,9 +262,9 @@ def close_vanguard_browser() -> None:
     VANGUARD_BROWSER = None
     return
 
-##############################
-# Vanguard Scraper Utilities #
-##############################
+#########################
+# Transaction Utilities #
+#########################
 
 VANGUARD_BUY_SELL_URL = 'https://personal.vanguard.com/us/TradeTicket?investmentType=EQUITY'
 
@@ -531,31 +531,66 @@ def load_sell_url(ticker_symbol: str, number_of_shares: int, limit_price: float)
     run_awaitable(_load_buy_sell_url('sell', ticker_symbol, number_of_shares, limit_price))
     return
 
-########################
-# RH Browser Utilities #
-########################
+############################
+# Price Scraping Utilities #
+############################
 
-# @event_loop_func
-# def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
-#     global RH_BROWSER
-#     global RH_SCRAPER_TASK
-#     assert RH_BROWSER is not None, f'RH browser not initialized.'
-#     if RH_SCRAPER_TASK is not None:
-#         RH_SCRAPER_TASK.cancel()
-#     run_awaitable(open_pages_for_ticker_symbols(ticker_symbols))
-#     RH_SCRAPER_TASK = enqueue_awaitable(scrape_ticker_symbols())
-#     return
+PRICE_SCRAPER_TASK = None
+
+TRACKED_TICKER_SYMBOL_TO_PAGE: Dict[str, pyppeteer.page.Page] = dict()
+
+async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
+    global TRACKED_TICKER_SYMBOL_TO_PAGE
+    ticker_symbols = eager_map(str.upper, ticker_symbols)
+    current_pages = TRACKED_TICKER_SYMBOL_TO_PAGE.values()
+    
+    # Add new pages
+    new_pages = []
+    for _ in range(len(ticker_symbols) - len(current_pages)):
+        new_pages.append(await VANGUARD_BROWSER.newPage())
+    
+    # Close unneccessary pages
+    for _ in range(len(current_pages) - len(ticker_symbols)):
+        _, page = TRACKED_TICKER_SYMBOL_TO_PAGE.popitem()
+        await page.close()
+        
+    for page in TRACKED_TICKER_SYMBOL_TO_PAGE.values():
+        new_pages.append(page)
+        
+    more_itertools.consume((TRACKED_TICKER_SYMBOL_TO_PAGE.popitem() for _ in range(len(TRACKED_TICKER_SYMBOL_TO_PAGE))))
+    assert len(new_pages) == len(ticker_symbols)
+    assert all(not page.isClosed() for page in new_pages)
+    assert len(TRACKED_TICKER_SYMBOL_TO_PAGE) == 0
+    
+    page_opening_tasks = []
+    for page, ticker_symbol in zip(current_pages, ticker_symbols):
+        url = f'https://personal.vanguard.com/us/secfunds/stocks/snapshot?Ticker={ticker_symbol}'
+        page_opening_task = EVENT_LOOP.create_task(page.goto(url))
+        page_opening_tasks.append(page_opening_task)
+        TRACKED_TICKER_SYMBOL_TO_PAGE[ticker_symbol] = page
+    for page_opening_task in page_opening_tasks:
+        await page_opening_task
+    
+    return
+
+@event_loop_func
+def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
+    global VANGUARD_BROWSER
+    global PRICE_SCRAPER_TASK
+    assert VANGUARD_BROWSER is not None, f'Vanguard browser not initialized.'
+    if PRICE_SCRAPER_TASK is not None:
+        PRICE_SCRAPER_TASK.cancel()
+    run_awaitable(open_pages_for_ticker_symbols(ticker_symbols))
+    PRICE_SCRAPER_TASK = enqueue_awaitable(scrape_ticker_symbols())
+    return
 
 ##########
 # Driver #
 ##########
 
-DEFAULT_TICKER_SYMBOLS = ('TWTR', 'TSLA', "IT", "T", "F", "COF", "GOOGL", "AAPL", "ZM", "SAVE", "AMC", "BB", "COF", "CMG", "XOM", "TGT", "NKE", "ULTA", "NFLX")
-
 @one_time_execution
 def initialize_browsers() -> None:
     initialize_vanguard_browser()
-    # track_ticker_symbols(*DEFAULT_TICKER_SYMBOLS)
     return
 
 @atexit.register
