@@ -324,8 +324,8 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
     await asyncio.sleep(1.0)
     await select_cost_basis_method(page, transaction_type)
 
-    await asyncio.sleep(1.0)
-    await click_yes_buttons(page)
+    # await asyncio.sleep(1.0)
+    # await click_yes_buttons(page)
 
     await asyncio.sleep(1.0)
     await click_continue_button(page)
@@ -505,7 +505,7 @@ async def select_cost_basis_method(page: pyppeteer.page.Page, transaction_type: 
             'table',
             'tbody',
             'tr',
-            'td[id="baseForm:costBasisMethodSelectOne:2"]'
+            'td[id="baseForm:costBasisMethodSelectOne:1"]'
         ])
         cost_basis_method_dropdown = await page.get_sole_element(cost_basis_method_dropdown_selector)
         await cost_basis_method_dropdown.click()
