@@ -3,6 +3,7 @@
 
 load_buy_url('cgc', 1, 0.40)
 load_sell_url('cgc', 1, 4321.0)
+track_ticker_symbols('TSLA', 'f')
 
 rm *db
 conda activate stock_scraper
@@ -88,6 +89,9 @@ def execute_query(sql_query: str) -> List[Tuple]:
     with DB_INFO.db_access() as (db_connection, db_cursor):
         result = db_cursor.execute(sql_query).fetchall()
     return result
+
+def get_all_rows() -> List[Tuple]:
+    return execute_query('SELECT * FROM stocks')
     
 ###################
 # Async Utilities #
@@ -214,10 +218,14 @@ setattr(pyppeteer.page.Page, 'safelyWaitForNavigation', _safelyWaitForNavigation
 
 VANGUARD_LOGIN_URL = 'https://investor.vanguard.com/my-account/log-on'
 
+VANGUARD_BUY_SELL_PAGE = None
+
 VANGUARD_BROWSER = None
 
 async def _initialize_vanguard_browser() -> pyppeteer.browser.Browser:
     browser = await launch_browser(
+        args=['--start-maximized'],
+        defaultViewport=None,
         headless=False, 
         handleSIGINT=False,
         handleSIGTERM=False,
@@ -249,9 +257,12 @@ async def _initialize_vanguard_browser() -> pyppeteer.browser.Browser:
 @event_loop_func
 def initialize_vanguard_browser() -> pyppeteer.browser.Browser:
     global VANGUARD_BROWSER
-    assert VANGUARD_BROWSER is None, f'Vanguard Browser already initialized.'
+    global VANGUARD_BUY_SELL_PAGE
+    assert VANGUARD_BROWSER is None, f'Vanguard browser already initialized.'
+    assert VANGUARD_BUY_SELL_PAGE is None, f'Vanguard buy/sell page already initialized.'
     browser = run_awaitable(_initialize_vanguard_browser())
     VANGUARD_BROWSER = browser
+    VANGUARD_BUY_SELL_PAGE = only_one(run_awaitable(VANGUARD_BROWSER.pages()))
     return browser
 
 @event_loop_func
@@ -269,9 +280,11 @@ def close_vanguard_browser() -> None:
 VANGUARD_BUY_SELL_URL = 'https://personal.vanguard.com/us/TradeTicket?investmentType=EQUITY'
 
 async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
+    global VANGUARD_BUY_SELL_PAGE
     assert transaction_type in ('buy', 'sell')
-    page = only_one(await VANGUARD_BROWSER.pages())
+    page = VANGUARD_BUY_SELL_PAGE
     await page.goto(VANGUARD_BUY_SELL_URL)
+    await page.bringToFront()
 
     need_to_click_ok_button = await page.safelyWaitForSelector('input#okButtonInput', {'timeout': 1_000})
     if need_to_click_ok_button:
@@ -392,6 +405,7 @@ async def select_transaction_type(page: pyppeteer.page.Page, transaction_type: L
 
 async def insert_ticker_symbol(page: pyppeteer.page.Page, ticker_symbol: str) -> None:
     ticker_symbol_input_selector = 'input[id="baseForm:investmentTextField"]'
+    await page.evaluate(f'''() => {{ document.querySelector('{ticker_symbol_input_selector}').value = '' }} ''')
     await page.focus(ticker_symbol_input_selector)
     await page.keyboard.type(ticker_symbol)
     await page.keyboard.press('Enter')
@@ -399,6 +413,7 @@ async def insert_ticker_symbol(page: pyppeteer.page.Page, ticker_symbol: str) ->
 
 async def insert_number_of_shares(page: pyppeteer.page.Page, number_of_shares: int) -> None:
     number_of_shares_input_selector = 'input[id="baseForm:shareQuantityTextField"]'
+    await page.evaluate(f'''() => {{ document.querySelector('{number_of_shares_input_selector}').value = '' }} ''')
     await page.focus(number_of_shares_input_selector)
     await page.keyboard.type(str(number_of_shares))
     await page.keyboard.press('Enter')
@@ -433,6 +448,7 @@ async def select_order_type(page: pyppeteer.page.Page) -> None:
 
 async def insert_limit_price(page: pyppeteer.page.Page, limit_price: float) -> None:
     limit_price_input_selector = 'input[id="baseForm:limitPriceTextField"]'
+    await page.evaluate(f'''() => {{ document.querySelector('{limit_price_input_selector}').value = '' }} ''')
     await page.focus(limit_price_input_selector)
     await page.keyboard.type(str(limit_price))
     await page.keyboard.press('Enter')
@@ -561,10 +577,18 @@ async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
     assert len(new_pages) == len(ticker_symbols)
     assert all(not page.isClosed() for page in new_pages)
     assert len(TRACKED_TICKER_SYMBOL_TO_PAGE) == 0
-    
+
+    # We have to visit the wrapping page before visiting the iframe source page
+    page = await VANGUARD_BROWSER.newPage()
+    url = f'https://personal.vanguard.com/us/secfunds/stocks/snapshot?Ticker=voo'
+    await page.goto(url)
+    await page.waitForSelector('iframe')
+    await page.close()
+
+    # load source pages
     page_opening_tasks = []
-    for page, ticker_symbol in zip(current_pages, ticker_symbols):
-        url = f'https://personal.vanguard.com/us/secfunds/stocks/snapshot?Ticker={ticker_symbol}'
+    for page, ticker_symbol in zip(new_pages, ticker_symbols):
+        url = f'https://vanguard.factsetdigitalsolutions.com/stocks/overview?symbol={ticker_symbol}'
         page_opening_task = EVENT_LOOP.create_task(page.goto(url))
         page_opening_tasks.append(page_opening_task)
         TRACKED_TICKER_SYMBOL_TO_PAGE[ticker_symbol] = page
@@ -572,6 +596,37 @@ async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
         await page_opening_task
     
     return
+
+async def scrape_ticker_symbols() -> None:
+    try:
+        while True:
+            rows = []
+            
+            # Refresh pages
+            for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
+                assert page.url.split('=')[-1].lower() == ticker_symbol.lower()
+                await page.evaluate('''() => {{ location.reload(true) }} ''')
+                
+            # Perform actual scraping
+            for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
+                price_selector = 'div.idc-modulecontent table.idc-quotetable tr.idc-lastrow td.idc-td-last'
+                await page.waitForSelector(price_selector)
+                price_span_string = await page.evaluate(f'''() => document.querySelector('{price_selector}').innerText''')
+                price = float(price_span_string.replace(',', ''))
+                
+                date_time = get_local_datetime()
+                row = (date_time, ticker_symbol, price)
+                rows.append(row)
+                
+            with DB_INFO.db_access() as (db_connection, db_cursor):
+                db_cursor.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
+                db_connection.commit()
+                
+    except asyncio.CancelledError:
+        pass
+    return
+
+    return 
 
 @event_loop_func
 def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
