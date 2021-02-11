@@ -283,7 +283,7 @@ def close_vanguard_browser() -> None:
 
 VANGUARD_BUY_SELL_URL = 'https://personal.vanguard.com/us/TradeTicket?investmentType=EQUITY'
 
-async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
+async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> int:
     global VANGUARD_BUY_SELL_PAGE
     assert transaction_type in ('buy', 'sell')
     page = VANGUARD_BUY_SELL_PAGE
@@ -335,8 +335,12 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
 
     await asyncio.sleep(1.0)
     await click_submit_button(page)
+
+    await page.waitForSelector('div[id="baseForm:northPanel"] h2')
+    order_number_string = await page.evaluate(''' () => document.querySelector('div[id="baseForm:northPanel"] h2').innerText ''')
+    order_number = int(order_number_string.replace('Order #', ''))
     
-    return
+    return order_number
 
 async def select_account(page: pyppeteer.page.Page) -> None:
     account_dropdown_selector = ' '.join([
@@ -538,18 +542,18 @@ async def click_submit_button(page: pyppeteer.page.Page) -> None:
     await submit_button.click()    
     return
 
-def load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
+def load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> int:
     assert VANGUARD_BROWSER is not None, f'Vanguard browser not initialized.'
-    run_awaitable(_load_buy_sell_url(transaction_type))
-    return
+    order_number = run_awaitable(_load_buy_sell_url(transaction_type))
+    return order_number
 
-def load_buy_url(ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
-    run_awaitable(_load_buy_sell_url('buy', ticker_symbol, number_of_shares, limit_price))
-    return
+def load_buy_url(ticker_symbol: str, number_of_shares: int, limit_price: float) -> int:
+    order_number = run_awaitable(_load_buy_sell_url('buy', ticker_symbol, number_of_shares, limit_price))
+    return order_number
 
-def load_sell_url(ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
-    run_awaitable(_load_buy_sell_url('sell', ticker_symbol, number_of_shares, limit_price))
-    return
+def load_sell_url(ticker_symbol: str, number_of_shares: int, limit_price: float) -> int:
+    order_number = run_awaitable(_load_buy_sell_url('sell', ticker_symbol, number_of_shares, limit_price))
+    return order_number
 
 ###########################
 # Ticker Symbol Utilities #
@@ -660,6 +664,7 @@ def initialize_browsers() -> None:
     global PAGE_POOL_SIZE
     initialize_vanguard_browser()
     PAGE_POOL = [run_awaitable(VANGUARD_BROWSER.newPage()) for _ in range(PAGE_POOL_SIZE)]
+    run_awaitable(VANGUARD_BUY_SELL_PAGE.bringToFront())
     return
 
 @atexit.register
