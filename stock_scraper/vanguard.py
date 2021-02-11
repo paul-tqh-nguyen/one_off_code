@@ -236,10 +236,10 @@ async def _initialize_vanguard_browser() -> pyppeteer.browser.Browser:
     # keyring.set_password('vanguard_stock_scraper', 'pw', getpass.getpass(prompt='Password: ', stream=None))
         
     await page.focus(username_input_selector)
-    await page.keyboard.type(keyring.get_password('vanguard_stock_scraper', 'un'));
+    await page.keyboard.type(keyring.get_password('vanguard_stock_scraper', 'un'))
     await page.focus(password_input_selector)
-    await page.keyboard.type(keyring.get_password('vanguard_stock_scraper', 'pw'));
-    await page.keyboard.press('Enter');
+    await page.keyboard.type(keyring.get_password('vanguard_stock_scraper', 'pw'))
+    await page.keyboard.press('Enter')
 
     return browser
 
@@ -265,53 +265,6 @@ def close_vanguard_browser() -> None:
 
 VANGUARD_BUY_SELL_URL = 'https://personal.vanguard.com/us/TradeTicket?investmentType=EQUITY'
 
-# async def click_yes_buttons(page: pyppeteer.page.Page) -> None:
-    
-#     need_to_click_yes_button = await page.safelyWaitForSelector('input[id="orderCaptureWarningLayerForm:yesButtonInput"]', {'timeout': 500})
-#     if need_to_click_yes_button:
-#         yes_button = await page.get_sole_element('input[id="orderCaptureWarningLayerForm:yesButtonInput"]')
-#         await yes_button.click()
-    
-#     need_to_click_yes_button = await page.safelyWaitForSelector('span[id="comp-orderCaptureWarningLayerForm:yesButton"]', {'timeout': 500})
-#     if need_to_click_yes_button:
-#         await page.evaluate(f'''() => document.querySelector('span[id="comp-orderCaptureWarningLayerForm:yesButton"] input').click()''')
-    
-#     return
-
-async def select_cost_basis_method(page: pyppeteer.page.Page, transaction_type: Literal['buy', 'sell']) -> None:
-    # Select Cost Basis Method
-    if transaction_type == 'sell':
-        if await page.safelyWaitForSelector('a[id="baseForm:costBasisMethodLearnMoreLink"]', {'timeout': 1_000}):
-            cost_basis_method_dropdown_selector = ' '.join([
-                'body',
-                'table[id="baseForm:costBasisMethodTable"]',
-                'div[id="baseForm:costBasisMethodSelectOne_label"]',
-                'div[id="baseForm:costBasisMethodSelectOne_cont"]',
-                'table[id="baseForm:costBasisMethodSelectOne-border"]',
-                'tbody',
-                'tr.vg-SelOneMenuVisRow',
-                'td.vg-SelOneMenuIconCell',
-            ])
-            cost_basis_method_selector = ' '.join([
-                'body',
-                'div[id="menu-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
-                'div[id="scroll-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDownScroll',
-                'table',
-                'tbody',
-                'tr',
-                'td[id="baseForm:costBasisMethodSelectOne:2"]'
-            ])
-            cost_basis_method_selection_success = await page.evaluate(
-                get_js_func_string_for_clicking_buy_sell_dropdowns(
-                    cost_basis_method_dropdown_selector,
-                    cost_basis_method_selector,
-                    'First In, First Out (FIFO)'
-                )
-            )
-            assert cost_basis_method_selection_success
-
-    return
-
 async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_symbol: str, number_of_shares: int, limit_price: float) -> None:
     assert transaction_type in ('buy', 'sell')
     page = only_one(await VANGUARD_BROWSER.pages())
@@ -319,108 +272,24 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
 
     need_to_click_ok_button = await page.safelyWaitForSelector('input#okButtonInput', {'timeout': 1_000})
     if need_to_click_ok_button:
-        await page.evaluate(f'''() => document.querySelector('input#okButtonInput').click()''')
-    
-    # Select Account
-    account_dropdown_selector = ' '.join([
-        'body',
-        'table[id="baseForm:accountTable"]',
-        'div[id="baseForm:accountSelectOne_label"]',
-        'div[id="baseForm:accountSelectOne_cont"]',
-        'table[id="baseForm:accountSelectOne-border"]',
-        'tbody',
-        'tr.vg-SelOneMenuVisRow',
-        'td.vg-SelOneMenuIconCell',
-    ])
-    account_selector = ' '.join([
-        'body',
-        'div[id="menu-baseForm:accountSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
-        'div[id="scroll-baseForm:accountSelectOne"].vg-SelOneMenuDropDownScroll',
-        'table',
-        'tbody',
-        'tr',
-        'td[id="baseForm:accountSelectOne:1"]',
-    ])
-    account_dropdown = await page.get_sole_element(account_dropdown_selector)
-    await account_dropdown.click()
-    account_option = await page.get_sole_element(account_selector)
-    await account_option.click()
-    
-#     # Select Transaction Type
-#     transaction_type_dropdown_selector = ' '.join([
-#         'body',
-#         'table[id="baseForm:transactionTypeTable"]',
-#         'div[id="baseForm:transactionTypeSelectOne_label"]',
-#         'div[id="baseForm:transactionTypeSelectOne_cont"]',
-#         'table[id="baseForm:transactionTypeSelectOne-border"]',
-#         'tbody',
-#         'tr.vg-SelOneMenuVisRow',
-#         'td.vg-SelOneMenuIconCell',
-#     ])
-#     if transaction_type == 'buy':
-#         transaction_selector = ' '.join([
-#             'body',
-#             'div[id="menu-baseForm:transactionTypeSelectOne"]',
-#             'table',
-#             'tbody',
-#             'tr',
-#             'td[id="baseForm:transactionTypeSelectOne:1"]',
-#         ]).replace(':', '\\\\:')
-#         expected_inner_text = 'Buy'
-#     elif transaction_type == 'sell':
-#         transaction_selector = ' '.join([
-#             'body',
-#             'div[id="menu-baseForm:transactionTypeSelectOne"]',
-#             'table',
-#             'tbody',
-#             'tr',
-#             'td[id="baseForm:transactionTypeSelectOne:2"]',
-#         ]).replace(':', '\\\\:')
-#         expected_inner_text = 'Sell'
-#     await page.waitForSelector(' '.join([
-#         'div[id="baseForm:accountDetailTabBox:fundsAvailableNavBox"]',
-#         'table[id="baseForm:accountDetailTabBox:fundsAvailableTable"]',
-#         'tbody[id="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]',
-#         'tr[tbodyid="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]'
-#     ]))
-#     transaction_type_selection_success = await page.evaluate(
-#         get_js_func_string_for_clicking_buy_sell_dropdowns(
-#             transaction_type_dropdown_selector,
-#             transaction_selector,
-#             expected_inner_text
-#         )
-#     )
-#     assert transaction_type_selection_success
-    
-#     # Select Duration
-#     duration_dropdown_selector = ' '.join([
-#         'body',
-#         'table[id="baseForm:durationTypeTable"]',
-#         'div[id="baseForm:durationTypeSelectOne_label"]',
-#         'div[id="baseForm:durationTypeSelectOne_cont"]',
-#         'table[id="baseForm:durationTypeSelectOne-border"]',
-#         'tbody',
-#         'tr.vg-SelOneMenuVisRow',
-#         'td.vg-SelOneMenuIconCell',
-#     ])
-#     duration_selector = ' '.join([
-#         'body',
-#         'div[id="menu-baseForm:durationTypeSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
-#         'div[id="scroll-baseForm:durationTypeSelectOne"].vg-SelOneMenuDropDownScroll',
-#         'table',
-#         'tbody',
-#         'tr',
-#         'td[id="baseForm:durationTypeSelectOne:1"]'
-#     ])
-#     duration_selection_success = await page.evaluate(
-#         get_js_func_string_for_clicking_buy_sell_dropdowns(
-#             duration_dropdown_selector,
-#             duration_selector,
-#             'Day'
-#         )
-#     )
-#     assert duration_selection_success
+        ok_button = await page.get_sole_element('input#okButtonInput')
+        await ok_button.click()
 
+    await select_account(page)
+    
+    await page.waitForSelector(' '.join([
+        'div[id="baseForm:accountDetailTabBox:fundsAvailableNavBox"]',
+        'table[id="baseForm:accountDetailTabBox:fundsAvailableTable"]',
+        'tbody[id="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]',
+        'tr[tbodyid="baseForm:accountDetailTabBox:fundsAvailableTabletbody0"]'
+    ]))
+    
+    await select_transaction_type(page, transaction_type)
+
+    await insert_ticker_symbol(page, ticker_symbol)
+    
+    await select_duration(page)
+    
 #     # Select Order Type
 #     order_type_dropdown_selector = ' '.join([
 #         'body',
@@ -446,27 +315,6 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
 #     order_type_option = await page.get_sole_element(order_type_selector)
 #     await order_type_option.click()
     
-#     # Insert Input Box Text
-#     await page.waitForSelector('input[id="baseForm:limitPriceTextField"]')
-#     text_insertion_success = await page.evaluate(f'''
-# () => {{
-
-# const ticker_symbol_inputs = document.querySelectorAll('input[id="baseForm:investmentTextField"]');
-# const number_of_shares_inputs = document.querySelectorAll('input[id="baseForm:shareQuantityTextField"]')
-# const limit_price_inputs = document.querySelectorAll('input[id="baseForm:limitPriceTextField"]')
-
-# if (ticker_symbol_inputs.length != 1 || number_of_shares_inputs.length != 1 || limit_price_inputs.length != 1) {{
-#     return false;
-# }}
-
-# ticker_symbol_inputs[0].value = '{ticker_symbol}'
-# number_of_shares_inputs[0].value = '{number_of_shares}'
-# limit_price_inputs[0].value = '{limit_price}'
-
-# return true;
-# }}
-# ''')
-#     assert text_insertion_success
 
 #     # Select Account Type
 #     security_account_type_dropdown_selector = ' '.join([
@@ -538,6 +386,170 @@ async def _load_buy_sell_url(transaction_type: Literal['buy', 'sell'], ticker_sy
 # }}
 # ''')
 #     assert submit_button_press_success
+
+    return
+
+# async def click_yes_buttons(page: pyppeteer.page.Page) -> None:
+    
+#     need_to_click_yes_button = await page.safelyWaitForSelector('input[id="orderCaptureWarningLayerForm:yesButtonInput"]', {'timeout': 500})
+#     if need_to_click_yes_button:
+#         yes_button = await page.get_sole_element('input[id="orderCaptureWarningLayerForm:yesButtonInput"]')
+#         await yes_button.click()
+    
+#     need_to_click_yes_button = await page.safelyWaitForSelector('span[id="comp-orderCaptureWarningLayerForm:yesButton"]', {'timeout': 500})
+#     if need_to_click_yes_button:
+#         await page.evaluate(f'''() => document.querySelector('span[id="comp-orderCaptureWarningLayerForm:yesButton"] input').click()''')
+    
+#     return
+
+async def select_account(page: pyppeteer.page.Page) -> None:
+    account_dropdown_selector = ' '.join([
+        'body',
+        'table[id="baseForm:accountTable"]',
+        'div[id="baseForm:accountSelectOne_label"]',
+        'div[id="baseForm:accountSelectOne_cont"]',
+        'table[id="baseForm:accountSelectOne-border"]',
+        'tbody',
+        'tr.vg-SelOneMenuVisRow',
+        'td.vg-SelOneMenuIconCell',
+    ])
+    account_selector = ' '.join([
+        'body',
+        'div[id="menu-baseForm:accountSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+        'div[id="scroll-baseForm:accountSelectOne"].vg-SelOneMenuDropDownScroll',
+        'table',
+        'tbody',
+        'tr',
+        'td[id="baseForm:accountSelectOne:1"]',
+    ])
+    account_dropdown = await page.get_sole_element(account_dropdown_selector)
+    await account_dropdown.click()
+    account_option = await page.get_sole_element(account_selector)
+    await account_option.click()
+
+    return
+
+async def select_transaction_type(page: pyppeteer.page.Page, transaction_type: Literal['buy', 'sell']) -> None:
+    transaction_type_dropdown_selector = ' '.join([
+        'body',
+        'table[id="baseForm:transactionTypeTable"]',
+        'div[id="baseForm:transactionTypeSelectOne_label"]',
+        'div[id="baseForm:transactionTypeSelectOne_cont"]',
+        'table[id="baseForm:transactionTypeSelectOne-border"]',
+        'tbody',
+        'tr.vg-SelOneMenuVisRow',
+        'td.vg-SelOneMenuIconCell',
+    ])
+    if transaction_type == 'buy':
+        transaction_type_selector = ' '.join([
+            'body',
+            'div[id="menu-baseForm:transactionTypeSelectOne"]',
+            'table',
+            'tbody',
+            'tr',
+            'td[id="baseForm:transactionTypeSelectOne:1"]',
+        ])
+    elif transaction_type == 'sell':
+        transaction_type_selector = ' '.join([
+            'body',
+            'div[id="menu-baseForm:transactionTypeSelectOne"]',
+            'table',
+            'tbody',
+            'tr',
+            'td[id="baseForm:transactionTypeSelectOne:2"]',
+        ])
+    transaction_type_dropdown = await page.get_sole_element(transaction_type_dropdown_selector)
+    await transaction_type_dropdown.click()
+    transaction_type_option = await page.get_sole_element(transaction_type_selector)
+    await transaction_type_option.click()
+    
+    return
+
+async def insert_ticker_symbol(page: pyppeteer.page.Page, ticker_symbol: str) -> None:
+    ticker_symbol_input_selector = 'input[id="baseForm:investmentTextField"]'
+    await page.evaluate(f'''
+() => {{
+
+const input_elem = document.querySelector('{ticker_symbol_input_selector}');
+
+input_elem.onkeydown = console.log; // set the onkeydown attribute to non-null so we can know if this element is replaced later
+
+input_elem.value = '{ticker_symbol}';
+
+document.querySelector('span[id="baseForm:investmentButton"]').click();
+
+}}
+''')
+    await page.focus('body')
+    await asyncio.sleep(10)
+    # ticker_symbol_input = await page.get_sole_element(ticker_symbol_input_selector)
+    # await page.focus(ticker_symbol_input_selector)
+    # await page.keyboard.press('Tab')
+    # await asyncio.sleep(3)
+    # await page.keyboard.type(ticker_symbol)
+    # await page.keyboard.press('Enter')
+    while await page.evaluate(f'''() => document.querySelector('input[id="baseForm:investmentTextField"]').onkeydown != null'''):
+        pass
+    await asyncio.sleep(10)
+    return
+
+async def select_duration(page: pyppeteer.page.Page) -> None:
+    duration_dropdown_selector = ' '.join([
+        'body',
+        'table[id="baseForm:durationTypeTable"]',
+        'div[id="baseForm:durationTypeSelectOne_label"]',
+        'div[id="baseForm:durationTypeSelectOne_cont"]',
+        'table[id="baseForm:durationTypeSelectOne-border"]',
+        'tbody',
+        'tr.vg-SelOneMenuVisRow',
+        'td.vg-SelOneMenuIconCell',
+    ])
+    duration_selector = ' '.join([
+        'body',
+        'div[id="menu-baseForm:durationTypeSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+        'div[id="scroll-baseForm:durationTypeSelectOne"].vg-SelOneMenuDropDownScroll',
+        'table',
+        'tbody',
+        'tr',
+        'td[id="baseForm:durationTypeSelectOne:1"]'
+    ])
+    duration_dropdown = await page.get_sole_element(duration_dropdown_selector)
+    await duration_dropdown.click()
+    duration_option = await page.get_sole_element(duration_selector)
+    await duration_option.click()
+
+    return
+
+async def select_cost_basis_method(page: pyppeteer.page.Page, transaction_type: Literal['buy', 'sell']) -> None:
+    if transaction_type == 'sell':
+        if await page.safelyWaitForSelector('a[id="baseForm:costBasisMethodLearnMoreLink"]', {'timeout': 1_000}):
+            cost_basis_method_dropdown_selector = ' '.join([
+                'body',
+                'table[id="baseForm:costBasisMethodTable"]',
+                'div[id="baseForm:costBasisMethodSelectOne_label"]',
+                'div[id="baseForm:costBasisMethodSelectOne_cont"]',
+                'table[id="baseForm:costBasisMethodSelectOne-border"]',
+                'tbody',
+                'tr.vg-SelOneMenuVisRow',
+                'td.vg-SelOneMenuIconCell',
+            ])
+            cost_basis_method_selector = ' '.join([
+                'body',
+                'div[id="menu-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDown.vg-SelOneMenuNoWrap',
+                'div[id="scroll-baseForm:costBasisMethodSelectOne"].vg-SelOneMenuDropDownScroll',
+                'table',
+                'tbody',
+                'tr',
+                'td[id="baseForm:costBasisMethodSelectOne:2"]'
+            ])
+            cost_basis_method_selection_success = await page.evaluate(
+                get_js_func_string_for_clicking_buy_sell_dropdowns(
+                    cost_basis_method_dropdown_selector,
+                    cost_basis_method_selector,
+                    'First In, First Out (FIFO)'
+                )
+            )
+            assert cost_basis_method_selection_success
 
     return
 
