@@ -600,6 +600,7 @@ async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
 async def scrape_ticker_symbols() -> None:
     try:
         while True:
+            mean_time = -time.time()
             rows = []
             
             # Refresh pages
@@ -617,6 +618,10 @@ async def scrape_ticker_symbols() -> None:
                 date_time = get_local_datetime()
                 row = (date_time, ticker_symbol, price)
                 rows.append(row)
+            
+            mean_time += time.time()
+            mean_time = mean_time / len(rows)
+            print(f"mean_time {repr(mean_time)}")
                 
             with DB_INFO.db_access() as (db_connection, db_cursor):
                 db_cursor.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
