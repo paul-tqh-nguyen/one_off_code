@@ -1,6 +1,9 @@
 
 '''
 
+load_buy_url('cgc', 1, 0.40)
+load_sell_url('cgc', 1, 4321.0)
+
 rm *db
 conda activate stock_scraper
 python3
@@ -395,15 +398,10 @@ async def insert_ticker_symbol(page: pyppeteer.page.Page, ticker_symbol: str) ->
     return
 
 async def insert_number_of_shares(page: pyppeteer.page.Page, number_of_shares: int) -> None:
-    print(f"1  {repr(1 )}")
     number_of_shares_input_selector = 'input[id="baseForm:shareQuantityTextField"]'
-    print(f"2 {repr(2)}")
     await page.focus(number_of_shares_input_selector)
-    print(f"3 {repr(3)}")
     await page.keyboard.type(str(number_of_shares))
-    print(f"4 {repr(4)}")
     await page.keyboard.press('Enter')
-    print(f"5  {repr(5 )}")
     return
 
 async def select_order_type(page: pyppeteer.page.Page) -> None:
