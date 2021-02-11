@@ -575,95 +575,78 @@ def gather_popular_ticker_symbols(maximum: Optional[int] = None) -> List[str]:
 
 PRICE_SCRAPER_TASK = None
 
-TRACKED_TICKER_SYMBOL_TO_PAGE: Dict[str, pyppeteer.page.Page] = dict()
+PAGE_POOL_SIZE = 10
+PAGE_POOL: List[pyppeteer.page.Page] = []
 
-async def open_pages_for_ticker_symbols(ticker_symbols: List[str]) -> None:
-    global TRACKED_TICKER_SYMBOL_TO_PAGE
-    ticker_symbols = eager_map(str.upper, ticker_symbols)
-    current_pages = TRACKED_TICKER_SYMBOL_TO_PAGE.values()
-    
-    # Add new pages
-    new_pages = []
-    for _ in range(len(ticker_symbols) - len(current_pages)):
-        new_pages.append(await VANGUARD_BROWSER.newPage())
-    
-    # Close unneccessary pages
-    for _ in range(len(current_pages) - len(ticker_symbols)):
-        _, page = TRACKED_TICKER_SYMBOL_TO_PAGE.popitem()
-        await page.close()
-        
-    for page in TRACKED_TICKER_SYMBOL_TO_PAGE.values():
-        new_pages.append(page)
-        
-    more_itertools.consume((TRACKED_TICKER_SYMBOL_TO_PAGE.popitem() for _ in range(len(TRACKED_TICKER_SYMBOL_TO_PAGE))))
-    assert len(new_pages) == len(ticker_symbols)
-    assert all(not page.isClosed() for page in new_pages)
-    assert len(TRACKED_TICKER_SYMBOL_TO_PAGE) == 0
-
-    # We have to visit the wrapping page before visiting the iframe source page
-    if len(ticker_symbols):
-        page = await VANGUARD_BROWSER.newPage()
-        url = f'https://personal.vanguard.com/us/secfunds/stocks/snapshot?Ticker=voo'
-        await page.goto(url)
-        await page.waitForSelector('iframe')
-        await page.close()
-    
-    # load source pages
-    page_opening_tasks = []
-    for page, ticker_symbol in zip(new_pages, ticker_symbols):
-        url = f'https://vanguard.factsetdigitalsolutions.com/stocks/overview?symbol={ticker_symbol}'
-        page_opening_task = EVENT_LOOP.create_task(page.goto(url, {'timeout': 1_000*len(ticker_symbols)} ))
-        page_opening_tasks.append(page_opening_task)
-        TRACKED_TICKER_SYMBOL_TO_PAGE[ticker_symbol] = page
-    for page_opening_task in page_opening_tasks:
-        await page_opening_task
-    
-    return
+TICKER_SYMBOLS_TO_SCRAPE: List[str] = []
 
 async def scrape_ticker_symbols() -> None:
+    global PAGE_POOL
+    global PAGE_POOL_SIZE
+    global TICKER_SYMBOLS_TO_SCRAPE
+    global VANGUARD_BROWSER
+    
     try:
+        
+        # We have to visit an arbitrary wrapping page before visiting the iframe source page
+        if len(TICKER_SYMBOLS_TO_SCRAPE):
+            page = await VANGUARD_BROWSER.newPage()
+            url = f'https://personal.vanguard.com/us/secfunds/stocks/snapshot?Ticker=voo'
+            await page.goto(url)
+            await page.waitForSelector('iframe')
+            await page.close()
+            
+            
         while True:
             elapsed_time = -time.time()
             
-            # Refresh pages
-            for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
-                assert page.url.split('=')[-1].lower() == ticker_symbol.lower()
-                await page.evaluate('''() => {{ location.reload(true) }} ''')
-                
-            # Perform actual scraping
             rows = []
-            for ticker_symbol, page in TRACKED_TICKER_SYMBOL_TO_PAGE.items():
-                price_selector = 'div.idc-modulecontent table.idc-quotetable tr.idc-lastrow td.idc-td-last'
-                await page.waitForSelector(price_selector)
-                price_span_string = await page.evaluate(f'''() => document.querySelector('{price_selector}').innerText''')
-                price = float(price_span_string.replace(',', ''))
                 
-                date_time = get_local_datetime()
-                row = (date_time, ticker_symbol, price)
-                rows.append(row)
-                            
+            for ticker_symbol_batch in more_itertools.chunked(TICKER_SYMBOLS_TO_SCRAPE, PAGE_POOL_SIZE):
+
+                # Go to URLs
+                url_loading_tasks = []
+                for ticker_symbol, page in zip(ticker_symbol_batch, PAGE_POOL):
+                    url = f'https://vanguard.factsetdigitalsolutions.com/stocks/overview?symbol={ticker_symbol}'
+                    url_loading_task = EVENT_LOOP.create_task(page.goto(url))
+                    url_loading_tasks.append(url_loading_task)
+                for url_loading_task in url_loading_tasks:
+                    await url_loading_task
+                    
+                # Perform actual scraping
+                for ticker_symbol, page in zip(ticker_symbol_batch, PAGE_POOL):
+                    price_selector = 'div.idc-modulecontent table.idc-quotetable tr.idc-lastrow td.idc-td-last'
+                    await page.waitForSelector(price_selector)
+                    price_string = await page.evaluate(f'''() => document.querySelector('{price_selector}').innerText''')
+                    price = float(price_string.replace(',', ''))
+                    
+                    date_time = get_local_datetime()
+                    row = (date_time, ticker_symbol, price)
+                    rows.append(row)
+                                
             with DB_INFO.db_access() as (db_connection, db_cursor):
                 db_cursor.executemany('INSERT INTO stocks VALUES(?,?,?)', rows)
                 db_connection.commit()
-                
+                    
             elapsed_time += time.time()
             sleep_time = max(0, 1-elapsed_time)
-            await asyncio.sleep(sleep_time)
-            
+            if sleep_time > 0:
+                await asyncio.sleep(sleep_time)
+                
     except asyncio.CancelledError:
         pass
-    return
 
-    return 
+    return
 
 @event_loop_func
 def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
     global VANGUARD_BROWSER
     global PRICE_SCRAPER_TASK
+    global TICKER_SYMBOLS_TO_SCRAPE
     assert VANGUARD_BROWSER is not None, f'Vanguard browser not initialized.'
     if PRICE_SCRAPER_TASK is not None:
         PRICE_SCRAPER_TASK.cancel()
-    run_awaitable(open_pages_for_ticker_symbols(ticker_symbols))
+    TICKER_SYMBOLS_TO_SCRAPE = ticker_symbols
     PRICE_SCRAPER_TASK = enqueue_awaitable(scrape_ticker_symbols())
     return
 
@@ -673,7 +656,10 @@ def track_ticker_symbols(*ticker_symbols: List[str]) -> None:
 
 @one_time_execution
 def initialize_browsers() -> None:
+    global PAGE_POOL
+    global PAGE_POOL_SIZE
     initialize_vanguard_browser()
+    PAGE_POOL = [run_awaitable(VANGUARD_BROWSER.newPage()) for _ in range(PAGE_POOL_SIZE)]
     return
 
 @atexit.register
