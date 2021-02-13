@@ -42,4 +42,4 @@ add_definitions(${LLVM_DEFINITIONS})
 
 add_subdirectory(include)
 add_subdirectory(lib)
-add_subdirectory(tibs-main)
+add_subdirectory(tibs-compiler)

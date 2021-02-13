@@ -1,7 +1,10 @@
 name: tibs
 dependencies:
-# dev environment
   - python=3.7
   - pytest-cov
   - pyparsing
   - typing-extensions
+  - cmake
+  - clang
+  - clangxx
+  - conda-forge::ninja

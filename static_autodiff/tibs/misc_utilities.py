@@ -122,14 +122,15 @@ def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -
     return
 
 from typing import Tuple
-def shell(input_command: str) -> Tuple[str, str]:
+def shell(input_command: str) -> Tuple[str, str, int]:
     '''Handles multi-line input_command'''
+    import subprocess
     command = input_command.encode("utf-8")
     process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout_string, stderr_string = process.communicate(command)
     stdout_string = stdout_string.decode("utf-8")
     stderr_string = stderr_string.decode("utf-8")
-    return stdout_string, stderr_string
+    return stdout_string, stderr_string, process.returncode
 
 def pid() -> int:
     import os
