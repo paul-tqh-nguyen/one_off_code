@@ -1,5 +1,5 @@
 
-#include "tibs-shared.hpp"
+#include "tibs-compiler.hpp"
 
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/Builders.h"
