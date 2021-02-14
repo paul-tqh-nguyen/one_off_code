@@ -76,7 +76,18 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
         if LLVM_REPO_BIN_DIR not in PATH.split(':'):
             PATH = PATH + ':' + LLVM_REPO_BIN_DIR
         return PATH
+    
+    @staticmethod
+    def get_ld_library_path_environment_variable() -> str:
+        LD_LIBRARY_PATH = os.environ['LD_LIBRARY_PATH']
+        
+        conda_prefix = os.environ['CONDA_PREFIX']
+        conda_lib_dir = os.path.join(conda_prefix, 'lib')
+        if conda_lib_dir not in LD_LIBRARY_PATH.split(':'):
+            LD_LIBRARY_PATH = LD_LIBRARY_PATH + ':' + conda_lib_dir
 
+        return LD_LIBRARY_PATH
+    
     def run(self) -> None:
         if 'CONDA_PREFIX' not in os.environ:
             raise NotImplementedError(f'Compilation of TIBS compiler not currently supported outside of a conda environment.')
@@ -105,15 +116,6 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
         
         if self.compile_clean or not os.path.isdir(LLVM_REPO_BIN_DIR):
             PATH = self.__class__.get_path_environment_variable()
-            LD_LIBRARY_PATH = os.environ['LD_LIBRARY_PATH']
-
-            if LLVM_REPO_BIN_DIR not in PATH.split(':'):
-                PATH = PATH + ':' + LLVM_REPO_BIN_DIR
-            
-            conda_prefix = os.environ['CONDA_PREFIX']
-            conda_lib_dir = os.path.join(conda_prefix, 'lib')
-            if conda_lib_dir not in LD_LIBRARY_PATH.split(':'):
-                LD_LIBRARY_PATH = LD_LIBRARY_PATH + ':' + conda_lib_dir
                 
             run_shell_commands(
                 LLVM_REPO_BUILD_DIR,
