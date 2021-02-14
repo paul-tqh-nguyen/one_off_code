@@ -143,7 +143,8 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
             TIBS_COMPILER_BUILD_DIR,
             'cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit',
             'ninja',
-            PATH=PATH
+            PATH=PATH,
+            LD_LIBRARY_PATH=LD_LIBRARY_PATH,
             BUILD_DIR=LLVM_REPO_BUILD_DIR,
             PREFIX=LLVM_REPO_BUILD_DIR
         )
