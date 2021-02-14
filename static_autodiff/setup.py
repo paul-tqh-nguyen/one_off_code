@@ -138,7 +138,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
         setuptools.command.build_py.build_py.run(self)
         return
 
-setup( # TODO add more here
+setuptools.setup( # TODO add more here
     name="TIBS",
     description="TIBS (Tensor Instruction Based Semantics) Programming Language",
     author="Paul Nguyen",
