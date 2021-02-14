@@ -24,7 +24,7 @@ CURRENT_MODULE_PATH = os.path.dirname(os.path.realpath(__file__))
 
 LIBTIBS_SO_LOCATION = os.path.abspath(os.path.join(CURRENT_MODULE_PATH, 'mlir/build/tibs-compiler/libtibs-compiler.so'))
 
-assert os.path.isdir(LIBTIBS_SO_LOCATION), 'The Tibs compiler has not yet been compiled.'
+assert os.path.isdir(LIBTIBS_SO_LOCATION), 'The TIBS compiler has not yet been compiled.'
 
 LIBTIBS_SO = ctypes.CDLL(LIBTIBS_SO_LOCATION)
 
