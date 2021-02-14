@@ -116,6 +116,7 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
         
         if self.compile_clean or not os.path.isdir(LLVM_REPO_BIN_DIR):
             PATH = self.__class__.get_path_environment_variable()
+            LD_LIBRARY_PATH = self.__class__.get_ld_library_path_environment_variable()
                 
             run_shell_commands(
                 LLVM_REPO_BUILD_DIR,
