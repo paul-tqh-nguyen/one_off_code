@@ -8,6 +8,8 @@ export PATH=/home/pnguyen/code/one_off_code/mlir/llvm-project/build/bin/:$PATH
 export LD_LIBRARY_PATH=/home/pnguyen/miniconda3/envs/mlir/lib:$LD_LIBRARY_PATH
 export BUILD_DIR=/home/pnguyen/code/one_off_code/mlir/llvm-project/build
 export PREFIX=/home/pnguyen/code/one_off_code/mlir/llvm-project/build
+# export BUILD_DIR=/home/pnguyen/code/one_off_code/static_autodiff/tibs/compiler/llvm-project/build
+# export PREFIX=/home/pnguyen/code/one_off_code/static_autodiff/tibs/compiler/llvm-project/build
 
 cd /home/pnguyen/code/one_off_code/mlir/tibs/
 mkdir build
