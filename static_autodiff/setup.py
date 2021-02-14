@@ -139,6 +139,7 @@ setup( # TODO add more here
     python_requires=">=3.7",
     cmdclass={
         'compile_tibs_compiler': CompileTibsCompilerCommand,
+        'build_py': BuildPyCommand,
     },
 
 )
