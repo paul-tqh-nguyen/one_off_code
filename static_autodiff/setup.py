@@ -70,6 +70,13 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
         self.compile_clean = False if self.compile_clean.lower().strip() == 'false' else True
         return
 
+    @staticmethod
+    def get_path_environment_variable() -> str:
+        PATH = os.environ['PATH']
+        if LLVM_REPO_BIN_DIR not in PATH.split(':'):
+            PATH = PATH + ':' + LLVM_REPO_BIN_DIR
+        return PATH
+
     def run(self) -> None:
         if 'CONDA_PREFIX' not in os.environ:
             raise NotImplementedError(f'Compilation of TIBS compiler not currently supported outside of a conda environment.')
