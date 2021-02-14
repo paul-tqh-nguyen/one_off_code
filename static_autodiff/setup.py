@@ -1,6 +1,5 @@
 
 import setuptools
-from setuptools import setup
 import distutils.cmd
 import distutils.log
 
