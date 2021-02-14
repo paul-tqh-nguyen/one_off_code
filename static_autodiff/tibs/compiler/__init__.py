@@ -41,7 +41,8 @@ LIBTIBS_SO.runAllPasses.argtypes = []
 ############
 
 def compile():
-    return LIBTIBS_SO.runAllPasses()
+    result = 'DUMMY' # result = LIBTIBS_SO.runAllPasses()
+    return result
 
 # TODO enable this
 # __all__ = [

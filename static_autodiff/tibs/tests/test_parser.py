@@ -1,5 +1,6 @@
 
 import pytest
+import itertools
 
 from tibs import parser
 from tibs.parser import (
@@ -17,6 +18,7 @@ from tibs.parser import (
     BooleanLiteralASTNode,
     IntegerLiteralASTNode,
     FloatLiteralASTNode,
+    StringLiteralASTNode,
     NothingTypeLiteralASTNode,
     VariableASTNode,
     NegativeExpressionASTNode,
@@ -35,6 +37,7 @@ from tibs.parser import (
     LessThanOrEqualToExpressionASTNode,
     EqualToExpressionASTNode,
     NotEqualToExpressionASTNode,
+    StringConcatenationExpressionASTNode,
     FunctionCallExpressionASTNode,
     AssignmentASTNode,
     ModuleASTNode,
@@ -53,11 +56,15 @@ init()
 x: Integer
 
 ''',
-        'print(return 3)',
-        'print(if True 1 else 2)',
-        'print(Boolean)',
-        'print({1;2;3})',
+        'print << if << 3 ',
+        'print << return 3 ',
+        'print << if True 1 else 2',
+        'print << Boolean',
+        'print << {1;2;3}',
+        'print << ',
         'x = {}',
+        'x = """',
+        'x = \'123\'',
         'x = print()',
         'x = print(1, 2, 3)',
         'x = print(1, "2", 3)',
@@ -133,6 +140,7 @@ def test_parser_invalid_keyword_use():
         'Integer',
         'Boolean',
         'Float',
+        'String',
     ]
     literals = [
         'Nothing',
@@ -158,6 +166,7 @@ def test_parser_invalid_keyword_use():
         '<=',
         '==',
         '!=',
+        '<<',
     ]
     syntactic_contruct_keywords = [
         'function',
@@ -172,13 +181,71 @@ def test_parser_invalid_keyword_use():
         ('f({keyword}:=1)', types + literals + operators + syntactic_contruct_keywords),
         ('x = {{{keyword}}}', types + operators + syntactic_contruct_keywords),
         ('{keyword}', types + operators + syntactic_contruct_keywords),
-        ('print({keyword})', types + operators + syntactic_contruct_keywords),
+        ('print << {keyword}', types + operators + syntactic_contruct_keywords),
         ('x: {keyword} = 1', literals + operators + syntactic_contruct_keywords),
     ]
     for invalid_input_string_template, keywords in invalid_input_string_template_to_reserved_keywords:
         for keyword in keywords:
             input_string = invalid_input_string_template.format(keyword=keyword)
             with pytest.raises(parser.ParseError, match='Could not parse the following:'):
+                parser.parseSourceCode(input_string)
+
+def test_parser_incompatible_expression_use():
+    type_to_exemplars = {
+        'Boolean': {'True', 'False'},
+        'Integer': {'0', '1'},
+        'Float': {'1.0', '0.0', '1e3'},
+        'String': {'"string"'},
+        'NothingType': {'Nothing'},
+    }
+    types = list(type_to_exemplars.keys())
+    
+    type_to_compatible_types = {type: type for type in types}
+    type_to_compatible_types['Integer'] = {'Integer', 'Float'}
+    type_to_compatible_types['Float'] = {'Integer', 'Float'}
+
+    type_to_binary_operations = {
+        'Boolean': {'and', 'xor', 'or'},
+        'Integer': {
+            '**', '^', '*', '/', '+', '-',
+            '>', '>=', '<', '<=', '==', '!='
+        },
+        'Float': {
+            '**', '^', '*', '/', '+', '-',
+            '>', '>=', '<', '<=', '==', '!='
+        },
+        'String': {'<<'},
+        'NothingType': {},
+    }
+
+    type_to_unary_operations = {
+        'Boolean': {'not'},
+        'Integer': {'-'},
+        'Float': {'-'},
+        'String': set(),
+        'NothingType': set(),
+    }
+    type_to_unary_operations = {type: unary_operations | {''} for type, unary_operations in type_to_unary_operations.items()}
+
+    assert len(types) == len(type_to_exemplars) == len(type_to_compatible_types) == len(type_to_binary_operations) == len(type_to_unary_operations)
+    
+    for type in types:
+        other_types = {other_type for other_type in types if other_type not in type_to_compatible_types[type]}
+        for other_type in other_types:
+            unary_operations = type_to_unary_operations[type]
+            type_exemplars = type_to_exemplars[type]
+            binary_operations = type_to_binary_operations[type]
+            other_type_exemplars = type_to_exemplars[other_type]
+            for un_op1, arg1, bin_op, un_op2, arg2 in itertools.product(
+                    unary_operations,
+                    type_exemplars,
+                    binary_operations,
+                    unary_operations,
+                    other_type_exemplars
+            ):
+                input_string = f'x = {un_op1} {arg1} {bin_op} {un_op2} {arg2}'
+            with pytest.raises(parser.ParseError, match='Could not parse the following:'):
+                print(f"input_string {repr(input_string)}")
                 parser.parseSourceCode(input_string)
 
 def test_parser_nothing_literal():
@@ -331,6 +398,39 @@ input_string: {repr(input_string)}
 result: {repr(result)}
 '''
 
+def test_parser_atomic_string():
+    expected_input_output_pairs = [
+        ('', ''),
+        ('adsf', 'adsf'),
+        ('  adsf  ', '  adsf  '),
+        (r'  ad\"sf  ', r'  ad"sf  '),
+        ('ad\nsf', 'ad\nsf'),
+        (r'''a
+d
+s
+f''', 'a\nd\ns\nf'),
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        module_node = parser.parseSourceCode(f'x = "{input_string}"')
+        assert isinstance(module_node, ModuleASTNode)
+        assert isinstance(module_node.statements, list)
+        assignment_node = only_one(module_node.statements)
+        assert isinstance(assignment_node, AssignmentASTNode)
+        variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+        assert isinstance(variable_node, VariableASTNode)
+        assert variable_node.name is 'x'
+        assert isinstance(tensor_type_node, TensorTypeASTNode)
+        assert tensor_type_node.base_type_name is None
+        assert tensor_type_node.shape is None
+        value_node = assignment_node.value
+        assert isinstance(value_node, StringLiteralASTNode)
+        result = value_node.value
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
 def test_parser_vector_literal():
     expected_input_output_pairs = [
         ('[1,2,3]', VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1), IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)])),
@@ -362,11 +462,13 @@ def test_parser_vector_literal():
              BooleanLiteralASTNode(value=True),
              BooleanLiteralASTNode(value=False),
              OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=False))])),
-        ('[f(x:=1), [2, 3], some_variable, Nothing]',
+        ('[f(x:=1), [2, 3], some_variable, Nothing, "string"]',
          VectorExpressionASTNode(values=[
              FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'),
              VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)]),
-             VariableASTNode(name='some_variable')
+             VariableASTNode(name='some_variable'),
+             NothingTypeLiteralASTNode(),
+             StringLiteralASTNode('string'),
          ])),
     ]
     for input_string, expected_result in expected_input_output_pairs:
@@ -392,6 +494,7 @@ def test_parser_boolean_expression():
     expected_input_output_pairs = [
         ('not False', NotExpressionASTNode(arg=BooleanLiteralASTNode(value=False))),
         ('not True', NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True))),
+        ('not (True)', NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True))),
         ('True and True', AndExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True))),
         ('False and False', AndExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=False))),
         ('True and False', AndExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=False))),
@@ -463,6 +566,10 @@ def test_parser_boolean_expression():
              ),
              right_arg=BooleanLiteralASTNode(value=False)
          )),
+        ('not (1==2)', NotExpressionASTNode(arg=EqualToExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)))),
+        ('not f(a:=1)', NotExpressionASTNode(arg=FunctionCallExpressionASTNode(
+            arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=1))],
+            function_name='f'))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
@@ -599,6 +706,13 @@ def test_parser_arithmetic_expression():
                  right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=3))
              )
          )),
+        ('1 ** f(a:=1)',
+         ExponentExpressionASTNode(
+             left_arg=IntegerLiteralASTNode(value=1),
+             right_arg=FunctionCallExpressionASTNode(
+                 arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=1))],
+                 function_name='f')
+         )),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
@@ -643,6 +757,11 @@ def test_parser_comparison_expression():
 *-2', EqualToExpressionASTNode(
             left_arg=ExponentExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=3)),
             right_arg=ExponentExpressionASTNode(left_arg=IntegerLiteralASTNode(value=3), right_arg=NegativeExpressionASTNode(IntegerLiteralASTNode(value=2))))),
+        ('1 < f(a:=1)', LessThanExpressionASTNode(
+            left_arg=IntegerLiteralASTNode(value=1),
+            right_arg=FunctionCallExpressionASTNode(
+                arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=1))],
+                function_name='f'))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode('x = '+input_string)
@@ -658,6 +777,47 @@ def test_parser_comparison_expression():
         assert tensor_type_node.shape is None
         result = assignment_node.value
         assert isinstance(result, (ComparisonExpressionASTNode, AndExpressionASTNode))
+        assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_parser_string_expression():
+    expected_input_output_pairs = [
+        (' "asd" << "dsa" ', StringConcatenationExpressionASTNode(left_arg=StringLiteralASTNode(value='asd'), right_arg=StringLiteralASTNode(value='dsa'))),
+        (' "asd" << variable ', StringConcatenationExpressionASTNode(left_arg=StringLiteralASTNode(value='asd'), right_arg=VariableASTNode(name='variable'))),
+        (' variable << "asd" ', StringConcatenationExpressionASTNode(left_arg=VariableASTNode(name='variable'), right_arg=StringLiteralASTNode(value='asd'))),
+        (' variable << variable ', StringConcatenationExpressionASTNode(left_arg=VariableASTNode(name='variable'), right_arg=VariableASTNode(name='variable'))),
+        (' f(x:=1) << variable ', StringConcatenationExpressionASTNode(
+            left_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'),
+            right_arg=VariableASTNode(name='variable'))),
+        (' variable << f(x:=1) ', StringConcatenationExpressionASTNode(
+            left_arg=VariableASTNode(name='variable'),
+            right_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'))),
+        (' f(x:=1) << f(x:=1) ', StringConcatenationExpressionASTNode(
+            left_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'),
+            right_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'))),
+        (' f(x:=1) << "asd" ', StringConcatenationExpressionASTNode(
+            left_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'),
+            right_arg=StringLiteralASTNode(value='asd'))),
+        (' "asd" << f(x:=1) ', StringConcatenationExpressionASTNode(
+            left_arg=StringLiteralASTNode(value='asd'),
+            right_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f')))
+    ]
+    for input_string, expected_result in expected_input_output_pairs:
+        module_node = parser.parseSourceCode('x = '+input_string)
+        assert isinstance(module_node, ModuleASTNode)
+        assert isinstance(module_node.statements, list)
+        assignment_node = only_one(module_node.statements)
+        assert isinstance(assignment_node, AssignmentASTNode)
+        variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+        assert isinstance(variable_node, VariableASTNode)
+        assert variable_node.name is 'x'
+        assert isinstance(tensor_type_node, TensorTypeASTNode)
+        assert tensor_type_node.base_type_name is None
+        assert tensor_type_node.shape is None
+        result = assignment_node.value
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
@@ -1218,21 +1378,19 @@ expected_result: {repr(expected_result)}
 
 def test_parser_print_statement():
     expected_input_output_pairs = [
-        ('print()', PrintStatementASTNode(values_to_print=[])),
-        ('''print("1
+        ('''print "1
 2
-3")''', PrintStatementASTNode(values_to_print=['''1
-2
-3'''])),
-        ('print("1", 2, "3")', PrintStatementASTNode(values_to_print=['1', IntegerLiteralASTNode(value=2), '3'])),
-        ('print("1", -2, "3")', PrintStatementASTNode(values_to_print=['1', NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)), '3'])),
-        ('print("1", f(a:=1))', PrintStatementASTNode(values_to_print=[
-            '1',
+3" ''', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('1\n2\n3')])),
+        ('print "if" ', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('if')])),
+        ('print "1" 2 "3"', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('1'), IntegerLiteralASTNode(value=2), StringLiteralASTNode('3')])),
+        ('print "1" -2 "3"', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('1'), NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)), StringLiteralASTNode('3')])),
+        ('print "1" f(a:=1)', PrintStatementASTNode(values_to_print=[
+            StringLiteralASTNode('1'),
             FunctionCallExpressionASTNode(
                 arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=1))],
                 function_name='f')
         ])),
-        ('print(True, False xor True, 3)', PrintStatementASTNode(values_to_print=[
+        ('print True False xor True 3', PrintStatementASTNode(values_to_print=[
             BooleanLiteralASTNode(value=True),
             XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
             IntegerLiteralASTNode(value=3)

@@ -23,7 +23,7 @@ from .misc_utilities import *
 # Base Type Sanity Checking Utilities #
 #######################################
 
-BASE_TYPES = ('Boolean', 'Integer', 'Float', 'NothingType')
+BASE_TYPES = ('Boolean', 'Integer', 'Float', 'String', 'NothingType')
 
 BaseTypeName = operator.getitem(typing_extensions.Literal, BASE_TYPES)
 

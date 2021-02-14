@@ -168,6 +168,9 @@ class ComparisonExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpre
         node_instance: cls = cls(left_arg, right_arg)
         return node_instance
 
+class StringExpressionASTNode(ExpressionASTNode):
+    pass
+
 # Literal Node Generation
 
 @LiteralASTNodeClassBaseTypeTracker.Boolean
@@ -185,6 +188,11 @@ class IntegerLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
 class FloatLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = float
     token_checker = lambda token: isinstance(token, float)
+
+@LiteralASTNodeClassBaseTypeTracker.String
+class StringLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
+    value_type = str
+    token_checker = lambda token: isinstance(token, str)
 
 @LiteralASTNodeClassBaseTypeTracker.NothingType
 class NothingTypeLiteralASTNode(ExpressionASTNode):
@@ -316,6 +324,11 @@ def parse_comparison_expression_pe(_s: str, _loc: int, tokens: pyparsing.ParseRe
         prev_operand =  operand
     return node_instance
 
+# String Expression Node Generation
+
+class StringConcatenationExpressionASTNode(BinaryOperationExpressionASTNode, StringExpressionASTNode):
+    pass
+
 # Function Call Node Generation
 
 class FunctionCallExpressionASTNode(ExpressionASTNode):
@@ -354,6 +367,7 @@ class VectorExpressionASTNode(ExpressionASTNode):
     
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
+            len(self.values) == len(other.values) and \
             all(
                 self_value == other_value
                 for self_value, other_value

@@ -60,6 +60,7 @@ from .ast_node import (
     BooleanLiteralASTNode,
     IntegerLiteralASTNode,
     FloatLiteralASTNode,
+    StringLiteralASTNode,
     NothingTypeLiteralASTNode,
     VariableASTNode,
     NegativeExpressionASTNode,
@@ -78,6 +79,8 @@ from .ast_node import (
     LessThanOrEqualToExpressionASTNode,
     EqualToExpressionASTNode,
     NotEqualToExpressionASTNode,
+    StringExpressionASTNode,
+    StringConcatenationExpressionASTNode, 
     FunctionCallExpressionASTNode,
     VectorExpressionASTNode,
     TensorTypeASTNode,
@@ -93,7 +96,7 @@ from .ast_node import (
     parse_multiplication_or_division_expression_pe,
     parse_addition_or_subtraction_expression_pe,
     parse_comparison_expression_pe,
-    parse_variable_type_declaration_pe
+    parse_variable_type_declaration_pe,
 )
 from .misc_utilities import *
 
@@ -130,9 +133,10 @@ tensor_dimension_declaration_pe = Suppress('<') + Group(Optional(Literal('???') 
 boolean_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Boolean'](Literal('Boolean') + Optional(tensor_dimension_declaration_pe)).setName('boolean tensor type')
 integer_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Integer'](Literal('Integer') + Optional(tensor_dimension_declaration_pe)).setName('integer tensor type')
 float_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['Float'](Literal('Float') + Optional(tensor_dimension_declaration_pe)).setName('float tensor type')
+string_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['String'](Literal('String') + Optional(tensor_dimension_declaration_pe)).setName('string tensor type')
 nothing_tensor_type_pe = TensorTypeParserElementBaseTypeTracker['NothingType'](Literal('NothingType') + Optional(tensor_dimension_declaration_pe)).setName('nothingg tensor type')
 
-tensor_type_pe = (boolean_tensor_type_pe | integer_tensor_type_pe | float_tensor_type_pe | nothing_tensor_type_pe).setParseAction(TensorTypeASTNode.parse_action)
+tensor_type_pe = (boolean_tensor_type_pe | integer_tensor_type_pe | float_tensor_type_pe | string_tensor_type_pe | nothing_tensor_type_pe).setParseAction(TensorTypeASTNode.parse_action)
 
 # Literal Parser Elements
 
@@ -141,6 +145,8 @@ boolean_pe = AtomicLiteralParserElementBaseTypeTracker['Boolean'](oneOf('True Fa
 integer_pe = AtomicLiteralParserElementBaseTypeTracker['Integer'](ppc.integer).setName('unsigned integer').setParseAction(ppc.convertToInteger, IntegerLiteralASTNode.parse_action)
 
 float_pe = AtomicLiteralParserElementBaseTypeTracker['Float'](ppc.real | ppc.sci_real).setName('floating point number').setParseAction(FloatLiteralASTNode.parse_action)
+
+string_pe = AtomicLiteralParserElementBaseTypeTracker['String'](QuotedString('"', escChar='\\', multiline=True)).setName('string').setParseAction(StringLiteralASTNode.parse_action)
 
 nothing_pe = AtomicLiteralParserElementBaseTypeTracker['NothingType'](Suppress('Nothing')).setName('nothing type').setParseAction(NothingTypeLiteralASTNode.parse_action)
 
@@ -173,6 +179,12 @@ not_equal_to_comparator_keyword_pe = Literal('!=').setName('not equal to operati
 
 comparator_pe = greater_than_or_equal_to_comparator_keyword_pe | greater_than_comparator_keyword_pe | less_than_or_equal_to_comparator_keyword_pe | less_than_comparator_keyword_pe | equal_to_comparator_keyword_pe | not_equal_to_comparator_keyword_pe
 
+# String Operation Parser Elements
+
+string_concatenation_operation_pe = Suppress('<<').setName('string concatenation operation')
+
+string_operation_pe = string_concatenation_operation_pe
+
 # Identifier Parser Elements
 
 # identifiers are not variables as identifiers can also be used as function names. Function names are not variables since functions are not first class citizens.
@@ -192,6 +204,7 @@ for_loop_keyword_pe = Suppress('for')
 function_definition_keyword_pe = Suppress('function')
 
 not_reserved_keyword_pe = reduce(operator.add, map(NotAny, map(Suppress, BASE_TYPES))) + (
+    ~string_operation_pe + 
     ~comparator_pe +
     ~nothing_pe +
     ~boolean_operation_pe +
@@ -211,14 +224,18 @@ identifier_pe = (not_reserved_keyword_pe + ppc.identifier)
 
 variable_pe = identifier_pe.copy().setName('identifier').setParseAction(VariableASTNode.parse_action)
 
-atom_pe = (variable_pe | float_pe | integer_pe | boolean_pe | nothing_pe).setName('atom')
+atom_pe = (variable_pe | float_pe | string_pe | integer_pe | boolean_pe | nothing_pe).setName('atom')
 
 # Expression Parser Elements
 
 expression_pe = Forward()
 
+function_variable_binding_pe = Group(variable_pe + Suppress(':=') + expression_pe)
+function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
+function_call_expression_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallExpressionASTNode.parse_action)
+
 arithmetic_expression_pe = infixNotation(
-    float_pe | integer_pe | variable_pe,
+    float_pe | integer_pe | function_call_expression_pe | variable_pe,
     [
         (negative_operation_pe, 1, opAssoc.RIGHT, NegativeExpressionASTNode.parse_action),
         (exponent_operation_pe, 2, opAssoc.RIGHT, ExponentExpressionASTNode.parse_action),
@@ -227,8 +244,13 @@ arithmetic_expression_pe = infixNotation(
     ],
 ).setName('arithmetic expression')
 
+comparison_expression_pe = (
+    arithmetic_expression_pe +
+    OneOrMore(comparator_pe + arithmetic_expression_pe)
+).setName('comparison expression').setParseAction(parse_comparison_expression_pe)
+
 boolean_expression_pe = infixNotation(
-    boolean_pe | variable_pe,
+    boolean_pe | comparison_expression_pe | function_call_expression_pe | variable_pe,
     [
         (not_operation_pe, 1, opAssoc.RIGHT, NotExpressionASTNode.parse_action),
         (and_operation_pe, 2, opAssoc.LEFT, AndExpressionASTNode.parse_action),
@@ -237,17 +259,15 @@ boolean_expression_pe = infixNotation(
     ],
 ).setName('boolean expression')
 
-comparison_expression_pe = (
-    arithmetic_expression_pe +
-    OneOrMore(comparator_pe + arithmetic_expression_pe)
-).setName('comparison expression').setParseAction(parse_comparison_expression_pe)
-
-function_variable_binding_pe = Group(variable_pe + Suppress(':=') + expression_pe)
-function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
-function_call_expression_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallExpressionASTNode.parse_action)
+string_expression_pe = infixNotation(
+    string_pe | function_call_expression_pe | variable_pe,
+    [
+        (string_concatenation_operation_pe, 2, opAssoc.LEFT, StringConcatenationExpressionASTNode.parse_action),
+    ],
+).setName('string expression')
 
 vector_pe = Forward()
-expression_pe <<= (function_call_expression_pe | (comparison_expression_pe ^ arithmetic_expression_pe) | boolean_expression_pe | atom_pe | vector_pe).setName('expression')
+expression_pe <<= ((function_call_expression_pe ^ comparison_expression_pe ^ arithmetic_expression_pe ^ string_expression_pe) | boolean_expression_pe | atom_pe | vector_pe).setName('expression')
 
 # Vector Parser Elements
 
@@ -275,9 +295,9 @@ return_statement_pe = (return_keyword_pe + Optional(delimitedList(expression_pe)
 
 # Print Statement Parser Elements
 
-print_statement_pe = (print_keyword_pe + Suppress('(') + Optional(delimitedList(
-    QuotedString('"', escChar='\\', multiline=True) | expression_pe
-)) + Suppress(')')).setParseAction(PrintStatementASTNode.parse_action).setName('print statetment')
+print_statement_pe = (
+    print_keyword_pe + OneOrMore(string_pe | expression_pe)
+).setParseAction(PrintStatementASTNode.parse_action).setName('print statetment')
 
 # Statement Parser Elements
 
@@ -404,11 +424,13 @@ def sanity_check_concrete_ast_node_subclass_method_annotations() -> None:
             return_annotation = inspect.signature(parse_action_method).return_annotation
             if issubclass(ast_node_class, ComparisonExpressionASTNode):
                 assert return_annotation == 'ComparisonExpressionASTNode'
-            elif issubclass(ast_node_class, (ArithmeticExpressionASTNode, BooleanExpressionASTNode)):
+            elif issubclass(ast_node_class, (ArithmeticExpressionASTNode, BooleanExpressionASTNode, StringExpressionASTNode)):
                 if issubclass(ast_node_class, UnaryOperationExpressionASTNode):
                     assert return_annotation == 'UnaryOperationExpressionASTNode'
                 elif issubclass(ast_node_class, BinaryOperationExpressionASTNode):
                     assert return_annotation == 'BinaryOperationExpressionASTNode'
+                else:
+                    assert jissubclass(ast_node_class, (UnaryOperationExpressionASTNode, BinaryOperationExpressionASTNode))
             else:
                 assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
     return
