@@ -136,6 +136,9 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
         if not os.path.isdir(TIBS_COMPILER_BUILD_DIR):
             os.makedirs(TIBS_COMPILER_BUILD_DIR)
         
+        PATH = self.__class__.get_path_environment_variable()
+        LD_LIBRARY_PATH = self.__class__.get_ld_library_path_environment_variable()
+            
         run_shell_commands(
             TIBS_COMPILER_BUILD_DIR,
             'cmake -G Ninja .. -DMLIR_DIR=$PREFIX/lib/cmake/mlir -DLLVM_EXTERNAL_LIT=$BUILD_DIR/bin/llvm-lit',
