@@ -54,7 +54,6 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
     '''
     Example Usage:
         python3 setup.py compile_tibs_compiler
-        python3 setup.py compile_tibs_compiler --compile-clean=1
         python3 setup.py compile_tibs_compiler --compile-clean=true
     '''
     
