@@ -130,6 +130,11 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
 
         return
         
+class BuildPyCommand(setuptools.command.build_py.build_py):
+
+  def run(self):
+    self.run_command('pylint')
+    setuptools.command.build_py.build_py.run(self)
 
 setup( # TODO add more here
     name="TIBS",
