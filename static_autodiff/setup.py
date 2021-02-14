@@ -63,7 +63,6 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
 
     def finalize_options(self) -> None:
         self.compile_clean = False if self.compile_clean.lower().strip() == 'false' else True
-        print(f"self.compile_clean {repr(self.compile_clean)}")
         return
 
     def run(self) -> None:
