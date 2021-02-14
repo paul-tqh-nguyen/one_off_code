@@ -137,10 +137,6 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
         return
         
 class BuildPyCommand(setuptools.command.build_py.build_py):
-
-    user_options = [
-        ('compile-clean=', None, 'Compile from a clean state.'),
-    ]
     
     def run(self) -> None:
         self.run_command('compile_tibs_compiler')
