@@ -75,7 +75,7 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
         return
     
     def clone_local_llvm(self) -> None:
-        if self.compile_clean:
+        if self.compile_clean and os.path.isdir(LLVM_PROJECT_REPO_LOCATION)
             shutil.rmtree(LLVM_PROJECT_REPO_LOCATION)
         if not os.path.isdir(LLVM_PROJECT_REPO_LOCATION):
             self.announce(f'Cloning local LLVM repo into {LLVM_PROJECT_REPO_LOCATION}.', level=distutils.log.INFO)
