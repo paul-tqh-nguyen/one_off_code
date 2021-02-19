@@ -19,14 +19,46 @@
 #include <boost/type_index.hpp>
 #include <tuple>
 
-void generateModule(mlir::MLIRContext &context, mlir::ModuleOp &theModule) {
+// TODO remove unneeded libraries above
+
+/*******************/
+/* Python Bindings */
+/*******************/
+
+// TODO rename this section ^^
+
+class ModuleGenerator {
+
+public:
+
+  // TODO make these private
+  mlir::MLIRContext context;
+  mlir::OpBuilder builder;
+  mlir::ModuleOp theModule;
   
-  context.getOrLoadDialect<mlir::tibs::TibsDialect>();
-  mlir::OpBuilder builder = mlir::OpBuilder(&context);
-  
-  // Create an MLIR module
-  theModule = mlir::ModuleOp::create(builder.getUnknownLoc());
-  
+  ModuleGenerator()
+    :
+    context(),
+    builder(&context),
+    theModule(mlir::ModuleOp::create(builder.getUnknownLoc()))
+  {
+    context.getOrLoadDialect<mlir::tibs::TibsDialect>();
+    return;
+  }
+
+};
+
+/***********************/
+/* Misc. Functionality */
+/***********************/
+
+// TODO get rid of this stuff
+
+void generateModule(ModuleGenerator &moduleGenerator) {
+
+  mlir::OpBuilder &builder = moduleGenerator.builder;
+  mlir::ModuleOp &theModule = moduleGenerator.theModule;
+
   // Create a location
   std::string fileName = "/tmp/non_existant_file.fake";
   int lineNumber = 12;
@@ -101,21 +133,20 @@ void compileAndExecuteModule(mlir::ModuleOp module) {
 void runAllPasses() {
   
   std::cout << "===== runAllPasses start =====" << "\n\n" << "\n\n";
-  
-  mlir::MLIRContext context;
-  mlir::ModuleOp theModule;
-  generateModule(context, theModule);
+
+  ModuleGenerator moduleGenerator;
+  generateModule(moduleGenerator);
 
   // Original MLIR
   std::cout << "Original MLIR:" << "\n";
   std::cout << "\n";
-  theModule->dump();
+  moduleGenerator.theModule->dump();
 
   // Pass Application Utilities
-  mlir::PassManager pm(&context);
+  mlir::PassManager pm(&moduleGenerator.context);
   std::function<void()> runPassManager =
     [&]() {
-      mlir::LogicalResult pmRunStatus = pm.run(theModule);
+      mlir::LogicalResult pmRunStatus = pm.run(moduleGenerator.theModule);
       if (mlir::failed(pmRunStatus)) {
 	std::cout << "Pass manager run failed." << "\n";
       }
@@ -136,14 +167,14 @@ void runAllPasses() {
   std::cout << "\n";
   std::cout << "Final MLIR:" << "\n";
   std::cout << "\n";
-  theModule->dump();
+  moduleGenerator.theModule->dump();
   std::cout << "\n";
   
   std::cout << "===== runAllPasses end =====" << "\n\n" << "\n\n";
   
   std::cout << "===== compile LLVM start =====" << "\n\n" << "\n\n";
   
-  compileAndExecuteModule(theModule);
+  compileAndExecuteModule(moduleGenerator.theModule);
   
   std::cout << "===== compile LLVM end =====" << "\n\n" << "\n\n";
   

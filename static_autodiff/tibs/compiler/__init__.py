@@ -28,9 +28,9 @@ assert os.path.isfile(LIBTIBS_SO_LOCATION), f'The TIBS compiler has not yet been
 
 LIBTIBS_SO = ctypes.CDLL(LIBTIBS_SO_LOCATION)
 
-#################################
-# C++ Method Type Declarations  #
-#################################
+##################################
+# C++ Functionality Declarations #
+##################################
 
 # TODO we must declare types for all methods
 LIBTIBS_SO.runAllPasses.restype = None

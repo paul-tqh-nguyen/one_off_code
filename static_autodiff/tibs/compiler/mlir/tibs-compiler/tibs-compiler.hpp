@@ -1,2 +1,4 @@
 
-extern "C" void runAllPasses();
+extern "C" {
+  void runAllPasses();
+}
