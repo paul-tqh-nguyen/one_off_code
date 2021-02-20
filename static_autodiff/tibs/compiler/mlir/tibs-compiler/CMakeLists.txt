@@ -1,5 +1,5 @@
 
-add_library(tibs-compiler SHARED tibs-compiler.hpp tibs-compiler.cpp)
+add_library(tibs-compiler SHARED tibs-compiler.cpp)
 
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS) # makes it so we include llvm-project/mlir/lib/Dialect
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS) # makes it so we include llvm-project/mlir/lib/Conversion

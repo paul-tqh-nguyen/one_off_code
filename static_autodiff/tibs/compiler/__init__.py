@@ -8,8 +8,13 @@
 # Imports #
 ###########
 
-import os
 import ctypes
+import io
+import os
+import sys
+import tempfile
+from contextlib import contextmanager
+from typing import Generator, Callable, Optional
 
 from ..misc_utilities import *
 
@@ -28,9 +33,46 @@ assert os.path.isfile(LIBTIBS_SO_LOCATION), f'The TIBS compiler has not yet been
 
 LIBTIBS_SO = ctypes.CDLL(LIBTIBS_SO_LOCATION)
 
-##################################
-# C++ Functionality Declarations #
-##################################
+##########################
+# Module Generator Class #
+##########################
+
+LIBTIBS_SO.newModuleGenerator.argtypes = []
+LIBTIBS_SO.newModuleGenerator.restype = ctypes.c_void_p
+
+LIBTIBS_SO.dumpModule.argtypes = [ctypes.c_void_p]
+LIBTIBS_SO.dumpModule.restype = None
+
+# TODO get rid of this
+LIBTIBS_SO.generateModule.argtypes = [ctypes.c_void_p]
+LIBTIBS_SO.generateModule.restype = None
+
+class ModuleGenerator:
+
+    def __init__(self) -> None:
+        self.value = LIBTIBS_SO.newModuleGenerator()
+        return
+
+    @trace
+    def dump_module(self) -> str:
+        result_container = []
+        print(f"1 {repr(1)}")
+        LIBTIBS_SO.generateModule(self.value) # TODO remove this
+        print(f"2 {repr(2)}")
+        LIBTIBS_SO.dumpModule(self.value) # TODO remove this
+        print(f"3 {repr(3)}")
+        module_string = only_one(result_container)
+        return module_string
+
+    # @trace
+    # def dump_module(self) -> None: # TODO remove this
+    #     LIBTIBS_SO.func_a.argtypes = []
+    #     LIBTIBS_SO.func_a.restype = ctypes.c_void_p
+    #     LIBTIBS_SO.func_b.argtypes = [ctypes.c_void_p]
+    #     LIBTIBS_SO.func_b.restype = None
+    #     ctx = LIBTIBS_SO.func_a()
+    #     LIBTIBS_SO.func_b(ctx)
+    #     return 'dummy'
 
 # TODO we must declare types for all methods
 LIBTIBS_SO.runAllPasses.restype = None

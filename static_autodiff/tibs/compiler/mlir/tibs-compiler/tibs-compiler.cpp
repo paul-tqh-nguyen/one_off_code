@@ -21,13 +21,26 @@
 
 /*********************/
 /* C++ Functionality */
-/*******((************/
+/*********************/
 
 // TODO rename this section ^^
 
 class ModuleGenerator {
 
 private:
+  
+  mlir::MLIRContext context;
+  mlir::OpBuilder builder;
+  mlir::ModuleOp theModule;
+  mlir::PassManager pm;
+
+  mlir::OpBuilder createTibsBuilder(mlir::MLIRContext *ctx) {
+    // TODO do we need this?
+    ctx->getOrLoadDialect<mlir::tibs::TibsDialect>();
+    mlir::OpBuilder builder(ctx);
+    return builder;
+  }
+  
   void intializePasses() {
     // canonicalization passes
     pm.addPass(mlir::createCanonicalizerPass());
@@ -42,19 +55,17 @@ private:
   
 public:
 
-  // TODO make these private
-  mlir::MLIRContext context;
-  mlir::OpBuilder builder;
-  mlir::ModuleOp theModule;
-  mlir::PassManager pm;
-  
   ModuleGenerator()
     :
     context(),
-    builder(&context),
+    // builder(&context),
+    builder(createTibsBuilder(&context)),
     theModule(mlir::ModuleOp::create(builder.getUnknownLoc())),
     pm(&context)
   {
+    // python3 setup.py build ; python3 -c "import tibs ; tibs.compiler.ModuleGenerator().dump_module()"
+    // python3 setup.py build ; python3 -c "import tibs ; tibs.compiler.LIBTIBS_SO.runAllPasses()"
+    // python3 setup.py build ; python3 -c "import tibs ; tibs.compiler.LIBTIBS_SO.runAllPasses() ; print('no seg fault yet') ; tibs.compiler.ModuleGenerator().dump_module()"
     context.getOrLoadDialect<mlir::tibs::TibsDialect>();
     intializePasses();
     return;
@@ -73,7 +84,7 @@ public:
     return;
   }
 
-  std::unique_ptr<mlir::ExecutionEngine>& compileModule() {
+  void compileAndExecuteModule() {
       
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
@@ -87,13 +98,6 @@ public:
     llvm::Expected<std::unique_ptr<mlir::ExecutionEngine>> maybeEngine = mlir::ExecutionEngine::create(theModule, llvmModuleBuilder, optPipeline);
     assert(maybeEngine && "failed to construct an execution engine");
     std::unique_ptr<mlir::ExecutionEngine> &engine = maybeEngine.get();
-  
-    return engine;
-  }
-
-  void compileAndExecuteModule() {
-
-    std::unique_ptr<mlir::ExecutionEngine> &engine = compileModule();
     
     llvm::Error invocationResult = engine->invoke("tibsMLIRFunc");
     if (invocationResult) {
@@ -105,16 +109,18 @@ public:
   }
   
   void generateModule() { // TODO get rid of this
-    
+        
     // Create a location
     std::string fileName = "/tmp/non_existant_file.fake";
     int lineNumber = 12;
     int columnNumber = 34;
+    std::cout << " generateModule 1 ======================================================== \n"; // TODO Remove this
     mlir::Location location = builder.getFileLineColLoc(builder.getIdentifier(fileName), lineNumber, columnNumber);
+    std::cout << " generateModule 2 ======================================================== \n"; // TODO Remove this
     std::cout << "location.dump(): \n";
     location.dump();
     std::cout << "\n";
-
+    
     { // Main Function
     
       // Create empty function
@@ -125,7 +131,7 @@ public:
       mlir::FunctionType func_type = builder.getFunctionType(arg_types, llvm::None);
       llvm::StringRef funcName("tibsMLIRFunc");
       mlir::FuncOp funcOp = mlir::FuncOp::create(location, funcName, func_type);
-
+      
       // Add function body
       mlir::Block &entryBlock = *funcOp.addEntryBlock();
       builder.setInsertionPointToStart(&entryBlock);
@@ -152,13 +158,14 @@ public:
 
     return;
   }
+
 };
 
 /***********************/
 /* Python Entry Points */
 /***********************/
 
-extern "C" void runAllPasses() {
+extern "C" void runAllPasses() { // TODO remove this
   
   std::cout << "===== runAllPasses start =====" << "\n\n" << "\n\n";
 
@@ -188,3 +195,31 @@ extern "C" void runAllPasses() {
   
   return;
 }
+
+extern "C" void* newModuleGenerator() {
+  ModuleGenerator* modGen = new ModuleGenerator();
+  void* result_pointer = static_cast<void*>(modGen);
+  return result_pointer;
+}
+
+extern "C" void dumpModule(void* modGen) {
+  static_cast<ModuleGenerator*>(modGen)->dumpModule();
+  return;
+}
+
+extern "C" void generateModule(void* unkown_type_pointer) { // TODO get rid of this
+  ModuleGenerator* modGen = static_cast<ModuleGenerator*>(unkown_type_pointer);
+  modGen->generateModule();
+  return;
+}
+
+extern "C" mlir::MLIRContext* func_a() { // TODO get rid of this
+  mlir::MLIRContext *context = new mlir::MLIRContext();
+  return context;
+}
+
+extern "C" void func_b(mlir::MLIRContext* ctx) { // TODO get rid of this
+  ctx->getOrLoadDialect<mlir::tibs::TibsDialect>();
+  return;
+}
+
