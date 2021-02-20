@@ -64,16 +64,6 @@ class ModuleGenerator:
         module_string = only_one(result_container)
         return module_string
 
-    # @trace
-    # def dump_module(self) -> None: # TODO remove this
-    #     LIBTIBS_SO.func_a.argtypes = []
-    #     LIBTIBS_SO.func_a.restype = ctypes.c_void_p
-    #     LIBTIBS_SO.func_b.argtypes = [ctypes.c_void_p]
-    #     LIBTIBS_SO.func_b.restype = None
-    #     ctx = LIBTIBS_SO.func_a()
-    #     LIBTIBS_SO.func_b(ctx)
-    #     return 'dummy'
-
 # TODO we must declare types for all methods
 LIBTIBS_SO.runAllPasses.restype = None
 LIBTIBS_SO.runAllPasses.argtypes = []

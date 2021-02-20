@@ -33,13 +33,6 @@ private:
   mlir::OpBuilder builder;
   mlir::ModuleOp theModule;
   mlir::PassManager pm;
-
-  mlir::OpBuilder createTibsBuilder(mlir::MLIRContext *ctx) {
-    // TODO do we need this?
-    ctx->getOrLoadDialect<mlir::tibs::TibsDialect>();
-    mlir::OpBuilder builder(ctx);
-    return builder;
-  }
   
   void intializePasses() {
     // canonicalization passes
@@ -58,8 +51,7 @@ public:
   ModuleGenerator()
     :
     context(),
-    // builder(&context),
-    builder(createTibsBuilder(&context)),
+    builder(&context),
     theModule(mlir::ModuleOp::create(builder.getUnknownLoc())),
     pm(&context)
   {
@@ -212,14 +204,3 @@ extern "C" void generateModule(void* unkown_type_pointer) { // TODO get rid of t
   modGen->generateModule();
   return;
 }
-
-extern "C" mlir::MLIRContext* func_a() { // TODO get rid of this
-  mlir::MLIRContext *context = new mlir::MLIRContext();
-  return context;
-}
-
-extern "C" void func_b(mlir::MLIRContext* ctx) { // TODO get rid of this
-  ctx->getOrLoadDialect<mlir::tibs::TibsDialect>();
-  return;
-}
-
