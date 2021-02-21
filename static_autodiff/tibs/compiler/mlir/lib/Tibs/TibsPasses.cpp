@@ -324,7 +324,7 @@ namespace {
 
 void TibsToLLVMLoweringPass::runOnOperation() {
   
-  std::cout << "////TibsToLLVMLoweringPass::runOnOperation" << std::endl;
+  // std::cout << "////TibsToLLVMLoweringPass::runOnOperation" << std::endl;
   
   LLVMConversionTarget target(getContext());
   target.addLegalOp<ModuleOp, ModuleTerminatorOp>(); // TODO add explicit namespaces
@@ -352,7 +352,7 @@ void TibsToLLVMLoweringPass::runOnOperation() {
   // std::cout << "BEFORE module->dump()" << std::endl;
   // module->dump();
   
-  std::cout << "////failed(fullConversionStatus): " << failed(fullConversionStatus) << "\n";
+  // std::cout << "////failed(fullConversionStatus): " << failed(fullConversionStatus) << "\n";
   
   if (failed(fullConversionStatus)) {
     signalPassFailure();

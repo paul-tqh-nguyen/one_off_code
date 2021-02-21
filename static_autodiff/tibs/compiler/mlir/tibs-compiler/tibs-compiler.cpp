@@ -55,9 +55,9 @@ public:
     theModule(mlir::ModuleOp::create(builder.getUnknownLoc())),
     pm(&context)
   {
+    // TODO remove these
     // python3 setup.py build ; python3 -c "import tibs ; tibs.compiler.ModuleGenerator().dump_module()"
     // python3 setup.py build ; python3 -c "import tibs ; tibs.compiler.LIBTIBS_SO.runAllPasses()"
-    // python3 setup.py build ; python3 -c "import tibs ; tibs.compiler.LIBTIBS_SO.runAllPasses() ; print('no seg fault yet') ; tibs.compiler.ModuleGenerator().dump_module()"
     context.getOrLoadDialect<mlir::tibs::TibsDialect>();
     intializePasses();
     return;
@@ -68,12 +68,10 @@ public:
     return;
   }
 
-  void runPassManager () {
+  bool runPassManager () {
     mlir::LogicalResult pmRunStatus = pm.run(theModule);
-    if (mlir::failed(pmRunStatus)) {
-      std::cout << "Pass manager run failed." << std::endl;
-    }
-    return;
+    bool successStatus = not mlir::failed(pmRunStatus);
+    return successStatus;
   }
 
   void compileAndExecuteModule() {
@@ -96,7 +94,7 @@ public:
       std::cout << "Compilation failed" << std::endl;
       return;
     }
-  
+    
     return;
   }
   
@@ -106,12 +104,7 @@ public:
     std::string fileName = "/tmp/non_existant_file.fake";
     int lineNumber = 12;
     int columnNumber = 34;
-    std::cout << " generateModule 1 ======================================================== \n"; // TODO Remove this
     mlir::Location location = builder.getFileLineColLoc(builder.getIdentifier(fileName), lineNumber, columnNumber);
-    std::cout << " generateModule 2 ======================================================== \n"; // TODO Remove this
-    std::cout << "location.dump(): \n";
-    location.dump();
-    std::cout << "\n";
     
     { // Main Function
     
@@ -200,7 +193,10 @@ extern "C" void dumpModule(void* modGen) {
 }
 
 extern "C" void generateModule(void* unkown_type_pointer) { // TODO get rid of this
-  ModuleGenerator* modGen = static_cast<ModuleGenerator*>(unkown_type_pointer);
-  modGen->generateModule();
+  static_cast<ModuleGenerator*>(unkown_type_pointer)->generateModule();
   return;
+}
+
+extern "C" bool runPassManager(void* modGen) {
+  return static_cast<ModuleGenerator*>(modGen)->runPassManager();
 }

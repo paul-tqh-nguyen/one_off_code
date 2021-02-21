@@ -15,7 +15,7 @@ import sys
 import tempfile
 from functools import lru_cache
 from contextlib import contextmanager
-from typing import Tuple, Union, Generator, Callable, Optional
+from typing import Any, Tuple, Union, Generator, Callable, Optional
 
 from ..misc_utilities import *
 
@@ -39,7 +39,6 @@ assert os.path.isfile(LIBTIBS_SO_LOCATION), f'The TIBS compiler has not yet been
 BOGUS_TOKEN = object()
 
 class ASSERTMetaClass(type):
-
     
     @staticmethod
     @lru_cache(maxsize=1)
@@ -72,7 +71,18 @@ class ASSERT(metaclass=ASSERTMetaClass):
 # ctypes Utilities #
 ####################
 
+NoneType = type(None)
+
 class SafeSharedObjectCallable:
+
+    @staticmethod
+    def ctypes_compatible(instance: Any, data_type: '_ctypes._CData') -> bool:
+        expected_class = {
+            ctypes.c_void_p: int,
+            ctypes.c_bool: bool,
+        }.get(data_type, data_type)
+        result = isinstance(instance, expected_class)
+        return result
 
     def __init__(self, so_callable: '_ctypes.PyCFuncPtr') -> None:
         self.so_callable = so_callable
@@ -81,14 +91,12 @@ class SafeSharedObjectCallable:
         return
     
     def __setitem__(self, item: Union[Tuple['_ctypes._CData', ...], '_ctypes._CData'], return_type: '_ctypes._CData') -> None:
-        ASSERT.RuntimeError(self.input_types is BOGUS_TOKEN, f'Input types of {self.input_types} already declared for {self.so_callable.__name__}')
-        ASSERT.RuntimeError(self.return_type is BOGUS_TOKEN, f'Return type of {self.return_type} already declared for {self.so_callable.__name__}')
+        ASSERT.RuntimeError(self.input_types is BOGUS_TOKEN and self.so_callable.argtypes is None, f'Input types of {self.input_types} already declared for {self.so_callable.__name__}')
+        ASSERT.RuntimeError(self.return_type is BOGUS_TOKEN and self.so_callable.restype is ctypes.c_int, f'Return type of {self.return_type} already declared for {self.so_callable.__name__}')
         self.input_types = item if isinstance(item, tuple) else (item,)
         self.return_type = return_type
         self.so_callable.argtypes = self.input_types
         self.so_callable.restype = self.return_type
-        # TODO make assertions about the types and values of self.so_callable.argtypes and self.so_callable.restype
-        # TODO get rid of self.input_types and self.return_type
         return
     
     def __call__(self, *args) -> '_ctypes._CData':
@@ -96,9 +104,10 @@ class SafeSharedObjectCallable:
         ASSERT.RuntimeError(self.return_type is not BOGUS_TOKEN, f'Return type not declared for {self.so_callable.__name__}')
         ASSERT.ValueError(len(args) == len(self.input_types), f'{self.so_callable.__name__} expects {len(self.input_types)} inputs but got {len(args)}.')
         for arg, input_type in zip(args, self.input_types):
-            ASSERT.TypeError(isinstance(arg, input_type), f'{arg} is not an instance of {input_type}.')
+            ASSERT.TypeError(self.ctypes_compatible(arg, input_type), f'{arg} is not an instance of {input_type}.')
         result = self.so_callable(*args)
-        ASSERT.TypeError(self.return_type is None or isinstance(result, self.return_type), f'{self.so_callable.__name__} returned {result} (an instance of {type(result)}) when {self.return_type} was expected.')
+        expected_result_type = NoneType if self.return_type is None else self.return_type
+        ASSERT.TypeError(self.ctypes_compatible(result, expected_result_type), f'{self.so_callable.__name__} returned {result} (an instance of {type(result)}) when {self.return_type} was expected.')
         return result
 
 class SafeDLL():
@@ -122,10 +131,11 @@ NO_INPUTS = ()
 
 LIBTIBS_SO = SafeDLL(LIBTIBS_SO_LOCATION)
 
-LIBTIBS_SO.newModuleGenerator[NO_INPUTS] = ctypes.c_void_p # TODO remove this
-LIBTIBS_SO.generateModule[NO_INPUTS] = None
+LIBTIBS_SO.newModuleGenerator[NO_INPUTS] = ctypes.c_void_p
+LIBTIBS_SO.generateModule[ctypes.c_void_p] = None # TODO remove this
 LIBTIBS_SO.runAllPasses[NO_INPUTS] = None # TODO remove this
 LIBTIBS_SO.dumpModule[ctypes.c_void_p] = None
+LIBTIBS_SO.runPassManager[ctypes.c_void_p] = ctypes.c_bool
 
 ##########################
 # Module Generator Class #
@@ -136,15 +146,21 @@ class ModuleGenerator:
     c = LIBTIBS_SO
 
     def __init__(self) -> None:
-        self.module_generator = self.c.newModuleGenerator() # TODO add type declaration
+        self.module_generator_pointer: int = self.c.newModuleGenerator()
         return
 
-    @trace
     def dump_module(self) -> str:
-        self.c.generateModule(self.value) # TODO remove this
-        self.c.dumpModule(self.value)
-        module_string = 'DUMMY' # TODO unstub this
+        results = []
+        with redirected_standard_streams(lambda *args: results.append(args)):
+            self.c.dumpModule(self.module_generator_pointer)
+        stdout_string, stderr_string = only_one(results)
+        assert stdout_string == '', f'Expected stdout stream to be empty but got {repr(stdout_string)}.'
+        module_string = stderr_string
         return module_string
+
+    def run_pass_manager(self) -> bool:
+        success_status = self.c.runPassManager(self.module_generator_pointer)
+        return success_status
 
 ############
 # Compiler #
