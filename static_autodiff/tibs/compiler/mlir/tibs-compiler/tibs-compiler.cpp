@@ -35,7 +35,7 @@ private:
   mlir::PassManager pm;
   
   void intializePasses() {
-    // canonicalization passes
+    // Canonicalization Passes
     pm.addPass(mlir::createCanonicalizerPass());
     // Lower to Affine Dialect
     mlir::OpPassManager &optPM = pm.nest<mlir::FuncOp>();
