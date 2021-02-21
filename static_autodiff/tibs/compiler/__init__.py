@@ -132,23 +132,29 @@ NO_INPUTS = ()
 LIBTIBS_SO = SafeDLL(LIBTIBS_SO_LOCATION)
 
 LIBTIBS_SO.newModuleGenerator[NO_INPUTS] = ctypes.c_void_p
-LIBTIBS_SO.generateModule[ctypes.c_void_p] = None # TODO remove this
-LIBTIBS_SO.runAllPasses[NO_INPUTS] = None # TODO remove this
+LIBTIBS_SO.deleteModuleGenerator[ctypes.c_void_p] = None
 LIBTIBS_SO.dumpModule[ctypes.c_void_p] = None
 LIBTIBS_SO.runPassManager[ctypes.c_void_p] = ctypes.c_bool
+LIBTIBS_SO.compileAndExecuteModule[ctypes.c_void_p] = ctypes.c_bool
+LIBTIBS_SO.generateModule[ctypes.c_void_p] = None # TODO remove this
+LIBTIBS_SO.runAllPasses[NO_INPUTS] = None # TODO remove this
 
 ##########################
 # Module Generator Class #
 ##########################
 
 class ModuleGenerator:
-
+    
     c = LIBTIBS_SO
-
+    
     def __init__(self) -> None:
         self.module_generator_pointer: int = self.c.newModuleGenerator()
         return
-
+    
+    def __del__(self) -> None:
+        self.c.deleteModuleGenerator(self.module_generator_pointer)
+        return
+    
     def dump_module(self) -> str:
         results = []
         with redirected_standard_streams(lambda *args: results.append(args)):
@@ -157,16 +163,21 @@ class ModuleGenerator:
         assert stdout_string == '', f'Expected stdout stream to be empty but got {repr(stdout_string)}.'
         module_string = stderr_string
         return module_string
-
+    
     def run_pass_manager(self) -> bool:
         success_status = self.c.runPassManager(self.module_generator_pointer)
         return success_status
 
+    def compile_and_execute_module(self) -> bool:
+        success_status = self.c.compileAndExecuteModule(self.module_generator_pointer)
+        return success_status
+    
 ############
 # Compiler #
 ############
 
 def compile():
+    # TODO update this
     result = 'DUMMY' # result = LIBTIBS_SO.runAllPasses()
     return result
 

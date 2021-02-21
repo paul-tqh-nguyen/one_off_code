@@ -56,14 +56,13 @@ public:
     pm(&context)
   {
     // TODO remove these
-    // python3 setup.py build ; python3 -c "import tibs ; tibs.compiler.ModuleGenerator().dump_module()"
-    // python3 setup.py build ; python3 -c "import tibs ; tibs.compiler.LIBTIBS_SO.runAllPasses()"
+    // python3 setup.py build ; python3 -c "import tibs ; print(tibs.compiler.ModuleGenerator().dump_module())"
     context.getOrLoadDialect<mlir::tibs::TibsDialect>();
     intializePasses();
     return;
   }
 
-  void dumpModule() {
+  void dumpModule() const {
     theModule->dump();
     return;
   }
@@ -74,13 +73,13 @@ public:
     return successStatus;
   }
 
-  void compileAndExecuteModule() {
+  bool compileAndExecuteModule() const {
       
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
 
-    unsigned optLevel = 3;
-    unsigned sizeLevel = 0;
+    static const unsigned optLevel = 3;
+    static const unsigned sizeLevel = 0;
     llvm::TargetMachine* targetMachine = nullptr;
     std::function<llvm::Error(llvm::Module *)> optPipeline = mlir::makeOptimizingTransformer(optLevel, sizeLevel, targetMachine);
 
@@ -90,12 +89,9 @@ public:
     std::unique_ptr<mlir::ExecutionEngine> &engine = maybeEngine.get();
     
     llvm::Error invocationResult = engine->invoke("tibsMLIRFunc");
-    if (invocationResult) {
-      std::cout << "Compilation failed" << std::endl;
-      return;
-    }
-    
-    return;
+    bool successStatus = not static_cast<bool>(invocationResult);
+
+    return successStatus;
   }
   
   void generateModule() { // TODO get rid of this
@@ -181,10 +177,23 @@ extern "C" void runAllPasses() { // TODO remove this
   return;
 }
 
+extern "C" void generateModule(void* unkown_type_pointer) { // TODO get rid of this
+  static_cast<ModuleGenerator*>(unkown_type_pointer)->generateModule();
+  return;
+}
+
+///////////////////////////////////////////////////////////////////////////// TODO get rid of the above
+
 extern "C" void* newModuleGenerator() {
   ModuleGenerator* modGen = new ModuleGenerator();
   void* result_pointer = static_cast<void*>(modGen);
   return result_pointer;
+}
+
+extern "C" void deleteModuleGenerator(void* unkown_type_pointer) {
+  ModuleGenerator* modGen = static_cast<ModuleGenerator*>(unkown_type_pointer);
+  delete modGen;
+  return;
 }
 
 extern "C" void dumpModule(void* modGen) {
@@ -192,11 +201,10 @@ extern "C" void dumpModule(void* modGen) {
   return;
 }
 
-extern "C" void generateModule(void* unkown_type_pointer) { // TODO get rid of this
-  static_cast<ModuleGenerator*>(unkown_type_pointer)->generateModule();
-  return;
-}
-
 extern "C" bool runPassManager(void* modGen) {
   return static_cast<ModuleGenerator*>(modGen)->runPassManager();
+}
+
+extern "C" bool compileAndExecuteModule(void* modGen) {
+  return static_cast<ModuleGenerator*>(modGen)->compileAndExecuteModule();
 }
