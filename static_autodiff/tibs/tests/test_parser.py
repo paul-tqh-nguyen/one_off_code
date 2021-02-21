@@ -245,7 +245,6 @@ def test_parser_incompatible_expression_use():
             ):
                 input_string = f'x = {un_op1} {arg1} {bin_op} {un_op2} {arg2}'
             with pytest.raises(parser.ParseError, match='Could not parse the following:'):
-                print(f"input_string {repr(input_string)}")
                 parser.parseSourceCode(input_string)
 
 def test_parser_nothing_literal():
