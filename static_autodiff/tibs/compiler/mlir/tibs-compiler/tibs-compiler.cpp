@@ -116,10 +116,6 @@ extern "C" void* newLocation(void* modGenVoidPointer, const char* fileNameCharat
   std::string fileName(fileNameCharaters);
   mlir::Location location = builder.getFileLineColLoc(builder.getIdentifier(fileName), lineNumber, columnNumber);
   mlir::Location* copiedLocation = new mlir::Location(location);
-  std::cout << std::endl << std::endl << std::endl << "newLocation" << std::endl; // TODO remove this
-  std::cout << "(copiedLocation->getContext()): " << (copiedLocation->getContext()) << std::endl; // TODO remove this
-  std::cout << "&(modGenPointer->context): " << &(modGenPointer->context) << std::endl; // TODO remove this
-  std::cout << "copiedLocation: " << copiedLocation << std::endl; // TODO remove this
   void* resultPointer = static_cast<void*>(copiedLocation);
   return resultPointer;
 }
@@ -130,19 +126,13 @@ extern "C" void deleteLocation(void* unkownTypePointer) {
   return;
 }
 
-extern "C" void generateModule(void* modGenVoidPointer, void* locationVoidPointer) { // TODO get rid of this
+extern "C" void generateModule(void* modGenVoidPointer, void* locationVoidPointer) {
+  // TODO get rid of this function
   ModuleGenerator* modGen = static_cast<ModuleGenerator*>(modGenVoidPointer);
   mlir::OpBuilder &builder = modGen->builder;
   mlir::ModuleOp &theModule = modGen->theModule;
   
-  // Create a location
-  // const char* fileNameCharaters = "/tmp/non_existant_file.fake";
-  // int lineNumber = 12;
-  // int columnNumber = 34;
-  // mlir::Location *location = static_cast<mlir::Location*>(newLocation(modGenVoidPointer, fileNameCharaters, lineNumber, columnNumber));
   mlir::Location *location = static_cast<mlir::Location*>(locationVoidPointer);
-  std::cout << "location: " << location << std::endl;
-  std::cout << "locationVoidPointer: " << locationVoidPointer << std::endl; 
   
   { // Main Function
 
@@ -153,9 +143,7 @@ extern "C" void generateModule(void* modGenVoidPointer, void* locationVoidPointe
     llvm::SmallVector<mlir::Type, 4> arg_types(numberOfArgs, inputTensorType); // TODO Figure out what the 4 denotes
     mlir::FunctionType func_type = builder.getFunctionType(arg_types, llvm::None);
     llvm::StringRef funcName("tibsMLIRFunc");
-    std::cout << "generateModule 3" << std::endl;
     mlir::FuncOp funcOp = mlir::FuncOp::create(*location, funcName, func_type);
-    std::cout << "generateModule 4" << std::endl;
 
     // Add function body
     mlir::Block &entryBlock = *funcOp.addEntryBlock();
