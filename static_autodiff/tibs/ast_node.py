@@ -27,12 +27,6 @@ from .misc_utilities import *
 # TODO make sure imports are used
 # TODO make sure these imports are ordered in some way
 
-###########
-# Globals #
-###########
-
-BOGUS_TOKEN = object()
-
 #####################
 # AST Functionality #
 #####################

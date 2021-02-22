@@ -436,7 +436,7 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
 	    (progn
 	      (dotimes (space-index index-of-first-non-white-space-character)
 	  	(insert " "))
-	      (insert (format "std::cout << \"%s: \" << %s << \"\\n\";" no-indentation-region-line no-indentation-region-line))))
+	      (insert (format "std::cout << \"%s: \" << %s << std::endl;" no-indentation-region-line no-indentation-region-line))))
 	  (unless (eq current-line-index (1- number-of-region-lines))
 	    (insert "\n")
 	    (setq current-line-index (1+ current-line-index))))))))

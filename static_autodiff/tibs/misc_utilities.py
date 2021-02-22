@@ -1,6 +1,7 @@
 
 # cat misc_utilities.py  | grep "^def " | cut -d"(" -f1 | cut -d" " -f2 | grep -v "^_"
 __all__ = [
+    'BOGUS_TOKEN',
     'safe_cuda_memory',
     'warnings_suppressed',
     'exceptions_suppressed',
@@ -53,6 +54,8 @@ __all__ = [
 ]
 
 # Debugging Utilities
+
+BOGUS_TOKEN = object()
 
 from typing import Generator
 from contextlib import contextmanager
@@ -184,11 +187,11 @@ from typing import Tuple
 def shell(input_command: str) -> Tuple[str, str, int]:
     '''Handles multi-line input_command'''
     import subprocess
-    command = input_command.encode("utf-8")
+    command = input_command.encode('utf-8')
     process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout_string, stderr_string = process.communicate(command)
-    stdout_string = stdout_string.decode("utf-8")
-    stderr_string = stderr_string.decode("utf-8")
+    stdout_string = stdout_string.decode('utf-8')
+    stderr_string = stderr_string.decode('utf-8')
     return stdout_string, stderr_string, process.returncode
 
 def pid() -> int:
@@ -343,7 +346,6 @@ def trace(func: Callable) -> Callable:
         return result
     return decorating_function
 
-BOGUS_TOKEN = object()
 import types
 def dpn(expression_string: str, given_frame=Optional[types.FrameType]):
     """dpn == debug print name"""

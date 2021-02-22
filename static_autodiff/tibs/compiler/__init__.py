@@ -36,8 +36,6 @@ assert os.path.isfile(LIBTIBS_SO_LOCATION), f'The TIBS compiler has not yet been
 # Type Checking Utilities #
 ###########################
 
-BOGUS_TOKEN = object()
-
 class ASSERTMetaClass(type):
     
     @staticmethod
@@ -78,6 +76,7 @@ class SafeSharedObjectCallable:
     @staticmethod
     def ctypes_compatible(instance: Any, data_type: '_ctypes._CData') -> bool:
         expected_class = {
+            ctypes.c_int: int,
             ctypes.c_void_p: int,
             ctypes.c_bool: bool,
         }.get(data_type, data_type)
@@ -104,10 +103,10 @@ class SafeSharedObjectCallable:
         ASSERT.RuntimeError(self.return_type is not BOGUS_TOKEN, f'Return type not declared for {self.so_callable.__name__}')
         ASSERT.ValueError(len(args) == len(self.input_types), f'{self.so_callable.__name__} expects {len(self.input_types)} inputs but got {len(args)}.')
         for arg, input_type in zip(args, self.input_types):
-            ASSERT.TypeError(self.ctypes_compatible(arg, input_type), f'{arg} is not an instance of {input_type}.')
+            ASSERT.TypeError(self.ctypes_compatible(arg, input_type), f'{arg} is not compatible with {input_type}.')
         result = self.so_callable(*args)
         expected_result_type = NoneType if self.return_type is None else self.return_type
-        ASSERT.TypeError(self.ctypes_compatible(result, expected_result_type), f'{self.so_callable.__name__} returned {result} (an instance of {type(result)}) when {self.return_type} was expected.')
+        ASSERT.TypeError(self.ctypes_compatible(result, expected_result_type), f'{self.so_callable.__name__} returned {result}, an instance of {type(result)}, which is not compatible with {self.return_type}.')
         return result
 
 class SafeDLL():
@@ -129,15 +128,19 @@ NO_INPUTS = ()
 # libtibs Shared Object Utilities #
 ###################################
 
-LIBTIBS_SO = SafeDLL(LIBTIBS_SO_LOCATION)
+c = SafeDLL(LIBTIBS_SO_LOCATION)
 
-LIBTIBS_SO.newModuleGenerator[NO_INPUTS] = ctypes.c_void_p
-LIBTIBS_SO.deleteModuleGenerator[ctypes.c_void_p] = None
-LIBTIBS_SO.dumpModule[ctypes.c_void_p] = None
-LIBTIBS_SO.runPassManager[ctypes.c_void_p] = ctypes.c_bool
-LIBTIBS_SO.compileAndExecuteModule[ctypes.c_void_p] = ctypes.c_bool
-LIBTIBS_SO.generateModule[ctypes.c_void_p] = None # TODO remove this
-LIBTIBS_SO.runAllPasses[NO_INPUTS] = None # TODO remove this
+# Module Generator Functions
+
+c.generateModule[ctypes.c_void_p, ctypes.c_void_p] = None # TODO remove this
+
+c.newModuleGenerator[NO_INPUTS] = ctypes.c_void_p
+c.deleteModuleGenerator[ctypes.c_void_p] = None
+c.dumpModule[ctypes.c_void_p] = None
+c.runPassManager[ctypes.c_void_p] = ctypes.c_bool
+c.compileAndExecuteModule[ctypes.c_void_p] = ctypes.c_bool
+c.newLocation[ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int, ctypes.c_int] = ctypes.c_void_p
+c.deleteLocation[ctypes.c_void_p] = None
 
 ##########################
 # Module Generator Class #
@@ -145,32 +148,43 @@ LIBTIBS_SO.runAllPasses[NO_INPUTS] = None # TODO remove this
 
 class ModuleGenerator:
     
-    c = LIBTIBS_SO
-    
     def __init__(self) -> None:
-        self.module_generator_pointer: int = self.c.newModuleGenerator()
+        self.module_generator_pointer: int = c.newModuleGenerator()
         return
     
     def __del__(self) -> None:
-        self.c.deleteModuleGenerator(self.module_generator_pointer)
+        c.deleteModuleGenerator(self.module_generator_pointer)
         return
     
     def dump_module(self) -> str:
         results = []
         with redirected_standard_streams(lambda *args: results.append(args)):
-            self.c.dumpModule(self.module_generator_pointer)
+            c.dumpModule(self.module_generator_pointer)
         stdout_string, stderr_string = only_one(results)
         assert stdout_string == '', f'Expected stdout stream to be empty but got {repr(stdout_string)}.'
         module_string = stderr_string
         return module_string
     
     def run_pass_manager(self) -> bool:
-        success_status = self.c.runPassManager(self.module_generator_pointer)
+        success_status = c.runPassManager(self.module_generator_pointer)
         return success_status
 
     def compile_and_execute_module(self) -> bool:
-        success_status = self.c.compileAndExecuteModule(self.module_generator_pointer)
+        success_status = c.compileAndExecuteModule(self.module_generator_pointer)
         return success_status
+
+    def new_location(self, file_name: bytes, line_number: int, column_number: int) -> int:
+        # TODO use this somewhere
+        # TODO test this
+        file_name = ctypes.c_char_p(file_name)
+        location_pointer = c.newLocation(self.module_generator_pointer, file_name, line_number, column_number)
+        return location_pointer
+
+    def delete_location(self, location_pointer: int) -> None:
+        # TODO use this somewhere
+        # TODO test this
+        c.deleteLocation(location_pointer)
+        return
     
 ############
 # Compiler #
@@ -178,7 +192,7 @@ class ModuleGenerator:
 
 def compile():
     # TODO update this
-    result = 'DUMMY' # result = LIBTIBS_SO.runAllPasses()
+    result = 'DUMMY'
     return result
 
 # TODO enable this
