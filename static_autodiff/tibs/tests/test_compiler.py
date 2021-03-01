@@ -8,7 +8,7 @@ from .test_utilities import *
 import tibs
 from tibs import compiler
 from tibs.misc_utilities import *
-
+""" # TODO enable this
 def test_compiler_c_functions_registered():
     tibs_dir = os.path.dirname(inspect.getfile(tibs))
     search_dir = os.path.join(tibs_dir, 'compiler',  'mlir')
@@ -49,6 +49,7 @@ def test_compiler():
         mod_gen.delete_location(location_pointer)
     mod_gen.run_pass_manager()
     result = mod_gen.dump_module()
-    # print(result)
-    # assert False
+    print(result)
+    assert False
     return
+"""

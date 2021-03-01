@@ -41,6 +41,10 @@ class ASTNode(ABC):
     @abstractmethod
     def parse_action(cls, s: str, loc: int, tokens: pyparsing.ParseResults) -> 'ASTNode':
         raise NotImplementedError
+    
+    @abstractmethod
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         attributes_string = ', '.join(f'{k}={repr(self.__dict__[k])}' for k in sorted(self.__dict__.keys()))
@@ -102,9 +106,11 @@ class AtomASTNodeType(type):
         return result_class
 
 class StatementASTNode(ASTNode):
+    # TODO should this be an abstract class?
     pass
 
 class ExpressionASTNode(StatementASTNode):
+    # TODO should this be an abstract class?
     pass
 
 class ExpressionAtomASTNodeType(AtomASTNodeType):
@@ -113,6 +119,7 @@ class ExpressionAtomASTNodeType(AtomASTNodeType):
     base_ast_node_class = ExpressionASTNode
 
 class BinaryOperationExpressionASTNode(ExpressionASTNode):
+    # TODO should this be an abstract class?
 
     def __init__(self, left_arg: ExpressionASTNode, right_arg: ExpressionASTNode) -> None:
         self.left_arg: ExpressionASTNode = left_arg
@@ -121,6 +128,7 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
 
     @classmethod
     def parse_action(cls, _s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> 'BinaryOperationExpressionASTNode':
+        # TODO is this used? do we need this?
         tokens = only_one(group_tokens)
         assert len(tokens) >= 2
         node_instance: cls = reduce(cls, tokens)
@@ -132,6 +140,7 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
             self.right_arg == other.right_arg 
 
 class UnaryOperationExpressionASTNode(ExpressionASTNode):
+    # TODO should this be an abstract class?
 
     def __init__(self, arg: ExpressionASTNode) -> None:
         self.arg: ExpressionASTNode = arg
@@ -139,6 +148,7 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
 
     @classmethod
     def parse_action(cls, _s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> 'UnaryOperationExpressionASTNode':
+        # TODO is this used? do we need this?
         tokens = only_one(group_tokens)
         token = only_one(tokens)
         node_instance: cls = cls(token)
@@ -148,12 +158,15 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
         return type(self) is type(other) and self.arg == other.arg
 
 class ArithmeticExpressionASTNode(ExpressionASTNode):
+    # TODO should this be an abstract class?
     pass
 
 class BooleanExpressionASTNode(ExpressionASTNode):
+    # TODO should this be an abstract class?
     pass
 
 class ComparisonExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
+    # TODO should this be an abstract class?
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> 'ComparisonExpressionASTNode':
@@ -163,6 +176,7 @@ class ComparisonExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpre
         return node_instance
 
 class StringExpressionASTNode(ExpressionASTNode):
+    # TODO should this be an abstract class?
     pass
 
 # Literal Node Generation
@@ -172,21 +186,33 @@ class BooleanLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = bool
     token_checker = lambda token: token in ('True', 'False')
     dwimming_func = lambda token: True if token == 'True' else False
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 @LiteralASTNodeClassBaseTypeTracker.Integer
 class IntegerLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = int
     token_checker = lambda token: isinstance(token, int)
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 @LiteralASTNodeClassBaseTypeTracker.Float
 class FloatLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = float
     token_checker = lambda token: isinstance(token, float)
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 @LiteralASTNodeClassBaseTypeTracker.String
 class StringLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
     value_type = str
     token_checker = lambda token: isinstance(token, str)
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 @LiteralASTNodeClassBaseTypeTracker.NothingType
 class NothingTypeLiteralASTNode(ExpressionASTNode):
@@ -202,6 +228,9 @@ class NothingTypeLiteralASTNode(ExpressionASTNode):
 
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other)
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Identifier / Variable Node Generation
 
@@ -209,26 +238,41 @@ class VariableASTNode(metaclass=ExpressionAtomASTNodeType):
     value_attribute_name = 'name'
     value_type = str
     token_checker = lambda token: isinstance(token, str)
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Arithmetic Expression Node Generation
 
 class NegativeExpressionASTNode(UnaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class ExponentExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class MultiplicationExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class DivisionExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class AdditionExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class SubtractionExpressionASTNode(BinaryOperationExpressionASTNode, ArithmeticExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 def parse_multiplication_or_division_expression_pe(_s: str, _loc: int, group_tokens: pyparsing.ParseResults) -> typing.Union[MultiplicationExpressionASTNode, DivisionExpressionASTNode]:
     tokens = only_one(group_tokens).asList()
@@ -261,36 +305,56 @@ def parse_addition_or_subtraction_expression_pe(_s: str, _loc: int, group_tokens
 # Boolean Expression Node Generation
 
 class NotExpressionASTNode(UnaryOperationExpressionASTNode, BooleanExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class AndExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class XorExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class OrExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Comparison Expression Node Generation
 
 class GreaterThanExpressionASTNode(ComparisonExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class GreaterThanOrEqualToExpressionASTNode(ComparisonExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class LessThanExpressionASTNode(ComparisonExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class LessThanOrEqualToExpressionASTNode(ComparisonExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class EqualToExpressionASTNode(ComparisonExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 class NotEqualToExpressionASTNode(ComparisonExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 comparator_to_ast_node_class = {
     '>': GreaterThanExpressionASTNode,
@@ -321,7 +385,9 @@ def parse_comparison_expression_pe(_s: str, _loc: int, tokens: pyparsing.ParseRe
 # String Expression Node Generation
 
 class StringConcatenationExpressionASTNode(BinaryOperationExpressionASTNode, StringExpressionASTNode):
-    pass
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Function Call Node Generation
 
@@ -344,6 +410,9 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
             self.arg_bindings == other.arg_bindings
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Vector Node Generation
 
@@ -367,6 +436,9 @@ class VectorExpressionASTNode(ExpressionASTNode):
                 for self_value, other_value
                 in zip(self.values, other.values)
             )
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Tensor Type Node Generation
 
@@ -401,6 +473,9 @@ class TensorTypeASTNode(ASTNode):
         return type(self) is type(other) and \
             self.base_type_name is other.base_type_name and \
             self.shape == other.shape
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Assignment Node Generation
 
@@ -434,6 +509,9 @@ class AssignmentASTNode(StatementASTNode):
         return type(self) is type(other) and \
             self.variable_type_pairs == other.variable_type_pairs and \
             self.value == other.value
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Return Statement Node Generation
 
@@ -453,6 +531,9 @@ class ReturnStatementASTNode(StatementASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.return_values == other.return_values
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Print Statement Node Generation
 
@@ -471,6 +552,9 @@ class PrintStatementASTNode(StatementASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.values_to_print == other.values_to_print
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Scoped Statement Sequence Node Generation
 
@@ -489,6 +573,9 @@ class ScopedStatementSequenceASTNode(StatementASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.statements == other.statements
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Function Definition Node Generation
 
@@ -520,6 +607,9 @@ class FunctionDefinitionASTNode(StatementASTNode):
             self.function_signature == other.function_signature and \
             self.function_return_type == other.function_return_type and \
             self.function_body == other.function_body
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # For Loop Node Generation
 
@@ -559,6 +649,9 @@ class ForLoopASTNode(StatementASTNode):
             self.supremum == other.supremum and \
             self.delta == other.delta and \
             self.body == other.body
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # While Loop Node Generation
 
@@ -583,6 +676,9 @@ class WhileLoopASTNode(StatementASTNode):
         return type(self) is type(other) and \
             self.condition == other.condition and \
             self.body == other.body
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Conditional Node Generation
 
@@ -616,6 +712,9 @@ class ConditionalASTNode(StatementASTNode):
             self.condition == other.condition and \
             self.then_body == other.then_body and \
             self.else_body == other.else_body
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 # Module Node Generation
 
@@ -636,6 +735,9 @@ class ModuleASTNode(ASTNode):
         return type(self) is type(other) and \
             len(self.statements) == len(other.statements) and \
             self.statements == other.statements
+    
+    def emit_mlir(self) -> 'str':
+        raise NotImplementedError
 
 ##########
 # Driver #

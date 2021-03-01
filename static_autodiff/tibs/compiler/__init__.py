@@ -123,7 +123,7 @@ class SafeDLL():
         return self.func_name_to_func[func_name]
 
 NO_INPUTS = ()
-
+''' # TODO enable this
 ###################################
 # libtibs Shared Object Utilities #
 ###################################
@@ -161,7 +161,7 @@ class ModuleGenerator:
         with redirected_standard_streams(lambda *args: results.append(args)):
             c.dumpModule(self.module_generator_pointer)
         stdout_string, stderr_string = only_one(results)
-        assert stdout_string == '', f'Expected stdout stream to be empty but got {repr(stdout_string)}.' 
+        assert stdout_string == '', f'Expected stdout stream to be empty but got {repr(stdout_string)}.'
         module_string = stderr_string
         return module_string
     
@@ -185,7 +185,7 @@ class ModuleGenerator:
         # TODO test this
         c.deleteLocation(location_pointer)
         return
-    
+'''    
 ############
 # Compiler #
 ############
