@@ -46,6 +46,10 @@
 (load "tablegen-mode.el")
 (load "llvm-mode.el")
 
+;; Cython Mode
+
+(load "cython-mode.el")
+
 ;; Javascript Settings
 
 (load "json-reformat.el")
