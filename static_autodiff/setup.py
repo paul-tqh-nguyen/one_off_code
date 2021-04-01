@@ -70,6 +70,15 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
         self.compile_clean = False if self.compile_clean.lower().strip() == 'false' else True
         return
 
+    def run(self) -> None:
+        if 'CONDA_PREFIX' not in os.environ:
+            raise NotImplementedError(f'Compilation of TIBS compiler not currently supported outside of a conda environment.')
+        self.clone_local_llvm()
+        self.compile_local_llvm()
+        self.compile_tibs_compiler()
+        self.announce(f'Finished compiling TIBS compiler.', level=distutils.log.INFO)
+        return
+    
     @staticmethod
     def get_path_environment_variable() -> str:
         PATH = os.environ['PATH']
@@ -87,15 +96,6 @@ class CompileTibsCompilerCommand(distutils.cmd.Command):
             LD_LIBRARY_PATH = LD_LIBRARY_PATH + ':' + conda_lib_dir
 
         return LD_LIBRARY_PATH
-    
-    def run(self) -> None:
-        if 'CONDA_PREFIX' not in os.environ:
-            raise NotImplementedError(f'Compilation of TIBS compiler not currently supported outside of a conda environment.')
-        self.clone_local_llvm()
-        self.compile_local_llvm()
-        self.compile_tibs_compiler()
-        self.announce(f'Finished compiling TIBS compiler.', level=distutils.log.INFO)
-        return
     
     def clone_local_llvm(self) -> None:
         if self.compile_clean and os.path.isdir(LLVM_PROJECT_REPO_LOCATION):

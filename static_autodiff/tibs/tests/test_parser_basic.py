@@ -3,7 +3,7 @@ import pytest
 import itertools
 
 from tibs import parser
-from tibs.parser import (
+from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
     ExpressionASTNode,
@@ -47,206 +47,6 @@ from tibs.misc_utilities import *
 # TODO verify that the above imports are used
 # TODO make sure these imports are ordered in some way
 
-def test_parser_invalid_misc():
-    invalid_input_strings = [
-        '''
-###
-init()
-
-x: Integer
-
-''',
-        'print << if << 3 ',
-        'print << return 3 ',
-        'print << if True 1 else 2',
-        'print << Boolean',
-        'print << {1;2;3}',
-        'print << ',
-        'x = {}',
-        'x = """',
-        'x = \'123\'',
-        'x = print()',
-        'x = print(1, 2, 3)',
-        'x = print(1, "2", 3)',
-        'x = {function}',
-        'x = {Nothing}',
-        'x = {Integer}',
-        'x = {Float}',
-        'x = {Boolean}',
-        'x: function = 1',
-        'x: Nothing = 1',
-        'x: True = 1',
-        'x: False = 1',
-        'x: not = 1',
-        'x: and = 1',
-        'x: xor = 1',
-        'x: or = 1',
-        'x: ** = 1',
-        'x: ^ = 1',
-        'x: * = 1',
-        'x: / = 1',
-        'x: + = 1',
-        'x: - = 1',
-        'Float',
-        'Boolean',
-        'Integer',
-        'NothingType',
-        'Float = 1',
-        'Boolean = 1',
-        'Integer = 1',
-        'NothingType = 1',
-        'Float(x:=1)',
-        'Boolean(x:=1)',
-        'Integer(x:=1)',
-        'NothingType(x:=1)',
-        'True = 1',
-        'False = 1',
-        'not = 1',
-        'and = 1',
-        'xor = 1',
-        'or = 1',
-        'return = 1',
-        'True(x:=1)',
-        'False(x:=1)',
-        'print(x:=1)',
-        'not(x:=1)',
-        'and(x:=1)',
-        'xor(x:=1)',
-        'or(x:=1)',
-        'return(x:=1)',
-        'function(x:=1)',
-        'function',
-        'function = 1',
-        'x: function = 1',
-        'function: Integer = 1',
-        'x: Integer<??> = 1',
-        'x: Integer<1, ??> = 1',
-        'x: Integer<???, 1> = 1',
-        'x: for = 1',
-        'for = 1',
-        'while 0 {return}',
-        'if 0 {return}',
-        'if 0 {return} then 123',
-        'if print() {return} then 123',
-        'if 0 {return} then if',
-    ]
-    for input_string in invalid_input_strings:
-        with pytest.raises(parser.ParseError, match='Could not parse the following:'):
-            parser.parseSourceCode(input_string)
-
-def test_parser_invalid_keyword_use():
-    types = [
-        'NothingType',
-        'Integer',
-        'Boolean',
-        'Float',
-        'String',
-    ]
-    literals = [
-        'Nothing',
-        'True',
-        'False',
-    ]
-    operators = [
-        'print',
-        'not',
-        'and',
-        'xor',
-        'or',
-        '**',
-        '^',
-        '*',
-        '/',
-        '+',
-        '-',
-        '=',
-        '>',
-        '>=',
-        '<',
-        '<=',
-        '==',
-        '!=',
-        '<<',
-    ]
-    syntactic_contruct_keywords = [
-        'function',
-        'for',
-        'while',
-        'if',
-        'else'
-    ]
-    invalid_input_string_template_to_reserved_keywords = [
-        ('{keyword} = 1', types + literals + operators + syntactic_contruct_keywords),
-        ('{keyword}(x:=1)', types + literals + operators + syntactic_contruct_keywords),
-        ('f({keyword}:=1)', types + literals + operators + syntactic_contruct_keywords),
-        ('x = {{{keyword}}}', types + operators + syntactic_contruct_keywords),
-        ('{keyword}', types + operators + syntactic_contruct_keywords),
-        ('print << {keyword}', types + operators + syntactic_contruct_keywords),
-        ('x: {keyword} = 1', literals + operators + syntactic_contruct_keywords),
-    ]
-    for invalid_input_string_template, keywords in invalid_input_string_template_to_reserved_keywords:
-        for keyword in keywords:
-            input_string = invalid_input_string_template.format(keyword=keyword)
-            with pytest.raises(parser.ParseError, match='Could not parse the following:'):
-                parser.parseSourceCode(input_string)
-
-def test_parser_incompatible_expression_use():
-    type_to_exemplars = {
-        'Boolean': {'True', 'False'},
-        'Integer': {'0', '1'},
-        'Float': {'1.0', '0.0', '1e3'},
-        'String': {'"string"'},
-        'NothingType': {'Nothing'},
-    }
-    types = list(type_to_exemplars.keys())
-    
-    type_to_compatible_types = {type: type for type in types}
-    type_to_compatible_types['Integer'] = {'Integer', 'Float'}
-    type_to_compatible_types['Float'] = {'Integer', 'Float'}
-
-    type_to_binary_operations = {
-        'Boolean': {'and', 'xor', 'or'},
-        'Integer': {
-            '**', '^', '*', '/', '+', '-',
-            '>', '>=', '<', '<=', '==', '!='
-        },
-        'Float': {
-            '**', '^', '*', '/', '+', '-',
-            '>', '>=', '<', '<=', '==', '!='
-        },
-        'String': {'<<'},
-        'NothingType': {},
-    }
-
-    type_to_unary_operations = {
-        'Boolean': {'not'},
-        'Integer': {'-'},
-        'Float': {'-'},
-        'String': set(),
-        'NothingType': set(),
-    }
-    type_to_unary_operations = {type: unary_operations | {''} for type, unary_operations in type_to_unary_operations.items()}
-
-    assert len(types) == len(type_to_exemplars) == len(type_to_compatible_types) == len(type_to_binary_operations) == len(type_to_unary_operations)
-    
-    for type in types:
-        other_types = {other_type for other_type in types if other_type not in type_to_compatible_types[type]}
-        for other_type in other_types:
-            unary_operations = type_to_unary_operations[type]
-            type_exemplars = type_to_exemplars[type]
-            binary_operations = type_to_binary_operations[type]
-            other_type_exemplars = type_to_exemplars[other_type]
-            for un_op1, arg1, bin_op, un_op2, arg2 in itertools.product(
-                    unary_operations,
-                    type_exemplars,
-                    binary_operations,
-                    unary_operations,
-                    other_type_exemplars
-            ):
-                input_string = f'x = {un_op1} {arg1} {bin_op} {un_op2} {arg2}'
-            with pytest.raises(parser.ParseError, match='Could not parse the following:'):
-                parser.parseSourceCode(input_string)
-
 def test_parser_nothing_literal():
     module_node = parser.parseSourceCode('x = Nothing')
     assert isinstance(module_node, ModuleASTNode)
@@ -257,41 +57,13 @@ def test_parser_nothing_literal():
     assert isinstance(variable_node, VariableASTNode)
     assert variable_node.name is 'x'
     assert isinstance(tensor_type_node, TensorTypeASTNode)
-    assert tensor_type_node.base_type_name is None
-    assert tensor_type_node.shape is None
+    assert tensor_type_node.base_type_name == 'NothingType'
+    assert tensor_type_node.shape == []
     value_node = assignment_node.value
     assert isinstance(value_node, NothingTypeLiteralASTNode)
     result = value_node
     expected_result = NothingTypeLiteralASTNode()
     assert result == expected_result, f'''
-input_string: {repr(input_string)}
-result: {repr(result)}
-expected_result: {repr(expected_result)}
-'''
-
-def test_parser_atomic_boolean():
-    expected_input_output_pairs = [
-        ('True', True),
-        ('False', False),
-        ('Fal\
-se', False),
-    ]
-    for input_string, expected_result in expected_input_output_pairs:
-        module_node = parser.parseSourceCode('x = '+input_string)
-        assert isinstance(module_node, ModuleASTNode)
-        assert isinstance(module_node.statements, list)
-        assignment_node = only_one(module_node.statements)
-        assert isinstance(assignment_node, AssignmentASTNode)
-        variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
-        assert isinstance(variable_node, VariableASTNode)
-        assert variable_node.name is 'x'
-        assert isinstance(tensor_type_node, TensorTypeASTNode)
-        assert tensor_type_node.base_type_name is None
-        assert tensor_type_node.shape is None
-        value_node = assignment_node.value
-        assert isinstance(value_node, BooleanLiteralASTNode)
-        result = value_node.value
-        assert result == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
@@ -826,6 +598,13 @@ expected_result: {repr(expected_result)}
 def test_parser_assignment():
     expected_input_output_pairs = [
         ('x = 1', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1))),
+        ('x, y = f(a:=12)', AssignmentASTNode(variable_type_pairs=[
+            (VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None)),
+            (VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))
+        ], value=FunctionCallExpressionASTNode(
+            arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=12))],
+            function_name='f')
+        )),
         ('x: NothingType = Nothing', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='NothingType', shape=[]))], value=NothingTypeLiteralASTNode())),
         ('x = Nothing', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=NothingTypeLiteralASTNode())),
         ('x: NothingType<> = Nothing', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='NothingType', shape=[]))], value=NothingTypeLiteralASTNode())),
@@ -860,10 +639,10 @@ def test_parser_assignment():
         assert isinstance(module_node.statements, list)
         assignment_node = only_one(module_node.statements)
         assert isinstance(assignment_node, AssignmentASTNode)
-        variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
-        assert isinstance(variable_node, VariableASTNode)
-        assert variable_node.name is 'x'
-        assert isinstance(tensor_type_node, TensorTypeASTNode)
+        for variable_node, tensor_type_node in assignment_node.variable_type_pairs:
+            assert isinstance(variable_node, VariableASTNode)
+            assert isinstance(variable_node.name, str)
+            assert isinstance(tensor_type_node, TensorTypeASTNode)
         result = assignment_node
         assert result == expected_result, f'''
 input_string: {repr(input_string)}
@@ -1342,7 +1121,7 @@ if False {
     while not False {
         if True 1 else { f(x:=2) }
     }
-}
+} else return 3, 5
 ''',
          ConditionalASTNode(
              condition=BooleanLiteralASTNode(value=False),
@@ -1361,7 +1140,10 @@ if False {
                          )
                      ])
                  )]),
-             else_body=None)),
+             else_body=ReturnStatementASTNode(return_values=[
+                 IntegerLiteralASTNode(value=3),
+                 IntegerLiteralASTNode(value=5)
+             ]))),
     ]
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(input_string)

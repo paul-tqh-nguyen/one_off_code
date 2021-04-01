@@ -218,6 +218,10 @@ class StringLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
 class NothingTypeLiteralASTNode(ExpressionASTNode):
     
     def __init__(self) -> None:
+        '''
+        An instance of this AST Node represents a "nothing type literal", 
+        i.e. the tibs constant "Nothing", not the "nothing type".
+        '''
         return
     
     @classmethod
@@ -511,6 +515,9 @@ class AssignmentASTNode(StatementASTNode):
             self.value == other.value
     
     def emit_mlir(self) -> 'str':
+        assert implies(len(self.variable_type_pairs) != 1, isinstance(self.value, FunctionCallExpressionASTNode))
+        for variable_node, tensor_type_node in self.variable_type_pairs:
+            breakpoint() # TODO remove this
         raise NotImplementedError
 
 # Return Statement Node Generation
@@ -519,6 +526,7 @@ class ReturnStatementASTNode(StatementASTNode):
     
     def __init__(self, return_values: typing.List[ExpressionASTNode]) -> None:
         self.return_values = return_values
+        return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'ReturnStatementASTNode':
@@ -585,27 +593,29 @@ class FunctionDefinitionASTNode(StatementASTNode):
             self,
             function_name: str,
             function_signature: typing.List[typing.Tuple[VariableASTNode, TensorTypeASTNode]],
-            function_return_type: TensorTypeASTNode, 
+            function_return_types: typing.List[TensorTypeASTNode], 
             function_body: StatementASTNode
     ) -> None:
         self.function_name = function_name
         self.function_signature = function_signature
-        self.function_return_type = function_return_type
+        self.function_return_types = function_return_types
         self.function_body = function_body
         return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionASTNode':
-        function_name, function_signature, function_return_type, function_body = tokens.asList()
+        function_name, function_signature, function_return_types, function_body = tokens.asList()
         function_signature = eager_map(tuple, function_signature)
-        node_instance = cls(function_name, function_signature, function_return_type, function_body)
+        function_return_types = function_return_types.asList()
+        breakpoint() # TODO remove this
+        node_instance = cls(function_name, function_signature, function_return_types, function_body)
         return node_instance
 
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
             self.function_signature == other.function_signature and \
-            self.function_return_type == other.function_return_type and \
+            self.function_return_types == other.function_return_types and \
             self.function_body == other.function_body
     
     def emit_mlir(self) -> 'str':
@@ -737,7 +747,8 @@ class ModuleASTNode(ASTNode):
             self.statements == other.statements
     
     def emit_mlir(self) -> 'str':
-        raise NotImplementedError
+        mlir_text = '\n'.join(statement.emit_mlir() for statement in self.statements)
+        return mlir_text
 
 ##########
 # Driver #

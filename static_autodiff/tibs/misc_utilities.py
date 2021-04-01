@@ -1,7 +1,9 @@
 
 # cat misc_utilities.py  | grep "^def " | cut -d"(" -f1 | cut -d" " -f2 | grep -v "^_"
 __all__ = [
+    'ASSERT',
     'BOGUS_TOKEN',
+    'NoneType',
     'safe_cuda_memory',
     'warnings_suppressed',
     'exceptions_suppressed',
@@ -53,9 +55,43 @@ __all__ = [
     'histogram'
 ]
 
+# Type Checking Utilities
+
+from typing import Union, Callable
+from functools import lru_cache
+class ASSERTMetaClass(type):
+    
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def exceptions_by_name() -> None:
+        return {exception.__name__: exception for exception in child_classes(BaseException)}
+    
+    @lru_cache(maxsize=16)
+    def __getitem__(self, exception_type: Union[type, str]) -> Callable[[bool], None]:
+        if isinstance(exception_type, str):
+            if exception_type not in self.exceptions_by_name():
+                self.exceptions_by_name.cache_clear()
+            exception_type = self.exceptions_by_name().get(exception_type, exception_type)
+        if not isinstance(exception_type, type):
+            raise TypeError(f'{exception_type} does not describe a subclass of {BaseException.__qualname__}.')
+        if not issubclass(exception_type, BaseException):
+            raise TypeError(f'{exception_type} is not a subclass of {BaseException.__qualname__}.')
+        def assert_func(invariant: bool, error_message: str) -> None:
+            if not invariant:
+                raise exception_type(error_message)
+            return
+        return assert_func
+    
+    def __getattr__(self, exception_type: type) -> Callable[[bool], None]:
+        return self[exception_type]
+
+class ASSERT(metaclass=ASSERTMetaClass):
+    pass
+
 # Debugging Utilities
 
 BOGUS_TOKEN = object()
+NoneType = type(None)
 
 from typing import Generator
 from contextlib import contextmanager

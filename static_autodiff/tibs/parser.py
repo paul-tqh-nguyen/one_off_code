@@ -325,7 +325,7 @@ scoped_statement_sequence_pe <<= (Suppress('{') + statement_sequence_pe + Suppre
 # Function Definition Parser Elements
 
 function_signature_pe = Suppress('(') + Group(Optional(delimitedList(Group(variable_pe + variable_type_declaration_pe)))) + Suppress(')')
-function_return_type_pe = (Suppress('->') + tensor_type_pe).setParseAction(TensorTypeASTNode.parse_action)
+function_return_type_pe = (Suppress('->') + delimitedList(tensor_type_pe, delim=',')).setParseAction(TensorTypeASTNode.parse_action)
 
 function_definition_pe <<= (
     function_definition_keyword_pe +
@@ -392,8 +392,10 @@ class ParseError(Exception):
 
 def parseSourceCode(input_string: str) -> ModuleASTNode:
     '''The returned ModuleASTNode may contain the same identical-in-memory nodes due to caching.'''
+    from . import type_inference
     try:
         result = only_one(module_pe.parseString(input_string, parseAll=True))
+        type_inference.perform_type_inference(result)
     except pyparsing.ParseException as exception:
         raise ParseError(input_string, exception.line, exception.col)
     return result
@@ -435,7 +437,7 @@ def sanity_check_concrete_ast_node_subclass_method_annotations() -> None:
                 assert return_annotation == ast_node_class.__qualname__, f'{ast_node_class.__qualname__}.parse_action is not declared to return a {ast_node_class.__qualname__}'
     return
 
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=1)
 def perform_sanity_check() -> None:
     sanity_check_base_types()
     sanity_check_concrete_ast_node_subclass_method_annotations()

@@ -13,7 +13,6 @@ import io
 import os
 import sys
 import tempfile
-from functools import lru_cache
 from contextlib import contextmanager
 from typing import Any, Tuple, Union, Generator, Callable, Optional
 
@@ -32,44 +31,9 @@ LIBTIBS_SO_LOCATION = os.path.abspath(os.path.join(CURRENT_MODULE_PATH, 'mlir/bu
 
 assert os.path.isfile(LIBTIBS_SO_LOCATION), f'The TIBS compiler has not yet been compiled. It is expected to be found at {LIBTIBS_SO_LOCATION}.'
 
-###########################
-# Type Checking Utilities #
-###########################
-
-class ASSERTMetaClass(type):
-    
-    @staticmethod
-    @lru_cache(maxsize=1)
-    def exceptions_by_name() -> None:
-        return {exception.__name__: exception for exception in child_classes(Exception)}
-    
-    @lru_cache(maxsize=16)
-    def __getitem__(self, exception_type: Union[type, str]) -> Callable[[bool], None]:
-        if isinstance(exception_type, str):
-            if exception_type not in self.exceptions_by_name():
-                self.exceptions_by_name.cache_clear()
-            exception_type = self.exceptions_by_name().get(exception_type, exception_type)
-        if not isinstance(exception_type, type):
-            raise TypeError(f'{exception_type} does not describe a subclass of {BaseException.__qualname__}.')
-        if not issubclass(exception_type, BaseException):
-            raise TypeError(f'{exception_type} is not a subclass of {BaseException.__qualname__}.')
-        def assert_func(invariant: bool, error_message: str) -> None:
-            if not invariant:
-                raise exception_type(error_message)
-            return
-        return assert_func
-    
-    def __getattr__(self, exception_type: type) -> Callable[[bool], None]:
-        return self[exception_type]
-
-class ASSERT(metaclass=ASSERTMetaClass):
-    pass
-
 ####################
 # ctypes Utilities #
 ####################
-
-NoneType = type(None)
 
 class SafeSharedObjectCallable:
 
