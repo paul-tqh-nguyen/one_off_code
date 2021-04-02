@@ -2,15 +2,16 @@ import pytest
 
 from tibs import parser
 
-EXPECTED_INPUT_OUTPUT_PAIRS = (
-    pytest.param('True', True),
-    pytest.param('False', False),
-    pytest.param('Fal\
-se', False),
-)
+EXPECTED_INPUT_OUTPUT_PAIRS = [
+    pytest.param('123', 123),
+    pytest.param('0', 0),
+    pytest.param('0000', 0),
+    pytest.param('00\
+00', 0),
+]
 
 @pytest.mark.parametrize("input_string,expected_result", EXPECTED_INPUT_OUTPUT_PAIRS)
-def test_parser_atomic_boolean(input_string, expected_result):
+def test_parser_atomic_integer(input_string, expected_result):
     module_node = parser.parseSourceCode('x = '+input_string)
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
@@ -23,7 +24,7 @@ def test_parser_atomic_boolean(input_string, expected_result):
     assert tensor_type_node.base_type_name is None
     assert tensor_type_node.shape is None
     value_node = assignment_node.value
-    assert isinstance(value_node, BooleanLiteralASTNode)
+    assert isinstance(value_node, IntegerLiteralASTNode)
     result = value_node.value
     assert result == expected_result, f'''
 input_string: {repr(input_string)}
