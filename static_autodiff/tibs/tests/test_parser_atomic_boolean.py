@@ -2,6 +2,8 @@ import pytest
 
 from tibs import parser
 
+# TODO make sure all these imports are used
+
 EXPECTED_INPUT_OUTPUT_PAIRS = (
     pytest.param('True', True),
     pytest.param('False', False),
@@ -9,7 +11,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
 se', False),
 )
 
-@pytest.mark.parametrize("input_string,expected_result", EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_atomic_boolean(input_string, expected_result):
     module_node = parser.parseSourceCode('x = '+input_string)
     assert isinstance(module_node, ModuleASTNode)

@@ -41,6 +41,8 @@ from tibs.ast_node import (
     ModuleASTNode,
 ) # TODO reorder these in according to their declaration
 
+# TODO make sure all these imports are used
+
 EXPECTED_INPUT_OUTPUT_PAIRS = (
     ('x = 1', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1))),
     ('x, y = f(a:=12)', AssignmentASTNode(variable_type_pairs=[
@@ -79,7 +81,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
 ?> = value', AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=None))], value=VariableASTNode(name='value'))),
 )
 
-@pytest.mark.parametrize("input_string,expected_result", EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_assignment(input_string, expected_result):
     module_node = parser.parseSourceCode(input_string)
     assert isinstance(module_node, ModuleASTNode)

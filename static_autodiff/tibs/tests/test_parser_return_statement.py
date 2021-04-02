@@ -41,6 +41,8 @@ from tibs.ast_node import (
     ModuleASTNode,
 ) # TODO reorder these in according to their declaration
 
+# TODO make sure all these imports are used
+
 EXPECTED_INPUT_OUTPUT_PAIRS = (
     ('', NothingTypeLiteralASTNode()),
     ('  \
@@ -73,7 +75,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
          function_name='f')),
 )
 
-@pytest.mark.parametrize("input_string,expected_result", EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_return_statement(input_string, expected_result):
     module_node = parser.parseSourceCode(f'''
 function f() -> NothingType {{

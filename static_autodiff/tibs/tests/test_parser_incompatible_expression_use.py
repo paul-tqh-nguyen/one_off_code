@@ -61,7 +61,7 @@ def generate_invalid_input_strings() -> Generator[str, None, None]:
                 input_string = f'x = {un_op1} {arg1} {bin_op} {un_op2} {arg2}'
                 yield input_string
 
-@pytest.mark.parametrize("input_string", generate_invalid_input_strings())
+@pytest.mark.parametrize('input_string', generate_invalid_input_strings())
 def test_parser_incompatible_expression_use(input_string):
     with pytest.raises(parser.ParseError, match='Could not parse the following:'):
         parser.parseSourceCode(input_string)

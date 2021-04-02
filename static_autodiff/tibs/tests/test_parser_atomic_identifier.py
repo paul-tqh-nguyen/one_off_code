@@ -2,6 +2,8 @@ import pytest
 
 from tibs import parser
 
+# TODO make sure all these imports are used
+
 VALID_IDENTIFIERS = (
         'var',
         'var_1',

@@ -41,6 +41,8 @@ from tibs.ast_node import (
     ModuleASTNode,
 ) # TODO reorder these in according to their declaration
 
+# TODO make sure all these imports are used
+
 EXPECTED_INPUT_OUTPUT_PAIRS = (
     (' "asd" << "dsa" ', StringConcatenationExpressionASTNode(left_arg=StringLiteralASTNode(value='asd'), right_arg=StringLiteralASTNode(value='dsa'))),
     (' "asd" << variable ', StringConcatenationExpressionASTNode(left_arg=StringLiteralASTNode(value='asd'), right_arg=VariableASTNode(name='variable'))),
@@ -63,7 +65,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
         right_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f')))
 )
 
-@pytest.mark.parametrize("input_string,expected_result", EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_string_expression(input_string, expected_result):
     module_node = parser.parseSourceCode('x = '+input_string)
     assert isinstance(module_node, ModuleASTNode)

@@ -41,6 +41,8 @@ from tibs.ast_node import (
     ModuleASTNode,
 ) # TODO reorder these in according to their declaration
 
+# TODO make sure all these imports are used
+
 EXPECTED_INPUT_OUTPUT_PAIRS = (
     ('not False', NotExpressionASTNode(arg=BooleanLiteralASTNode(value=False))),
     ('not True', NotExpressionASTNode(arg=BooleanLiteralASTNode(value=True))),
@@ -122,7 +124,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
         function_name='f'))),
 )
 
-@pytest.mark.parametrize("input_string,expected_result", EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_boolean_expression(input_string, expected_result):
     module_node = parser.parseSourceCode('x = '+input_string)
     assert isinstance(module_node, ModuleASTNode)

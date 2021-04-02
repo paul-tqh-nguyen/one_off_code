@@ -41,6 +41,8 @@ from tibs.ast_node import (
     ModuleASTNode,
 ) # TODO reorder these in according to their declaration
 
+# TODO make sure all these imports are used
+
 INPUT_STRINGS = (
     'function f() -> NothingType {}',
     '''
@@ -92,7 +94,7 @@ function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> g(b:=1, a:=3, b:
 ''',
 )
 
-@pytest.mark.parametrize("input_string", INPUT_STRINGS)
+@pytest.mark.parametrize('input_string', INPUT_STRINGS)
 def test_parser_function_definition(input_string):
     # TODO test that the parses are correct
     parser.parseSourceCode(input_string)

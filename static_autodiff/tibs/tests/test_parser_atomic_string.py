@@ -2,6 +2,8 @@ import pytest
 
 from tibs import parser
 
+# TODO make sure all these imports are used
+
 EXPECTED_INPUT_OUTPUT_PAIRS = (
     pytest.param('', ''),
     pytest.param('adsf', 'adsf'),
@@ -14,7 +16,7 @@ s
 f''', 'a\nd\ns\nf'),
 )
 
-@pytest.mark.parametrize("input_string,expected_result", EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_atomic_string(input_string, expected_result):
     for input_string, expected_result in expected_input_output_pairs:
         module_node = parser.parseSourceCode(f'x = "{input_string}"')

@@ -89,7 +89,7 @@ x: Integer
     )
 )
 
-@pytest.mark.parametrize("input_string", INVALID_INPUT_STRINGS)
+@pytest.mark.parametrize('input_string', INVALID_INPUT_STRINGS)
 def test_parser_invalid_misc(input_string):
     with pytest.raises(parser.ParseError, match='Could not parse the following:'):
         parser.parseSourceCode(input_string)

@@ -2,6 +2,8 @@
 import pytest
 from tibs import parser
 
+# TODO make sure all these imports are used
+
 TYPES = [
     'NothingType',
     'Integer',
@@ -62,7 +64,7 @@ INVALID_INPUT_STRINGS = [
     for keyword in keywords
 ]
 
-@pytest.mark.parametrize("input_string", INVALID_INPUT_STRINGS)
+@pytest.mark.parametrize('input_string', INVALID_INPUT_STRINGS)
 def test_parser_invalid_keyword_use(input_string):
     with pytest.raises(parser.ParseError, match='Could not parse the following:'):
         parser.parseSourceCode(input_string)

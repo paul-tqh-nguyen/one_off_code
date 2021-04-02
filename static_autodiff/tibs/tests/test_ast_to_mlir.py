@@ -12,6 +12,8 @@ import pytest
 from tibs import parser
 from tibs.misc_utilities import *
 
+# TODO make sure all these imports are used
+
 def test_mlir_from_print():
     input_string = '''
 x = [[1,2,3], [4,5,6], [7,8,9]]
