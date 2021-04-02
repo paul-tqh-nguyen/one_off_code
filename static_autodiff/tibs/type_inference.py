@@ -53,6 +53,7 @@ from .parser import (
     AssignmentASTNode,
     ModuleASTNode,
 )
+from .ast_node import EMPTY_TENSOR_TYPE_AST_NODE
 from .misc_utilities import *
 
 # TODO make sure imports are used
@@ -145,21 +146,35 @@ def determine_expression_ast_node_type(ast_node: ExpressionASTNode, var_name_to_
 def assignment_type_inference(ast_node: AssignmentASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
     changed = False
     for variable_node, tensor_type_node in ast_node.variable_type_pairs:
-        if tensor_type_node.base_type_name is not None:
+        if tensor_type_node != EMPTY_TENSOR_TYPE_AST_NODE:
             if variable_node.name in var_name_to_type_info:
                 assert_type_consistency(variable_node, var_name_to_type_info[variable_node.name], tensor_type_node)
             else:
                 var_name_to_type_info[variable_node.name] = tensor_type_node.base_type_name
     if isinstance(ast_node.value, FunctionCallExpressionASTNode):
-        raise NotImplementedError # TODO support this
+        ASSERT.TypeInferenceFailure(ast_node.value.function_name in var_name_to_type_info, f'Return type of {ast_node.value.function_name} is not declared.')
+        return_types = var_name_to_type_info[ast_node.value.function_name].function_return_types
+        if len(return_types) != len(ast_node.variable_type_pairs):
+            raise TypeInferenceFailure(f'{ast_node} attempts to assign the result of {ast_node.value.function_name}, which returns {len(return_types)} values, to {len(ast_node.variable_type_pairs)} variables.')
+        for return_index, return_type in enumerate(return_types):
+            inferred_type = return_type
+            variable_node, tensor_type_node = ast_node.variable_type_pairs[return_index]
+            if tensor_type_node == EMPTY_TENSOR_TYPE_AST_NODE:
+                ast_node.variable_type_pairs[return_index] = (variable_node, inferred_type)
+                var_name_to_type_info[variable_node.name] = inferred_type
+                changed = True
+            else:
+                assert_type_consistency(variable_node, inferred_type, var_name_to_type_info[variable_node.name])
     elif isinstance(ast_node.value, ExpressionASTNode):
        variable_node, tensor_type_node = only_one(ast_node.variable_type_pairs)
        inferred_type = determine_expression_ast_node_type(ast_node.value, var_name_to_type_info)
        if variable_node.name in var_name_to_type_info:
            assert_type_consistency(variable_node, inferred_type, var_name_to_type_info[variable_node.name])
        else:
-           assert tensor_type_node.base_type_name is None
+           assert tensor_type_node == EMPTY_TENSOR_TYPE_AST_NODE
            ast_node.variable_type_pairs = [(variable_node, inferred_type)]
+           var_name_to_type_info[variable_node.name] = inferred_type
+           changed = True
     else:
         assert isinstance(ast_node.value, ASTNode)
         raise NotImplementedError(f'Type inference on node type {type(ast_node.value)} not yet supported.')

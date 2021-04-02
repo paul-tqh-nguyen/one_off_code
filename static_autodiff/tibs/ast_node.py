@@ -482,12 +482,14 @@ class TensorTypeASTNode(ASTNode):
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
 
+EMPTY_TENSOR_TYPE_AST_NODE = TensorTypeASTNode(None, None)
+
 # Assignment Node Generation
 
 def parse_variable_type_declaration_pe(_s: str, _loc: int, type_label_tokens: pyparsing.ParseResults) -> TensorTypeASTNode:
     assert len(type_label_tokens) in (0, 1)
     if len(type_label_tokens) is 0:
-        node_instance: TensorTypeASTNode = TensorTypeASTNode(None, None)
+        node_instance: TensorTypeASTNode = EMPTY_TENSOR_TYPE_AST_NODE
     elif len(type_label_tokens) is 1:
         node_instance: TensorTypeASTNode = only_one(type_label_tokens)
     else:
