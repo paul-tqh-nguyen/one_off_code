@@ -2,13 +2,13 @@ import pytest
 
 from tibs import parser
 
-EXPECTED_INPUT_OUTPUT_PAIRS = [
+EXPECTED_INPUT_OUTPUT_PAIRS = (
     pytest.param('123', 123),
     pytest.param('0', 0),
     pytest.param('0000', 0),
     pytest.param('00\
 00', 0),
-]
+)
 
 @pytest.mark.parametrize("input_string,expected_result", EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_atomic_integer(input_string, expected_result):
