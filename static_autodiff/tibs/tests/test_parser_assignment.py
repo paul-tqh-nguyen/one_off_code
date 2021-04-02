@@ -67,7 +67,7 @@ TEST_CASES = (
             arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=12))],
             function_name='f')
         ),
-        {
+        { # TODO verify that this body is correct
             'f': FunctionDefinitionASTNode(
                 function_body=ScopedStatementSequenceASTNode(statements=[ReturnStatementASTNode(return_values=[
                     BooleanLiteralASTNode(value=True),
