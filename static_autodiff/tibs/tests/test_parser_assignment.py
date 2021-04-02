@@ -97,14 +97,26 @@ TEST_CASES = (
         {}
     ),
     (
-        'x: NothingType<1,?> = Nothing',
+        'x: NothingType<1,?> = [[Nothing, Nothing, Nothing]]',
         AssignmentASTNode(
-            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='NothingType', shape=[IntegerLiteralASTNode(value=1), None]))],
-            value=NothingTypeLiteralASTNode()
+            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='NothingType', shape=[1, None]))],
+            value=VectorExpressionASTNode(values=[
+                VectorExpressionASTNode(values=[
+                    NothingTypeLiteralASTNode(),
+                    NothingTypeLiteralASTNode(),
+                    NothingTypeLiteralASTNode()
+                ]),
+            ])
         ),
         AssignmentASTNode(
-            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='NothingType', shape=[IntegerLiteralASTNode(value=1), None]))],
-            value=NothingTypeLiteralASTNode()
+            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='NothingType', shape=[1, None]))],
+            value=VectorExpressionASTNode(values=[
+                VectorExpressionASTNode(values=[
+                    NothingTypeLiteralASTNode(),
+                    NothingTypeLiteralASTNode(),
+                    NothingTypeLiteralASTNode()
+                ]),
+            ])
         ),
         {}
     ),
@@ -121,65 +133,81 @@ TEST_CASES = (
         {}
     ),
     (
-        'x: Integer<2,3,4> = 1',
+        'x: Integer<2,3,1> = [[[1], [2], [3]], [[1], [2], [3]]]',
         AssignmentASTNode(
             variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(
                 base_type_name='Integer',
-                shape=[
-                    IntegerLiteralASTNode(value=2),
-                    IntegerLiteralASTNode(value=3),
-                    IntegerLiteralASTNode(value=4),
-                ]))],
-            value=IntegerLiteralASTNode(value=1)
+                shape=[2, 3, 1]
+            ))],
+            value=VectorExpressionASTNode(values=[
+                VectorExpressionASTNode(values=[
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=2)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=3)])
+                ]),
+                VectorExpressionASTNode(values=[
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=2)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=3)])
+                ])
+            ])
         ),
         AssignmentASTNode(
             variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(
                 base_type_name='Integer',
-                shape=[
-                    IntegerLiteralASTNode(value=2),
-                    IntegerLiteralASTNode(value=3),
-                    IntegerLiteralASTNode(value=4),
-                ]))],
-            value=IntegerLiteralASTNode(value=1)
+                shape=[2, 3, 1]
+            ))],
+            value=VectorExpressionASTNode(values=[
+                VectorExpressionASTNode(values=[
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=2)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=3)])
+                ]),
+                VectorExpressionASTNode(values=[
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=2)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=3)])
+                ])
+            ])
         ),
-        {}
+        {'bogus_distractor_var': TensorTypeASTNode(base_type_name='String', shape=[2, 3, 1])}
     ),
     (
         'x: Float<?> = value',
         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=[None]))], value=VariableASTNode(name='value')),
         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=[None]))], value=VariableASTNode(name='value')),
-        {}
+        {'value': TensorTypeASTNode(base_type_name='Float', shape=[None])}
     ),
     (
         'x: Float<???> = value',
         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=None))], value=VariableASTNode(name='value')),
         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=None))], value=VariableASTNode(name='value')),
-        {}
+        {'value': TensorTypeASTNode(base_type_name='Float', shape=[1,2,3,4,5])}
     ),
     (
         'x: Float<?, ?, ?> = value',
         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=[None, None, None]))], value=VariableASTNode(name='value')),
         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=[None, None, None]))], value=VariableASTNode(name='value')),
-        {}
+        {'value': TensorTypeASTNode(base_type_name='Float', shape=[None, 1234, None])}
     ),
     (
         'x: Boolean<?, 3, ?> = value',
         AssignmentASTNode(
-            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Boolean', shape=[None, IntegerLiteralASTNode(value=3), None]))],
+            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Boolean', shape=[None, 3, None]))],
             value=VariableASTNode(name='value')
         ),
         AssignmentASTNode(
-            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Boolean', shape=[None, IntegerLiteralASTNode(value=3), None]))],
+            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Boolean', shape=[None, 3, None]))],
             value=VariableASTNode(name='value')
         ),
-        {}
+        {'value': TensorTypeASTNode(base_type_name='Float', shape=[9999, 3, None])}
     ),
     (
         'x: Float<??\
 ?> = value',
         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=None))], value=VariableASTNode(name='value')),
         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=None))], value=VariableASTNode(name='value')),
-        {}
+        {'value': TensorTypeASTNode(base_type_name='Float', shape=[None, None, None, None, None])}
     ),
 )
 

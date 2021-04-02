@@ -8,6 +8,7 @@
 # Imports #
 ###########
 
+from functools import reduce
 from typing import Dict, Callable, Tuple, Union, Optional
 import typing_extensions
 
@@ -78,9 +79,20 @@ class TypeInferenceConsistencyError(Exception):
 # Type Inference Consistency Checking Utilities #
 #################################################
 
-def assert_type_consistency(ast_node: ASTNode, type_a: Union[TensorTypeASTNode, FunctionDefinitionASTNode], type_b: Union[TensorTypeASTNode, FunctionDefinitionASTNode]) -> None:
-    if not type_a == type_b:
-        raise TypeInferenceConsistencyError(ast_node, type_a, type_b)
+def _assert_type_consistency(type_a: Union[TensorTypeASTNode, FunctionDefinitionASTNode], type_b: Union[TensorTypeASTNode, FunctionDefinitionASTNode]) -> bool:
+    if type_a == type_b:
+        return True
+    if type(type_a) == TensorTypeASTNode == type(type_b):
+        if None in (type_a.shape, type_b.shape):
+            return True
+        if len(type_a.shape) == len(type_b.shape):
+            if all(dim_a == dim_b for dim_a, dim_b in zip(type_a.shape, type_b.shape) if None not in (dim_a, dim_b)):
+                return  True
+    return False
+
+def assert_type_consistency(ast_node: ASTNode, *types: Union[TensorTypeASTNode, FunctionDefinitionASTNode]) -> None:
+    if not reduce(_assert_type_consistency, types):
+        raise TypeInferenceConsistencyError(ast_node, *types)
     return
 
 ######################################
@@ -124,9 +136,12 @@ def determine_expression_ast_node_type(ast_node: ExpressionASTNode, var_name_to_
     elif isinstance(ast_node, FunctionCallExpressionASTNode):
         ASSERT.TypeInferenceFailure(ast_node.function_name in var_name_to_type_info, f'Return type of {ast_node.function_name} is not declared.')
         return_types = var_name_to_type_info[ast_node.function_name].function_return_types
+        assert len(return_types) != 0
         if len(return_types) != 1:
-            raise TypeInferenceConsistencyError(ast_node, return_types[0], return_types[1])
+            raise TypeInferenceConsistencyError(ast_node, *return_types)
         inferred_type = only_one(return_types)
+    elif isinstance(ast_node, VariableASTNode):
+        inferred_type = var_name_to_type_info[ast_node.name]
     elif isinstance(ast_node, UnaryOperationExpressionASTNode):
         inferred_type = determine_expression_ast_node_type(ast_node.arg, var_name_to_type_info)
     elif isinstance(ast_node, BinaryOperationExpressionASTNode):
@@ -134,6 +149,16 @@ def determine_expression_ast_node_type(ast_node: ExpressionASTNode, var_name_to_
         right_arg_inferred_type = determine_expression_ast_node_type(ast_node.right_arg, var_name_to_type_info)
         if left_arg_inferred_type == right_arg_inferred_type:
             inferred_type = left_arg_inferred_type
+    elif isinstance(ast_node, VectorExpressionASTNode):
+        element_types = (determine_expression_ast_node_type(value, var_name_to_type_info) for value in ast_node.values)
+        element_types = quadratic_unique(element_types)
+        if len(element_types) == 1:
+            element_type = only_one(element_types)
+            inferred_type = TensorTypeASTNode(base_type_name=element_type.base_type_name, shape=[len(ast_node.values)]+element_type.shape)
+        elif len(element_types) == 0:
+            raise NotImplementedError # TODO handle this case
+        else:
+            assert_type_consistency(ast_node, *element_types)
     if inferred_type is BOGUS_TOKEN:
         raise NotImplementedError(f'Could not determine type of {ast_node}.')
     return inferred_type
@@ -150,7 +175,7 @@ def assignment_type_inference(ast_node: AssignmentASTNode, var_name_to_type_info
             if variable_node.name in var_name_to_type_info:
                 assert_type_consistency(variable_node, var_name_to_type_info[variable_node.name], tensor_type_node)
             else:
-                var_name_to_type_info[variable_node.name] = tensor_type_node.base_type_name
+                var_name_to_type_info[variable_node.name] = tensor_type_node
     if isinstance(ast_node.value, FunctionCallExpressionASTNode):
         ASSERT.TypeInferenceFailure(ast_node.value.function_name in var_name_to_type_info, f'Return type of {ast_node.value.function_name} is not declared.')
         return_types = var_name_to_type_info[ast_node.value.function_name].function_return_types

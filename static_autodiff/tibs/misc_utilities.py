@@ -52,7 +52,8 @@ __all__ = [
     'false',
     'current_timestamp_string',
     'unzip',
-    'histogram'
+    'histogram',
+    'quadratic_unique',
 ]
 
 # Type Checking Utilities
@@ -598,3 +599,10 @@ def histogram(iterator: Iterable) -> Counter:
         counter[element]+=1
     return counter
 
+from typing import Iterable, List
+def quadratic_unique(iterator: Iterable) -> List:
+    answer = []
+    for element in iterator:
+        if element not in answer:
+            answer.append(element)
+    return answer    
