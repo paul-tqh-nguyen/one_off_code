@@ -40,6 +40,7 @@ from tibs.ast_node import (
     AssignmentASTNode,
     ModuleASTNode,
 ) # TODO reorder these in according to their declaration
+from tibs.misc_utilities import *
 
 # TODO make sure all these imports are used
 
@@ -88,6 +89,7 @@ function f() -> NothingType {{
     assert isinstance(function_definition_node, FunctionDefinitionASTNode)
     assert function_definition_node.function_name == 'f'
     assert function_definition_node.function_signature == []
+    assert function_definition_node.function_return_types == [TensorTypeASTNode(base_type_name='NothingType', shape=[])]
     function_body = function_definition_node.function_body
     assert isinstance(function_body, ScopedStatementSequenceASTNode)
     return_statement_node = only_one(function_body.statements)

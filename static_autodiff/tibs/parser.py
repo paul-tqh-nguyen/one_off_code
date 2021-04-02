@@ -39,6 +39,7 @@ from collections import defaultdict
 import operator
 
 from .parser_utilities import (
+    ParseError,
     BASE_TYPES,
     BaseTypeName,
     sanity_check_base_types,
@@ -325,7 +326,7 @@ scoped_statement_sequence_pe <<= (Suppress('{') + statement_sequence_pe + Suppre
 # Function Definition Parser Elements
 
 function_signature_pe = Suppress('(') + Group(Optional(delimitedList(Group(variable_pe + variable_type_declaration_pe)))) + Suppress(')')
-function_return_type_pe = (Suppress('->') + delimitedList(tensor_type_pe, delim=',')).setParseAction(TensorTypeASTNode.parse_action)
+function_return_type_pe = Suppress('->') + Group(delimitedList(tensor_type_pe, delim=','))
 
 function_definition_pe <<= (
     function_definition_keyword_pe +
@@ -377,25 +378,10 @@ module_pe = statement_sequence_pe.copy().setParseAction(ModuleASTNode.parse_acti
 # Entry Points #
 ################
 
-class ParseError(Exception):
-
-    def __init__(self, original_text: str, problematic_text: str, problem_column_number: int) -> None:
-        self.original_text = original_text
-        self.problematic_text = problematic_text
-        self.problem_column_number = problem_column_number
-        super().__init__(f'''Could not parse the following:
-
-    {self.problematic_text}
-    {(' '*(self.problem_column_number - 1))}^
-''')
-        return
-
 def parseSourceCode(input_string: str) -> ModuleASTNode:
     '''The returned ModuleASTNode may contain the same identical-in-memory nodes due to caching.'''
-    from . import type_inference
     try:
         result = only_one(module_pe.parseString(input_string, parseAll=True))
-        type_inference.perform_type_inference(result)
     except pyparsing.ParseException as exception:
         raise ParseError(input_string, exception.line, exception.col)
     return result

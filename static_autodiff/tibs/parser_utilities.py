@@ -19,6 +19,23 @@ from .misc_utilities import *
 # TODO make sure imports are used
 # TODO make sure these imports are ordered in some way
 
+###################
+# Exception Types #
+###################
+
+class ParseError(Exception):
+
+    def __init__(self, original_text: str, problematic_text: str, problem_column_number: int) -> None:
+        self.original_text = original_text
+        self.problematic_text = problematic_text
+        self.problem_column_number = problem_column_number
+        super().__init__(f'''Could not parse the following:
+
+    {self.problematic_text}
+    {(' '*(self.problem_column_number - 1))}^
+''')
+        return
+
 #######################################
 # Base Type Sanity Checking Utilities #
 #######################################

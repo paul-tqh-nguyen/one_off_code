@@ -40,6 +40,7 @@ from tibs.ast_node import (
     AssignmentASTNode,
     ModuleASTNode,
 ) # TODO reorder these in according to their declaration
+from tibs.misc_utilities import *
 
 # TODO make sure all these imports are used
 

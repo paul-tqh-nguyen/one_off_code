@@ -12,6 +12,7 @@ import typing
 import typing_extensions
 from abc import ABC, abstractmethod
 import pyparsing
+import operator
 from functools import reduce
 
 from .parser_utilities import (
@@ -45,7 +46,7 @@ class ASTNode(ABC):
     @abstractmethod
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
-
+    
     def __repr__(self) -> str:
         attributes_string = ', '.join(f'{k}={repr(self.__dict__[k])}' for k in sorted(self.__dict__.keys()))
         return f'{self.__class__.__name__}({attributes_string})'
@@ -516,8 +517,6 @@ class AssignmentASTNode(StatementASTNode):
     
     def emit_mlir(self) -> 'str':
         assert implies(len(self.variable_type_pairs) != 1, isinstance(self.value, FunctionCallExpressionASTNode))
-        for variable_node, tensor_type_node in self.variable_type_pairs:
-            breakpoint() # TODO remove this
         raise NotImplementedError
 
 # Return Statement Node Generation
@@ -606,8 +605,6 @@ class FunctionDefinitionASTNode(StatementASTNode):
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionASTNode':
         function_name, function_signature, function_return_types, function_body = tokens.asList()
         function_signature = eager_map(tuple, function_signature)
-        function_return_types = function_return_types.asList()
-        breakpoint() # TODO remove this
         node_instance = cls(function_name, function_signature, function_return_types, function_body)
         return node_instance
 
