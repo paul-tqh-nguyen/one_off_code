@@ -61,17 +61,20 @@ TEST_CASES = (
             function_name='f')
         ),
         AssignmentASTNode(variable_type_pairs=[
-            (VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[])),
-            (VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Integer', shape=[]))
+            (VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Boolean', shape=[])),
+            (VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Float', shape=[2]))
         ], value=FunctionCallExpressionASTNode(
             arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=12))],
             function_name='f')
         ),
         {
             'f': FunctionDefinitionASTNode(
-                function_body=ScopedStatementSequenceASTNode(statements=[ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True), FloatLiteralASTNode(value=12.34)])]),
+                function_body=ScopedStatementSequenceASTNode(statements=[ReturnStatementASTNode(return_values=[
+                    BooleanLiteralASTNode(value=True),
+                    VectorExpressionASTNode(values=[FloatLiteralASTNode(value=2.2), FloatLiteralASTNode(value=3.3)])
+                ])]),
                 function_name='f',
-                function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[]), TensorTypeASTNode(base_type_name='Float', shape=[])],
+                function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[]), TensorTypeASTNode(base_type_name='Float', shape=[2])],
                 function_signature=[])
         }
     ),
