@@ -133,6 +133,8 @@ def determine_expression_ast_node_type(ast_node: ExpressionASTNode, var_name_to_
         inferred_type = TensorTypeASTNode(base_type_name='NothingType', shape=[])
     elif isinstance(ast_node, IntegerLiteralASTNode):
         inferred_type = TensorTypeASTNode(base_type_name='Integer', shape=[])
+    elif isinstance(ast_node, BooleanLiteralASTNode):
+        inferred_type = TensorTypeASTNode(base_type_name='Boolean', shape=[])
     elif isinstance(ast_node, FunctionCallExpressionASTNode):
         ASSERT.TypeInferenceFailure(ast_node.function_name in var_name_to_type_info, f'Return type of {ast_node.function_name} is not declared.')
         return_types = var_name_to_type_info[ast_node.function_name].function_return_types
