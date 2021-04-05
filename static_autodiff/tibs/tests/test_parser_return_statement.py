@@ -105,5 +105,5 @@ function f() -> NothingType {{
 '''
     ast = parser.parseSourceCode(input_string)
     ast_with_type_inference = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(ast_with_type_inference, {'some_variable': TensorTypeASTNode(base_type_name='String', shape=[3])})
+    type_inference.perform_type_inference(ast_with_type_inference, {'some_variable': TensorTypeASTNode(base_type_name='Boolean', shape=[3])})
     assert ast == ast_with_type_inference

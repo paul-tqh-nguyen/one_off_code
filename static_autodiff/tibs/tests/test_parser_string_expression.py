@@ -1,6 +1,6 @@
 import pytest
 
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
@@ -85,3 +85,26 @@ input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
+
+@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+def test_type_inference_string_expression(input_string, expected_result):
+    module_node = parser.parseSourceCode('x = '+input_string)
+    type_inference.perform_type_inference(module_node, {
+        'f': FunctionDefinitionASTNode(
+            function_name='f',
+            function_signature=[(VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='NothingType', shape=[]))],
+            function_return_types=[TensorTypeASTNode(base_type_name='String', shape=[])],
+            function_body=ReturnStatementASTNode(return_values=[StringLiteralASTNode(value='blah')])
+        ),
+        'variable': TensorTypeASTNode(base_type_name='String', shape=[])
+    })
+    assert isinstance(module_node, ModuleASTNode)
+    assert isinstance(module_node.statements, list)
+    assignment_node = only_one(module_node.statements)
+    assert isinstance(assignment_node, AssignmentASTNode)
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name is 'String'
+    assert tensor_type_node.shape == []
