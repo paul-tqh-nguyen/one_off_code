@@ -1,6 +1,6 @@
 import pytest
 
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
@@ -51,9 +51,6 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
             arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
             function_name='func'
         ))),
-    ('while False xor True return 3', WhileLoopASTNode(
-        condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
-        body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)]))),
     ('''
 while not False {
     Nothing
@@ -84,7 +81,7 @@ while not False {
             delta=IntegerLiteralASTNode(value=2)))),
 )
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_while_loop(input_string, expected_result):
     module_node = parser.parseSourceCode(input_string)
     assert isinstance(module_node, ModuleASTNode)
@@ -96,3 +93,10 @@ input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
+    
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+def test_type_inference_while_loop(input_string, expected_result):
+    ast = parser.parseSourceCode(input_string)
+    ast_with_type_inference = parser.parseSourceCode(input_string)
+    type_inference.perform_type_inference(ast_with_type_inference)
+    assert ast == ast_with_type_inference

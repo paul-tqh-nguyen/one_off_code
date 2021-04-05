@@ -144,7 +144,8 @@ function f(a: NothingType) -> NothingType {
        True or True
        return
    }
-
+        
+   while False xor True return 3
 }
 
 ''',
@@ -207,8 +208,12 @@ function f(a: NothingType) -> NothingType {
                         supremum=IntegerLiteralASTNode(value=10),
                         delta=IntegerLiteralASTNode(value=2)
                     ),
+                    WhileLoopASTNode(
+                        condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
+                        body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)])
+                    )
                 ])
-            ),
+            )
         ]),
         ModuleASTNode(statements=[
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
@@ -269,6 +274,10 @@ function f(a: NothingType) -> NothingType {
                         supremum=IntegerLiteralASTNode(value=10),
                         delta=IntegerLiteralASTNode(value=2)
                     ),
+                    WhileLoopASTNode(
+                        condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
+                        body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)])
+                    )
                 ])
             ),
         ])

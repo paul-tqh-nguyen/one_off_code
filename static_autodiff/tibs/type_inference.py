@@ -251,6 +251,22 @@ def module_type_inference(ast_node: ModuleASTNode, var_name_to_type_info: Dict[s
         changed |= statement_changed
     return var_name_to_type_info, changed
 
+@register_type_inference_method(ConditionalASTNode)
+def conditional_type_inference(ast_node: ConditionalASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    condition_inferred_type = determine_expression_ast_node_type(ast_node.condition, var_name_to_type_info)
+    assert_type_consistency(ast_node, condition_inferred_type, TensorTypeASTNode(base_type_name='Boolean', shape=[]))
+    var_name_to_type_info, then_changed = perform_type_inference(ast_node.then_body, var_name_to_type_info, latest_function_name)
+    var_name_to_type_info, else_changed = perform_type_inference(ast_node.else_body, var_name_to_type_info, latest_function_name)
+    changed = then_changed or else_changed
+    return var_name_to_type_info, changed
+
+@register_type_inference_method(WhileLoopASTNode)
+def while_loop_type_inference(ast_node: WhileLoopASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    condition_inferred_type = determine_expression_ast_node_type(ast_node.condition, var_name_to_type_info)
+    assert_type_consistency(ast_node, condition_inferred_type, TensorTypeASTNode(base_type_name='Boolean', shape=[]))
+    var_name_to_type_info, changed = perform_type_inference(ast_node.body, var_name_to_type_info, latest_function_name)
+    return var_name_to_type_info, changed
+
 @register_type_inference_method(ForLoopASTNode)
 def for_loop_type_inference(ast_node: ForLoopASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
     changed = False
@@ -266,7 +282,9 @@ def for_loop_type_inference(ast_node: ForLoopASTNode, var_name_to_type_info: Dic
     if iterator_variable_known:
         var_name_to_type_info, changed = perform_type_inference(ast_node.body, var_name_to_type_info, latest_function_name)
     else:
-        var_name_to_type_info, changed = perform_type_inference(ast_node.body, {ast_node.iterator_variable_name: only_one(inferred_types)}.update(var_name_to_type_info), latest_function_name)
+        inferred_type = only_one(quadratic_unique(inferred_types))
+        var_name_to_type_info[ast_node.iterator_variable_name] = inferred_type
+        var_name_to_type_info, changed = perform_type_inference(ast_node.body, var_name_to_type_info, latest_function_name)
         del var_name_to_type_info[ast_node.iterator_variable_name]
     return var_name_to_type_info, changed
 
