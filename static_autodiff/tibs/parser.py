@@ -325,13 +325,13 @@ scoped_statement_sequence_pe <<= (Suppress('{') + statement_sequence_pe + Suppre
 # Function Definition Parser Elements
 
 function_signature_pe = Suppress('(') + Group(Optional(delimitedList(Group(variable_pe + variable_type_declaration_pe)))) + Suppress(')')
-function_return_type_pe = Suppress('->') + delimitedList(tensor_type_pe, delim=',')
+function_return_types_pe = Suppress('->') + Group(delimitedList(tensor_type_pe, delim=','))
 
 function_definition_pe <<= (
     function_definition_keyword_pe +
     identifier_pe +
     function_signature_pe +
-    function_return_type_pe +
+    function_return_types_pe +
     required_atomic_statement_pe
 ).ignore(ignorable_pe).setParseAction(FunctionDefinitionASTNode.parse_action)
 

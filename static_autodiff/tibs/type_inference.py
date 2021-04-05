@@ -8,6 +8,7 @@
 # Imports #
 ###########
 
+import itertools
 from functools import reduce
 from typing import Dict, Callable, Tuple, Union, Optional
 import typing_extensions
@@ -67,7 +68,7 @@ from .misc_utilities import *
 class TypeInferenceFailure(Exception):
     pass
 
-class TypeInferenceConsistencyError(Exception):
+class TypeInferenceConsistencyError(TypeInferenceFailure):
 
     def __init__(self, ast_node: ASTNode, *inconsistent_types: Union[TensorTypeASTNode, FunctionDefinitionASTNode]) -> None:
         self.ast_node = ast_node
@@ -91,8 +92,9 @@ def _assert_type_consistency(type_a: Union[TensorTypeASTNode, FunctionDefinition
     return False
 
 def assert_type_consistency(ast_node: ASTNode, *types: Union[TensorTypeASTNode, FunctionDefinitionASTNode]) -> None:
-    if not reduce(_assert_type_consistency, types):
-        raise TypeInferenceConsistencyError(ast_node, *types)
+    for type_1, type_2 in zip(types[1:], types):
+        if not _assert_type_consistency(type_1, type_2):
+            raise TypeInferenceConsistencyError(ast_node, type_1, type_2)
     return
 
 ######################################
@@ -102,24 +104,28 @@ def assert_type_consistency(ast_node: ASTNode, *types: Union[TensorTypeASTNode, 
 AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD: Dict= {}
 
 def register_type_inference_method(ast_node_type: type) -> Callable[
-        [Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]],
-        Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]
+        [Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]], 
+        Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]
 ]:
-    assert issubclass(ast_node_type, ASTNode)
+    '''Handes ast_node_type and all child classes.'''
     def decorator(
-            type_inference_method: Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]
-    ) -> Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]:
+            type_inference_method: Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]
+    ) -> Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]:
         '''
         type_inference_method can safely modify the given dict as this decorator automatically makes a copy before passing it in.
         The dict returned by type_inference_method should be a dict that can safely be reused by the parent AST node for performing more type inference.
         type_inference_method is expected to also do sanity checking that there are no type conflicts.
         '''
-        assert ast_node_type not in AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD, f'Type inference method for {ast_node_type} redundantly declared.'
-        def decorated_func(ast_node: ASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
-            assert isinstance(ast_node, ast_node_type)
-            var_name_to_type_info  = dict(var_name_to_type_info)
-            return type_inference_method(ast_node, var_name_to_type_info)
-        AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD[ast_node_type] = decorated_func
+        child_ast_node_types = {child_ast_node_type for child_ast_node_type in child_classes(ast_node_type) if child_ast_node_type != ast_node_type}
+        child_ast_node_types = itertools.chain(child_ast_node_types, [ast_node_type]) # process ast_node_type last since that's the decorator we want to return
+        for child_ast_node_type in child_ast_node_types:
+            assert issubclass(child_ast_node_type, ASTNode)
+            assert child_ast_node_type not in AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD, f'Type inference method for {child_ast_node_type} redundantly declared.'
+            def decorated_func(ast_node: ASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+                assert isinstance(ast_node, child_ast_node_type)
+                var_name_to_type_info = dict(var_name_to_type_info)
+                return type_inference_method(ast_node, var_name_to_type_info, latest_function_name)
+            AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD[child_ast_node_type] = decorated_func
         return decorated_func
     return decorator
 
@@ -171,8 +177,35 @@ def determine_expression_ast_node_type(ast_node: ExpressionASTNode, var_name_to_
 # Registered Type Inference Methods #
 #####################################
 
+@register_type_inference_method(PrintStatementASTNode)
+@register_type_inference_method(ExpressionASTNode)
+def no_op_type_inference(ast_node: ASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    del ast_node
+    del latest_function_name
+    return var_name_to_type_info, False
+
+@register_type_inference_method(FunctionDefinitionASTNode)
+def function_definition_type_inference(ast_node: FunctionDefinitionASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    changed = False
+    ASSERT.TypeInferenceFailure(ast_node.function_name not in var_name_to_type_info, f'{ast_node.function_name} defined  multiple times.')
+    var_name_to_type_info[ast_node.function_name] = ast_node
+    var_name_to_type_info, changed = perform_type_inference(ast_node.function_body, var_name_to_type_info, ast_node.function_name)
+    return var_name_to_type_info, changed
+
+@register_type_inference_method(ReturnStatementASTNode)
+def return_type_inference(ast_node: ReturnStatementASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    ASSERT.TypeInferenceFailure(latest_function_name is not None, f'Return statement used outside of function body.')
+    ASSERT.TypeInferenceFailure(latest_function_name in var_name_to_type_info, f'Return type of {latest_function_name} is not declared.')
+    expected_return_types = var_name_to_type_info[latest_function_name].function_return_types
+    ASSERT.TypeInferenceFailure(len(expected_return_types) == len(ast_node.return_values), f'{latest_function_name} is declared to have {len(expected_return_types)} return values but attempts to return {len(ast_node.return_values)} values.')
+    for expected_return_type, return_value in zip(expected_return_types, ast_node.return_values):
+        return_type = determine_expression_ast_node_type(return_value, var_name_to_type_info)
+        assert_type_consistency(ast_node, expected_return_type, return_type)
+    return var_name_to_type_info, False
+
 @register_type_inference_method(AssignmentASTNode)
-def assignment_type_inference(ast_node: AssignmentASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+def assignment_type_inference(ast_node: AssignmentASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    del latest_function_name
     changed = False
     for variable_node, tensor_type_node in ast_node.variable_type_pairs:
         if tensor_type_node != EMPTY_TENSOR_TYPE_AST_NODE:
@@ -199,8 +232,9 @@ def assignment_type_inference(ast_node: AssignmentASTNode, var_name_to_type_info
        inferred_type = determine_expression_ast_node_type(ast_node.value, var_name_to_type_info)
        if variable_node.name in var_name_to_type_info:
            assert_type_consistency(variable_node, inferred_type, var_name_to_type_info[variable_node.name])
+       if tensor_type_node != EMPTY_TENSOR_TYPE_AST_NODE:
+           assert_type_consistency(variable_node, inferred_type, tensor_type_node)
        else:
-           assert tensor_type_node == EMPTY_TENSOR_TYPE_AST_NODE
            ast_node.variable_type_pairs = [(variable_node, inferred_type)]
            var_name_to_type_info[variable_node.name] = inferred_type
            changed = True
@@ -210,26 +244,64 @@ def assignment_type_inference(ast_node: AssignmentASTNode, var_name_to_type_info
     return var_name_to_type_info, changed
 
 @register_type_inference_method(ModuleASTNode)
-def module_type_inference(ast_node: ModuleASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+def module_type_inference(ast_node: ModuleASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
     changed = False
     for statement in ast_node.statements:
-        var_name_to_type_info, statement_changed = perform_type_inference(statement, var_name_to_type_info)
+        var_name_to_type_info, statement_changed = perform_type_inference(statement, var_name_to_type_info, latest_function_name)
         changed |= statement_changed
     return var_name_to_type_info, changed
+
+@register_type_inference_method(ForLoopASTNode)
+def for_loop_type_inference(ast_node: ForLoopASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    changed = False
+    inferred_types = [
+        determine_expression_ast_node_type(ast_node.minimum, var_name_to_type_info),
+        determine_expression_ast_node_type(ast_node.supremum, var_name_to_type_info),
+        determine_expression_ast_node_type(ast_node.delta, var_name_to_type_info)
+    ]
+    iterator_variable_known = ast_node.iterator_variable_name in var_name_to_type_info
+    if iterator_variable_known:
+        inferred_types.append(var_name_to_type_info[ast_node.iterator_variable_name])
+    assert_type_consistency(ast_node, *inferred_types)
+    if iterator_variable_known:
+        var_name_to_type_info, changed = perform_type_inference(ast_node.body, var_name_to_type_info, latest_function_name)
+    else:
+        var_name_to_type_info, changed = perform_type_inference(ast_node.body, {ast_node.iterator_variable_name: only_one(inferred_types)}.update(var_name_to_type_info), latest_function_name)
+        del var_name_to_type_info[ast_node.iterator_variable_name]
+    return var_name_to_type_info, changed
+
+@register_type_inference_method(ScopedStatementSequenceASTNode)
+def scoped_statement_sequence_type_inference(ast_node: ScopedStatementSequenceASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    changed = False
+    sequece_var_name_to_type_info = var_name_to_type_info
+    for statement in ast_node.statements:
+        sequece_var_name_to_type_info, _ = perform_type_inference(statement, sequece_var_name_to_type_info, latest_function_name)
+        # only update variables known outside of scope
+        for var_name in var_name_to_type_info.keys():
+            changed = var_name_to_type_info[var_name] != sequece_var_name_to_type_info[var_name]
+            if changed:
+                var_name_to_type_info[var_name] = sequece_var_name_to_type_info[var_name]
+    return var_name_to_type_info, changed
+
+# assert set(child_classes(ASTNode)) == set(AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD.keys()) # TODO enable this
 
 ###############
 # Entry Point #
 ###############
 
-def perform_type_inference(ast_node: ASTNode, var_name_to_type_info: Optional[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]] = None) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+def perform_type_inference(
+        ast_node: ASTNode,
+        var_name_to_type_info: Optional[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]]] = None,
+        latest_function_name: Optional[str] = None
+) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
     '''Modifies the AST node in place. Runs until quiescence.'''
     if var_name_to_type_info is None:
         var_name_to_type_info = dict()
     ast_node_type = type(ast_node)
     type_inference_method = AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD[ast_node_type]
-    var_name_to_type_info, changed = type_inference_method(ast_node, var_name_to_type_info)
+    var_name_to_type_info, changed = type_inference_method(ast_node, var_name_to_type_info, latest_function_name)
     while changed:
-        var_name_to_type_info, changed = type_inference_method(ast_node, var_name_to_type_info)
+        var_name_to_type_info, changed = type_inference_method(ast_node, var_name_to_type_info, latest_function_name)
     return var_name_to_type_info, changed
 
 ##########

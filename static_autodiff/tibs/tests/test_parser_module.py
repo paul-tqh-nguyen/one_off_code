@@ -1,6 +1,7 @@
 import pytest
+import os
 
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
@@ -43,37 +44,79 @@ from tibs.ast_node import (
 
 # TODO make sure all these imports are used
 
-EXPECTED_INPUT_OUTPUT_PAIRS = (
-    ('', ModuleASTNode(statements=[])),
-    ('   ', ModuleASTNode(statements=[])),
-    ('\t   \n', ModuleASTNode(statements=[])),
-    ('\n\n\n \t   \n', ModuleASTNode(statements=[])),
-    ('1 + 2',
-     ModuleASTNode(statements=[
-         AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
-     ])),
-    ('x = 1 ; 1 + 2 ; x: Integer = 1 ; Nothing',
-     ModuleASTNode(statements=[
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-         AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
-         NothingTypeLiteralASTNode(),
-     ])),
-    ('x = 1 ; x: Integer = 1 ; 1 + 2 # y = 123',
-     ModuleASTNode(statements=[
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
-         AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
-     ])
+TEST_CASES = tuple(pytest.param(*args, id=f'{os.path.basename(__file__)}_{i}') for i, args in enumerate([
+    (
+        '',
+        ModuleASTNode(statements=[]),
+        ModuleASTNode(statements=[])
     ),
-    ('''
+    (
+        '   ',
+        ModuleASTNode(statements=[]),
+        ModuleASTNode(statements=[])
+    ),
+    (
+        '\t   \n',
+        ModuleASTNode(statements=[]),
+        ModuleASTNode(statements=[])
+    ),
+    (
+        '\n\n\n \t   \n',
+        ModuleASTNode(statements=[]),
+        ModuleASTNode(statements=[])
+    ),
+    (
+        '1 + 2',
+        ModuleASTNode(statements=[
+            AdditionExpressionASTNode(
+                left_arg=IntegerLiteralASTNode(value=1),
+                right_arg=IntegerLiteralASTNode(value=2)
+            ),
+        ]),
+        ModuleASTNode(statements=[
+            AdditionExpressionASTNode(
+                left_arg=IntegerLiteralASTNode(value=1),
+                right_arg=IntegerLiteralASTNode(value=2)
+            ),
+        ])
+    ),
+    (
+        'x = 1 ; 1 + 2 ; x: Integer = 1 ; Nothing',
+        ModuleASTNode(statements=[
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
+            AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            NothingTypeLiteralASTNode(),
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            NothingTypeLiteralASTNode(),
+        ])
+    ),
+    (
+        'x = 1 ; x: Integer = 1 ; 1 + 2 # y = 123',
+        ModuleASTNode(statements=[
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
+        ])
+    ),
+    (
+        '''
 
 # comment
 
+x: Integer = 1 # comment
 x
 Nothing
 x = 1 # comment
-x: Integer = 1 # comment
 init_something()
 init_something(x:=x)
 x = 1 ; x: Integer = 1 # y = 123
@@ -88,79 +131,167 @@ x = 1 ; {
 x = 1 ; { x: Integer = 1
 } # y = 123
 
-for x:(1,10, 2) {
-    True or True
-    return
-}
+function f(a: NothingType) -> NothingType {
 
-for x\
-:\
-(1,10, 2) {
-    True or True
-    return
+   for x:(1,10, 2) {
+       True or True
+       return
+   }
+   
+   for x\
+   :\
+   (1,10, 2) {
+       True or True
+       return
+   }
+
 }
 
 ''',
-     ModuleASTNode(statements=[
-         VariableASTNode(name='x'),
-         NothingTypeLiteralASTNode(),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
-         FunctionCallExpressionASTNode(arg_bindings=[], function_name='init_something'),
-         FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), VariableASTNode(name='x'))], function_name='init_something'),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
-         AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
-         ScopedStatementSequenceASTNode(statements=[
-             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
-         ]),
-         ScopedStatementSequenceASTNode(statements=[
-             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
-         ]),
-         IntegerLiteralASTNode(value=123),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-         ScopedStatementSequenceASTNode(statements=[
-             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
-         ]),
-         IntegerLiteralASTNode(value=123),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-         ScopedStatementSequenceASTNode(statements=[
-             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
-             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
-         ]),
-         AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-         ScopedStatementSequenceASTNode(statements=[
-             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
-         ]),
-         ForLoopASTNode(
-             body=ScopedStatementSequenceASTNode(statements=[
-                 OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
-                 ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
-             ]),
-             iterator_variable_name='x',
-             minimum=IntegerLiteralASTNode(value=1),
-             supremum=IntegerLiteralASTNode(value=10),
-             delta=IntegerLiteralASTNode(value=2)
-         ),
-         ForLoopASTNode(
-             body=ScopedStatementSequenceASTNode(statements=[
-                 OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
-                 ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
-             ]),
-             iterator_variable_name='x',
-             minimum=IntegerLiteralASTNode(value=1),
-             supremum=IntegerLiteralASTNode(value=10),
-             delta=IntegerLiteralASTNode(value=2)
-         ),
-     ])),
-)
+        ModuleASTNode(statements=[
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            VariableASTNode(name='x'),
+            NothingTypeLiteralASTNode(),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
+            FunctionCallExpressionASTNode(arg_bindings=[], function_name='init_something'),
+            FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), VariableASTNode(name='x'))], function_name='init_something'),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            IntegerLiteralASTNode(value=123),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)
+            ),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            IntegerLiteralASTNode(value=123),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            FunctionDefinitionASTNode(
+                function_name='f',
+                function_signature=[(VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='NothingType', shape=[]))],
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[])],
+                function_body=ScopedStatementSequenceASTNode(statements=[
+                    ForLoopASTNode(
+                        body=ScopedStatementSequenceASTNode(statements=[
+                            OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)
+                            ),
+                            ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+                        ]),
+                        iterator_variable_name='x',
+                        minimum=IntegerLiteralASTNode(value=1),
+                        supremum=IntegerLiteralASTNode(value=10),
+                        delta=IntegerLiteralASTNode(value=2)
+                    ),
+                    ForLoopASTNode(
+                        body=ScopedStatementSequenceASTNode(statements=[
+                            OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
+                            ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+                        ]),
+                        iterator_variable_name='x',
+                        minimum=IntegerLiteralASTNode(value=1),
+                        supremum=IntegerLiteralASTNode(value=10),
+                        delta=IntegerLiteralASTNode(value=2)
+                    ),
+                ])
+            ),
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            VariableASTNode(name='x'),
+            NothingTypeLiteralASTNode(),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            FunctionCallExpressionASTNode(arg_bindings=[], function_name='init_something'),
+            FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), VariableASTNode(name='x'))], function_name='init_something'),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            AdditionExpressionASTNode(left_arg=IntegerLiteralASTNode(value=1), right_arg=IntegerLiteralASTNode(value=2)),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            IntegerLiteralASTNode(value=123),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)
+            ),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            IntegerLiteralASTNode(value=123),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
+            ScopedStatementSequenceASTNode(statements=[
+                AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1))
+            ]),
+            FunctionDefinitionASTNode(
+                function_name='f',
+                function_signature=[(VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='NothingType', shape=[]))],
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[])],
+                function_body=ScopedStatementSequenceASTNode(statements=[
+                    ForLoopASTNode(
+                        body=ScopedStatementSequenceASTNode(statements=[
+                            OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)
+                            ),
+                            ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+                        ]),
+                        iterator_variable_name='x',
+                        minimum=IntegerLiteralASTNode(value=1),
+                        supremum=IntegerLiteralASTNode(value=10),
+                        delta=IntegerLiteralASTNode(value=2)
+                    ),
+                    ForLoopASTNode(
+                        body=ScopedStatementSequenceASTNode(statements=[
+                            OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
+                            ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+                        ]),
+                        iterator_variable_name='x',
+                        minimum=IntegerLiteralASTNode(value=1),
+                        supremum=IntegerLiteralASTNode(value=10),
+                        delta=IntegerLiteralASTNode(value=2)
+                    ),
+                ])
+            ),
+        ])
+    ),
+]))
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
-def test_parser_module(input_string, expected_result):
+@pytest.mark.parametrize('input_string, parse_result, type_inference_result', TEST_CASES)
+def test_parser_module(input_string, parse_result, type_inference_result):
+    del type_inference_result
     result = parser.parseSourceCode(input_string)
-    assert result == expected_result, f'''
+    assert result == parse_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
-expected_result: {repr(expected_result)}
+parse_result: {repr(parse_result)}
+'''
+
+@pytest.mark.parametrize('input_string, parse_result, type_inference_result', TEST_CASES)
+def test_type_inference_module(input_string, parse_result, type_inference_result):
+    del parse_result
+    result = parser.parseSourceCode(input_string)
+    type_inference.perform_type_inference(result)
+    assert result == type_inference_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+type_inference_result: {repr(type_inference_result)}
 '''

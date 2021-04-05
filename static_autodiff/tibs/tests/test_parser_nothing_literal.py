@@ -1,8 +1,7 @@
 
 import pytest
-import itertools
 
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
@@ -59,6 +58,29 @@ def test_parser_nothing_literal():
     assert isinstance(tensor_type_node, TensorTypeASTNode)
     assert tensor_type_node.base_type_name == None
     assert tensor_type_node.shape == None
+    value_node = assignment_node.value
+    assert isinstance(value_node, NothingTypeLiteralASTNode)
+    result = value_node
+    expected_result = NothingTypeLiteralASTNode()
+    assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+def test_type_inference_nothing_literal():
+    module_node = parser.parseSourceCode('x = Nothing')
+    type_inference.perform_type_inference(module_node)
+    assert isinstance(module_node, ModuleASTNode)
+    assert isinstance(module_node.statements, list)
+    assignment_node = only_one(module_node.statements)
+    assert isinstance(assignment_node, AssignmentASTNode)
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert isinstance(tensor_type_node, TensorTypeASTNode)
+    assert tensor_type_node.base_type_name == 'NothingType'
+    assert tensor_type_node.shape == []
     value_node = assignment_node.value
     assert isinstance(value_node, NothingTypeLiteralASTNode)
     result = value_node

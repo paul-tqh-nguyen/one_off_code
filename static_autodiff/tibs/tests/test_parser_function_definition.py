@@ -98,3 +98,5 @@ function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> g(b:=1, a:=3, b:
 def test_parser_function_definition(input_string):
     # TODO test that the parses are correct
     parser.parseSourceCode(input_string)
+
+# TODO add type inference tests
