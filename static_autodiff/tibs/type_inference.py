@@ -103,14 +103,34 @@ def assert_type_consistency(ast_node: ASTNode, *types: Union[TensorTypeASTNode, 
 # Type Inference Method Registration #
 ######################################
 
-AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD: Dict= {}
+class TypeInferenceMethod:
+
+    def __init__(
+            self,
+            ast_node_type: type,
+            type_inference_method: Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]
+    ) -> None:
+        self.ast_node_type = ast_node_type
+        self.type_inference_method = type_inference_method
+        return
+
+    def __call__(
+            self,
+            ast_node: ASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]],
+            latest_function_name: Optional[str]
+    ) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+        assert isinstance(ast_node, self.ast_node_type)
+        var_name_to_type_info = dict(var_name_to_type_info)
+        return self.type_inference_method(ast_node, var_name_to_type_info, latest_function_name)
+
+AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD: Dict[type, TypeInferenceMethod] = {}
 
 def register_type_inference_method(*ast_node_types: type) -> Callable[
         [Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]], 
         None
 ]:
     '''Handes ast_node_type and all child classes.'''
-    def registration_decorator(
+    def decorator(
             type_inference_method: Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]
     ) -> None:
         '''
@@ -120,17 +140,13 @@ def register_type_inference_method(*ast_node_types: type) -> Callable[
         '''
         for ast_node_type in ast_node_types:
             child_ast_node_types = set(child_classes(ast_node_type))
-            child_ast_node_types.add(ast_node_type)
+            child_ast_node_types = itertools.chain(child_ast_node_types, [ast_node_type])
             for child_ast_node_type in child_ast_node_types:
                 assert issubclass(child_ast_node_type, ASTNode)
                 assert child_ast_node_type not in AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD, f'Type inference method for {child_ast_node_type} redundantly declared.'
-                def decorated_func(ast_node: ASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
-                    assert isinstance(ast_node, child_ast_node_type)
-                    var_name_to_type_info = dict(var_name_to_type_info)
-                    return type_inference_method(ast_node, var_name_to_type_info, latest_function_name)
-                AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD[child_ast_node_type] = decorated_func
+                AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD[child_ast_node_type] = TypeInferenceMethod(child_ast_node_type, type_inference_method)
         return
-    return registration_decorator
+    return decorator
 
 ##########################################
 # Expression Node Type Inference Methods #
