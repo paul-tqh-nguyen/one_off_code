@@ -1,6 +1,6 @@
 import pytest
 
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
@@ -84,13 +84,11 @@ for x:(1+0,10) {
     ('''
 for x:(1, -10, -1) {
     True or True
-    return
 }
 ''',
      ForLoopASTNode(
          body=ScopedStatementSequenceASTNode(statements=[
              OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
-             ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
          ]),
          iterator_variable_name='x',
          minimum=IntegerLiteralASTNode(value=1),
@@ -110,6 +108,24 @@ for x:(1, -10, -1) {
 @pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_for_loop(input_string, expected_result):
     module_node = parser.parseSourceCode(input_string)
+    assert isinstance(module_node, ModuleASTNode)
+    assert isinstance(module_node.statements, list)
+    result = only_one(module_node.statements)
+    assert isinstance(result, ForLoopASTNode)
+    assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+def test_type_inference_for_loop(input_string, expected_result):
+    '''Type inference should be a no-op.'''
+    module_node = parser.parseSourceCode(input_string)
+    type_inference.perform_type_inference(
+        module_node,
+        {'y': TensorTypeASTNode(base_type_name='Integer', shape=[])}
+    )
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
     result = only_one(module_node.statements)

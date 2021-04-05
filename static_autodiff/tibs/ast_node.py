@@ -697,7 +697,7 @@ class ConditionalASTNode(StatementASTNode):
             self,
             condition: typing.Union[VariableASTNode, BooleanExpressionASTNode],
             then_body: StatementASTNode,
-            else_body: StatementASTNode,
+            else_body: typing.Optional[StatementASTNode],
     ) -> None:
         self.condition = condition
         self.then_body = then_body

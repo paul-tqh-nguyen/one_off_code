@@ -67,15 +67,16 @@ TEST_CASES = (
             arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=12))],
             function_name='f')
         ),
-        { # TODO verify that this body is correct
+        {
             'f': FunctionDefinitionASTNode(
+                function_name='f',
+                function_signature=[],
+                function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[]), TensorTypeASTNode(base_type_name='Float', shape=[2])],
                 function_body=ScopedStatementSequenceASTNode(statements=[ReturnStatementASTNode(return_values=[
                     BooleanLiteralASTNode(value=True),
                     VectorExpressionASTNode(values=[FloatLiteralASTNode(value=2.2), FloatLiteralASTNode(value=3.3)])
-                ])]),
-                function_name='f',
-                function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[]), TensorTypeASTNode(base_type_name='Float', shape=[2])],
-                function_signature=[])
+                ])])
+            )
         }
     ),
     (

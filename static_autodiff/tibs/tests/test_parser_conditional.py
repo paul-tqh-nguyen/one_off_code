@@ -1,6 +1,6 @@
 import pytest
 
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
@@ -53,7 +53,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
                 arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
                 function_name='func')),
         else_body=None)),
-    ('if True xor False while False and True return 3 else 5', ConditionalASTNode(
+    ('if True xor False while False and True 3 else 5', ConditionalASTNode(
         condition=XorExpressionASTNode(
             left_arg=BooleanLiteralASTNode(value=True),
             right_arg=BooleanLiteralASTNode(value=False)
@@ -63,14 +63,14 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
                 left_arg=BooleanLiteralASTNode(value=False),
                 right_arg=BooleanLiteralASTNode(value=True)
             ),
-            body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)])),
+            body=IntegerLiteralASTNode(value=3)),
         else_body=IntegerLiteralASTNode(value=5))),
     ('''
 if False {
     while not False {
         if True 1 else { f(x:=2) }
     }
-} else return 3, 5
+} else 5
 ''',
      ConditionalASTNode(
          condition=BooleanLiteralASTNode(value=False),
@@ -89,15 +89,27 @@ if False {
                      )
                  ])
              )]),
-         else_body=ReturnStatementASTNode(return_values=[
-             IntegerLiteralASTNode(value=3),
-             IntegerLiteralASTNode(value=5)
-         ]))),
+         else_body=IntegerLiteralASTNode(value=5))),
 )
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_conditional(input_string, expected_result):
     module_node = parser.parseSourceCode(input_string)
+    assert isinstance(module_node, ModuleASTNode)
+    assert isinstance(module_node.statements, list)
+    result = only_one(module_node.statements)
+    assert isinstance(result, ConditionalASTNode)
+    assert result == expected_result, f'''
+input_string: {repr(input_string)}
+result: {repr(result)}
+expected_result: {repr(expected_result)}
+'''
+
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+def test_type_inference_conditional(input_string, expected_result):
+    '''Type inference should be a no-op.'''
+    module_node = parser.parseSourceCode(input_string)
+    type_inference.perform_type_inference(module_node)
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
     result = only_one(module_node.statements)

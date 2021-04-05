@@ -257,9 +257,10 @@ def module_type_inference(ast_node: ModuleASTNode, var_name_to_type_info: Dict[s
 def conditional_type_inference(ast_node: ConditionalASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
     condition_inferred_type = determine_expression_ast_node_type(ast_node.condition, var_name_to_type_info)
     assert_type_consistency(ast_node, condition_inferred_type, TensorTypeASTNode(base_type_name='Boolean', shape=[]))
-    var_name_to_type_info, then_changed = perform_type_inference(ast_node.then_body, var_name_to_type_info, latest_function_name)
-    var_name_to_type_info, else_changed = perform_type_inference(ast_node.else_body, var_name_to_type_info, latest_function_name)
-    changed = then_changed or else_changed
+    var_name_to_type_info, changed = perform_type_inference(ast_node.then_body, var_name_to_type_info, latest_function_name)
+    if ast_node.else_body is not None:
+        var_name_to_type_info, else_changed = perform_type_inference(ast_node.else_body, var_name_to_type_info, latest_function_name)
+        changed |= else_changed
     return var_name_to_type_info, changed
 
 @register_type_inference_method(WhileLoopASTNode)
