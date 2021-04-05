@@ -19,7 +19,9 @@ from .parser import (
     BinaryOperationExpressionASTNode,
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
+    BooleanExpressionASTNode,
     ExpressionASTNode,
+    ArithmeticExpressionASTNode,
     TensorTypeASTNode,
     VectorExpressionASTNode,
     FunctionDefinitionASTNode,
@@ -154,9 +156,19 @@ def determine_expression_ast_node_type(ast_node: ExpressionASTNode, var_name_to_
         inferred_type = only_one(return_types)
     elif isinstance(ast_node, VariableASTNode):
         inferred_type = var_name_to_type_info[ast_node.name]
+    elif isinstance(ast_node, UnaryOperationExpressionASTNode) and isinstance(ast_node, ComparisonExpressionASTNode):
+        arg_inferred_type = determine_expression_ast_node_type(ast_node.arg, var_name_to_type_info)
+        inferred_type = TensorTypeASTNode(base_type_name='Boolean', shape=arg_inferred_type.shape)
+    elif isinstance(ast_node, BinaryOperationExpressionASTNode) and isinstance(ast_node, ComparisonExpressionASTNode):
+        left_arg_inferred_type = determine_expression_ast_node_type(ast_node.left_arg, var_name_to_type_info)
+        right_arg_inferred_type = determine_expression_ast_node_type(ast_node.right_arg, var_name_to_type_info)
+        if left_arg_inferred_type == right_arg_inferred_type:
+            inferred_type = TensorTypeASTNode(base_type_name='Boolean', shape=left_arg_inferred_type.shape)
     elif isinstance(ast_node, UnaryOperationExpressionASTNode):
+        assert isinstance(ast_node, (BooleanExpressionASTNode, ArithmeticExpressionASTNode))
         inferred_type = determine_expression_ast_node_type(ast_node.arg, var_name_to_type_info)
     elif isinstance(ast_node, BinaryOperationExpressionASTNode):
+        assert isinstance(ast_node, (BooleanExpressionASTNode, ArithmeticExpressionASTNode))
         left_arg_inferred_type = determine_expression_ast_node_type(ast_node.left_arg, var_name_to_type_info)
         right_arg_inferred_type = determine_expression_ast_node_type(ast_node.right_arg, var_name_to_type_info)
         if left_arg_inferred_type == right_arg_inferred_type:
@@ -230,16 +242,16 @@ def assignment_type_inference(ast_node: AssignmentASTNode, var_name_to_type_info
             else:
                 assert_type_consistency(variable_node, inferred_type, var_name_to_type_info[variable_node.name])
     elif isinstance(ast_node.value, ExpressionASTNode):
-       variable_node, tensor_type_node = only_one(ast_node.variable_type_pairs)
-       inferred_type = determine_expression_ast_node_type(ast_node.value, var_name_to_type_info)
-       if variable_node.name in var_name_to_type_info:
-           assert_type_consistency(variable_node, inferred_type, var_name_to_type_info[variable_node.name])
-       if tensor_type_node != EMPTY_TENSOR_TYPE_AST_NODE:
-           assert_type_consistency(variable_node, inferred_type, tensor_type_node)
-       else:
-           ast_node.variable_type_pairs = [(variable_node, inferred_type)]
-           var_name_to_type_info[variable_node.name] = inferred_type
-           changed = True
+        variable_node, tensor_type_node = only_one(ast_node.variable_type_pairs)
+        inferred_type = determine_expression_ast_node_type(ast_node.value, var_name_to_type_info)
+        if variable_node.name in var_name_to_type_info:
+            assert_type_consistency(variable_node, inferred_type, var_name_to_type_info[variable_node.name])
+        if tensor_type_node != EMPTY_TENSOR_TYPE_AST_NODE:
+            assert_type_consistency(variable_node, inferred_type, tensor_type_node)
+        else:
+            ast_node.variable_type_pairs = [(variable_node, inferred_type)]
+            var_name_to_type_info[variable_node.name] = inferred_type
+            changed = True
     else:
         assert isinstance(ast_node.value, ASTNode)
         raise NotImplementedError(f'Type inference on node type {type(ast_node.value)} not yet supported.')

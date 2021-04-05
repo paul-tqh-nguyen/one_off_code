@@ -1,6 +1,6 @@
 import pytest
 
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
@@ -73,7 +73,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
             function_name='f'))),
 )
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_comparison_expression(input_string, expected_result):
     module_node = parser.parseSourceCode('x = '+input_string)
     assert isinstance(module_node, ModuleASTNode)
@@ -93,3 +93,30 @@ input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
+
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+def test_type_inference_function_call(input_string, expected_result):
+    del expected_result
+    module_node = parser.parseSourceCode('x = '+input_string)
+    type_inference.perform_type_inference(
+        module_node,
+        {
+            'y': TensorTypeASTNode(base_type_name='Integer', shape=[]),
+            'f': FunctionDefinitionASTNode(
+                function_name='f',
+                function_signature=[
+                    (VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='Integer', shape=[]))
+                ],
+                function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
+                function_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=2)])
+            ),
+        }
+    )
+    assert isinstance(module_node, ModuleASTNode)
+    assert isinstance(module_node.statements, list)
+    assignment_node = only_one(module_node.statements)
+    assert isinstance(assignment_node, AssignmentASTNode)
+    variable_node, tensor_type_node = only_one(assignment_node.variable_type_pairs)
+    assert isinstance(variable_node, VariableASTNode)
+    assert variable_node.name is 'x'
+    assert tensor_type_node == TensorTypeASTNode(base_type_name='Boolean', shape=[])
