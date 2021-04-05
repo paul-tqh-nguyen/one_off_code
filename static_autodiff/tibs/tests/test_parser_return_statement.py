@@ -1,6 +1,6 @@
 import pytest
 
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.ast_node import (
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
@@ -45,20 +45,12 @@ from tibs.misc_utilities import *
 # TODO make sure all these imports are used
 
 EXPECTED_INPUT_OUTPUT_PAIRS = (
-    ('', NothingTypeLiteralASTNode()),
-    ('  \
-\t # comment', NothingTypeLiteralASTNode()),
-    ('Nothing', NothingTypeLiteralASTNode()),
+    ('''Nothing  \
+\t # comment''', NothingTypeLiteralASTNode()),
     ('False', BooleanLiteralASTNode(value=False)),
     ('123', IntegerLiteralASTNode(value=123)),
     ('1E2', FloatLiteralASTNode(value=100.0)),
     ('some_variable', VariableASTNode(name='some_variable')),
-    ('[f(x:=1), [2, 3], some_variable, Nothing]',
-     VectorExpressionASTNode(values=[
-         FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'),
-         VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)]),
-         VariableASTNode(name='some_variable'),
-         NothingTypeLiteralASTNode()])),
     ('False or True', OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True))),
     ('1 ** 2 ^ 3',
      ExponentExpressionASTNode(
@@ -80,7 +72,8 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
 def test_parser_return_statement(input_string, expected_result):
     module_node = parser.parseSourceCode(f'''
 function f() -> NothingType {{
-    return {input_string}
+    {input_string}
+    return
 }}
 ''')
     assert isinstance(module_node, ModuleASTNode)
@@ -92,11 +85,25 @@ function f() -> NothingType {{
     assert function_definition_node.function_return_types == [TensorTypeASTNode(base_type_name='NothingType', shape=[])]
     function_body = function_definition_node.function_body
     assert isinstance(function_body, ScopedStatementSequenceASTNode)
-    return_statement_node = only_one(function_body.statements)
+    expression_node, return_statement_node = function_body.statements
     assert isinstance(return_statement_node, ReturnStatementASTNode)
-    result = only_one(return_statement_node.return_values)
-    assert result == expected_result, f'''
+    assert only_one(return_statement_node.return_values) == NothingTypeLiteralASTNode()
+    assert expression_node == expected_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
+
+@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+def test_type_inference_return_statement(input_string, expected_result):
+    del expected_result
+    input_string = f'''
+function f() -> NothingType {{
+    {input_string}
+    return
+}}
+'''
+    ast = parser.parseSourceCode(input_string)
+    ast_with_type_inference = parser.parseSourceCode(input_string)
+    type_inference.perform_type_inference(ast_with_type_inference, {'some_variable': TensorTypeASTNode(base_type_name='String', shape=[3])})
+    assert ast == ast_with_type_inference
