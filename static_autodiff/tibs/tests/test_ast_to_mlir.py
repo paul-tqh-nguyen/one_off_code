@@ -14,12 +14,12 @@ from tibs.misc_utilities import *
 
 # TODO make sure all these imports are used
 
-def test_mlir_from_print():
-    input_string = '''
-x = [[1,2,3], [4,5,6], [7,8,9]]
-print x
-'''
-    module_ast = parser.parseSourceCode(input_string)
-    mlir_string = module_ast.emit_mlir()
-    print(f"mlir_string {repr(mlir_string)}")
-    assert False
+# def test_mlir_from_print():
+#     input_string = '''
+# x = [[1,2,3], [4,5,6], [7,8,9]]
+# print x
+# '''
+#     module_ast = parser.parseSourceCode(input_string)
+#     mlir_string = module_ast.emit_mlir()
+#     print(f"mlir_string {repr(mlir_string)}")
+#     assert False
