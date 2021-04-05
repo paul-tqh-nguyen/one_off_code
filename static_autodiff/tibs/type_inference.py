@@ -129,7 +129,7 @@ def register_type_inference_method(*ast_node_types: type) -> Callable[
         [Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]], 
         None
 ]:
-    '''Handes ast_node_type and all child classes.'''
+    '''Handles ast_node_type and all child classes.'''
     def decorator(
             type_inference_method: Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]
     ) -> None:
