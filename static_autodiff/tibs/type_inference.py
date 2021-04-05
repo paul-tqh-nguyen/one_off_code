@@ -182,10 +182,10 @@ def determine_expression_ast_node_type(ast_node: ExpressionASTNode, var_name_to_
         if left_arg_inferred_type == right_arg_inferred_type:
             inferred_type = TensorTypeASTNode(base_type_name='Boolean', shape=left_arg_inferred_type.shape)
     elif isinstance(ast_node, UnaryOperationExpressionASTNode):
-        assert isinstance(ast_node, (BooleanExpressionASTNode, ArithmeticExpressionASTNode))
+        assert isinstance(ast_node, (BooleanExpressionASTNode, ArithmeticExpressionASTNode, StringConcatenationExpressionASTNode))
         inferred_type = determine_expression_ast_node_type(ast_node.arg, var_name_to_type_info)
     elif isinstance(ast_node, BinaryOperationExpressionASTNode):
-        assert isinstance(ast_node, (BooleanExpressionASTNode, ArithmeticExpressionASTNode))
+        assert isinstance(ast_node, (BooleanExpressionASTNode, ArithmeticExpressionASTNode, StringConcatenationExpressionASTNode))
         left_arg_inferred_type = determine_expression_ast_node_type(ast_node.left_arg, var_name_to_type_info)
         right_arg_inferred_type = determine_expression_ast_node_type(ast_node.right_arg, var_name_to_type_info)
         if left_arg_inferred_type == right_arg_inferred_type:
