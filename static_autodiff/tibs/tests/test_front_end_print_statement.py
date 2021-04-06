@@ -81,7 +81,17 @@ expected_result: {repr(expected_result)}
 def test_type_inference_print_statement(input_string, expected_result):
     '''Verify that type inference is a no-op.'''
     module_node = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(module_node)
+    type_inference.perform_type_inference(
+        module_node,
+        {
+            'f': FunctionDefinitionASTNode(
+                function_name='f',
+                function_signature=[(VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[])],
+                function_body=ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+            )
+        }
+    )
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
     result = only_one(module_node.statements)
