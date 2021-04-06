@@ -68,7 +68,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
          function_name='f')),
 )
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_return_statement(input_string, expected_result):
     module_node = parser.parseSourceCode(f'''
 function f() -> NothingType {{
@@ -94,7 +94,7 @@ result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_type_inference_return_statement(input_string, expected_result):
     del expected_result
     input_string = f'''

@@ -52,7 +52,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
 00', 0),
 )
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_atomic_integer(input_string, expected_result):
     module_node = parser.parseSourceCode('x = '+input_string)
     assert isinstance(module_node, ModuleASTNode)
@@ -74,7 +74,7 @@ result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_type_inference_atomic_integer(input_string, expected_result):
     module_node = parser.parseSourceCode('x = '+input_string)
     type_inference.perform_type_inference(module_node)

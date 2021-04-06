@@ -105,7 +105,7 @@ for x:(1, -10, -1) {
         delta=IntegerLiteralASTNode(value=2))),
 )
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_for_loop(input_string, expected_result):
     module_node = parser.parseSourceCode(input_string)
     assert isinstance(module_node, ModuleASTNode)

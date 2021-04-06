@@ -50,7 +50,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
     ('Nothing # comment', ModuleASTNode(statements=[NothingTypeLiteralASTNode()])),
 )
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_comments(input_string, expected_result):
     result = parser.parseSourceCode(input_string)
     assert result == expected_result, f'''
