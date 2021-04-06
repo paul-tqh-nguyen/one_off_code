@@ -64,7 +64,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
     ])),
 )
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_print_statement(input_string, expected_result):
     module_node = parser.parseSourceCode(input_string)
     assert isinstance(module_node, ModuleASTNode)
@@ -77,7 +77,7 @@ result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
 
-@pytest.mark.parametrize('input_string,expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
+@pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_type_inference_print_statement(input_string, expected_result):
     '''Verify that type inference is a no-op.'''
     module_node = parser.parseSourceCode(input_string)
