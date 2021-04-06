@@ -230,7 +230,6 @@ def print_statement_type_inference(ast_node: PrintStatementASTNode, var_name_to_
     for value_to_print in ast_node.values_to_print:
         if isinstance(value_to_print, ExpressionASTNode):
             inferred_type = determine_expression_ast_node_type(value_to_print, var_name_to_type_info)
-            ASSERT.TypeInferenceFailure(inferred_type.base_type_name == 'String', f'{ast_node} attempts to print {value_to_print}, a non-string value.')
             ASSERT.TypeInferenceFailure(inferred_type.shape == [], f'{ast_node} attempts to print {value_to_print}, which is not 0-dimensional.')
     return var_name_to_type_info, False
 
