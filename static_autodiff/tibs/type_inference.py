@@ -17,6 +17,7 @@ from .parser import (
     ASTNode,
     UnaryOperationExpressionASTNode,
     BinaryOperationExpressionASTNode,
+    StatementASTNode, 
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
     BooleanExpressionASTNode,
@@ -125,11 +126,11 @@ class TypeInferenceMethod:
 
 AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD: Dict[type, TypeInferenceMethod] = {}
 
-def register_type_inference_method(*ast_node_types: type) -> Callable[
+def register_type_inference_method(*ast_node_types: type, register_child_classes: bool = True) -> Callable[
         [Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]], 
         None
 ]:
-    '''Handles ast_node_type and all child classes.'''
+    '''The parameter register_child_classes dictates if this handles ast_node_type as well as all child classes.'''
     def decorator(
             type_inference_method: Callable[[ASTNode, Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], Optional[str]], Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]]
     ) -> None:
@@ -139,7 +140,7 @@ def register_type_inference_method(*ast_node_types: type) -> Callable[
         type_inference_method is expected to also do sanity checking that there are no type conflicts.
         '''
         for ast_node_type in ast_node_types:
-            child_ast_node_types = set(child_classes(ast_node_type))
+            child_ast_node_types = set(child_classes(ast_node_type)) if register_child_classes else ()
             child_ast_node_types = itertools.chain(child_ast_node_types, [ast_node_type])
             for child_ast_node_type in child_ast_node_types:
                 assert issubclass(child_ast_node_type, ASTNode)
@@ -224,6 +225,13 @@ def no_op_type_inference(ast_node: ASTNode, var_name_to_type_info: Dict[str, Uni
     del ast_node
     del latest_function_name
     return var_name_to_type_info, False
+
+@register_type_inference_method(StatementASTNode, TensorTypeASTNode, register_child_classes=False)
+def bogus_type_inference(ast_node: ASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
+    del ast_node
+    del var_name_to_type_info
+    del latest_function_name
+    raise NotImplemented(f'Type inference is intentionally not implemented for instances of {StatementASTNode.__name__} or {TensorTypeASTNode.__name__}.')
 
 @register_type_inference_method(PrintStatementASTNode)
 def print_statement_type_inference(ast_node: PrintStatementASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
@@ -350,7 +358,7 @@ def scoped_statement_sequence_type_inference(ast_node: ScopedStatementSequenceAS
                 var_name_to_type_info[var_name] = sequece_var_name_to_type_info[var_name]
     return var_name_to_type_info, changed
 
-# assert set(child_classes(ASTNode)) == set(AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD.keys()) # TODO enable this
+assert set(child_classes(ASTNode)) == set(AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD.keys())
 
 ###############
 # Entry Point #
