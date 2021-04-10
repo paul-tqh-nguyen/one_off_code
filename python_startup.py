@@ -103,64 +103,67 @@ def suppressed_output() -> Generator:
             yield
     return
 
-from contextlib import contextmanager
-@contextmanager
-class redirected_standard_streams:
+try:
+    from contextlib import contextmanager
+    @contextmanager
+    class redirected_standard_streams:
+        
+        import ctypes
+        from typing import Callable, Union, Generator
+        
+        libc = ctypes.CDLL(None)
+        c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
+        c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
     
-    import ctypes
-    from typing import Callable, Union, Generator
+        def __new__(cls, exitCallback: Union[None, Callable[[str], None]] = None) -> Generator:
+            
+            import io
+            import os
+            import sys
+            import tempfile
+            
+            stdout_stream = io.BytesIO()
+            stderr_stream = io.BytesIO()
+            
+            original_stdout_file_descriptor = sys.stdout.fileno()
+            original_stderr_file_descriptor = sys.stderr.fileno()
     
-    libc = ctypes.CDLL(None)
-    c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
-    c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
-
-    def __new__(cls, exitCallback: Union[None, Callable[[str], None]] = None) -> Generator:
-        
-        import io
-        import os
-        import sys
-        import tempfile
-        
-        stdout_stream = io.BytesIO()
-        stderr_stream = io.BytesIO()
-        
-        original_stdout_file_descriptor = sys.stdout.fileno()
-        original_stderr_file_descriptor = sys.stderr.fileno()
-
-        def _redirect(destination_stdout_file_descriptor: int, destination_stderr_file_descriptor: int) -> None:
-            cls.libc.fflush(cls.c_stdout)
-            cls.libc.fflush(cls.c_stderr)
-            sys.stdout.close()
-            sys.stderr.close()
-            os.dup2(destination_stdout_file_descriptor, original_stdout_file_descriptor)
-            os.dup2(destination_stderr_file_descriptor, original_stderr_file_descriptor)
-            sys.stdout = io.TextIOWrapper(os.fdopen(original_stdout_file_descriptor, 'wb'))
-            sys.stderr = io.TextIOWrapper(os.fdopen(original_stderr_file_descriptor, 'wb'))
+            def _redirect(destination_stdout_file_descriptor: int, destination_stderr_file_descriptor: int) -> None:
+                cls.libc.fflush(cls.c_stdout)
+                cls.libc.fflush(cls.c_stderr)
+                sys.stdout.close()
+                sys.stderr.close()
+                os.dup2(destination_stdout_file_descriptor, original_stdout_file_descriptor)
+                os.dup2(destination_stderr_file_descriptor, original_stderr_file_descriptor)
+                sys.stdout = io.TextIOWrapper(os.fdopen(original_stdout_file_descriptor, 'wb'))
+                sys.stderr = io.TextIOWrapper(os.fdopen(original_stderr_file_descriptor, 'wb'))
+                return
+    
+            with tempfile.TemporaryFile(mode='w+b') as stdout_tmp_file:
+                with tempfile.TemporaryFile(mode='w+b') as stderr_tmp_file:
+                    try:
+                        saved_stdout_file_descriptor = os.dup(original_stdout_file_descriptor)
+                        saved_stderr_file_descriptor = os.dup(original_stderr_file_descriptor)
+                        _redirect(stdout_tmp_file.fileno(), stderr_tmp_file.fileno())
+                        yield
+                        _redirect(saved_stdout_file_descriptor, saved_stderr_file_descriptor)
+                        stdout_tmp_file.flush()
+                        stderr_tmp_file.flush()
+                        stdout_tmp_file.seek(0, io.SEEK_SET)
+                        stderr_tmp_file.seek(0, io.SEEK_SET)
+                        stdout_stream.write(stdout_tmp_file.read())
+                        stderr_stream.write(stderr_tmp_file.read())
+                    finally:
+                        os.close(saved_stdout_file_descriptor)
+                        os.close(saved_stderr_file_descriptor)
+                        
+            if exitCallback is not None:
+                exitCallback(stdout_stream.getvalue().decode('utf-8'), stderr_stream.getvalue().decode('utf-8'))
+            
             return
-
-        with tempfile.TemporaryFile(mode='w+b') as stdout_tmp_file:
-            with tempfile.TemporaryFile(mode='w+b') as stderr_tmp_file:
-                try:
-                    saved_stdout_file_descriptor = os.dup(original_stdout_file_descriptor)
-                    saved_stderr_file_descriptor = os.dup(original_stderr_file_descriptor)
-                    _redirect(stdout_tmp_file.fileno(), stderr_tmp_file.fileno())
-                    yield
-                    _redirect(saved_stdout_file_descriptor, saved_stderr_file_descriptor)
-                    stdout_tmp_file.flush()
-                    stderr_tmp_file.flush()
-                    stdout_tmp_file.seek(0, io.SEEK_SET)
-                    stderr_tmp_file.seek(0, io.SEEK_SET)
-                    stdout_stream.write(stdout_tmp_file.read())
-                    stderr_stream.write(stderr_tmp_file.read())
-                finally:
-                    os.close(saved_stdout_file_descriptor)
-                    os.close(saved_stderr_file_descriptor)
-                    
-        if exitCallback is not None:
-            exitCallback(stdout_stream.getvalue().decode('utf-8'), stderr_stream.getvalue().decode('utf-8'))
+except Exception:
+    pass
         
-        return
-
 from typing import Callable, Union, Generator
 from contextlib import contextmanager
 @contextmanager
@@ -178,11 +181,9 @@ def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -
 from typing import Tuple
 def shell(input_command: str) -> Tuple[str, str]:
     '''Handles multi-line input_command'''
-    command = input_command.encode("utf-8")
+    command = input_command.encode()
     process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout_string, stderr_string = process.communicate(command)
-    stdout_string = stdout_string.decode("utf-8")
-    stderr_string = stderr_string.decode("utf-8")
+    stdout_string, stderr_string = map(str.decode, process.communicate(command))
     return stdout_string, stderr_string
 
 def pid() -> int:
