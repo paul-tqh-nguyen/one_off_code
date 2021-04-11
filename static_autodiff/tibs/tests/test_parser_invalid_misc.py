@@ -3,7 +3,7 @@ import pytest
 from tibs import parser, type_inference
 from tibs.misc_utilities import *
 
-INVALID_INPUT_STRINGS = eager_map(
+BAD_PARSE_STRINGS = eager_map(
     pytest.param,
     (
         '''
@@ -89,7 +89,7 @@ x: Integer
     )
 )
 
-@pytest.mark.parametrize('input_string', INVALID_INPUT_STRINGS)
+@pytest.mark.parametrize('input_string', BAD_PARSE_STRINGS)
 def test_parser_invalid_misc(input_string):
     with pytest.raises(parser.ParseError, match='Could not parse the following:'):
         parser.parseSourceCode(input_string)
@@ -97,6 +97,19 @@ def test_parser_invalid_misc(input_string):
 def test_return_statement_outside_function_definition():
     input_string = '''
 return 123
+'''
+    result = parser.parseSourceCode(input_string)
+    with pytest.raises(type_inference.TypeInferenceFailure, match='Return statement used outside of function body.'):
+        type_inference.perform_type_inference(result)
+
+def test_out_of_scope_function():
+    input_string = '''
+function f() -> Integer, Boolean {
+    function g() -> Integer
+        return 1234
+    return g(), True
+}
+g()
 '''
     result = parser.parseSourceCode(input_string)
     with pytest.raises(type_inference.TypeInferenceFailure, match='Return statement used outside of function body.'):

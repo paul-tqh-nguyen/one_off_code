@@ -308,6 +308,7 @@ function f() -> Integer, Boolean {
         return 1234
     return g(), True
 }
+f()
 ''',
         ModuleASTNode(statements=[
             FunctionDefinitionASTNode(
@@ -323,7 +324,8 @@ function f() -> Integer, Boolean {
                     ),
                     ReturnStatementASTNode(return_values=[FunctionCallExpressionASTNode(arg_bindings=[], function_name='g'), BooleanLiteralASTNode(value=True)])
                 ])
-            )
+            ),
+            FunctionCallExpressionASTNode(arg_bindings=[], function_name='f')
         ]),
         ModuleASTNode(statements=[
             FunctionDefinitionASTNode(
@@ -339,7 +341,8 @@ function f() -> Integer, Boolean {
                     ),
                     ReturnStatementASTNode(return_values=[FunctionCallExpressionASTNode(arg_bindings=[], function_name='g'), BooleanLiteralASTNode(value=True)])
                 ])
-            )
+            ),
+            FunctionCallExpressionASTNode(arg_bindings=[], function_name='f')
         ])
     )
 ]))
