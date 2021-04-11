@@ -24,6 +24,19 @@ function f() -> Integer, Boolean {
 ''',
         'has the following inconsistent types'
     ),
+    (
+        '''
+function f() -> Integer, Boolean {
+    function g() -> String
+        return "asd"
+    function g() -> Float {
+        return 1.1
+    }
+    return g(), True
+}
+''',
+        'asd'
+    )
 ])]
 
 @pytest.mark.parametrize('input_string, error_match_string', INVALID_RETURN_STATEMENT_INPUT_STRINGS)
