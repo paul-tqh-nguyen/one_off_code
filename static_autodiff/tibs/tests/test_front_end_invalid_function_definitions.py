@@ -3,7 +3,16 @@ import pytest
 from tibs import parser, type_inference
 from tibs.misc_utilities import *
 
-INVALID_RETURN_STATEMENT_INPUT_STRINGS = [pytest.param(*args, id=f'invalid_return_statement_{i}') for i, args in enumerate([
+INVALID_FUNCTION_DEFINITION_INPUT_STRINGS = [pytest.param(*args, id=f'invalid_function_definition_{i}') for i, args in enumerate([
+    (
+        '''
+function f() -> NothingType {
+    return print "if" 
+}
+''',
+        parser.ParseError,
+        'Could not parse the following'
+    ),
     (
         '''
 function f() -> Integer, Boolean {
@@ -12,6 +21,7 @@ function f() -> Integer, Boolean {
     return g(), True
 }
 ''',
+        type_inference.TypeInferenceFailure,
         'g is declared to have 1 return values but attempts to return 4 values.'
     ),
     (
@@ -22,6 +32,7 @@ function f() -> Integer, Boolean {
     return g(), True
 }
 ''',
+        type_inference.TypeInferenceFailure,
         'has the following inconsistent types'
     ),
     (
@@ -35,14 +46,15 @@ function f() -> Integer, Boolean {
     return g(), True
 }
 ''',
+        type_inference.TypeInferenceFailure,
         'g defined multiple times.'
     )
 ])]
 
-@pytest.mark.parametrize('input_string, error_match_string', INVALID_RETURN_STATEMENT_INPUT_STRINGS)
-def test_invalid_return_statements(input_string, error_match_string):
+@pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_FUNCTION_DEFINITION_INPUT_STRINGS)
+def test_invalid_function_definitions(input_string, exception_type, error_match_string):
     result = parser.parseSourceCode(input_string)
-    with pytest.raises(type_inference.TypeInferenceFailure, match=error_match_string):
+    with pytest.raises(exception_type, match=error_match_string):
         type_inference.perform_type_inference(result)
 
 def test_return_statement_outside_function_definition():
