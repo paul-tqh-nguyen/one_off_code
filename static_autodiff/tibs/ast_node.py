@@ -548,19 +548,19 @@ class ReturnStatementASTNode(StatementASTNode):
 
 class PrintStatementASTNode(StatementASTNode):
     
-    def __init__(self, values_to_print: typing.List[typing.Union[str, ExpressionASTNode]]) -> None:
-        self.values_to_print = values_to_print
+    def __init__(self, value_to_print: typing.Union[str, ExpressionASTNode]) -> None:
+        self.value_to_print = value_to_print
         return
     
     @classmethod
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'PrintStatementASTNode':
-        values_to_print = tokens.asList()
-        node_instance = cls(values_to_print)
+        value_to_print = only_one(tokens.asList())
+        node_instance = cls(value_to_print)
         return node_instance
 
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
-            self.values_to_print == other.values_to_print
+            self.value_to_print == other.value_to_print
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError

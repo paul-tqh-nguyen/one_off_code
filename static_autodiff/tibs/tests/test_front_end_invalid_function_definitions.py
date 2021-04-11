@@ -53,8 +53,8 @@ function f() -> Integer, Boolean {
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_FUNCTION_DEFINITION_INPUT_STRINGS)
 def test_invalid_function_definitions(input_string, exception_type, error_match_string):
-    result = parser.parseSourceCode(input_string)
     with pytest.raises(exception_type, match=error_match_string):
+        result = parser.parseSourceCode(input_string)
         type_inference.perform_type_inference(result)
 
 def test_return_statement_outside_function_definition():
