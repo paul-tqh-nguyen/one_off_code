@@ -47,17 +47,23 @@ from tibs.misc_utilities import *
 EXPECTED_INPUT_OUTPUT_PAIRS = (
     ('''print "1
 2
-3" ''', PrintStatementASTNode(value_to_print=[StringLiteralASTNode('1\n2\n3')])),
-    ('print "if" ', PrintStatementASTNode(value_to_print=[StringLiteralASTNode('if')])),
-    ('print "1" 2 "3"', PrintStatementASTNode(value_to_print=[StringLiteralASTNode('1'), IntegerLiteralASTNode(value=2), StringLiteralASTNode('3')])),
-    ('print "1" -2 "3"', PrintStatementASTNode(value_to_print=[StringLiteralASTNode('1'), NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)), StringLiteralASTNode('3')])),
-    ('print "1" f(a:=1)', PrintStatementASTNode(value_to_print=[
+3" ''', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('1\n2\n3')])),
+    ('print "a" << "b" << "c" ', PrintStatementASTNode(values_to_print=[
+        StringConcatenationExpressionASTNode(
+            StringConcatenationExpressionASTNode(StringLiteralASTNode('a'), StringLiteralASTNode('b')),
+            StringLiteralASTNode('c')
+        ),
+    ])),
+    ('print "if" ', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('if')])),
+    ('print "1" 2 "3"', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('1'), IntegerLiteralASTNode(value=2), StringLiteralASTNode('3')])),
+    ('print "1" -2 "3"', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('1'), NegativeExpressionASTNode(IntegerLiteralASTNode(value=2)), StringLiteralASTNode('3')])),
+    ('print "1" f(a:=1)', PrintStatementASTNode(values_to_print=[
         StringLiteralASTNode('1'),
         FunctionCallExpressionASTNode(
             arg_bindings=[(VariableASTNode(name='a'), IntegerLiteralASTNode(value=1))],
             function_name='f')
     ])),
-    ('print True False xor True 3', PrintStatementASTNode(value_to_print=[
+    ('print True False xor True 3', PrintStatementASTNode(values_to_print=[
         BooleanLiteralASTNode(value=True),
         XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
         IntegerLiteralASTNode(value=3)
