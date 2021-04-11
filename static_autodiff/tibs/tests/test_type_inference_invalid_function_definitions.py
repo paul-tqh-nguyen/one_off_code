@@ -35,7 +35,7 @@ function f() -> Integer, Boolean {
     return g(), True
 }
 ''',
-        'asd'
+        'g defined multiple times.'
     )
 ])]
 
