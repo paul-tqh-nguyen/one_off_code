@@ -134,22 +134,21 @@ x = 1 ; { x: Integer = 1
 function f(a: NothingType) -> NothingType 
 {
 
-   for x:(1,10, 2) {
-       True or True
-       return
-   }
-   
-   for x\
-   :\
-   (1,10, 2) {
-       True or True
-       return
-   }
-        
-   while False xor True return 3
+    for x:(1,10, 2) {
+        True or True
+        return
+    }
+    
+    for x\
+    :\
+    (1,10, 2) {
+        True or True
+        return
+    }
 }
 
 function g() -> NothingType, Boolean {
+    while False xor True return Nothing, False
     return Nothing,  True
 }
 ''',
@@ -211,10 +210,6 @@ function g() -> NothingType, Boolean {
                         minimum=IntegerLiteralASTNode(value=1),
                         supremum=IntegerLiteralASTNode(value=10),
                         delta=IntegerLiteralASTNode(value=2)
-                    ),
-                    WhileLoopASTNode(
-                        condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
-                        body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)])
                     )
                 ])
             ),
@@ -223,6 +218,10 @@ function g() -> NothingType, Boolean {
                 function_signature=[],
                 function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[]), TensorTypeASTNode(base_type_name='Boolean', shape=[])],
                 function_body=ScopedStatementSequenceASTNode(statements=[
+                    WhileLoopASTNode(
+                        condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
+                        body=ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode(), BooleanLiteralASTNode(value=False)])
+                    ),
                     ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode(), BooleanLiteralASTNode(value=True)])
                 ])
             )
@@ -285,10 +284,6 @@ function g() -> NothingType, Boolean {
                         minimum=IntegerLiteralASTNode(value=1),
                         supremum=IntegerLiteralASTNode(value=10),
                         delta=IntegerLiteralASTNode(value=2)
-                    ),
-                    WhileLoopASTNode(
-                        condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
-                        body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)])
                     )
                 ])
             ),
@@ -297,6 +292,10 @@ function g() -> NothingType, Boolean {
                 function_signature=[],
                 function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[]), TensorTypeASTNode(base_type_name='Boolean', shape=[])],
                 function_body=ScopedStatementSequenceASTNode(statements=[
+                    WhileLoopASTNode(
+                        condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
+                        body=ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode(), BooleanLiteralASTNode(value=False)])
+                    ),
                     ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode(), BooleanLiteralASTNode(value=True)])
                 ])
             )
