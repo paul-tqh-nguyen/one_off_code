@@ -148,6 +148,9 @@ function f(a: NothingType) -> NothingType {
    while False xor True return 3
 }
 
+function g() -> NothingType, Boolean {
+    return Nothing,  True
+}
 ''',
         ModuleASTNode(statements=[
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
@@ -212,6 +215,14 @@ function f(a: NothingType) -> NothingType {
                         condition=XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=BooleanLiteralASTNode(value=True)),
                         body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=3)])
                     )
+                ])
+            ),
+            FunctionDefinitionASTNode(
+                function_name='g',
+                function_signature=[],
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[]), TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_body=ScopedStatementSequenceASTNode(statements=[
+                    ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode(), BooleanLiteralASTNode(value=True)])
                 ])
             )
         ]),
@@ -280,8 +291,56 @@ function f(a: NothingType) -> NothingType {
                     )
                 ])
             ),
+            FunctionDefinitionASTNode(
+                function_name='g',
+                function_signature=[],
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[]), TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_body=ScopedStatementSequenceASTNode(statements=[
+                    ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode(), BooleanLiteralASTNode(value=True)])
+                ])
+            )
         ])
     ),
+    (
+        '''
+function f() -> Integer, Boolean {
+    function g() -> Integer return 1234
+    return g(), True
+}
+''',
+        ModuleASTNode(statements=[
+            FunctionDefinitionASTNode(
+                function_name='f',
+                function_signature=[],
+                function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[]), TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_body=ScopedStatementSequenceASTNode(statements=[
+                    FunctionDefinitionASTNode(
+                        function_name='g',
+                        function_signature=[],
+                        function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
+                        function_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])
+                    ),
+                    ReturnStatementASTNode(return_values=[FunctionCallExpressionASTNode(arg_bindings=[], function_name='g'), BooleanLiteralASTNode(value=True)])
+                ])
+            )
+        ]),
+        ModuleASTNode(statements=[
+            FunctionDefinitionASTNode(
+                function_name='f',
+                function_signature=[],
+                function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[]), TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_body=ScopedStatementSequenceASTNode(statements=[
+                    FunctionDefinitionASTNode(
+                        function_name='g',
+                        function_signature=[],
+                        function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
+                        function_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])
+                    ),
+                    ReturnStatementASTNode(return_values=[FunctionCallExpressionASTNode(arg_bindings=[], function_name='g'), BooleanLiteralASTNode(value=True)])
+                ])
+            )
+        ])
+    )
 ]))
 
 @pytest.mark.parametrize('input_string, parse_result, type_inference_result', TEST_CASES)

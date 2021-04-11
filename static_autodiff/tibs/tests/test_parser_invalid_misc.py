@@ -1,6 +1,6 @@
 
 import pytest
-from tibs import parser
+from tibs import parser, type_inference
 from tibs.misc_utilities import *
 
 INVALID_INPUT_STRINGS = eager_map(
@@ -93,3 +93,11 @@ x: Integer
 def test_parser_invalid_misc(input_string):
     with pytest.raises(parser.ParseError, match='Could not parse the following:'):
         parser.parseSourceCode(input_string)
+
+def test_return_statement_outside_function_definition():
+    input_string = '''
+return 123
+'''
+    result = parser.parseSourceCode(input_string)
+    with pytest.raises(type_inference.TypeInferenceFailure, match='Return statement used outside of function body.'):
+        type_inference.perform_type_inference(result)
