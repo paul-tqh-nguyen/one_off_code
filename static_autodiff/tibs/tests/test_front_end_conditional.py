@@ -53,7 +53,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
                 arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
                 function_name='func')),
         else_body=None)),
-    ('if True xor False while False and True 3 else 5', ConditionalASTNode(
+    ('if True xor False while False and True 3 else \n   5', ConditionalASTNode(
         condition=XorExpressionASTNode(
             left_arg=BooleanLiteralASTNode(value=True),
             right_arg=BooleanLiteralASTNode(value=False)

@@ -63,12 +63,16 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
         minimum=IntegerLiteralASTNode(value=1),
         supremum=IntegerLiteralASTNode(value=10),
         delta=IntegerLiteralASTNode(value=1))),
-    ('for x:(1,10, 2) func(x:=1)', ForLoopASTNode(
-        body=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='func'),
-        iterator_variable_name='x',
-        minimum=IntegerLiteralASTNode(value=1),
-        supremum=IntegerLiteralASTNode(value=10),
-        delta=IntegerLiteralASTNode(value=2))),
+    ('''
+for x:(1,10, 2) 
+    func(x:=1)
+''',
+     ForLoopASTNode(
+         body=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='func'),
+         iterator_variable_name='x',
+         minimum=IntegerLiteralASTNode(value=1),
+         supremum=IntegerLiteralASTNode(value=10),
+         delta=IntegerLiteralASTNode(value=2))),
     ('''
 for x:(1+0,10) {
     Nothing

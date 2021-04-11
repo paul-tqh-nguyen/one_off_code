@@ -304,7 +304,8 @@ function g() -> NothingType, Boolean {
     (
         '''
 function f() -> Integer, Boolean {
-    function g() -> Integer return 1234
+    function g() -> Integer
+        return 1234
     return g(), True
 }
 ''',

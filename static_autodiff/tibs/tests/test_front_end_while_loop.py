@@ -45,7 +45,10 @@ from tibs.misc_utilities import *
 # TODO make sure all these imports are used
 
 EXPECTED_INPUT_OUTPUT_PAIRS = (
-    ('while True func(x:=1)', WhileLoopASTNode(
+    ('''
+while True 
+    func(x:=1)
+''', WhileLoopASTNode(
         condition=BooleanLiteralASTNode(value=True),
         body=FunctionCallExpressionASTNode(
             arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],

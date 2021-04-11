@@ -310,6 +310,8 @@ scoped_statement_sequence_pe = Forward()
 
 required_atomic_statement_pe = scoped_statement_sequence_pe | conditional_pe | while_loop_pe | for_loop_pe | function_definition_pe | return_statement_pe | print_statement_pe | assignment_pe | expression_pe
 
+language_construct_body_pe = Optional(Suppress('\n')) + required_atomic_statement_pe
+
 atomic_statement_pe = Optional(required_atomic_statement_pe)
 
 non_atomic_statement_pe = atomic_statement_pe + Suppress(';') + delimitedList(atomic_statement_pe, delim=';')
@@ -332,7 +334,7 @@ function_definition_pe <<= (
     identifier_pe +
     function_signature_pe +
     function_return_types_pe +
-    required_atomic_statement_pe
+    language_construct_body_pe
 ).ignore(ignorable_pe).setParseAction(FunctionDefinitionASTNode.parse_action)
 
 # For Loop Parser Elements
@@ -349,7 +351,7 @@ for_loop_pe <<= (
         Optional(Suppress(',') + arithmetic_expression_pe) +
         Suppress(')')
     ) + 
-    required_atomic_statement_pe
+    language_construct_body_pe
 ).ignore(ignorable_pe).setParseAction(ForLoopASTNode.parse_action)
 
 # While Loop Parser Elements
@@ -357,7 +359,7 @@ for_loop_pe <<= (
 while_loop_pe <<= (
     while_loop_keyword_pe +
     boolean_expression_pe +
-    required_atomic_statement_pe
+    language_construct_body_pe
 ).ignore(ignorable_pe).setParseAction(WhileLoopASTNode.parse_action)
 
 # Conditional Parser Elements
@@ -365,8 +367,8 @@ while_loop_pe <<= (
 conditional_pe <<= (
     if_keyword_pe +
     boolean_expression_pe +
-    required_atomic_statement_pe +
-    Optional(else_keyword_pe + required_atomic_statement_pe)
+    language_construct_body_pe +
+    Optional(else_keyword_pe + language_construct_body_pe)
 ).ignore(ignorable_pe).setParseAction(ConditionalASTNode.parse_action)
 
 # Module & Misc. Parser Elements
