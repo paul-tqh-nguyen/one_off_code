@@ -201,7 +201,7 @@ TEST_CASES = (
             variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Boolean', shape=[None, 3, None]))],
             value=VariableASTNode(name='value')
         ),
-        {'value': TensorTypeASTNode(base_type_name='Float', shape=[9999, 3, None])}
+        {'value': TensorTypeASTNode(base_type_name='Boolean', shape=[9999, 3, None])}
     ),
     (
         'x: Float<??\
