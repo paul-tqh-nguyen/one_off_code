@@ -86,7 +86,7 @@ class TypeInferenceConsistencyError(TypeInferenceFailure):
 def _assert_type_consistency(type_a: Union[TensorTypeASTNode, FunctionDefinitionASTNode], type_b: Union[TensorTypeASTNode, FunctionDefinitionASTNode]) -> bool:
     if type_a == type_b:
         return True
-    if type(type_a) == TensorTypeASTNode == type(type_b):
+    if type(type_a) == TensorTypeASTNode == type(type_b) and type_a.base_type_name == type_b.base_type_name:
         if None in (type_a.shape, type_b.shape):
             return True
         if len(type_a.shape) == len(type_b.shape):

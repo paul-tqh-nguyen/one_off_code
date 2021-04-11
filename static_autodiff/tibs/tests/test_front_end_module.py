@@ -131,7 +131,8 @@ x = 1 ; {
 x = 1 ; { x: Integer = 1
 } # y = 123
 
-function f(a: NothingType) -> NothingType {
+function f(a: NothingType) -> NothingType 
+{
 
    for x:(1,10, 2) {
        True or True
