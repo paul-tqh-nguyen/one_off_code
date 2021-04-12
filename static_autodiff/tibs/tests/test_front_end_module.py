@@ -504,8 +504,8 @@ function f(x: Integer) -> Integer {
                     ForLoopASTNode(
                         body=ScopedStatementSequenceASTNode(statements=[
                             AssignmentASTNode(
+                                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))],
                                 value=AdditionExpressionASTNode(
-                                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))]
                                     left_arg=VariableASTNode(name='x'),
                                     right_arg=VariableASTNode(name='i')
                                 )
