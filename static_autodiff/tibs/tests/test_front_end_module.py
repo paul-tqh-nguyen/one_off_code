@@ -578,7 +578,7 @@ function f(x: Integer) -> Integer {
                                     left_arg=VariableASTNode(name='x'),
                                     right_arg=IntegerLiteralASTNode(value=2)
                                 ),
-                                then_body=IntegerLiteralASTNode(value=1),
+                                then_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=0)]),
                                 else_body=None
                             )
                         ]),
