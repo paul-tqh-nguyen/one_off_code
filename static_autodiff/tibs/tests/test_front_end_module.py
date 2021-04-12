@@ -486,15 +486,9 @@ g()
     ),
     (
         '''
-function f() -> Integer, Boolean {
-    function g() -> Integer
-        return 1234
-    return g(), True
-}
-f()
-function g() -> Integer
+function f() -> Integer {
     return 1234
-g()
+}
 ''',
         ModuleASTNode(statements=[
             FunctionDefinitionASTNode(
