@@ -556,7 +556,7 @@ function f(x: Integer) -> Integer {
 function f(x: Integer) -> Integer {
     for i:(1,10, 2) {
         x = x + i
-        if x > 2 return 0
+        if x >= 2 return 0
     }
     return 1234
 }
