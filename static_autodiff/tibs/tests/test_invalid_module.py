@@ -17,7 +17,7 @@ INVALID_MODULE_CASES = tuple(pytest.param(*args, id=f'invalid_module_{i}') for i
     (
         'function f(x: Integer) -> NothingType return ; f(x:=2, a:=1)',
         type_inference.TypeInferenceConsistencyError,
-        f'given [0-9]+ args when [0-9]+ were expected'
+        r'given [0-9]+ args when [0-9]+ were expected'
     ),
 ]))
 
