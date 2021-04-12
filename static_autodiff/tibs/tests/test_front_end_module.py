@@ -526,13 +526,13 @@ function f(x: Integer) -> Integer {
             FunctionDefinitionASTNode(
                 function_body=ScopedStatementSequenceASTNode(statements=[
                     AssignmentASTNode(
-                        variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                        variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
                         value=IntegerLiteralASTNode(value=100)
                     ),
                     ForLoopASTNode(
                         body=ScopedStatementSequenceASTNode(statements=[
                             AssignmentASTNode(
-                                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
                                 value=AdditionExpressionASTNode(
                                     left_arg=VariableASTNode(name='x'),
                                     right_arg=VariableASTNode(name='i')
