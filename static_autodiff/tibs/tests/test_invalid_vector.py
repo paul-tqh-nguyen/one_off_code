@@ -77,7 +77,7 @@ while [True, True]
         {
             'f': FunctionDefinitionASTNode(
                 function_name='f',
-                function_signature=[],
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
                 function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[])],
                 function_body=ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True)])
             )
