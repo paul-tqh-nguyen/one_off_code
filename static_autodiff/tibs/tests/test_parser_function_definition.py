@@ -43,7 +43,7 @@ from tibs.ast_node import (
 
 # TODO make sure all these imports are used
 
-INPUT_STRINGS = (
+INPUT_STRINGS = tuple(pytest.param(*args, id=f'{os.path.basename(__file__)}_{i}') for i, args in enumerate([
     'function f() -> NothingType {}',
     '''
 function f() -> NothingType {
@@ -92,7 +92,7 @@ dummy_var # comment
 
 function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> g(b:=1, a:=3, b:=123)
 ''',
-)
+]))
 
 @pytest.mark.parametrize('input_string', INPUT_STRINGS)
 def test_parser_function_definition(input_string):
