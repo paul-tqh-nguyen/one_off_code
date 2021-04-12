@@ -107,6 +107,12 @@ for x:(1, -10, -1) {
         minimum=IntegerLiteralASTNode(value=1),
         supremum=IntegerLiteralASTNode(value=10),
         delta=IntegerLiteralASTNode(value=2))),
+    ('''
+for x:(1, -10, -1) {
+    True or True
+}
+''',
+     )
 )
 
 @pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
