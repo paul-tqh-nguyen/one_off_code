@@ -27,7 +27,7 @@ INVALID_MODULE_CASES = tuple(pytest.param(*args, id=f'invalid_module_{i}') for i
     (
         'function f(x: Integer, x: Integer) -> NothingType return',
         Exception,
-        r'has redundantly defined parameters'
+        r'defined with redundantly defined parameters.'
     ),
     (
         'function f(x: Integer, y: Integer) -> NothingType return ; f(x:=2, y:=1, y:=1)',
