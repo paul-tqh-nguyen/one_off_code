@@ -16,6 +16,7 @@ import operator
 from functools import reduce
 
 from .parser_utilities import (
+    ParseError,
     BASE_TYPES,
     BaseTypeName,
     sanity_check_base_types,
