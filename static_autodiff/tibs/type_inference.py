@@ -273,7 +273,8 @@ def print_statement_type_inference(ast_node: PrintStatementASTNode, var_name_to_
 def function_definition_type_inference(ast_node: FunctionDefinitionASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
     ASSERT.TypeInferenceFailure(ast_node.function_name not in var_name_to_type_info, f'{ast_node.function_name} defined multiple times.')
     ast_node.function_signature
-    {variable.name: variable_type for variable, variable_type in ast_node.function_signature}
+    for variable, variable_type in ast_node.function_signature:
+        var_name_to_type_info
     var_name_to_type_info[ast_node.function_name] = ast_node
     var_name_to_type_info, changed = perform_type_inference(ast_node.function_body, var_name_to_type_info, ast_node.function_name)
     return var_name_to_type_info, changed
