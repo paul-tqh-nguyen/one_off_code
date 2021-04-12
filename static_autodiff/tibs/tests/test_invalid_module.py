@@ -33,6 +33,6 @@ INVALID_MODULE_CASES = tuple(pytest.param(*args, id=f'invalid_module_{i}') for i
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_MODULE_CASES)
 def test_invalid_module(input_string, exception_type, error_match_string):
-    result = parser.parseSourceCode(input_string)
     with pytest.raises(exception_type, match=error_match_string):
+        result = parser.parseSourceCode(input_string)
         type_inference.perform_type_inference(result)
