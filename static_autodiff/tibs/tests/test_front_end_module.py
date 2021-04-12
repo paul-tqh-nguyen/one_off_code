@@ -604,6 +604,14 @@ function f(x: Integer) -> Integer {
                                     left_arg=VariableASTNode(name='x'),
                                     right_arg=VariableASTNode(name='i')
                                 )
+                            ),
+                            ConditionalASTNode(
+                                condition=GreaterThanOrEqualToExpressionASTNode(
+                                    left_arg=VariableASTNode(name='x'),
+                                    right_arg=IntegerLiteralASTNode(value=2)
+                                ),
+                                then_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=0)]),
+                                else_body=None
                             )
                         ]),
                         delta=IntegerLiteralASTNode(value=2),
@@ -614,7 +622,7 @@ function f(x: Integer) -> Integer {
                 ]),
                 function_name='f',
                 function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
-                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
+                x                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
             )
         ])
     )
