@@ -558,7 +558,6 @@ function f(x: Integer) -> Integer {
         x = x + i
         if x > 2 return 0
     }
-    }
     return 1234
 }
 ''',
