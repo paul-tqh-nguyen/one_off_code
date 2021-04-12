@@ -44,7 +44,7 @@ from tibs.misc_utilities import *
 
 # TODO make sure all these imports are used
 
-EXPECTED_INPUT_OUTPUT_PAIRS = (
+EXPECTED_INPUT_OUTPUT_PAIRS = tuple(pytest.param(*args, id=f'case_{i}') for i, args in enumerate([
     (' "asd" << "dsa" ', StringConcatenationExpressionASTNode(left_arg=StringLiteralASTNode(value='asd'), right_arg=StringLiteralASTNode(value='dsa'))),
     (' "asd" << variable ', StringConcatenationExpressionASTNode(left_arg=StringLiteralASTNode(value='asd'), right_arg=VariableASTNode(name='variable'))),
     (' variable << "asd" ', StringConcatenationExpressionASTNode(left_arg=VariableASTNode(name='variable'), right_arg=StringLiteralASTNode(value='asd'))),
@@ -86,7 +86,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
             ])
         ])
     ))
-)
+]))
 
 @pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_parser_string_expression(input_string, expected_result):
@@ -114,7 +114,7 @@ def test_type_inference_string_expression(input_string, expected_result):
     type_inference.perform_type_inference(module_node, {
         'f': FunctionDefinitionASTNode(
             function_name='f',
-            function_signature=[(VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='NothingType', shape=[]))],
+            function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
             function_return_types=[TensorTypeASTNode(base_type_name='String', shape=[])],
             function_body=ReturnStatementASTNode(return_values=[StringLiteralASTNode(value='blah')])
         ),

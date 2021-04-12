@@ -58,14 +58,14 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
          right_arg=ExponentExpressionASTNode(
              left_arg=IntegerLiteralASTNode(value=2),
              right_arg=IntegerLiteralASTNode(value=3)))),
-    ('f(a:=1, b:=2, c:=Nothing)',
+    ('g(a:=1, b:=2, c:=Nothing)',
      FunctionCallExpressionASTNode(
          arg_bindings=[
              (VariableASTNode(name='a'), IntegerLiteralASTNode(value=1)),
              (VariableASTNode(name='b'), IntegerLiteralASTNode(value=2)),
              (VariableASTNode(name='c'), NothingTypeLiteralASTNode()),
          ],
-         function_name='f')),
+         function_name='g')),
 )
 
 @pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
@@ -105,5 +105,17 @@ function f() -> NothingType {{
 '''
     ast = parser.parseSourceCode(input_string)
     ast_with_type_inference = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(ast_with_type_inference, {'some_variable': TensorTypeASTNode(base_type_name='Boolean', shape=[3])})
+    type_inference.perform_type_inference(ast_with_type_inference, {
+        'some_variable': TensorTypeASTNode(base_type_name='Boolean', shape=[3]),
+        'g': FunctionDefinitionASTNode(
+            function_name='g',
+            function_signature=[
+                (VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='Integer', shape=[])),
+                (VariableASTNode(name='b'), TensorTypeASTNode(base_type_name='Integer', shape=[])),
+                (VariableASTNode(name='c'), TensorTypeASTNode(base_type_name='NothingType', shape=[])),
+            ],
+            function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+            function_body=ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True)])
+        )
+    })
     assert ast == ast_with_type_inference

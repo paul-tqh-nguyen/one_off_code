@@ -132,7 +132,7 @@ def test_type_inference_for_loop(input_string, expected_result):
             'y': TensorTypeASTNode(base_type_name='Integer', shape=[]),
             'func': FunctionDefinitionASTNode(
                 function_name='func',
-                function_signature=[],
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
                 function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[])],
                 function_body=ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True)])
             )

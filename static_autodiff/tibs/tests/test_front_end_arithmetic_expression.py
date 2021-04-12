@@ -211,10 +211,10 @@ def test_type_inference_arithmetic_expression(input_string, expected_result, exp
     module_node = parser.parseSourceCode('x = '+input_string)
     type_inference.perform_type_inference(module_node, {
         'f': FunctionDefinitionASTNode(
-            function_body=ScopedStatementSequenceASTNode(statements=[ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])]),
+            function_body=ScopedStatementSequenceASTNode(statements=[ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])]),
             function_name='f',
             function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
-            function_signature=[])
+            function_signature=[(VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='Integer', shape=[]))])
     })
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
