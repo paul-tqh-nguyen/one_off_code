@@ -556,6 +556,11 @@ x                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNo
 function f(x: Integer) -> Integer {
     for i:(1,10, 2) {
         x = x + i
+        if False {
+        while not False {
+            if True 1 else { f(x:=2) }
+        }
+    }
     }
     return 1234
 }
