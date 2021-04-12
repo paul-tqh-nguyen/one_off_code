@@ -7,7 +7,7 @@ INVALID_MODULE_CASES = [pytest.param(*args, id=f'invalid_module_{i}') for i, arg
     (
         'function f(a: Integer) -> NothingType return ; f(a:=True or False)',
         Exception,
-        'asd'
+        'has the following inconsistent types'
     ),
     (
         'function f(x: Integer) -> NothingType return ; f(a:=1)',
