@@ -278,7 +278,7 @@ def function_definition_type_inference(ast_node: FunctionDefinitionASTNode, var_
     redefined_variables = set()
     for variable, variable_type in ast_node.function_signature:
         if variable.name in redefined_variables:
-            redefined_variables.append(variable.name)
+            redefined_variables.add(variable.name)
         function_body_var_name_to_type_info[variable.name] = variable_type
     var_name_to_type_info, changed = perform_type_inference(ast_node.function_body, var_name_to_type_info, ast_node.function_name)
     return var_name_to_type_info, changed
