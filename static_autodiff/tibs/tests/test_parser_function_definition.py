@@ -43,7 +43,7 @@ from tibs.ast_node import (
 
 # TODO make sure all these imports are used
 
-INPUT_STRINGS = tuple(pytest.param(*args, id=f'{os.path.basename(__file__)}_{i}') for i, args in enumerate([
+INPUT_STRINGS = tuple(pytest.param(*args, id=f'case_{i}') for i, args in enumerate([
     'function f() -> NothingType {}',
     '''
 function f() -> NothingType {
