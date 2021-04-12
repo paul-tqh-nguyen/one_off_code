@@ -519,7 +519,7 @@ function f(x: Integer) -> Integer {
                 ]),
                 function_name='f',
                 function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
-x                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
             )
         ]),
         ModuleASTNode(statements=[
