@@ -487,10 +487,9 @@ g()
     (
         '''
 function f(x: Integer) -> Integer {
-
+    x = 100
     for i:(1,10, 2) {
-        True or True
-        return
+        x = x + i
     }
     return 1234
 }
