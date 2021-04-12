@@ -609,7 +609,7 @@ class FunctionDefinitionASTNode(StatementASTNode):
     def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> 'FunctionDefinitionASTNode':
         function_name, function_signature, function_return_types, function_body = tokens.asList()
         function_signature = eager_map(tuple, function_signature)
-        ASSERT.ParseError(len({variable_ast_node.name for variable_ast_node, _ in arg_bindings}) == len(arg_bindings), f'{function_name} has redundantly defined parameters.')
+        ASSERT.ParseError(len({variable_ast_node.name for variable_ast_node, _ in function_signature}) == len(arg_bindings), f'{function_name} has redundantly defined parameters.')
         node_instance = cls(function_name, function_signature, function_return_types, function_body)
         return node_instance
 
