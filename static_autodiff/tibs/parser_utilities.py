@@ -37,17 +37,7 @@ class ParseError(Exception):
         return
 
 class SyntaxError(Exception):
-
-    def __init__(self, original_text: str, problematic_text: str, problem_column_number: int) -> None:
-        self.original_text = original_text
-        self.problematic_text = problematic_text
-        self.problem_column_number = problem_column_number
-        super().__init__(f'''Could not parse the following:
-
-    {self.problematic_text}
-    {(' '*(self.problem_column_number - 1))}^
-''')
-        return
+    pass
 
 #######################################
 # Base Type Sanity Checking Utilities #
