@@ -16,6 +16,7 @@ def test_no_redundant_tests():
     assert len(eager_filter(len, map(str.strip, stderr.split('\n')))) == 0
     function_name_to_location: Dict[str, str] = {}
     for location in filter(len, stdout.split('\n')):
+        breakpoint()
         with open(location, 'r') as f:
             source = f.read()
             source_ast = ast.parse(source, filename=location)
