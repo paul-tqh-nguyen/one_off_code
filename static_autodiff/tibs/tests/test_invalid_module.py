@@ -20,7 +20,7 @@ INVALID_MODULE_CASES = tuple(pytest.param(*args, id=f'invalid_module_{i}') for i
         r'given [0-9]+ args when [0-9]+ were expected'
     ),
     (
-        'function f(x: Integer) -> NothingType return ; f(x:=2, a:=1)',
+        'function f(x: Integer, y: Integer) -> NothingType return ; f(x:=2, a:=1)',
         Exception,
         r'12343'
     ),
