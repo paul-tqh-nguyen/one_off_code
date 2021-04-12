@@ -497,30 +497,28 @@ function g() -> Integer
 g()
 ''',
         ModuleASTNode(statements=[
-            ScopedStatementSequenceASTNode(statements=[
-                FunctionDefinitionASTNode(
-                    function_name='f',
-                    function_signature=[],
-                    function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[]), TensorTypeASTNode(base_type_name='Boolean', shape=[])],
-                    function_body=ScopedStatementSequenceASTNode(statements=[
-                        FunctionDefinitionASTNode(
-                            function_name='g',
-                            function_signature=[],
-                            function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
-                            function_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])
-                        ),
-                        ReturnStatementASTNode(return_values=[FunctionCallExpressionASTNode(arg_bindings=[], function_name='g'), BooleanLiteralASTNode(value=True)])
-                    ])
-                ),
-                FunctionCallExpressionASTNode(arg_bindings=[], function_name='f'),
-                FunctionDefinitionASTNode(
-                    function_name='g',
-                    function_signature=[],
-                    function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
-                    function_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])
-                ),
-                FunctionCallExpressionASTNode(arg_bindings=[], function_name='g')
-            ])
+            FunctionDefinitionASTNode(
+                function_name='f',
+                function_signature=[],
+                function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[]), TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_body=ScopedStatementSequenceASTNode(statements=[
+                    FunctionDefinitionASTNode(
+                        function_name='g',
+                        function_signature=[],
+                        function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
+                        function_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])
+                    ),
+                    ReturnStatementASTNode(return_values=[FunctionCallExpressionASTNode(arg_bindings=[], function_name='g'), BooleanLiteralASTNode(value=True)])
+                ])
+            ),
+            FunctionCallExpressionASTNode(arg_bindings=[], function_name='f'),
+            FunctionDefinitionASTNode(
+                function_name='g',
+                function_signature=[],
+                function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
+                function_body=ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])
+            ),
+            FunctionCallExpressionASTNode(arg_bindings=[], function_name='g')
         ]),
         ModuleASTNode(statements=[
             ScopedStatementSequenceASTNode(statements=[
