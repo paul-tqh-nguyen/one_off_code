@@ -26,8 +26,8 @@ INVALID_MODULE_CASES = tuple(pytest.param(*args, id=f'invalid_module_{i}') for i
     ),
     (
         'function f(x: Integer, x: Integer) -> NothingType return',
-        type_inference.TypeInferenceFailure,
-        r'given unexpected paramter binding for'
+        Exception,
+        r'12ewdf'
     ),
 ]))
 
