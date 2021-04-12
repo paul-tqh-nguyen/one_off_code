@@ -45,13 +45,13 @@ from tibs.misc_utilities import *
 # TODO make sure all these imports are used
 
 EXPECTED_INPUT_OUTPUT_PAIRS = (
-    ('if False while True func(x:=1)', ConditionalASTNode(
+    ('if False while True f(x:=1)', ConditionalASTNode(
         condition=BooleanLiteralASTNode(value=False),
         then_body=WhileLoopASTNode(
             condition=BooleanLiteralASTNode(value=True),
             body=FunctionCallExpressionASTNode(
                 arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))],
-                function_name='func')),
+                function_name='f')),
         else_body=None)),
     ('if True xor False while False and True 3 else \n   5', ConditionalASTNode(
         condition=XorExpressionASTNode(
@@ -109,7 +109,14 @@ expected_result: {repr(expected_result)}
 def test_type_inference_conditional(input_string, expected_result):
     '''Type inference should be a no-op.'''
     module_node = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(module_node)
+    type_inference.perform_type_inference(module_node, {
+        'f': FunctionDefinitionASTNode(
+            function_name='f',
+            function_signature=[],
+            function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+            function_body=ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True)])
+        )
+    })
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
     result = only_one(module_node.statements)

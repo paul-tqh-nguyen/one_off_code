@@ -113,11 +113,12 @@ TEST_CASES = tuple(pytest.param(*args, id=f'{os.path.basename(__file__)}_{i}') f
 
 # comment
 
+function init_something(x: Integer) -> NothingType return
+
 x: Integer = 1 # comment
 x
 Nothing
 x = 1 # comment
-init_something()
 init_something(x:=x)
 x = 1 ; x: Integer = 1 # y = 123
 1 + 2
@@ -153,11 +154,16 @@ function g() -> NothingType, Boolean {
 }
 ''',
         ModuleASTNode(statements=[
+            FunctionDefinitionASTNode(
+                function_name='init_something',
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[])],
+                function_body=ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+            ),
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
             VariableASTNode(name='x'),
             NothingTypeLiteralASTNode(),
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
-            FunctionCallExpressionASTNode(arg_bindings=[], function_name='init_something'),
             FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), VariableASTNode(name='x'))], function_name='init_something'),
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))], value=IntegerLiteralASTNode(value=1)),
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
@@ -227,11 +233,16 @@ function g() -> NothingType, Boolean {
             )
         ]),
         ModuleASTNode(statements=[
+            FunctionDefinitionASTNode(
+                function_name='init_something',
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[])],
+                function_body=ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
+            ),
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
             VariableASTNode(name='x'),
             NothingTypeLiteralASTNode(),
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
-            FunctionCallExpressionASTNode(arg_bindings=[], function_name='init_something'),
             FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), VariableASTNode(name='x'))], function_name='init_something'),
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),
             AssignmentASTNode(variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))], value=IntegerLiteralASTNode(value=1)),

@@ -128,7 +128,15 @@ def test_type_inference_for_loop(input_string, expected_result):
     module_node = parser.parseSourceCode(input_string)
     type_inference.perform_type_inference(
         module_node,
-        {'y': TensorTypeASTNode(base_type_name='Integer', shape=[])}
+        {
+            'y': TensorTypeASTNode(base_type_name='Integer', shape=[]),
+            'func': FunctionDefinitionASTNode(
+                function_name='func',
+                function_signature=[],
+                function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_body=ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True)])
+            )
+        }
     )
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)

@@ -101,5 +101,15 @@ expected_result: {repr(expected_result)}
 def test_type_inference_while_loop(input_string, expected_result):
     ast = parser.parseSourceCode(input_string)
     ast_with_type_inference = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(ast_with_type_inference)
+    type_inference.perform_type_inference(
+        ast_with_type_inference,
+        {
+            'func': FunctionDefinitionASTNode(
+                function_name='func',
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_body=ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True)])
+            )
+        }
+    )
     assert ast == ast_with_type_inference

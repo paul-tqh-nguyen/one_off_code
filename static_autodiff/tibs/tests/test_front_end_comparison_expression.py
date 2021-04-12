@@ -95,7 +95,7 @@ expected_result: {repr(expected_result)}
 '''
 
 @pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
-def test_type_inference_function_call(input_string, expected_result):
+def test_type_inference_comparison_expression(input_string, expected_result):
     del expected_result
     module_node = parser.parseSourceCode('x = '+input_string)
     type_inference.perform_type_inference(

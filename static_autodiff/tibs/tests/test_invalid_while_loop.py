@@ -15,7 +15,7 @@ while [True, True]
 ])]
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_EXAMPLES)
-def test_invalid_conditionals(input_string, exception_type, error_match_string):
+def test_invalid_while_loop(input_string, exception_type, error_match_string):
     with pytest.raises(exception_type, match=error_match_string):
         result = parser.parseSourceCode(input_string)
         type_inference.perform_type_inference(result)
