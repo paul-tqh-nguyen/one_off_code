@@ -409,7 +409,7 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
         assert len(tokens) is 2
         function_name = tokens[0]
         arg_bindings = eager_map(tuple, map(pyparsing.ParseResults.asList, tokens[1]))
-        breapoint()
+        breakpoint()
         ASSERT.ParseError(len({variable_ast_node.name for variable_ast_node, _ in arg_bindings}) == len(arg_bindings), f'{function_name} has redundantly defined parameters.')
         node_instance = cls(function_name, arg_bindings)
         return node_instance
