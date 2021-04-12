@@ -576,7 +576,7 @@ function f(x: Integer) -> Integer {
                             ConditionalASTNode(
                                 condition=GreaterThanOrEqualToExpressionASTNode(
                                     left_arg=VariableASTNode(name='x'),
-                                    right_arg=
+                                    right_arg=IntegerLiteralASTNode(value=1)
                                 ),
                                 then_body=IntegerLiteralASTNode(value=1),
                                 else_body=ScopedStatementSequenceASTNode(statements=[
