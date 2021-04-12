@@ -486,7 +486,7 @@ g()
     ),
     (
         '''
-function f() -> Integer {
+function f(x: Integer) -> Integer {
     return 1234
 }
 ''',
