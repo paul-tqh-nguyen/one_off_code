@@ -13,6 +13,7 @@ from functools import reduce
 from typing import Dict, Callable, Tuple, Union, Optional
 import typing_extensions
 
+from .parser_utilities import SemanticError
 from .parser import (
     ASTNode,
     UnaryOperationExpressionASTNode,
