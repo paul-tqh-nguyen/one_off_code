@@ -36,7 +36,7 @@ class ParseError(Exception):
 ''')
         return
 
-class SyntaxError(Exception):
+class SemanticError(Exception):
     pass
 
 #######################################
