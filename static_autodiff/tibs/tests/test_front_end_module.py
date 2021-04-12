@@ -572,6 +572,15 @@ function f(x: Integer) -> Integer {
                                     left_arg=VariableASTNode(name='x'),
                                     right_arg=VariableASTNode(name='i')
                                 )
+                            ),
+                            ConditionalASTNode(
+                                condition=BooleanLiteralASTNode(value=True),
+                                then_body=IntegerLiteralASTNode(value=1),
+                                else_body=ScopedStatementSequenceASTNode(statements=[
+                                    FunctionCallExpressionASTNode(
+                                        arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=2))],
+                                        function_name='f')
+                                ])
                             )
                         ]),
                         delta=IntegerLiteralASTNode(value=2),
