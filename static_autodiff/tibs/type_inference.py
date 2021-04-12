@@ -283,7 +283,7 @@ def function_definition_type_inference(ast_node: FunctionDefinitionASTNode, var_
     updated_var_name_to_type_info, changed = perform_type_inference(ast_node.function_body, function_body_var_name_to_type_info, ast_node.function_name)
     for in redefined_variables:
         
-    return var_name_to_type_info, changed
+    return updated_var_name_to_type_info, changed
 
 @register_type_inference_method(ReturnStatementASTNode)
 def return_type_inference(ast_node: ReturnStatementASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
