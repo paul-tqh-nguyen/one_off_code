@@ -505,10 +505,10 @@ function f(x: Integer) -> Integer {
                         body=ScopedStatementSequenceASTNode(statements=[
                             AssignmentASTNode(
                                 value=AdditionExpressionASTNode(
+                                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))]
                                     left_arg=VariableASTNode(name='x'),
                                     right_arg=VariableASTNode(name='i')
-                                ),
-                                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))]
+                                )
                             )
                         ]),
                         delta=IntegerLiteralASTNode(value=2),
