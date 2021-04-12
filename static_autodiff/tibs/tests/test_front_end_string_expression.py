@@ -63,7 +63,29 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
         right_arg=StringLiteralASTNode(value='asd'))),
     (' "asd" << f(x:=1) ', StringConcatenationExpressionASTNode(
         left_arg=StringLiteralASTNode(value='asd'),
-        right_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f')))
+        right_arg=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1))], function_name='f'))),
+    (' [["a", "b"], ["c", "d"]] << [["A", "B"], ["C", "D"]] ', StringConcatenationExpressionASTNode(
+        left_arg=VectorExpressionASTNode(values=[
+            VectorExpressionASTNode(values=[
+                StringLiteralASTNode(value='a'),
+                StringLiteralASTNode(value='b'),
+            ]),
+            VectorExpressionASTNode(values=[
+                StringLiteralASTNode(value='c'),
+                StringLiteralASTNode(value='d'),
+            ])
+        ]),
+        right_arg=VectorExpressionASTNode(values=[
+            VectorExpressionASTNode(values=[
+                StringLiteralASTNode(value='A'),
+                StringLiteralASTNode(value='B'),
+            ]),
+            VectorExpressionASTNode(values=[
+                StringLiteralASTNode(value='C'),
+                StringLiteralASTNode(value='D'),
+            ])
+        ])
+    ))
 )
 
 @pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
@@ -107,4 +129,4 @@ def test_type_inference_string_expression(input_string, expected_result):
     assert variable_node.name is 'x'
     assert isinstance(tensor_type_node, TensorTypeASTNode)
     assert tensor_type_node.base_type_name is 'String'
-    assert tensor_type_node.shape == []
+    assert tensor_type_node.shape in ([], [2,2])

@@ -230,13 +230,16 @@ atom_pe = (variable_pe | float_pe | string_pe | integer_pe | boolean_pe | nothin
 # Expression Parser Elements
 
 expression_pe = Forward()
+vector_pe = Forward()
 
 function_variable_binding_pe = Group(variable_pe + Suppress(':=') + expression_pe)
 function_variable_bindings_pe = Group(Optional(delimitedList(function_variable_binding_pe)))
 function_call_expression_pe = (identifier_pe + Suppress('(') + function_variable_bindings_pe + Suppress(')')).setName('function call').setParseAction(FunctionCallExpressionASTNode.parse_action)
 
+expression_operand_pe = vector_pe | function_call_expression_pe | variable_pe
+
 arithmetic_expression_pe = infixNotation(
-    float_pe | integer_pe | function_call_expression_pe | variable_pe,
+    float_pe | integer_pe | expression_operand_pe,
     [
         (negative_operation_pe, 1, opAssoc.RIGHT, NegativeExpressionASTNode.parse_action),
         (exponent_operation_pe, 2, opAssoc.RIGHT, ExponentExpressionASTNode.parse_action),
@@ -251,7 +254,7 @@ comparison_expression_pe = (
 ).setName('comparison expression').setParseAction(parse_comparison_expression_pe)
 
 boolean_expression_pe = infixNotation(
-    boolean_pe | comparison_expression_pe | function_call_expression_pe | variable_pe,
+    boolean_pe | comparison_expression_pe | expression_operand_pe,
     [
         (not_operation_pe, 1, opAssoc.RIGHT, NotExpressionASTNode.parse_action),
         (and_operation_pe, 2, opAssoc.LEFT, AndExpressionASTNode.parse_action),
@@ -261,13 +264,12 @@ boolean_expression_pe = infixNotation(
 ).setName('boolean expression')
 
 string_expression_pe = infixNotation(
-    string_pe | function_call_expression_pe | variable_pe,
+    string_pe | expression_operand_pe,
     [
         (string_concatenation_operation_pe, 2, opAssoc.LEFT, StringConcatenationExpressionASTNode.parse_action),
     ],
 ).setName('string expression')
 
-vector_pe = Forward()
 expression_pe <<= ((function_call_expression_pe ^ comparison_expression_pe ^ arithmetic_expression_pe ^ string_expression_pe) | boolean_expression_pe | atom_pe | vector_pe).setName('expression')
 
 # Vector Parser Elements

@@ -48,7 +48,7 @@ EXPECTED_INPUT_OUTPUT_PAIRS = (
     ('''print "1
 2
 3" ''', PrintStatementASTNode(values_to_print=[StringLiteralASTNode('1\n2\n3')])),
-    ('print "a" << "b" << "c" ', PrintStatementASTNode(values_to_print=[
+    ('print ("a" << "b" << "c") ', PrintStatementASTNode(values_to_print=[
         StringConcatenationExpressionASTNode(
             StringConcatenationExpressionASTNode(StringLiteralASTNode('a'), StringLiteralASTNode('b')),
             StringLiteralASTNode('c')
