@@ -25,7 +25,7 @@ INVALID_MODULE_CASES = tuple(pytest.param(*args, id=f'invalid_module_{i}') for i
         r'given unexpected paramter binding for'
     ),
     (
-        'function f(x: Integer, y: Integer) -> NothingType return ; f(x:=2, a:=1)',
+        'function f(x: Integer, x: Integer) -> NothingType return',
         type_inference.TypeInferenceFailure,
         r'given unexpected paramter binding for'
     ),
