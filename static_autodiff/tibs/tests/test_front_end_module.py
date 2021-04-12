@@ -498,15 +498,21 @@ function f(x: Integer) -> Integer {
             FunctionDefinitionASTNode(
                 function_body=ScopedStatementSequenceASTNode(statements=[
                     AssignmentASTNode(value=IntegerLiteralASTNode(value=100), variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))]),
-                    ForLoopASTNode(body=ScopedStatementSequenceASTNode(statements=[
-                        AssignmentASTNode(
-                            value=AdditionExpressionASTNode(
-                                left_arg=VariableASTNode(name='x'),
-                                right_arg=VariableASTNode(name='i')
-                            ),
-                            variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))]
-                        )
-                    ]), delta=IntegerLiteralASTNode(value=2), iterator_variable_name='i', minimum=IntegerLiteralASTNode(value=1), supremum=IntegerLiteralASTNode(value=10)), ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])
+                    ForLoopASTNode(
+                        body=ScopedStatementSequenceASTNode(statements=[
+                            AssignmentASTNode(
+                                value=AdditionExpressionASTNode(
+                                    left_arg=VariableASTNode(name='x'),
+                                    right_arg=VariableASTNode(name='i')
+                                ),
+                                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))]
+                            )
+                        ]),
+                        delta=IntegerLiteralASTNode(value=2),
+                        iterator_variable_name='i',
+                        minimum=IntegerLiteralASTNode(value=1),
+                        supremum=IntegerLiteralASTNode(value=10)),
+                    ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])
                 ]),
                 function_name='f',
                 function_return_types=[TensorTypeASTNode(base_type_name='Integer', shape=[])],
