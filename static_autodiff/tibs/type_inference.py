@@ -274,7 +274,7 @@ def function_definition_type_inference(ast_node: FunctionDefinitionASTNode, var_
     ASSERT.TypeInferenceFailure(ast_node.function_name not in var_name_to_type_info, f'{ast_node.function_name} defined multiple times.')
     ast_node.function_signature
     for variable, variable_type in ast_node.function_signature:
-        var_name_to_type_info[variable.name]
+        var_name_to_type_info[variable.name]  =  
     var_name_to_type_info[ast_node.function_name] = ast_node
     var_name_to_type_info, changed = perform_type_inference(ast_node.function_body, var_name_to_type_info, ast_node.function_name)
     return var_name_to_type_info, changed
