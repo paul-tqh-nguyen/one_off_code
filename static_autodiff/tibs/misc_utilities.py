@@ -77,9 +77,9 @@ class ASSERTMetaClass(type):
             raise TypeError(f'{exception_type} does not describe a subclass of {BaseException.__qualname__}.')
         if not issubclass(exception_type, BaseException):
             raise TypeError(f'{exception_type} is not a subclass of {BaseException.__qualname__}.')
-        def assert_func(invariant: bool, error_message: str) -> None:
+        def assert_func(invariant: bool, *args) -> None:
             if not invariant:
-                raise exception_type(error_message)
+                raise exception_type(*args)
             return
         return assert_func
     
