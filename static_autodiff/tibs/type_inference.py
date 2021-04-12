@@ -68,7 +68,7 @@ from .misc_utilities import *
 # Exception Types #
 ###################
 
-class TypeInferenceFailure(Exception):
+class TypeInferenceFailure(SemanticError):
     pass
 
 class TypeInferenceConsistencyError(TypeInferenceFailure):
