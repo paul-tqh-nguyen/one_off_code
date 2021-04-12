@@ -22,7 +22,7 @@ INVALID_MODULE_CASES = tuple(pytest.param(*args, id=f'invalid_module_{i}') for i
     (
         'function f(x: Integer, y: Integer) -> NothingType return ; f(x:=2, a:=1)',
         Exception,
-        r'12343'
+        r'given unexpected paramter binding for'
     ),
 ]))
 
