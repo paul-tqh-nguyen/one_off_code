@@ -554,7 +554,6 @@ x                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNo
     (
         '''
 function f(x: Integer) -> Integer {
-    x = 100
     for i:(1,10, 2) {
         x = x + i
     }
