@@ -499,7 +499,7 @@ function f(x: Integer) -> Integer {
                 function_body=ScopedStatementSequenceASTNode(statements=[
                     AssignmentASTNode(
                         variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name=None, shape=None))],
-                        value=IntegerLiteralASTNode(value=100),
+                        value=IntegerLiteralASTNode(value=100)
                     ),
                     ForLoopASTNode(
                         body=ScopedStatementSequenceASTNode(statements=[
