@@ -280,7 +280,7 @@ def function_definition_type_inference(ast_node: FunctionDefinitionASTNode, var_
         if variable.name in redefined_variables:
             redefined_variables.add(variable.name)
         function_body_var_name_to_type_info[variable.name] = variable_type
-    updated_var_name_to_type_info, changed = perform_type_inference(ast_node.function_body, var_name_to_type_info, ast_node.function_name)
+    updated_var_name_to_type_info, changed = perform_type_inference(ast_node.function_body, function_body_var_name_to_type_info, ast_node.function_name)
     return var_name_to_type_info, changed
 
 @register_type_inference_method(ReturnStatementASTNode)
