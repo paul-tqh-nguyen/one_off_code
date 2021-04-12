@@ -10,7 +10,7 @@
 
 import itertools
 from functools import reduce
-from typing import Dict, Callable, Tuple, Union, Optional
+from typing import List, Dict, Callable, Tuple, Union, Optional
 import typing_extensions
 
 from .parser_utilities import SemanticError
