@@ -3,7 +3,7 @@ import pytest
 from tibs import parser, type_inference
 from tibs.misc_utilities import *
 
-INVALID_MODULE_CASES = [pytest.param(*args, id=f'invalid_conditional_{i}') for i, args in enumerate([
+INVALID_MODULE_CASES = [pytest.param(*args, id=f'invalid_module_{i}') for i, args in enumerate([
     (
         'function f(a: Integer) -> NothingType return ; f(a:=True or False)',
         Exception,
