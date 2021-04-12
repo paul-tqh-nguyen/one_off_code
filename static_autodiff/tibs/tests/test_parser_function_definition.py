@@ -90,7 +90,7 @@ dummy_var # comment
 
     # comment
 
-function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> g(b:=1, a:=3, b:=123)
+function f(a: NothingType, b: Boolean<?, ?, ?>) -> Integer<2,2> g(b:=1, a:=3)
 ''',
 ]))
 
