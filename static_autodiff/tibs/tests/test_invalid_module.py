@@ -14,6 +14,11 @@ INVALID_MODULE_CASES = [pytest.param(*args, id=f'invalid_module_{i}') for i, arg
         type_inference.TypeInferenceConsistencyError,
         'given unexpected paramter binding for'
     ),
+    (
+        'function f(x: Integer) -> NothingType return ; f(x:=2, a:=1)',
+        type_inference.TypeInferenceConsistencyError,
+        'given unexpected paramter binding for'
+    ),
 ])]
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_MODULE_CASES)
