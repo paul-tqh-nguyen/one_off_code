@@ -487,6 +487,11 @@ g()
     (
         '''
 function f(x: Integer) -> Integer {
+
+    for i:(1,10, 2) {
+        True or True
+        return
+    }
     return 1234
 }
 ''',
