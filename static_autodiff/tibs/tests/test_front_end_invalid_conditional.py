@@ -3,7 +3,7 @@ import pytest
 from tibs import parser, type_inference
 from tibs.misc_utilities import *
 
-INVALID_CONDITIONAL_INPUT_STRINGS = [pytest.param(*args, id=f'invalid_conditional_{i}') for i, args in enumerate([
+INVALID_CONDITIONAL_INPUT_STRINGS = [pytest.param(*args, id=f'case_{i}') for i, args in enumerate([
     (
         '''
 a = [1,2]
