@@ -409,7 +409,7 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
         assert len(tokens) is 2
         function_name = tokens[0]
         arg_bindings = eager_map(tuple, map(pyparsing.ParseResults.asList, tokens[1]))
-        assert len({variable_name for variable_name, _ in arg_bindings}) == len(arg_bindings)
+        ASSERT.ParseError(len({variable_name for variable_name, _ in arg_bindings}) == len(arg_bindings), f'')
         node_instance = cls(function_name, arg_bindings)
         return node_instance
 
