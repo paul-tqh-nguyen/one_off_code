@@ -183,7 +183,7 @@ def shell(input_command: str) -> Tuple[str, str]:
     '''Handles multi-line input_command'''
     command = input_command.encode()
     process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout_string, stderr_string = map(str.decode, process.communicate(command))
+    stdout_string, stderr_string = map(bytes.decode, process.communicate(command))
     return stdout_string, stderr_string
 
 def pid() -> int:
