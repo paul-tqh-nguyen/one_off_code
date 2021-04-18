@@ -48,7 +48,16 @@ function f() -> Integer, Boolean {
 ''',
         type_inference.TypeInferenceFailure,
         'g defined multiple times.'
-    )
+    ),
+    (
+        '''
+function f(x: String) -> String {
+    return f(x:=x)+1
+}
+''',
+        type_inference.TypeInferenceFailure,
+        ' operates on expressions with different types.'
+    ),
 ])]
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_FUNCTION_DEFINITION_INPUT_STRINGS)

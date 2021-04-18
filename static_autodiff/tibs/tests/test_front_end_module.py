@@ -198,8 +198,7 @@ function g() -> NothingType, Boolean {
                 function_body=ScopedStatementSequenceASTNode(statements=[
                     ForLoopASTNode(
                         body=ScopedStatementSequenceASTNode(statements=[
-                            OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)
-                            ),
+                            OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=True)),
                             ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()])
                         ]),
                         iterator_variable_name='x',
@@ -625,7 +624,37 @@ function f(x: Integer) -> Integer {
                 function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
             )
         ])
-    )
+    ),
+    (
+        '''
+x: Float = 10.2
+function f(x: Integer) -> NothingType return
+''',
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                value=FloatLiteralASTNode(value=10.2)
+            ),
+            FunctionDefinitionASTNode(
+                function_body=ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()]),
+                function_name='f',
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[])],
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
+            )
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                value=FloatLiteralASTNode(value=10.2)
+            ),
+            FunctionDefinitionASTNode(
+                function_body=ReturnStatementASTNode(return_values=[NothingTypeLiteralASTNode()]),
+                function_name='f',
+                function_return_types=[TensorTypeASTNode(base_type_name='NothingType', shape=[])],
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
+            )
+        ]),
+    ),
 ]))
 
 @pytest.mark.parametrize('input_string, parse_result, type_inference_result', TEST_CASES)

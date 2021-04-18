@@ -270,7 +270,7 @@ string_expression_pe = infixNotation(
     ],
 ).setName('string expression')
 
-expression_pe <<= ((function_call_expression_pe ^ comparison_expression_pe ^ arithmetic_expression_pe ^ string_expression_pe) | boolean_expression_pe | atom_pe | vector_pe).setName('expression')
+expression_pe <<= ((function_call_expression_pe ^ comparison_expression_pe ^ arithmetic_expression_pe ^ string_expression_pe ^ boolean_expression_pe) | atom_pe | vector_pe).setName('expression')
 
 # Vector Parser Elements
 

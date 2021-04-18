@@ -34,6 +34,64 @@ INVALID_MODULE_CASES = tuple(pytest.param(*args, id=f'invalid_module_{i}') for i
         type_inference.SemanticError,
         r'called with redundantly defined parameters.'
     ),
+    (
+        '''
+reused_variable_name: Integer = 10
+function reused_variable_name(x: Integer) -> NothingType return
+reused_variable_name(x:=1)
+''',
+        type_inference.TypeInferenceFailure,
+        r' defined multiple times.'
+    ),
+    (
+        '''
+start = 0
+end = 2
+delta = 0.5
+for x:(start, end, delta) {
+    True or True
+}
+''',
+        type_inference.TypeInferenceConsistencyError,
+        r'has the following inconsistent types: '
+    ),
+    (
+        '''
+start = 0.0
+end = "two"
+delta = 0.5
+for x:(start, end, delta) {
+    True or True
+}
+''',
+        type_inference.TypeInferenceConsistencyError,
+        r'has the following inconsistent types: '
+    ),
+    (
+        '''
+start = 0.0
+end = 200
+delta = 5
+for x:(start, end, delta) {
+    True or True
+}
+''',
+        type_inference.TypeInferenceConsistencyError,
+        r'has the following inconsistent types: '
+    ),
+    (
+        '''
+start = 0
+end = 200
+delta = 5
+for x:(start, end, delta) {
+    True or True
+}
+x + 1 
+''',
+        type_inference.TypeInferenceFailure,
+        r' used before type declared.'
+    ),
 ]))
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_MODULE_CASES)
