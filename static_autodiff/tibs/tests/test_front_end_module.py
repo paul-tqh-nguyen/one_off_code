@@ -926,6 +926,87 @@ i ** 2.0
             ),
         ]),
     ),
+    (
+        '''
+y = 3.0
+i = 4.0
+for i:(i*2.0,10.0**i, i*0.50)
+    y = y + i
+i ** 2.0
+''',
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=FloatLiteralASTNode(value=3.0),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=FloatLiteralASTNode(value=4.0),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=MultiplicationExpressionASTNode(
+                    left_arg=VariableASTNode(name='i'),
+                    right_arg=FloatLiteralASTNode(value=2.0),
+                ),
+                supremum=ExponentExpressionASTNode(
+                    left_arg=FloatLiteralASTNode(value=10.0),
+                    right_arg=VariableASTNode(name='i'),
+                ),
+                delta=MultiplicationExpressionASTNode(
+                    left_arg=VariableASTNode(name='i'),
+                    right_arg=FloatLiteralASTNode(value=0.50),
+                )
+            ),
+            ExponentExpressionASTNode(
+                left_arg=VariableASTNode(name='i'),
+                right_arg=FloatLiteralASTNode(value=2.0)
+            ),
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                value=FloatLiteralASTNode(value=3.0),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                value=FloatLiteralASTNode(value=4.0),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=MultiplicationExpressionASTNode(
+                    left_arg=VariableASTNode(name='i'),
+                    right_arg=FloatLiteralASTNode(value=2.0),
+                ),
+                supremum=ExponentExpressionASTNode(
+                    left_arg=FloatLiteralASTNode(value=10.0),
+                    right_arg=VariableASTNode(name='i'),
+                ),
+                delta=MultiplicationExpressionASTNode(
+                    left_arg=VariableASTNode(name='i'),
+                    right_arg=FloatLiteralASTNode(value=0.50),
+                )
+            ),
+            ExponentExpressionASTNode(
+                left_arg=VariableASTNode(name='i'),
+                right_arg=FloatLiteralASTNode(value=2.0)
+            ),
+        ]),
+    ),
 ]))
 
 @pytest.mark.parametrize('input_string, parse_result, type_inference_result', TEST_CASES)
