@@ -363,22 +363,22 @@ def while_loop_type_inference(ast_node: WhileLoopASTNode, var_name_to_type_info:
 
 @register_type_inference_method(ForLoopASTNode)
 def for_loop_type_inference(ast_node: ForLoopASTNode, var_name_to_type_info: Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], latest_function_name: Optional[str]) -> Tuple[Dict[str, Union[TensorTypeASTNode, FunctionDefinitionASTNode]], bool]:
-    changed = False
-    inferred_types = [
+    inferred_types = quadratic_unique([
         determine_expression_ast_node_type(ast_node.minimum, var_name_to_type_info),
         determine_expression_ast_node_type(ast_node.supremum, var_name_to_type_info),
         determine_expression_ast_node_type(ast_node.delta, var_name_to_type_info)
-    ]
+    ])
+    assert_type_consistency(ast_node, *inferred_types)
+    inferred_type = only_one(inferred_types)
     iterator_variable_known = ast_node.iterator_variable_name in var_name_to_type_info
-    if iterator_variable_known:
-        inferred_types.append(var_name_to_type_info[ast_node.iterator_variable_name])
     assert_type_consistency(ast_node, *inferred_types)
     if iterator_variable_known:
-        var_name_to_type_info, changed = perform_type_inference(ast_node.body, var_name_to_type_info, latest_function_name)
+        previous_type = var_name_to_type_info[ast_node.iterator_variable_name]
+    var_name_to_type_info[ast_node.iterator_variable_name] = inferred_type
+    var_name_to_type_info, changed = perform_type_inference(ast_node.body, var_name_to_type_info, latest_function_name)
+    if iterator_variable_known:
+        var_name_to_type_info[ast_node.iterator_variable_name] = previous_type
     else:
-        inferred_type = only_one(quadratic_unique(inferred_types))
-        var_name_to_type_info[ast_node.iterator_variable_name] = inferred_type
-        var_name_to_type_info, changed = perform_type_inference(ast_node.body, var_name_to_type_info, latest_function_name)
         del var_name_to_type_info[ast_node.iterator_variable_name]
     return var_name_to_type_info, changed
 

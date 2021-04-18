@@ -655,6 +655,202 @@ function f(x: Integer) -> NothingType return
             )
         ]),
     ),
+    (
+        '''
+function f(x: Integer) -> Boolean return True
+y = 3
+i = f(x:=1234)
+for i:(1,10, 2)
+    y = y + i
+False xor i
+''',
+        ModuleASTNode(statements=[
+            FunctionDefinitionASTNode(
+                function_body=ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True)]),
+                function_name='f',
+                function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=IntegerLiteralASTNode(value=3),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1234))], function_name='f'),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=IntegerLiteralASTNode(value=1),
+                supremum=IntegerLiteralASTNode(value=10),
+                delta=IntegerLiteralASTNode(value=2)
+            ),
+            XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=VariableASTNode(name='i')),
+        ]),
+        ModuleASTNode(statements=[
+            FunctionDefinitionASTNode(
+                function_body=ReturnStatementASTNode(return_values=[BooleanLiteralASTNode(value=True)]),
+                function_name='f',
+                function_return_types=[TensorTypeASTNode(base_type_name='Boolean', shape=[])],
+                function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))]
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                value=IntegerLiteralASTNode(value=3),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name='Boolean', shape=[]))],
+                value=FunctionCallExpressionASTNode(arg_bindings=[(VariableASTNode(name='x'), IntegerLiteralASTNode(value=1234))], function_name='f'),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=IntegerLiteralASTNode(value=1),
+                supremum=IntegerLiteralASTNode(value=10),
+                delta=IntegerLiteralASTNode(value=2)
+            ),
+            XorExpressionASTNode(left_arg=BooleanLiteralASTNode(value=False), right_arg=VariableASTNode(name='i')),
+        ]),
+    ),
+    (
+        '''
+y = 3
+i = "string"
+for i:(1,10, 2)
+    y = y + i
+"asd" << i << "\n"
+''',
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=IntegerLiteralASTNode(value=3),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=StringLiteralASTNode(value='string'),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=IntegerLiteralASTNode(value=1),
+                supremum=IntegerLiteralASTNode(value=10),
+                delta=IntegerLiteralASTNode(value=2)
+            ),
+            StringConcatenationExpressionASTNode(
+                left_arg=StringConcatenationExpressionASTNode(left_arg=StringLiteralASTNode(value='asd'), right_arg=VariableASTNode(name='i')),
+                right_arg=StringLiteralASTNode(value='\n')
+            ),
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                value=IntegerLiteralASTNode(value=3),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name='String', shape=[]))],
+                value=StringLiteralASTNode(value='string'),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=IntegerLiteralASTNode(value=1),
+                supremum=IntegerLiteralASTNode(value=10),
+                delta=IntegerLiteralASTNode(value=2)
+            ),
+            StringConcatenationExpressionASTNode(
+                left_arg=StringConcatenationExpressionASTNode(left_arg=StringLiteralASTNode(value='asd'), right_arg=VariableASTNode(name='i')),
+                right_arg=StringLiteralASTNode(value='\n')
+            )
+        ]),
+    ),
+    (
+        '''
+y = 3
+i = 1234.5678
+for i:(1,10, 2)
+    y = y + i
+i ** 2.0
+''',
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=IntegerLiteralASTNode(value=3),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=FloatLiteralASTNode(value=1234.5678),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=IntegerLiteralASTNode(value=1),
+                supremum=IntegerLiteralASTNode(value=10),
+                delta=IntegerLiteralASTNode(value=2)
+            ),
+            ExponentExpressionASTNode(
+                left_arg=VariableASTNode(name='i'),
+                right_arg=FloatLiteralASTNode(value=2.0)
+            ),
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                value=IntegerLiteralASTNode(value=3),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                value=FloatLiteralASTNode(value=1234.5678),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=IntegerLiteralASTNode(value=1),
+                supremum=IntegerLiteralASTNode(value=10),
+                delta=IntegerLiteralASTNode(value=2)
+            ),
+            ExponentExpressionASTNode(
+                left_arg=VariableASTNode(name='i'),
+                right_arg=FloatLiteralASTNode(value=2.0)
+            ),
+        ]),
+    ),
 ]))
 
 @pytest.mark.parametrize('input_string, parse_result, type_inference_result', TEST_CASES)
