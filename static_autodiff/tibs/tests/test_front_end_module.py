@@ -729,7 +729,7 @@ False xor i
         '''
 y = 3
 i = "string"
-for i:(1,10, 2)
+for i:(1,10*y, 2)
     y = y + i
 "asd" << i << "\n"
 ''',
@@ -752,7 +752,10 @@ for i:(1,10, 2)
                 ),
                 iterator_variable_name='i',
                 minimum=IntegerLiteralASTNode(value=1),
-                supremum=IntegerLiteralASTNode(value=10),
+                supremum=MultiplicationExpressionASTNode(
+                    left_arg=IntegerLiteralASTNode(value=10),
+                    right_arg=VariableASTNode(name='y'),
+                ),
                 delta=IntegerLiteralASTNode(value=2)
             ),
             StringConcatenationExpressionASTNode(
@@ -779,7 +782,10 @@ for i:(1,10, 2)
                 ),
                 iterator_variable_name='i',
                 minimum=IntegerLiteralASTNode(value=1),
-                supremum=IntegerLiteralASTNode(value=10),
+                supremum=MultiplicationExpressionASTNode(
+                    left_arg=IntegerLiteralASTNode(value=10),
+                    right_arg=VariableASTNode(name='y'),
+                ),
                 delta=IntegerLiteralASTNode(value=2)
             ),
             StringConcatenationExpressionASTNode(
@@ -792,7 +798,7 @@ for i:(1,10, 2)
         '''
 y = 3
 i = 1234.5678
-for i:(1,10, 2)
+for i:(1,10, y-1)
     y = y + i
 i ** 2.0
 ''',
@@ -816,7 +822,10 @@ i ** 2.0
                 iterator_variable_name='i',
                 minimum=IntegerLiteralASTNode(value=1),
                 supremum=IntegerLiteralASTNode(value=10),
-                delta=IntegerLiteralASTNode(value=2)
+                delta=SubtractionExpressionASTNode(
+                    left_arg=VariableASTNode(name='y'),
+                    right_arg=IntegerLiteralASTNode(value=1),
+                )
             ),
             ExponentExpressionASTNode(
                 left_arg=VariableASTNode(name='i'),
@@ -843,7 +852,73 @@ i ** 2.0
                 iterator_variable_name='i',
                 minimum=IntegerLiteralASTNode(value=1),
                 supremum=IntegerLiteralASTNode(value=10),
-                delta=IntegerLiteralASTNode(value=2)
+                delta=SubtractionExpressionASTNode(
+                    left_arg=VariableASTNode(name='y'),
+                    right_arg=IntegerLiteralASTNode(value=1),
+                )
+            ),
+            ExponentExpressionASTNode(
+                left_arg=VariableASTNode(name='i'),
+                right_arg=FloatLiteralASTNode(value=2.0)
+            ),
+        ]),
+    ),
+    (
+        '''
+y = 3.0
+i = 4.0
+for i:(i,10.0, 0.50)
+    y = y + i
+i ** 2.0
+''',
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=FloatLiteralASTNode(value=3.0),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=FloatLiteralASTNode(value=4.0),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=VariableASTNode(name='i'),
+                supremum=FloatLiteralASTNode(value=10.0),
+                delta=FloatLiteralASTNode(value=0.5)
+            ),
+            ExponentExpressionASTNode(
+                left_arg=VariableASTNode(name='i'),
+                right_arg=FloatLiteralASTNode(value=2.0)
+            ),
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                value=FloatLiteralASTNode(value=3.0),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='i'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                value=FloatLiteralASTNode(value=4.0),
+            ),
+            ForLoopASTNode(
+                body=AssignmentASTNode(
+                    variable_type_pairs=[(VariableASTNode(name='y'), TensorTypeASTNode(base_type_name='Float', shape=[]))],
+                    value=AdditionExpressionASTNode(
+                        left_arg=VariableASTNode(name='y'),
+                        right_arg=VariableASTNode(name='i')
+                    ),
+                ),
+                iterator_variable_name='i',
+                minimum=VariableASTNode(name='i'),
+                supremum=FloatLiteralASTNode(value=10.0),
+                delta=FloatLiteralASTNode(value=0.5)
             ),
             ExponentExpressionASTNode(
                 left_arg=VariableASTNode(name='i'),
