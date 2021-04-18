@@ -92,6 +92,14 @@ x + 1
         type_inference.TypeInferenceFailure,
         r' used before type declared.'
     ),
+    (
+        '''
+start = [[1,2]]
+start = 123
+''',
+        type_inference.TypeInferenceConsistencyError,
+        r' has the following inconsistent types: '
+    ),
 ]))
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_MODULE_CASES)

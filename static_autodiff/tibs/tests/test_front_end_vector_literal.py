@@ -98,6 +98,11 @@ TEST_CASES = (
             OrExpressionASTNode(left_arg=BooleanLiteralASTNode(value=True), right_arg=BooleanLiteralASTNode(value=False))]),
         TensorTypeASTNode(base_type_name='Boolean', shape=[3])
     ),
+    (
+        '[[[True]]]',
+        VectorExpressionASTNode(values=[VectorExpressionASTNode(values=[VectorExpressionASTNode(values=[BooleanLiteralASTNode(value=True)])])]),
+        TensorTypeASTNode(base_type_name='Boolean', shape=[1,1,1])
+    ),
 )
 
 @pytest.mark.parametrize('input_string, parse_result, expected_type', TEST_CASES)

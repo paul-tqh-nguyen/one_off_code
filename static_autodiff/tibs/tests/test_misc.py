@@ -2,6 +2,7 @@
 import os
 import ast
 import inspect
+import tibs
 import tibs.tests
 from tibs.misc_utilities import *
 

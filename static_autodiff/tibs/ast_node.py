@@ -9,7 +9,6 @@
 ###########
 
 import typing
-import typing_extensions
 from abc import ABC, abstractmethod
 import pyparsing
 import operator
@@ -45,6 +44,10 @@ class ASTNode(ABC):
         raise NotImplementedError
     
     @abstractmethod
+    def copy(self) -> 'ASTNode':
+        raise NotImplementedError
+
+    @abstractmethod
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
     
@@ -63,7 +66,7 @@ class AtomASTNodeType(type):
     base_ast_node_class = ASTNode
     
     def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict) -> type:
-        method_names = ('__init__', 'parse_action', '__eq__')
+        method_names = ('__init__', 'parse_action', '__eq__', 'copy')
         for method_name in method_names:
             assert method_name not in attributes.keys(), f'{method_name} already defined for class {class_name}'
 
@@ -99,9 +102,13 @@ class AtomASTNodeType(type):
             same_value = self_value == other_value
             return same_type and same_value_type and same_value
         
+        def copy(self) -> class_name:
+            return self.__class__(getattr(self, value_attribute_name))
+        
         updated_attributes['__init__'] = __init__
         updated_attributes['parse_action'] = parse_action
         updated_attributes['__eq__'] = __eq__
+        updated_attributes['copy'] = copy
         
         result_class = type(class_name, bases+(meta.base_ast_node_class,), updated_attributes)
         assert all(hasattr(result_class, method_name) for method_name in method_names)
@@ -140,6 +147,9 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
         return type(self) is type(other) and \
             self.left_arg == other.left_arg and \
             self.right_arg == other.right_arg 
+    
+    def copy(self) -> 'BinaryOperationExpressionASTNode':
+        return self.__class__(self.left_arg.copy(), self.right_arg.copy())
 
 class UnaryOperationExpressionASTNode(ExpressionASTNode):
     # TODO should this be an abstract class?
@@ -158,6 +168,9 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
     
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and self.arg == other.arg
+
+    def copy(self) -> 'UnaryOperationExpressionASTNode':
+        return self.__class__(self.arg.copy())
 
 class ArithmeticExpressionASTNode(ExpressionASTNode):
     # TODO should this be an abstract class?
@@ -417,6 +430,15 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
             self.arg_bindings == other.arg_bindings
+
+    def copy(self) -> 'FunctionCallExpressionASTNode':
+        return self.__class__(
+            str(self.function_name),
+            [
+                (variable_ast_node.copy(), expression_ast_node.copy())
+                for variable_ast_node, expression_ast_node in self.arg_bindings
+            ]
+        )
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -443,6 +465,9 @@ class VectorExpressionASTNode(ExpressionASTNode):
                 for self_value, other_value
                 in zip(self.values, other.values)
             )
+
+    def copy(self) -> 'VectorExpressionASTNode':
+        return self.__class__([expression_ast_node.copy() for expression_ast_node in self.values])
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -451,10 +476,10 @@ class VectorExpressionASTNode(ExpressionASTNode):
 
 class TensorTypeASTNode(ASTNode):
 
-    def __init__(self, base_type_name: typing.Optional[BaseTypeName], shape: typing.Optional[typing.List[typing.Union[typing_extensions.Literal['?', '???'], int]]]) -> None:
+    def __init__(self, base_type_name: typing.Optional[BaseTypeName], shape: typing.Optional[typing.List[typing.Optional[int]]]) -> None:
         '''
-        shape == [IntegerLiteralASTNode(value=1), IntegerLiteralASTNode(value=2), IntegerLiteralASTNode(value=3)] means this tensor has 3 dimensions with the given sizes
-        shape == [None, IntegerLiteralASTNode(value=2)] means this tensor has 2 dimensions with an unspecified size for the first dimension size and a fixed size for the second dimension 
+        shape == [1, 2, 3] means this tensor has 3 dimensions with the given sizes
+        shape == [None, 2] means this tensor has 2 dimensions with an unspecified size for the first dimension size and a fixed size for the second dimension 
         shape == [] means this tensor has 0 dimensions, i.e. is a scalar
         shape == None means this tensor could have any arbitrary number of dimensions
         '''
@@ -480,6 +505,12 @@ class TensorTypeASTNode(ASTNode):
         return type(self) is type(other) and \
             self.base_type_name is other.base_type_name and \
             self.shape == other.shape
+
+    def copy(self) -> 'TensorTypeASTNode':
+        return self.__class__(
+            str(self.base_type_name) if self.base_type_name is not None else None,
+            list(self.shape) if self.shape is not None else None
+        )
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -518,6 +549,12 @@ class AssignmentASTNode(StatementASTNode):
         return type(self) is type(other) and \
             self.variable_type_pairs == other.variable_type_pairs and \
             self.value == other.value
+
+    def copy(self) -> 'AssignmentASTNode':
+        return self.__class__(
+            [(variable_ast_node.copy(), tensor_type_ast_node.copy()) for variable_ast_node, tensor_type_ast_node in self.variable_type_pairs],
+            value.copy()
+        )
     
     def emit_mlir(self) -> 'str':
         assert implies(len(self.variable_type_pairs) != 1, isinstance(self.value, FunctionCallExpressionASTNode))

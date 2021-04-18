@@ -83,6 +83,12 @@ while [True, True]
             )
         }
     ),
+    (
+        '[[[[[[]]]]]]',
+        parser.ParseError,
+        'Could not parse the following',
+        {}
+    ),
 ])]
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string, type_inference_table', INVALID_EXAMPLES)
