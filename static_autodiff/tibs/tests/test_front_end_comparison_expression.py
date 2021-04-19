@@ -98,7 +98,7 @@ expected_result: {repr(expected_result)}
 def test_type_inference_comparison_expression(input_string, expected_result):
     del expected_result
     module_node = parser.parseSourceCode('x = '+input_string)
-    type_inference.perform_type_inference(
+    module_node = type_inference.perform_type_inference(
         module_node,
         {
             'y': TensorTypeASTNode(base_type_name='Integer', shape=[]),

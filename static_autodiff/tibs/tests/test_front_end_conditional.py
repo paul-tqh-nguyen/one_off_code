@@ -109,7 +109,7 @@ expected_result: {repr(expected_result)}
 def test_type_inference_conditional(input_string, expected_result):
     '''Type inference should be a no-op.'''
     module_node = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(module_node, {
+    module_node = type_inference.perform_type_inference(module_node, {
         'f': FunctionDefinitionASTNode(
             function_name='f',
             function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],

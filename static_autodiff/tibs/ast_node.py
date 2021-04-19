@@ -8,14 +8,20 @@
 # Imports #
 ###########
 
+import decorator
+import inspect
+import uuid
 import typing
+import typing_extensions
 from abc import ABC, abstractmethod
+import inspect
 import pyparsing
 import operator
 from functools import reduce
 
 from .parser_utilities import (
     ParseError,
+    SemanticError,
     BASE_TYPES,
     BaseTypeName,
     sanity_check_base_types,
@@ -27,6 +33,127 @@ from .misc_utilities import *
 
 # TODO make sure imports are used
 # TODO make sure these imports are ordered in some way
+
+###############
+# AST Helpers #
+###############
+
+# type hint checkers
+
+def is_instance_type_hint(instance: typing.Any, type_declaration: typing.Union[type, typing._Final]) -> bool:
+    is_instance = BOGUS_TOKEN
+    if isinstance(type_declaration, type):
+        is_instance = isinstance(instance, type_declaration)
+    elif type_declaration.__origin__ is typing_extensions.Literal:
+        is_instance = instance in type_declaration.__args__
+    elif type_declaration.__origin__ is list:
+        element_type_declaration = only_one(type_declaration.__args__)
+        is_instance = isinstance(instance, list) and all(is_instance_type_hint(element, element_type_declaration) for element in instance)
+    elif type_declaration.__origin__ is tuple:
+        is_instance = isinstance(instance, tuple) and all(is_instance_type_hint(instance_element, element_annotation) for instance_element, element_annotation in zip(instance, type_declaration.__args__))
+    elif type_declaration.__origin__ is typing.Union:
+        is_instance = any(is_instance_type_hint(instance, possible_type) for possible_type in type_declaration.__args__)
+    else:
+        breakpoint() # TODO remove this
+        raise NotImplementedError(f'Checking membership of {type_declaration} not currently supported.')
+    assert is_instance is not BOGUS_TOKEN
+    return is_instance
+
+# AST Node copy helpers
+
+def _copy_function_for_typing_type_hint(type_declaration: typing._Final) -> typing.Callable[[typing.Any], typing.Any] :
+    if type_declaration.__origin__ is list:
+        element_annotation = only_one(type_declaration.__args__)
+        element_copy_func = _copy_function_for_type_declaration(element_annotation)
+        def copy_func(value: type_declaration) -> type_declaration:
+            ASSERT.SemanticError(is_instance_type_hint(value, type_declaration), f'{value} expected to be an instance of {type_declaration}.') 
+            return [element_copy_func(element) for element in value]
+    elif type_declaration.__origin__ is tuple:
+        element_copy_funcs = [_copy_function_for_type_declaration(element_annotation) for element_annotation in type_declaration.__args__]
+        def copy_func(value: type_declaration) -> type_declaration:
+            ASSERT.SemanticError(is_instance_type_hint(value, type_declaration), f'{value} expected to be an instance of {type_declaration}.') 
+            return tuple(element_copy_func(element) for element, element_copy_func in zip(value, element_copy_funcs))
+    elif type_declaration.__origin__ is typing.Union:
+        copy_func_to_type: typing.Tuple[typing.Callable[[typing.Union[typing._Final, type]], typing.Callable[[typing.Any], typing.Any]], typing.Union[typing._Final, type]] = tuple(
+            (_copy_function_for_type_declaration(annotation), annotation)
+            for annotation in type_declaration.__args__
+        )
+        def copy_func(value: type_declaration) -> type_declaration:
+            ASSERT.SemanticError(is_instance_type_hint(value, type_declaration), f'{value} expected to be an instance of {type_declaration}.') 
+            relevant_copy_function = next(copy_func for copy_func, potential_type in copy_func_to_type if is_instance_type_hint(value, potential_type))
+            return relevant_copy_function(value)
+    elif type_declaration.__origin__ is typing_extensions.Literal:
+        literal_value_types = tuple(map(type, type_declaration.__args__))
+        type_declaration_equivalent_wrt_copying = typing.Union[literal_value_types]
+        union_copy_func = _copy_function_for_type_declaration(type_declaration_equivalent_wrt_copying)
+        def copy_func(value: type_declaration) -> type_declaration:
+            ASSERT.SemanticError(value in type_declaration.__args__, f'{value} expected to be one of {type_declaration.__args__}.')
+            return union_copy_func(value)
+    else:
+        breakpoint() # TODO remove this
+        raise NotImplementedError(f'Copying instances {type_declaration} not currently supported.')    
+    return copy_func
+
+def _copy_function_for_type_declaration(type_declaration: typing.Union[type, typing._Final]) -> typing.Callable[[typing.Any], typing.Any]:
+    '''Traversal of the type declaration (when a type hint and not a class) happens eagerly (and not at runtime when copy_func is called).'''
+    if isinstance(type_declaration, type) and issubclass(type_declaration, ASTNode):
+        def copy_func(value: ASTNode) -> ASTNode:
+            ASSERT.SemanticError(isinstance(value, ASTNode), f'{value} expected to be an instance of {ASTNode.__qualname__}.') 
+            return value.copy()
+    elif isinstance(type_declaration, typing._Final):
+        copy_func = _copy_function_for_typing_type_hint(type_declaration)
+    elif type_declaration is NoneType:
+        def copy_func(none_value: NoneType) -> None:
+            ASSERT.SemanticError(none_value is None, f'{none_value} expected to be {None}.')
+            return 
+    elif type_declaration in (str, int, float, bool):
+        def copy_func(value: type_declaration) -> type_declaration:
+            ASSERT.SemanticError(isinstance(value, type_declaration), f'{value} expected to be an instance of {type_declaration.__qualname__}.') 
+            return type_declaration(value)
+    else:
+        breakpoint() # TODO remove this
+        raise NotImplementedError(f'Copying instances {type_declaration} not currently supported.')    
+    return copy_func
+
+# Decorators
+
+def rename_function_args(**old_to_new_arg_names):
+    
+    def result_decorator(old_function):
+        parameters = inspect.signature(old_function).parameters.values()
+
+        eval_dict = {f'annotation_{i}': parameter.annotation for i, parameter in enumerate(parameters) if parameter.annotation is not inspect.Parameter.empty}
+        eval_dict.update({'old_function': old_function})
+
+        new_arg_names = tuple(old_to_new_arg_names.get(parameter.name, parameter.name) for parameter in parameters)
+        input_string_to_old_function = ', '.join(new_arg_names)
+        body_string = f'return old_function({input_string_to_old_function})'
+        
+        old_function_name = old_function.__name__ if old_function.__name__.isidentifier() else f'anonymous_function_{uuid.uuid4().int}'
+        new_signature_string = ', '.join(
+            new_arg_names[i] + ('' if parameter.annotation is inspect.Parameter.empty else f': annotation_{i}')
+            for i, parameter in enumerate(parameters)
+        )
+        name_and_signature_string = f'{old_function_name}({new_signature_string})'
+
+        new_parameters = (
+            parameter.replace(name=old_to_new_arg_names.get(parameter.name, parameter.name))
+            for parameter in inspect.signature(old_function).parameters.values()
+        )
+        new_signature = inspect.signature(old_function).replace(parameters=new_parameters)
+        
+        decorated_function = decorator.FunctionMaker.create(
+            name_and_signature_string,
+            body_string,
+            eval_dict,
+            defaults=old_function.__defaults__,
+            addsource=True,
+            __wrapped__=old_function,
+            __signature__=new_signature
+        )
+        return decorated_function
+    
+    return result_decorator
 
 #####################
 # AST Functionality #
@@ -42,10 +169,19 @@ class ASTNode(ABC):
     @abstractmethod
     def parse_action(cls, s: str, loc: int, tokens: pyparsing.ParseResults) -> 'ASTNode':
         raise NotImplementedError
-    
-    @abstractmethod
+
     def copy(self) -> 'ASTNode':
-        raise NotImplementedError
+        '''Raises exceptions when an ill-formed AST node is encountered.'''
+        init_kwargs = {}
+        parameters = list(inspect.signature(self.__init__).parameters.values())
+        assert (len(parameters) and parameters[0].name == 'self' and not inspect.ismethod(self.__init__)) ^ (all(parameter.name != 'self' for parameter in parameters) and inspect.ismethod(self.__init__))
+        parameters = filter(lambda parameter: parameter != 'self', parameters)
+        for parameter in parameters:
+            assert parameter.annotation is not inspect.Parameter.empty
+            parameter_value = getattr(self, parameter.name)
+            copy_func = _copy_function_for_type_declaration(parameter.annotation)
+            init_kwargs[parameter.name] = copy_func(parameter_value)
+        return self.__class__(**init_kwargs)
 
     @abstractmethod
     def emit_mlir(self) -> 'str':
@@ -60,16 +196,14 @@ class ASTNode(ABC):
         raise NotImplementedError
 
 class AtomASTNodeType(type):
-
-    # TODO is this needed or is ExpressionAtomASTNodeType sufficient?
-
+    
     base_ast_node_class = ASTNode
     
     def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict) -> type:
         method_names = ('__init__', 'parse_action', '__eq__', 'copy')
         for method_name in method_names:
             assert method_name not in attributes.keys(), f'{method_name} already defined for class {class_name}'
-
+        
         updated_attributes = dict(attributes)
         # Required Declarations
         value_type: type = updated_attributes.pop('value_type')
@@ -78,13 +212,12 @@ class AtomASTNodeType(type):
         value_attribute_name: str = updated_attributes.pop('value_attribute_name', 'value')
         dwimming_func: typing.Callable[[typing.Any], value_type] = updated_attributes.pop('dwimming_func', lambda token: token)
         
-        def __init__(self, *args, **kwargs) -> None:
-            assert sum(map(len, (args, kwargs))) == 1
-            value: value_type = args[0] if len(args) == 1 else kwargs[value_attribute_name]
+        @rename_function_args(value=value_attribute_name)
+        def __init__(self, value: value_type) -> None:
             assert isinstance(value, value_type)
             setattr(self, value_attribute_name, value)
             return
-
+        
         @classmethod
         def parse_action(cls, _s: str, _loc: int, tokens: pyparsing.ParseResults) -> class_name:
             token = only_one(tokens)
@@ -102,13 +235,9 @@ class AtomASTNodeType(type):
             same_value = self_value == other_value
             return same_type and same_value_type and same_value
         
-        def copy(self) -> class_name:
-            return self.__class__(getattr(self, value_attribute_name))
-        
         updated_attributes['__init__'] = __init__
         updated_attributes['parse_action'] = parse_action
         updated_attributes['__eq__'] = __eq__
-        updated_attributes['copy'] = copy
         
         result_class = type(class_name, bases+(meta.base_ast_node_class,), updated_attributes)
         assert all(hasattr(result_class, method_name) for method_name in method_names)
@@ -124,7 +253,6 @@ class ExpressionASTNode(StatementASTNode):
 
 class ExpressionAtomASTNodeType(AtomASTNodeType):
     '''The atomic bases that make up expressions.'''
-
     base_ast_node_class = ExpressionASTNode
 
 class BinaryOperationExpressionASTNode(ExpressionASTNode):
@@ -147,9 +275,6 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
         return type(self) is type(other) and \
             self.left_arg == other.left_arg and \
             self.right_arg == other.right_arg 
-    
-    def copy(self) -> 'BinaryOperationExpressionASTNode':
-        return self.__class__(self.left_arg.copy(), self.right_arg.copy())
 
 class UnaryOperationExpressionASTNode(ExpressionASTNode):
     # TODO should this be an abstract class?
@@ -169,16 +294,19 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and self.arg == other.arg
 
-    def copy(self) -> 'UnaryOperationExpressionASTNode':
-        return self.__class__(self.arg.copy())
-
 class ArithmeticExpressionASTNode(ExpressionASTNode):
     # TODO should this be an abstract class?
     pass
 
+class ArithmeticExpressionAtomASTNodeType(ExpressionAtomASTNodeType):
+    base_ast_node_class = ArithmeticExpressionASTNode
+
 class BooleanExpressionASTNode(ExpressionASTNode):
     # TODO should this be an abstract class?
     pass
+
+class BooleanExpressionAtomASTNodeType(ExpressionAtomASTNodeType):
+    base_ast_node_class = BooleanExpressionASTNode
 
 class ComparisonExpressionASTNode(BinaryOperationExpressionASTNode, BooleanExpressionASTNode):
     # TODO should this be an abstract class?
@@ -194,10 +322,13 @@ class StringExpressionASTNode(ExpressionASTNode):
     # TODO should this be an abstract class?
     pass
 
+class StringExpressionAtomASTNodeType(ExpressionAtomASTNodeType):
+    base_ast_node_class = StringExpressionASTNode
+
 # Literal Node Generation
 
 @LiteralASTNodeClassBaseTypeTracker.Boolean
-class BooleanLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
+class BooleanLiteralASTNode(metaclass=BooleanExpressionAtomASTNodeType):
     value_type = bool
     token_checker = lambda token: token in ('True', 'False')
     dwimming_func = lambda token: True if token == 'True' else False
@@ -206,7 +337,7 @@ class BooleanLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
         raise NotImplementedError
 
 @LiteralASTNodeClassBaseTypeTracker.Integer
-class IntegerLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
+class IntegerLiteralASTNode(metaclass=ArithmeticExpressionAtomASTNodeType):
     value_type = int
     token_checker = lambda token: isinstance(token, int)
     
@@ -214,7 +345,7 @@ class IntegerLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
         raise NotImplementedError
 
 @LiteralASTNodeClassBaseTypeTracker.Float
-class FloatLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
+class FloatLiteralASTNode(metaclass=ArithmeticExpressionAtomASTNodeType):
     value_type = float
     token_checker = lambda token: isinstance(token, float)
     
@@ -222,7 +353,7 @@ class FloatLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
         raise NotImplementedError
 
 @LiteralASTNodeClassBaseTypeTracker.String
-class StringLiteralASTNode(metaclass=ExpressionAtomASTNodeType):
+class StringLiteralASTNode(metaclass=StringExpressionAtomASTNodeType):
     value_type = str
     token_checker = lambda token: isinstance(token, str)
     
@@ -430,15 +561,6 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
         return type(self) is type(other) and \
             self.function_name == other.function_name and \
             self.arg_bindings == other.arg_bindings
-
-    def copy(self) -> 'FunctionCallExpressionASTNode':
-        return self.__class__(
-            str(self.function_name),
-            [
-                (variable_ast_node.copy(), expression_ast_node.copy())
-                for variable_ast_node, expression_ast_node in self.arg_bindings
-            ]
-        )
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -465,9 +587,6 @@ class VectorExpressionASTNode(ExpressionASTNode):
                 for self_value, other_value
                 in zip(self.values, other.values)
             )
-
-    def copy(self) -> 'VectorExpressionASTNode':
-        return self.__class__([expression_ast_node.copy() for expression_ast_node in self.values])
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -505,12 +624,6 @@ class TensorTypeASTNode(ASTNode):
         return type(self) is type(other) and \
             self.base_type_name is other.base_type_name and \
             self.shape == other.shape
-
-    def copy(self) -> 'TensorTypeASTNode':
-        return self.__class__(
-            str(self.base_type_name) if self.base_type_name is not None else None,
-            list(self.shape) if self.shape is not None else None
-        )
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -549,12 +662,6 @@ class AssignmentASTNode(StatementASTNode):
         return type(self) is type(other) and \
             self.variable_type_pairs == other.variable_type_pairs and \
             self.value == other.value
-
-    def copy(self) -> 'AssignmentASTNode':
-        return self.__class__(
-            [(variable_ast_node.copy(), tensor_type_ast_node.copy()) for variable_ast_node, tensor_type_ast_node in self.variable_type_pairs],
-            value.copy()
-        )
     
     def emit_mlir(self) -> 'str':
         assert implies(len(self.variable_type_pairs) != 1, isinstance(self.value, FunctionCallExpressionASTNode))

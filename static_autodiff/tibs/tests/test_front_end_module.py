@@ -1023,7 +1023,7 @@ parse_result: {repr(parse_result)}
 def test_type_inference_module(input_string, parse_result, type_inference_result):
     del parse_result
     result = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(result)
+    result = type_inference.perform_type_inference(result)
     assert result == type_inference_result, f'''
 input_string: {repr(input_string)}
 result: {repr(result)}

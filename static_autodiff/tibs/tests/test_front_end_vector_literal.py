@@ -130,7 +130,7 @@ parse_result: {repr(parse_result)}
 def test_type_inference_vector_literal(input_string, parse_result, expected_type):
     del parse_result
     module_node = parser.parseSourceCode('x = '+input_string)
-    type_inference.perform_type_inference(module_node)
+    module_node = type_inference.perform_type_inference(module_node)
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
     assignment_node = only_one(module_node.statements)

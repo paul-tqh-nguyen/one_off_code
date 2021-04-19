@@ -81,7 +81,7 @@ expected_result: {repr(expected_result)}
 @pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_type_inference_atomic_string(input_string, expected_result):
     module_node = parser.parseSourceCode(f'x = "{input_string}"')
-    type_inference.perform_type_inference(module_node)
+    module_node = type_inference.perform_type_inference(module_node)
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
     assignment_node = only_one(module_node.statements)

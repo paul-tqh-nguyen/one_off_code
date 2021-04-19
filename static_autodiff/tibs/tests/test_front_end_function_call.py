@@ -221,7 +221,7 @@ expected_result: {repr(expected_result)}
 @pytest.mark.parametrize('input_string, expected_result, type_inference_table', TEST_CASES)
 def test_type_inference_function_call(input_string, expected_result, type_inference_table):
     module_node = parser.parseSourceCode('x = '+input_string)
-    type_inference.perform_type_inference(
+    module_node = type_inference.perform_type_inference(
         module_node,
         type_inference_table
     )

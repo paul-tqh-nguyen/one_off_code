@@ -111,7 +111,7 @@ expected_result: {repr(expected_result)}
 @pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_type_inference_string_expression(input_string, expected_result):
     module_node = parser.parseSourceCode('x = '+input_string)
-    type_inference.perform_type_inference(module_node, {
+    module_node = type_inference.perform_type_inference(module_node, {
         'f': FunctionDefinitionASTNode(
             function_name='f',
             function_signature=[(VariableASTNode(name='x'), TensorTypeASTNode(base_type_name='Integer', shape=[]))],

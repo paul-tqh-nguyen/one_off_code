@@ -53,6 +53,16 @@ while [True, True]
         {}
     ),
     (
+        '''
+cond = [True, True]
+while cond
+    func(x:=1)
+''',
+        type_inference.TypeInferenceConsistencyError,
+        'has the following inconsistent types',
+        {}
+    ),
+    (
         '[[2, 3], x]',
         type_inference.TypeInferenceFailure,
         'must strictly contain tensor expressions with the same base type',

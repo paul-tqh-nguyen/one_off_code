@@ -236,7 +236,7 @@ expected_result: {repr(unprocessed_results)}
 def test_type_inference_assignment(input_string, unprocessed_results, type_inference_results, type_inference_table):
     del unprocessed_results
     module_node = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(module_node, type_inference_table)
+    module_node = type_inference.perform_type_inference(module_node, type_inference_table)
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
     assignment_node = only_one(module_node.statements)

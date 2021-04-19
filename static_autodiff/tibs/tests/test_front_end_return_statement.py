@@ -104,8 +104,7 @@ function f() -> NothingType {{
 }}
 '''
     ast = parser.parseSourceCode(input_string)
-    ast_with_type_inference = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(ast_with_type_inference, {
+    ast_with_type_inference = type_inference.perform_type_inference(ast, {
         'some_variable': TensorTypeASTNode(base_type_name='Boolean', shape=[3]),
         'g': FunctionDefinitionASTNode(
             function_name='g',

@@ -87,7 +87,7 @@ expected_result: {repr(expected_result)}
 def test_type_inference_print_statement(input_string, expected_result):
     '''Verify that type inference is a no-op.'''
     module_node = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(
+    module_node = type_inference.perform_type_inference(
         module_node,
         {
             'f': FunctionDefinitionASTNode(

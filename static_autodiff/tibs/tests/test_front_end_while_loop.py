@@ -100,9 +100,8 @@ expected_result: {repr(expected_result)}
 @pytest.mark.parametrize('input_string, expected_result', EXPECTED_INPUT_OUTPUT_PAIRS)
 def test_type_inference_while_loop(input_string, expected_result):
     ast = parser.parseSourceCode(input_string)
-    ast_with_type_inference = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(
-        ast_with_type_inference,
+    ast_with_type_inference = type_inference.perform_type_inference(
+        ast,
         {
             'func': FunctionDefinitionASTNode(
                 function_name='func',

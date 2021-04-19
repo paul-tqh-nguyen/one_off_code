@@ -126,7 +126,7 @@ expected_result: {repr(expected_result)}
 def test_type_inference_for_loop(input_string, expected_result):
     '''Type inference should be a no-op.'''
     module_node = parser.parseSourceCode(input_string)
-    type_inference.perform_type_inference(
+    module_node = type_inference.perform_type_inference(
         module_node,
         {
             'y': TensorTypeASTNode(base_type_name='Integer', shape=[]),

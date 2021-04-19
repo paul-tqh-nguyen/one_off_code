@@ -70,7 +70,7 @@ expected_result: {repr(expected_result)}
 
 def test_type_inference_nothing_literal():
     module_node = parser.parseSourceCode('x = Nothing')
-    type_inference.perform_type_inference(module_node)
+    module_node = type_inference.perform_type_inference(module_node)
     assert isinstance(module_node, ModuleASTNode)
     assert isinstance(module_node.statements, list)
     assignment_node = only_one(module_node.statements)

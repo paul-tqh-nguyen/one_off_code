@@ -209,7 +209,7 @@ expected_result: {repr(expected_result)}
 def test_type_inference_arithmetic_expression(input_string, expected_result, expected_result_type):
     del expected_result
     module_node = parser.parseSourceCode('x = '+input_string)
-    type_inference.perform_type_inference(module_node, {
+    module_node = type_inference.perform_type_inference(module_node, {
         'f': FunctionDefinitionASTNode(
             function_body=ScopedStatementSequenceASTNode(statements=[ReturnStatementASTNode(return_values=[IntegerLiteralASTNode(value=1234)])]),
             function_name='f',
