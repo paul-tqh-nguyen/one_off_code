@@ -397,9 +397,9 @@ def scoped_statement_sequence_type_inference(ast_node: ScopedStatementSequenceAS
 
 assert set(child_classes(ASTNode)) == set(AST_NODE_TYPE_TO_TYPE_INFERENCE_METHOD.keys())
 
-###############################
-# Type Inferencce Entry Point #
-###############################
+##############################
+# Type Inference Entry Point #
+##############################
 
 def _perform_type_inference(
         ast_node: ASTNode,

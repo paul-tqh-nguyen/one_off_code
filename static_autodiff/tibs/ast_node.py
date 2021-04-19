@@ -171,7 +171,7 @@ class ASTNode(ABC):
         raise NotImplementedError
 
     def copy(self) -> 'ASTNode':
-        '''Raises exceptions when an ill-formed AST node is encountered.'''
+        '''Raises an exception when an ill-formed AST node is encountered.'''
         init_kwargs = {}
         parameters = list(inspect.signature(self.__init__).parameters.values())
         assert (len(parameters) and parameters[0].name == 'self' and not inspect.ismethod(self.__init__)) ^ (all(parameter.name != 'self' for parameter in parameters) and inspect.ismethod(self.__init__))
