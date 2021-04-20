@@ -141,7 +141,7 @@ def generate_example_values() -> Generator[str, None, None]:
         )
     )
     yield from example_vector_values
-    max_rank = random.randint(2,10)
+    max_rank = 2 # random.randint(2,10)
     for _ in range(max_rank):
         dimension_size = random.randint(1,3)
         example_vector_values = tuple(
