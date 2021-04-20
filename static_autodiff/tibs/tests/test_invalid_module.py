@@ -100,6 +100,14 @@ start = 123
         type_inference.TypeInferenceConsistencyError,
         r' has the following inconsistent types: '
     ),
+    (
+        '''
+function f(a: Integer, b: Integer) -> Integer, Integer return b, a**2
+bad_value = f(a:=10, b:=20) - f(b:=30, a:=40)
+''',
+        type_inference.TypeInferenceFailure,
+        r' returns multiple values ; cannot infer single type for this expression.'
+    ),
 ]))
 
 @pytest.mark.parametrize('input_string, exception_type, error_match_string', INVALID_MODULE_CASES)

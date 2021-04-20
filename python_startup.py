@@ -61,6 +61,37 @@ def safe_cuda_memory() -> Generator:
         else:
             print("CUDA ran out of memory.")
 
+from typing import Union, Callable
+from functools import lru_cache
+class ASSERTMetaClass(type):
+    
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def exceptions_by_name() -> None:
+        return {exception.__name__: exception for exception in child_classes(BaseException)}
+    
+    @lru_cache(maxsize=16)
+    def __getitem__(self, exception_type: Union[type, str]) -> Callable[[bool], None]:
+        if isinstance(exception_type, str):
+            if exception_type not in self.exceptions_by_name():
+                self.exceptions_by_name.cache_clear()
+            exception_type = self.exceptions_by_name().get(exception_type, exception_type)
+        if not isinstance(exception_type, type):
+            raise TypeError(f'{exception_type} does not describe a subclass of {BaseException.__qualname__}.')
+        if not issubclass(exception_type, BaseException):
+            raise TypeError(f'{exception_type} is not a subclass of {BaseException.__qualname__}.')
+        def assert_func(invariant: bool, *args) -> None:
+            if not invariant:
+                raise exception_type(*args)
+            return
+        return assert_func
+    
+    def __getattr__(self, exception_type: type) -> Callable[[bool], None]:
+        return self[exception_type]
+
+class ASSERT(metaclass=ASSERTMetaClass):
+    pass
+
 from typing import Generator
 from contextlib import contextmanager
 @contextmanager
@@ -417,6 +448,8 @@ def timer(section_name: str = None, exitCallback: Callable[[float], None] = None
 
 # General Utilities
 
+NoneType = type(None)
+
 from collections import defaultdict
 def recursive_defaultdict() -> defaultdict:
     return defaultdict(recursive_defaultdict)
@@ -493,11 +526,9 @@ def implies(antecedent: bool, consequent: bool) -> bool:
 def iff(antecedent: bool, consequent: bool) -> bool:
     return bool(antecedent) == bool(consequent)
 
-UNIQUE_BOGUS_RESULT_IDENTIFIER = object()
-
 from typing import Generator
 def uniq(iterator: Iterable) -> Generator:
-    previous = UNIQUE_BOGUS_RESULT_IDENTIFIER
+    previous = BOGUS_TOKEN
     for value in iterator:
         if previous != value:
             yield value
@@ -555,3 +586,16 @@ def histogram(iterator: Iterable) -> Counter:
         counter[element]+=1
     return counter
 
+from typing import Callable
+def _compose(f: Callable, g: Callable):
+    return lambda *args, **kwargs: f(g(*args, **kwargs))
+def compose(*functions: Callable):
+    return reduce(_compose, functions)
+
+from typing import Iterable, List
+def quadratic_unique(iterator: Iterable) -> List:
+    answer = []
+    for element in iterator:
+        if element not in answer:
+            answer.append(element)
+    return answer    
