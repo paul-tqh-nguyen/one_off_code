@@ -96,6 +96,7 @@ function spellcheck {
 		\
 		| grep -iv "^acm$" \
 		| grep -iv "^arxiv$" \
+		| grep -iv "^BibTeX$" \
 		| grep -iv "^connelly$" \
 		| grep -iv "^facebook$" \
 		| grep -iv "^gensim$" \
@@ -118,6 +119,7 @@ function spellcheck {
 		| grep -iv "^nyc$" \
 		| grep -iv "^paul$" \
 		| grep -iv "^patchmatch$" \
+		| grep -iv "^reddit$" \
 		| grep -iv "^reuters$" \
 		| grep -iv "^sparql$" \
 		| grep -iv "^spolsky$" \
