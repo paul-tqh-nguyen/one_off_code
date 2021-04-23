@@ -89,6 +89,7 @@ function spellcheck {
 		| grep -v "^LSTM$" \
 		| grep -v "^NLP$" \
 		| grep -iv "^photorealistic$" \
+		| grep -iv "^pretrained$" \
 		| grep -iv "^recommender$" \
 		| grep -v "^RNN$" \
 		| grep -v "^vec$" \
