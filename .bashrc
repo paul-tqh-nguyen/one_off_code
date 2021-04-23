@@ -91,6 +91,7 @@ function spellcheck {
 		| grep -v "^vec$" \
 		\
 		| grep -iv "^acm$" \
+		| grep -iv "^arxiv$" \
 		| grep -iv "^connelly$" \
 		| grep -iv "^facebook$" \
 		| grep -iv "^gensim$" \
