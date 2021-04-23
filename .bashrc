@@ -72,6 +72,7 @@ function spellcheck {
 		| grep -v "^px$" \
 		| grep -v "^RNN$" \
 		| grep -v "^src$" \
+		| grep -v "^stylesheet$" \
 		| grep -v "^th$" \
 		| grep -v "^ul$" \
 		| grep -v "^unstyled$" \
