@@ -44,8 +44,11 @@ function files-with-suffix {
 function spellcheck {
     for file in $@
     do
+	printf "\n\nx"
 	echo $file
-	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2
+	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2 \
+		| grep -v "^br&" \
+		| grep -v "^th&"
 	printf "\n\n"
     done
 }
