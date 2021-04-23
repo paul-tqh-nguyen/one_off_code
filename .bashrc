@@ -71,13 +71,14 @@ function spellcheck {
 		| grep -v "^$" \
 	        \
 		| grep -v "^ACM$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
+		| grep -v "^Connelly$" \
+		| grep -v "^GraphSAGE$" \
 		| grep -v "^Javascript$" \
 		| grep -v "^JS$" \
 		| grep -v "^Keras$" \
 		| grep -v "^ExpressJS$" \
 		| grep -v "^Github$" \
+		| grep -v "^Metagraph$" \
 		| grep -v "^ReactJS$" \
 		\
 		| sort | uniq 
