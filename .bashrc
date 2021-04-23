@@ -108,6 +108,7 @@ function spellcheck {
 		| grep -iv "^mutag$" \
 		| grep -iv "^netflix$" \
 		| grep -iv "^networkx$" \
+		| grep -iv "^newswire$" \
 		| grep -iv "^nguyen$" \
 		| grep -iv "^nltk$" \
 		| grep -iv "^nyc$" \
