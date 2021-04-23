@@ -45,7 +45,7 @@ function spellcheck {
     for file in $@
     do
 	echo $file
-	cat $file | aspell -a | grep -v "^\*" | grep -v "^$"
+	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2
 	printf "\n\n"
     done
 }
@@ -57,7 +57,7 @@ function git-black {
 }
 
 function git-add-mod {
-    git add $(git status | grep modified | cut -d":" -f2)
+    git add -f $(git status | grep modified | cut -d":" -f2)
 }
 alias gam="git-add-mod"
 alias update-via-upstream="git pull --rebase upstream main && git fetch upstream && git push"
