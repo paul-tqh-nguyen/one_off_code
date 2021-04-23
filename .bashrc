@@ -48,7 +48,22 @@ function spellcheck {
 	echo $file
 	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2 \
 		| grep -v "^br$" \
-		| grep -v "^th$"
+		| grep -v "^href$" \
+		| grep -v "^hspace$" \
+		| grep -v "^img$" \
+		| grep -v "^png$" \
+		| grep -v "^src$" \
+		| grep -v "^th$" \
+		| grep -v "^vw$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$"
 	printf "\n\n"
     done
 }
