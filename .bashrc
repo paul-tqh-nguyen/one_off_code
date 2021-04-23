@@ -1,4 +1,5 @@
 
+
 # Convenience & Workflow 
 
 export PS1="\u@\h:\`pwd\`$ "
@@ -48,6 +49,7 @@ function spellcheck {
 	echo $file
 	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2 \
 		| grep -v "^br$" \
+		| grep -v "^DOCTYPE$" \
 		| grep -v "^href$" \
 		| grep -v "^hspace$" \
 		| grep -v "^html$" \
@@ -60,15 +62,20 @@ function spellcheck {
 		| grep -v "^px$" \
 		| grep -v "^src$" \
 		| grep -v "^th$" \
+		| grep -v "^viewport$" \
 		| grep -v "^vw$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
 	        \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^Javascript$" \
+		| grep -v "^JS$" \
+		| grep -v "^Keras$" \
 		| grep -v "^ExpressJS$" \
 		| grep -v "^Github$" \
 		| grep -v "^ReactJS$" \
