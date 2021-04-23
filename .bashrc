@@ -62,12 +62,15 @@ function spellcheck {
 		| grep -v "^jpg$" \
 		| grep -v "^lang$" \
 		| grep -v "^li$" \
+		| grep -v "^LSTM$" \
 		| grep -v "^nav$" \
+		| grep -v "NLP^$" \
 		| grep -v "^nofollow$" \
 		| grep -v "^pdf$" \
 		| grep -v "^png$" \
 		| grep -v "^pptx$" \
 		| grep -v "^px$" \
+		| grep -v "^RNN$" \
 		| grep -v "^src$" \
 		| grep -v "^th$" \
 		| grep -v "^ul$" \
@@ -77,6 +80,12 @@ function spellcheck {
 		| grep -v "^viewport$" \
 		| grep -v "^vw$" \
 		\
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
+		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
@@ -107,6 +116,7 @@ function spellcheck {
 		| grep -iv "^ui$" \
 		| grep -iv "^ux$" \
 		| grep -iv "^wikidata$" \
+		| grep -iv "^zhouhan$" \
 		\
 		| sort | uniq 
 	printf "\n\n"
