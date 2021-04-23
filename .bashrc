@@ -102,7 +102,7 @@ function spellcheck {
 		| grep -iv "^sparql$" \
 		| grep -iv "^stellargraph$" \
 		| grep -iv "^stough$" \
-		| grep -v "^tiingo$" \
+		| grep -iv "^tiingo$" \
 		| grep -iv "^ui$" \
 		| grep -iv "^ux$" \
 		| grep -iv "^wikidata$" \
