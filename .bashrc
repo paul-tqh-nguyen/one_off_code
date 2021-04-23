@@ -80,22 +80,12 @@ function spellcheck {
 		| grep -v "^viewport$" \
 		| grep -v "^vw$" \
 		\
-		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$" \
-	        \
 		| grep -iv "^acm$" \
 		| grep -iv "^connelly$" \
 		| grep -iv "^gensim$" \
 		| grep -iv "^graphsage$" \
 		| grep -iv "^javascript$" \
+		| grep -iv "^joel$" \
 		| grep -iv "^js$" \
 		| grep -iv "^keras$" \
 		| grep -iv "^expressjs$" \
@@ -104,12 +94,16 @@ function spellcheck {
 		| grep -iv "^linkedin$" \
 		| grep -iv "^metagraph$" \
 		| grep -iv "^mutag$" \
+		| grep -iv "^netflix$" \
 		| grep -iv "^networkx$" \
 		| grep -iv "^nguyen$" \
 		| grep -iv "^nltk$" \
+		| grep -iv "^nyc$" \
 		| grep -iv "^paul$" \
+		| grep -iv "^patchmatch$" \
 		| grep -iv "^reactjs$" \
 		| grep -iv "^sparql$" \
+		| grep -iv "^spolsky$" \
 		| grep -iv "^stellargraph$" \
 		| grep -iv "^stough$" \
 		| grep -iv "^tiingo$" \
