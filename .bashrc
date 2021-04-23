@@ -44,14 +44,20 @@ function files-with-suffix {
 function spellcheck {
     for file in $@
     do
-	printf "\n\n"
+	printf "\n"
 	echo $file
 	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2 \
 		| grep -v "^br$" \
 		| grep -v "^href$" \
 		| grep -v "^hspace$" \
+		| grep -v "^html$" \
 		| grep -v "^img$" \
+		| grep -v "^jpg$" \
+		| grep -v "^nofollow$" \
+		| grep -v "^pdf$" \
 		| grep -v "^png$" \
+		| grep -v "^pptx$" \
+		| grep -v "^px$" \
 		| grep -v "^src$" \
 		| grep -v "^th$" \
 		| grep -v "^vw$" \
@@ -62,8 +68,12 @@ function spellcheck {
 		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
-		| grep -v "^$" \
-		| grep -v "^$"
+	        \
+		| grep -v "^ExpressJS$" \
+		| grep -v "^Github$" \
+		| grep -v "^ReactJS$" \
+		\
+		| sort | uniq 
 	printf "\n\n"
     done
 }
