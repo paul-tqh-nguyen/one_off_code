@@ -78,6 +78,7 @@ function spellcheck {
 		| grep -v "^vw$" \
 		\
 		| grep -v "^autograd$" \
+		| grep -v "^bouldering$" \
 		| grep -iv "^embeddings$" \
 		| grep -v "^conv$" \
 		| grep -iv "^choropleth$" \
