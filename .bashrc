@@ -79,6 +79,7 @@ function spellcheck {
 		\
 		| grep -iv "^embeddings$" \
 		| grep -v "^conv$" \
+		| grep -iv "^choropleth$" \
 		| grep -iv "^convolutional$" \
 		| grep -iv "^dataset$" \
 		| grep -iv "^labelling$" \
