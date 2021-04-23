@@ -64,7 +64,7 @@ function spellcheck {
 		| grep -v "^li$" \
 		| grep -v "^LSTM$" \
 		| grep -v "^nav$" \
-		| grep -v "NLP^$" \
+		| grep -v "^NLP$" \
 		| grep -v "^nofollow$" \
 		| grep -v "^pdf$" \
 		| grep -v "^png$" \
