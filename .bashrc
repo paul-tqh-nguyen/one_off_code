@@ -82,7 +82,7 @@ function spellcheck {
 		| grep -v "^conv$" \
 		| grep -iv "^choropleth$" \
 		| grep -iv "^convolutional$" \
-		| grep -iv "^denoising$" \	       
+		| grep -iv "^denoising$" \
 		| grep -iv "^gaussian$" \
 		| grep -iv "^dataset$" \
 		| grep -iv "^labelling$" \
