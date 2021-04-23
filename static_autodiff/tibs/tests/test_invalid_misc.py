@@ -1,7 +1,19 @@
 
 import pytest
-from tibs import parser
+import random
+import datetime
+import itertools
+
+from typing import Generator
+
+from tibs import parser, type_inference
 from tibs.misc_utilities import *
+
+random.seed(datetime.date.today())
+
+############################
+# test_parser_invalid_misc #
+############################
 
 BAD_PARSE_STRINGS = eager_map(
     pytest.param,
@@ -93,3 +105,69 @@ x: Integer
 def test_parser_invalid_misc(input_string):
     with pytest.raises(parser.ParseError, match='Could not parse the following:'):
         parser.parseSourceCode(input_string)
+
+###########################
+# test_invalid_expression #
+###########################
+
+UNIFORM_INPUT_TYPE_BINARY_OPERATORS = (
+    'and',
+    'xor',
+    'or',
+    '**',
+    '^',
+    '*',
+    '/',
+    '+',
+    '-',
+    # TODO should we include comparison operators here?
+)
+
+def generate_example_values() -> Generator[str, None, None]:
+    '''Every yielded element must be of a unique type (different shapes imply different types) and have unique value.'''
+    example_vector_values = (
+        'Nothing',
+        '100',
+        'True',
+        '12.34',
+        ' "blah" ',
+    )
+    assert len(example_vector_values) == len(set(example_vector_values)) == len(
+        quadratic_unique(
+            map(
+                compose(type_inference.perform_type_inference, parser.parseSourceCode),
+                example_vector_values
+            )
+        )
+    )
+    yield from example_vector_values
+    max_rank = 2 # random.randint(2,10)
+    for _ in range(max_rank):
+        dimension_size = random.randint(1,3)
+        example_vector_values = tuple(
+            '[' + str.join(',', itertools.repeat(subvectors, dimension_size)) + ']'
+            for subvectors in example_vector_values
+        )
+        yield from example_vector_values
+    return
+
+INVALID_EXPRESSIONS = [
+    pytest.param(
+        ' '.join([value_1, binary_operator, value_2]),
+        id=f'invalid_expression_{i}'
+    )
+    for i, (value_1, binary_operator, value_2) in enumerate(itertools.product(generate_example_values(), UNIFORM_INPUT_TYPE_BINARY_OPERATORS, generate_example_values()))
+    if value_1 != value_2
+]
+# too many slow cases, so just do a few random ones
+random.shuffle(INVALID_EXPRESSIONS)
+INVALID_EXPRESSIONS = INVALID_EXPRESSIONS[:100]
+
+@pytest.mark.parametrize('input_string', INVALID_EXPRESSIONS)
+def test_invalid_expression(input_string):
+    with pytest.raises(
+            (parser.ParseError, type_inference.TypeInferenceFailure)
+            , match=r'Could not parse the following:|operates on expressions with different types.'
+    ):
+        result = parser.parseSourceCode(input_string)
+        type_inference.perform_type_inference(result)

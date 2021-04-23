@@ -53,6 +53,7 @@ __all__ = [
     'current_timestamp_string',
     'unzip',
     'histogram',
+    'compose',
     'quadratic_unique',
 ]
 
@@ -598,6 +599,13 @@ def histogram(iterator: Iterable) -> Counter:
     for element in iterator:
         counter[element]+=1
     return counter
+
+from typing import Callable
+from functools import reduce
+def _compose(f: Callable, g: Callable):
+    return lambda *args, **kwargs: f(g(*args, **kwargs))
+def compose(*functions: Callable):
+    return reduce(_compose, functions)
 
 from typing import Iterable, List
 def quadratic_unique(iterator: Iterable) -> List:

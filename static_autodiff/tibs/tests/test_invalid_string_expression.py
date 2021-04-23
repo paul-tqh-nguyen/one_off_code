@@ -3,7 +3,7 @@ import pytest
 from tibs import parser, type_inference
 from tibs.misc_utilities import *
 
-INVALID_STRING_EXPRESSION = [pytest.param(*args, id=f'invalid_conditional_{i}') for i, args in enumerate([
+INVALID_STRING_EXPRESSION = [pytest.param(*args, id=f'invalid_string_expression_{i}') for i, args in enumerate([
     (
         ' "a" << 1.2 ',
         parser.ParseError,

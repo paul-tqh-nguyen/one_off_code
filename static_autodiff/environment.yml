@@ -2,6 +2,7 @@ name: tibs
 dependencies:
   - python=3.7
   - pytest-cov
+  - pytest-xdist
   - decorator
   - pyparsing
   - typing-extensions

@@ -1007,6 +1007,59 @@ i ** 2.0
             ),
         ]),
     ),
+    (
+        '''
+a = [[1,2],[3,4]]
+b = [[9,9],[9,9]]
+sum = a + b
+''',
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='a'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=VectorExpressionASTNode(values=[
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1), IntegerLiteralASTNode(value=2)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=3), IntegerLiteralASTNode(value=4)]),
+                ]),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='b'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=VectorExpressionASTNode(values=[
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=9), IntegerLiteralASTNode(value=9)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=9), IntegerLiteralASTNode(value=9)]),
+                ]),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='sum'), TensorTypeASTNode(base_type_name=None, shape=None))],
+                value=AdditionExpressionASTNode(
+                    left_arg=VariableASTNode(name='a'),
+                    right_arg=VariableASTNode(name='b')
+                ),
+            ),
+        ]),
+        ModuleASTNode(statements=[
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='a'), TensorTypeASTNode(base_type_name='Integer', shape=[2,2]))],
+                value=VectorExpressionASTNode(values=[
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=1), IntegerLiteralASTNode(value=2)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=3), IntegerLiteralASTNode(value=4)]),
+                ]),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='b'), TensorTypeASTNode(base_type_name='Integer', shape=[2,2]))],
+                value=VectorExpressionASTNode(values=[
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=9), IntegerLiteralASTNode(value=9)]),
+                    VectorExpressionASTNode(values=[IntegerLiteralASTNode(value=9), IntegerLiteralASTNode(value=9)]),
+                ]),
+            ),
+            AssignmentASTNode(
+                variable_type_pairs=[(VariableASTNode(name='sum'), TensorTypeASTNode(base_type_name='Integer', shape=[2,2]))],
+                value=AdditionExpressionASTNode(
+                    left_arg=VariableASTNode(name='a'),
+                    right_arg=VariableASTNode(name='b')
+                ),
+            ),
+        ]),
+    ),
 ]))
 
 @pytest.mark.parametrize('input_string, parse_result, type_inference_result', TEST_CASES)
