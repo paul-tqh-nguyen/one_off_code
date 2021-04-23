@@ -70,7 +70,7 @@ function spellcheck {
 		| grep -v "^$" \
 		| grep -v "^$" \
 	        \
-		| grep -v "^acm$" \
+		| grep -v "^ACM$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^Javascript$" \
