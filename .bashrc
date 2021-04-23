@@ -90,6 +90,7 @@ function spellcheck {
 		\
 		| grep -iv "^acm$" \
 		| grep -iv "^connelly$" \
+		| grep -iv "^facebook$" \
 		| grep -iv "^gensim$" \
 		| grep -iv "^graphsage$" \
 		| grep -iv "^javascript$" \
