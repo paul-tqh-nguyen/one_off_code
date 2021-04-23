@@ -117,7 +117,7 @@ function spellcheck {
 		| grep -iv "^nyc$" \
 		| grep -iv "^paul$" \
 		| grep -iv "^patchmatch$" \
-		| grep -iv "^reactjs$" \
+		| grep -iv "^reuters$" \
 		| grep -iv "^sparql$" \
 		| grep -iv "^spolsky$" \
 		| grep -iv "^stellargraph$" \
