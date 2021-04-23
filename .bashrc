@@ -48,13 +48,21 @@ function spellcheck {
 	printf "\n"
 	echo $file
 	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2 \
+		| grep -v "^bg$" \
 		| grep -v "^br$" \
+		| grep -v "^btn$" \
+		| grep -v "^charset$" \
+		| grep -v "^css$" \
 		| grep -v "^DOCTYPE$" \
 		| grep -v "^href$" \
 		| grep -v "^hspace$" \
 		| grep -v "^html$" \
+		| grep -v "^http$" \
 		| grep -v "^img$" \
 		| grep -v "^jpg$" \
+		| grep -v "^lang$" \
+		| grep -v "^li$" \
+		| grep -v "^nav$" \
 		| grep -v "^nofollow$" \
 		| grep -v "^pdf$" \
 		| grep -v "^png$" \
@@ -62,24 +70,42 @@ function spellcheck {
 		| grep -v "^px$" \
 		| grep -v "^src$" \
 		| grep -v "^th$" \
+		| grep -v "^ul$" \
+		| grep -v "^unstyled$" \
+		| grep -v "^utf$" \
+		| grep -v "^vec$" \
 		| grep -v "^viewport$" \
 		| grep -v "^vw$" \
-		| grep -v "^$" \
+		\
 		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
 		| grep -v "^$" \
 	        \
-		| grep -v "^ACM$" \
-		| grep -v "^Connelly$" \
-		| grep -v "^GraphSAGE$" \
-		| grep -v "^Javascript$" \
-		| grep -v "^JS$" \
-		| grep -v "^Keras$" \
-		| grep -v "^ExpressJS$" \
-		| grep -v "^Github$" \
-		| grep -v "^Metagraph$" \
-		| grep -v "^ReactJS$" \
+		| grep -iv "^acm$" \
+		| grep -iv "^connelly$" \
+		| grep -iv "^gensim$" \
+		| grep -iv "^graphsage$" \
+		| grep -iv "^javascript$" \
+		| grep -iv "^js$" \
+		| grep -iv "^keras$" \
+		| grep -iv "^expressjs$" \
+		| grep -iv "^github$" \
+		| grep -iv "^github$" \
+		| grep -iv "^linkedin$" \
+		| grep -iv "^metagraph$" \
+		| grep -iv "^networkx$" \
+		| grep -iv "^nguyen$" \
+		| grep -iv "^nltk$" \
+		| grep -iv "^paul$" \
+		| grep -iv "^reactjs$" \
+		| grep -iv "^sparql$" \
+		| grep -iv "^stellargraph$" \
+		| grep -iv "^stough$" \
+		| grep -v "^tiingo$" \
+		| grep -iv "^ui$" \
+		| grep -iv "^ux$" \
+		| grep -iv "^wikidata$" \
 		\
 		| sort | uniq 
 	printf "\n\n"
