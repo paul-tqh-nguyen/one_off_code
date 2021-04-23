@@ -94,6 +94,7 @@ function spellcheck {
 		| grep -iv "^github$" \
 		| grep -iv "^linkedin$" \
 		| grep -iv "^metagraph$" \
+		| grep -iv "^mutag$" \
 		| grep -iv "^networkx$" \
 		| grep -iv "^nguyen$" \
 		| grep -iv "^nltk$" \
