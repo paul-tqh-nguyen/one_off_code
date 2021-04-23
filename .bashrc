@@ -62,24 +62,31 @@ function spellcheck {
 		| grep -v "^jpg$" \
 		| grep -v "^lang$" \
 		| grep -v "^li$" \
-		| grep -v "^LSTM$" \
 		| grep -v "^nav$" \
-		| grep -v "^NLP$" \
 		| grep -v "^nofollow$" \
 		| grep -v "^pdf$" \
 		| grep -v "^png$" \
 		| grep -v "^pptx$" \
 		| grep -v "^px$" \
-		| grep -v "^RNN$" \
 		| grep -v "^src$" \
 		| grep -v "^stylesheet$" \
 		| grep -v "^th$" \
 		| grep -v "^ul$" \
 		| grep -v "^unstyled$" \
 		| grep -v "^utf$" \
-		| grep -v "^vec$" \
 		| grep -v "^viewport$" \
 		| grep -v "^vw$" \
+		\
+		| grep -iv "^embeddings$" \
+		| grep -v "^conv$" \
+		| grep -iv "^convolutional$" \
+		| grep -iv "^dataset$" \
+		| grep -iv "^labelling$" \
+		| grep -v "^LSTM$" \
+		| grep -v "^NLP$" \
+		| grep -iv "^Recommender$" \
+		| grep -v "^RNN$" \
+		| grep -v "^vec$" \
 		\
 		| grep -iv "^acm$" \
 		| grep -iv "^connelly$" \
