@@ -84,7 +84,8 @@ function spellcheck {
 		| grep -iv "^labelling$" \
 		| grep -v "^LSTM$" \
 		| grep -v "^NLP$" \
-		| grep -iv "^Recommender$" \
+		| grep -iv "^photorealistic$" \
+		| grep -iv "^recommender$" \
 		| grep -v "^RNN$" \
 		| grep -v "^vec$" \
 		\
