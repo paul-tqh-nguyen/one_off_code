@@ -47,8 +47,8 @@ function spellcheck {
 	printf "\n\n"
 	echo $file
 	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2 \
-		| grep -v "^br&" \
-		| grep -v "^th&"
+		| grep -v "^br$" \
+		| grep -v "^th$"
 	printf "\n\n"
     done
 }
