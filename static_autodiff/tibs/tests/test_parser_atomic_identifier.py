@@ -78,3 +78,4 @@ def test_parser_atomic_identifier(input_string):
 input_string: {repr(input_string)}
 result: {repr(result)}
 '''
+    

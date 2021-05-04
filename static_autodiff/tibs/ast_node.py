@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 import inspect
 import pyparsing
 import operator
+import itertools
 from functools import reduce
 
 from .parser_utilities import (
@@ -186,6 +187,11 @@ class ASTNode(ABC):
     @abstractmethod
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
+
+    @abstractmethod
+    def traverse(self) -> typing.Generator['ASTNode', None, None]:
+        '''This method will yield itself.'''
+        raise NotImplementedError
     
     def __repr__(self) -> str:
         attributes_string = ', '.join(f'{k}={repr(self.__dict__[k])}' for k in sorted(self.__dict__.keys()))
@@ -200,7 +206,7 @@ class AtomASTNodeType(type):
     base_ast_node_class = ASTNode
     
     def __new__(meta, class_name: str, bases: typing.Tuple[type, ...], attributes: dict) -> type:
-        method_names = ('__init__', 'parse_action', '__eq__', 'copy')
+        method_names = ('__init__', 'parse_action', '__eq__')
         for method_name in method_names:
             assert method_name not in attributes.keys(), f'{method_name} already defined for class {class_name}'
         
@@ -235,9 +241,14 @@ class AtomASTNodeType(type):
             same_value = self_value == other_value
             return same_type and same_value_type and same_value
         
+        def traverse(self) -> typing.Generator[class_name, None, None]:
+            yield self
+            return
+        
         updated_attributes['__init__'] = __init__
         updated_attributes['parse_action'] = parse_action
         updated_attributes['__eq__'] = __eq__
+        updated_attributes['traverse'] = traverse
         
         result_class = type(class_name, bases+(meta.base_ast_node_class,), updated_attributes)
         assert all(hasattr(result_class, method_name) for method_name in method_names)
@@ -274,8 +285,14 @@ class BinaryOperationExpressionASTNode(ExpressionASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.left_arg == other.left_arg and \
-            self.right_arg == other.right_arg 
-
+            self.right_arg == other.right_arg
+    
+    def traverse(self) -> typing.Generator[ExpressionASTNode, None, None]:
+        yield self
+        yield from self.left_arg.traverse()
+        yield from self.right_arg.traverse()
+        return
+        
 class UnaryOperationExpressionASTNode(ExpressionASTNode):
     # TODO should this be an abstract class?
 
@@ -293,7 +310,12 @@ class UnaryOperationExpressionASTNode(ExpressionASTNode):
     
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and self.arg == other.arg
-
+    
+    def traverse(self) -> typing.Generator[ExpressionASTNode, None, None]:
+        yield self
+        yield from self.arg.traverse()
+        return
+    
 class ArithmeticExpressionASTNode(ExpressionASTNode):
     # TODO should this be an abstract class?
     pass
@@ -379,6 +401,10 @@ class NothingTypeLiteralASTNode(ExpressionASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other)
     
+    def traverse(self) -> typing.Generator['NothingTypeLiteralASTNode', None, None]:
+        yield self
+        return
+
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
 
@@ -562,6 +588,11 @@ class FunctionCallExpressionASTNode(ExpressionASTNode):
             self.function_name == other.function_name and \
             self.arg_bindings == other.arg_bindings
     
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from itertools.chain(node.traverse() for node in sum(self.arg_bindings, ()))
+        return
+
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
 
@@ -587,6 +618,11 @@ class VectorExpressionASTNode(ExpressionASTNode):
                 for self_value, other_value
                 in zip(self.values, other.values)
             )
+    
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from itertools.chain(node.traverse() for node in self.values)
+        return
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -624,6 +660,10 @@ class TensorTypeASTNode(ASTNode):
         return type(self) is type(other) and \
             self.base_type_name is other.base_type_name and \
             self.shape == other.shape
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        return
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -662,6 +702,12 @@ class AssignmentASTNode(StatementASTNode):
         return type(self) is type(other) and \
             self.variable_type_pairs == other.variable_type_pairs and \
             self.value == other.value
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from itertools.chain(node.traverse() for node in sum(self.variable_type_pairs, ()))
+        yield from self.value.traverse()
+        return
     
     def emit_mlir(self) -> 'str':
         assert implies(len(self.variable_type_pairs) != 1, isinstance(self.value, FunctionCallExpressionASTNode))
@@ -686,6 +732,11 @@ class ReturnStatementASTNode(StatementASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.return_values == other.return_values
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from itertools.chain(node.traverse() for node in self.return_values)
+        return
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -707,6 +758,11 @@ class PrintStatementASTNode(StatementASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.values_to_print == other.values_to_print
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from itertools.chain(node.traverse() for node in self.values_to_print)
+        return
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -728,6 +784,11 @@ class ScopedStatementSequenceASTNode(StatementASTNode):
     def __eq__(self, other: ASTNode) -> bool:
         return type(self) is type(other) and \
             self.statements == other.statements
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from itertools.chain(node.traverse() for node in self.statements)
+        return
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -762,8 +823,15 @@ class FunctionDefinitionASTNode(StatementASTNode):
             self.function_name == other.function_name and \
             self.function_signature == other.function_signature and \
             self.function_return_types == other.function_return_types and \
-            self.function_body == other.function_body
-    
+            self.function_body == other.function_body 
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from itertools.chain(node.traverse() for node in sum(self.function_signature, ()))
+        yield from itertools.chain(node.traverse() for node in self.function_return_types)
+        yield from self.function_body.traverse()
+        return
+   
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
 
@@ -805,6 +873,14 @@ class ForLoopASTNode(StatementASTNode):
             self.supremum == other.supremum and \
             self.delta == other.delta and \
             self.body == other.body
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from self.minimum.traverse()
+        yield from self.supremum.traverse()
+        yield from self.delta.traverse()
+        yield from self.body.traverse()
+        return
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -832,6 +908,12 @@ class WhileLoopASTNode(StatementASTNode):
         return type(self) is type(other) and \
             self.condition == other.condition and \
             self.body == other.body
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from self.condition.traverse()
+        yield from self.body.traverse()
+        return
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -868,6 +950,14 @@ class ConditionalASTNode(StatementASTNode):
             self.condition == other.condition and \
             self.then_body == other.then_body and \
             self.else_body == other.else_body
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from self.condition.traverse()
+        yield from self.then_body.traverse()
+        if self.else_body is not None:
+            yield from self.else_body.traverse()
+        return
     
     def emit_mlir(self) -> 'str':
         raise NotImplementedError
@@ -891,6 +981,11 @@ class ModuleASTNode(ASTNode):
         return type(self) is type(other) and \
             len(self.statements) == len(other.statements) and \
             self.statements == other.statements
+
+    def traverse(self) -> typing.Generator[ASTNode, None, None]:
+        yield self
+        yield from itertools.chain(node.traverse() for node in self.statements)
+        return
     
     def emit_mlir(self) -> 'str':
         mlir_text = '\n'.join(statement.emit_mlir() for statement in self.statements)

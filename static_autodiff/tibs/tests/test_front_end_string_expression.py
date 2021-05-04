@@ -130,3 +130,4 @@ def test_type_inference_string_expression(input_string, expected_result):
     assert isinstance(tensor_type_node, TensorTypeASTNode)
     assert tensor_type_node.base_type_name is 'String'
     assert tensor_type_node.shape in ([], [2,2])
+    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in module_node.traverse())

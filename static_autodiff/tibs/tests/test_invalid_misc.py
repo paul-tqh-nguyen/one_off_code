@@ -141,6 +141,7 @@ def generate_example_values() -> Generator[str, None, None]:
         )
     )
     yield from example_vector_values
+     # TODO enable more of these
     max_rank = 2 # random.randint(2,10)
     for _ in range(max_rank):
         dimension_size = random.randint(1,3)
@@ -161,7 +162,7 @@ INVALID_EXPRESSIONS = [
 ]
 # too many slow cases, so just do a few random ones
 random.shuffle(INVALID_EXPRESSIONS)
-INVALID_EXPRESSIONS = INVALID_EXPRESSIONS[:100]
+INVALID_EXPRESSIONS = INVALID_EXPRESSIONS[:100] # TODO enable all of these
 
 @pytest.mark.parametrize('input_string', INVALID_EXPRESSIONS)
 def test_invalid_expression(input_string):

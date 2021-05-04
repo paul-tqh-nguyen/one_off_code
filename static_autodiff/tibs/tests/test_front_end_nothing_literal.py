@@ -90,3 +90,4 @@ input_string: {repr(input_string)}
 result: {repr(result)}
 expected_result: {repr(expected_result)}
 '''
+    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in module_node.traverse())

@@ -118,3 +118,4 @@ function f() -> NothingType {{
         )
     })
     assert ast == ast_with_type_inference
+    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in ast_with_type_inference.traverse())

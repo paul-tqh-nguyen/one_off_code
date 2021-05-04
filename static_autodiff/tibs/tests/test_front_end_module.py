@@ -1082,3 +1082,4 @@ input_string: {repr(input_string)}
 result: {repr(result)}
 type_inference_result: {repr(type_inference_result)}
 '''
+    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in result.traverse())

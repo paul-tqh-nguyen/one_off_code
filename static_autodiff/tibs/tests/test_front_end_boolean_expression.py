@@ -170,3 +170,4 @@ def test_type_inference_boolean_expression(input_string, expected_result):
     assert isinstance(variable_node, VariableASTNode)
     assert variable_node.name is 'x'
     assert tensor_type_node == TensorTypeASTNode(base_type_name='Boolean', shape=[])
+    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in module_node.traverse())

@@ -44,6 +44,12 @@ from tibs.misc_utilities import *
 
 INVALID_EXAMPLES = [pytest.param(*args, id=f'case_{i}') for i, args in enumerate([
     (
+        '[[[[[[]]]]]]',
+        parser.ParseError,
+        'Could not parse the following',
+        {}
+    ),
+    (
         '''
 while [True, True]
     func(x:=1)
@@ -94,9 +100,9 @@ while cond
         }
     ),
     (
-        '[[[[[[]]]]]]',
-        parser.ParseError,
-        'Could not parse the following',
+        '[[2, 3], [2.0, 3.0]]',
+        type_inference.TypeInferenceFailure,
+        ' must strictly contain tensor expressions with the same base type.',
         {}
     ),
 ])]

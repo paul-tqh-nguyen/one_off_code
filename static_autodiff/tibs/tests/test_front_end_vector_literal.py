@@ -140,3 +140,4 @@ def test_type_inference_vector_literal(input_string, parse_result, expected_type
     assert variable_node.name is 'x'
     assert isinstance(tensor_type_node, TensorTypeASTNode)
     assert tensor_type_node == expected_type
+    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in module_node.traverse())

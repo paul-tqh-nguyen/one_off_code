@@ -2,6 +2,7 @@ import pytest
 
 from tibs import parser, type_inference
 from tibs.ast_node import (
+    EMPTY_TENSOR_TYPE_AST_NODE,
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
     ExpressionASTNode,
@@ -226,4 +227,4 @@ def test_type_inference_arithmetic_expression(input_string, expected_result, exp
     assert isinstance(tensor_type_node, TensorTypeASTNode)
     assert tensor_type_node.base_type_name is expected_result_type
     assert tensor_type_node.shape == []
-    
+    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in module_node.traverse())
