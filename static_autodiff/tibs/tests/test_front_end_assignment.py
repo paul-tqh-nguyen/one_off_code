@@ -2,6 +2,7 @@ import pytest
 
 from tibs import parser, type_inference
 from tibs.ast_node import (
+    EMPTY_TENSOR_TYPE_AST_NODE,
     PrintStatementASTNode,
     ComparisonExpressionASTNode,
     ExpressionASTNode,
