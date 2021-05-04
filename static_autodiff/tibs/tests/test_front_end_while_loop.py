@@ -113,4 +113,4 @@ def test_type_inference_while_loop(input_string, expected_result):
         }
     )
     assert ast == ast_with_type_inference
-    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in module_node.traverse())
+    assert all(EMPTY_TENSOR_TYPE_AST_NODE != node for node in ast_with_type_inference.traverse())
