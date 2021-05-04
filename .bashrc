@@ -1,4 +1,5 @@
 
+
 # Convenience & Workflow 
 
 export PS1="\u@\h:\`pwd\`$ "
@@ -44,8 +45,95 @@ function files-with-suffix {
 function spellcheck {
     for file in $@
     do
+	printf "\n"
 	echo $file
-	cat $file | aspell -a | grep -v "^\*" | grep -v "^$"
+	cat $file | aspell -a | grep -v "^\*" | grep -v "^$" | grep "&" | cut -d" " -f2 \
+		| grep -v "^bg$" \
+		| grep -v "^br$" \
+		| grep -v "^btn$" \
+		| grep -v "^charset$" \
+		| grep -v "^css$" \
+		| grep -v "^DOCTYPE$" \
+		| grep -v "^href$" \
+		| grep -v "^hspace$" \
+		| grep -v "^html$" \
+		| grep -v "^http$" \
+		| grep -v "^img$" \
+		| grep -v "^jpg$" \
+		| grep -v "^lang$" \
+		| grep -v "^li$" \
+		| grep -v "^nav$" \
+		| grep -v "^nofollow$" \
+		| grep -v "^pdf$" \
+		| grep -v "^png$" \
+		| grep -v "^pptx$" \
+		| grep -v "^px$" \
+		| grep -v "^src$" \
+		| grep -v "^stylesheet$" \
+		| grep -v "^th$" \
+		| grep -v "^ul$" \
+		| grep -v "^unstyled$" \
+		| grep -v "^utf$" \
+		| grep -v "^viewport$" \
+		| grep -v "^vw$" \
+		\
+		| grep -v "^autograd$" \
+		| grep -v "^bouldering$" \
+		| grep -iv "^embeddings$" \
+		| grep -v "^conv$" \
+		| grep -iv "^choropleth$" \
+		| grep -iv "^convolutional$" \
+		| grep -iv "^denoising$" \
+		| grep -iv "^gaussian$" \
+		| grep -iv "^dataset$" \
+		| grep -iv "^labelling$" \
+		| grep -v "^LSTM$" \
+		| grep -v "^NLP$" \
+		| grep -iv "^photorealistic$" \
+		| grep -iv "^pretrained$" \
+		| grep -iv "^recommender$" \
+		| grep -v "^RNN$" \
+		| grep -v "^vec$" \
+		\
+		| grep -iv "^acm$" \
+		| grep -iv "^arxiv$" \
+		| grep -iv "^BibTeX$" \
+		| grep -iv "^connelly$" \
+		| grep -iv "^facebook$" \
+		| grep -iv "^gensim$" \
+		| grep -iv "^graphsage$" \
+		| grep -iv "^javascript$" \
+		| grep -iv "^joel$" \
+		| grep -iv "^js$" \
+		| grep -iv "^keras$" \
+		| grep -iv "^expressjs$" \
+		| grep -iv "^github$" \
+		| grep -iv "^github$" \
+		| grep -iv "^linkedin$" \
+		| grep -iv "^metagraph$" \
+		| grep -iv "^mutag$" \
+		| grep -iv "^netflix$" \
+		| grep -iv "^networkx$" \
+		| grep -iv "^newswire$" \
+		| grep -iv "^nguyen$" \
+		| grep -iv "^nltk$" \
+		| grep -iv "^nyc$" \
+		| grep -iv "^paul$" \
+		| grep -iv "^patchmatch$" \
+		| grep -iv "^reactjs$" \
+		| grep -iv "^reddit$" \
+		| grep -iv "^reuters$" \
+		| grep -iv "^sparql$" \
+		| grep -iv "^spolsky$" \
+		| grep -iv "^stellargraph$" \
+		| grep -iv "^stough$" \
+		| grep -iv "^tiingo$" \
+		| grep -iv "^ui$" \
+		| grep -iv "^ux$" \
+		| grep -iv "^wikidata$" \
+		| grep -iv "^zhouhan$" \
+		\
+		| sort | uniq 
 	printf "\n\n"
     done
 }
@@ -57,7 +145,7 @@ function git-black {
 }
 
 function git-add-mod {
-    git add $(git status | grep modified | cut -d":" -f2)
+    git add -f $(git status | grep modified | cut -d":" -f2)
 }
 alias gam="git-add-mod"
 alias update-via-upstream="git pull --rebase upstream main && git fetch upstream && git push"
