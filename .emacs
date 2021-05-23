@@ -45,6 +45,7 @@
 
 (load "tablegen-mode.el")
 (load "llvm-mode.el")
+(load "mlir-mode.el")
 
 ;; Cython Mode
 
