@@ -1,0 +1,62 @@
+{
+    "edges": [
+        {
+            "edge_type": 1,
+            "source": "[root] meta.count-boundary (EachMode fixup)",
+            "svg_id": "edge_0",
+            "target": "[root] output.hello_world"
+        },
+        {
+            "edge_type": 1,
+            "source": "[root] root",
+            "svg_id": "edge_1",
+            "target": "[root] meta.count-boundary (EachMode fixup)"
+        }
+    ],
+    "nodes": [
+        {
+            "cluster": "cluster[root] meta.count-boundary (EachMode fixup)_output_",
+            "definition": {
+                "value": "Hello, World!"
+            },
+            "group": 20000,
+            "label": "[root] output.hello_world",
+            "module": "root",
+            "modules": [
+                "root"
+            ],
+            "resource_name": "hello_world",
+            "simple_name": "output.hello_world",
+            "svg_id": "node_0",
+            "type": "output"
+        },
+        {
+            "cluster": "root",
+            "definition": "",
+            "group": 20000,
+            "label": "[root] meta.count-boundary (EachMode fixup)",
+            "module": "root",
+            "modules": [
+                "root"
+            ],
+            "resource_name": "count-boundary",
+            "simple_name": "meta.count-boundary (EachMode fixup)",
+            "svg_id": "node_1",
+            "type": "meta"
+        },
+        {
+            "cluster": "root",
+            "definition": "",
+            "group": 20000,
+            "label": "[root] root",
+            "module": "root",
+            "modules": [
+                "root"
+            ],
+            "resource_name": "",
+            "simple_name": "root",
+            "svg_id": "node_2",
+            "type": ""
+        }
+    ]
+}
