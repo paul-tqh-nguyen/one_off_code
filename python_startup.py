@@ -212,6 +212,7 @@ def redirected_output(exitCallback: Union[None, Callable[[str], None]] = None) -
 from typing import Tuple
 def shell(input_command: str) -> Tuple[str, str]:
     '''Handles multi-line input_command'''
+    import subprocess
     command = input_command.encode()
     process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout_string, stderr_string = map(bytes.decode, process.communicate(command))
