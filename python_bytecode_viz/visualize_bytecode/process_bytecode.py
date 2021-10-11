@@ -1,9 +1,10 @@
 import dis
 import io
+import os
 import inspect
 import networkx as nx
 
-from typing import List, Callable 
+from typing import List, Callable
 
 
 def instruction_pretty_string(
@@ -94,12 +95,11 @@ def function_cfg_to_dict(func: Callable) -> dict:
 
     ans = nx.node_link_data(graph)
 
-    string_io = io.StringIO()
-    dis.dis(func, file=string_io)
-    ans["bytecode_source_lines"] = string_io.getvalue().splitlines()
-
     lines, line_number = inspect.getsourcelines(func)
     ans["source_code_lines"] = lines
     ans["source_code_line_number"] = line_number
+
+    ans['func_name'] = func.__name__
+    ans['func_file_location'] = os.path.abspath(inspect.getfile(func))
     
     return ans
