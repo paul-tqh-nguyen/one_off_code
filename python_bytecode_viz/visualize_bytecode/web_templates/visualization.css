@@ -49,8 +49,8 @@ header h1 {
 
 header p {
     margin: 0px;
-    padding: 0px;
-    font-size: 1em;
+    padding: 10px;
+    font-size: 1.5em;
 }
 
 /*****************/
@@ -68,6 +68,29 @@ header p {
     border-radius: 4px;
 }
 
-#cfg-display {
+#code-table td div {
+    height: 100%;
+    overflow: scroll;
+    padding: 10px;
+}
+
+#cfg-cell {
     width: 50%;
+}
+
+#cfg-container {
+    height: 100%;
+    width: 100%;
+}
+
+.basic-block {
+    font-family: monospace;
+    fill: #000;
+}
+
+.basic-block-bounding-box {
+    stroke-width: 3;
+    fill: #fff;
+    fill-opacity: 0.7;
+    rx: 10;
 }
