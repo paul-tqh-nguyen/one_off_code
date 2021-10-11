@@ -1,0 +1,6 @@
+name: bytecode
+dependencies:
+  - python=3.7
+  - black
+  - networkx
+  - pygraphviz # TODO reomve this
