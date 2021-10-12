@@ -23,6 +23,11 @@ def instruction_pretty_string(
 
 
 NON_BRANCH_OP_NAMES = {
+    "BINARY_MULTIPLY",
+    "BINARY_SUBTRACT",
+    "BINARY_TRUE_DIVIDE",
+    "INPLACE_MULTIPLY",
+    "INPLACE_MODULO",
     "LOAD_CONST",
     "LOAD_FAST",
     "STORE_FAST",
@@ -71,16 +76,11 @@ def function_cfg_to_dict(func: Callable) -> dict:
 
     # compress the graph
     first_node_id = next(dis.get_instructions(func)).offset
-    node_ids_to_visit = [first_node_id]
-    while len(node_ids_to_visit) > 0:
-        node_id = node_ids_to_visit.pop()
-        neighbors = list(graph.neighbors(node_id))
-        if len(neighbors) == 1:
+    for node_id in nx.dfs_preorder_nodes(graph, first_node_id):
+        while len(neighbors := list(graph.neighbors(node_id))) == 1:
             [neighbor_id] = neighbors
             neighbor_predecessors = list(graph.predecessors(neighbor_id))
             if len(neighbor_predecessors) == 1:
-                # revisit since will have new neighbors
-                node_ids_to_visit.append(node_id)
                 assert neighbor_predecessors == [node_id]
                 # combine the nodes
                 for string in graph.nodes[neighbor_id]["pretty_strings"]:
@@ -89,11 +89,9 @@ def function_cfg_to_dict(func: Callable) -> dict:
                     graph.nodes[node_id]["source_code_line_numbers"].append(line_number)
                 for new_neighbor_id in graph.neighbors(neighbor_id):
                     graph.add_edge(node_id, new_neighbor_id)
-                    # search the new neighbors
-                    node_ids_to_visit.append(new_neighbor_id)
                 graph.remove_node(neighbor_id)
-        else:
-            node_ids_to_visit += neighbors
+            else:
+                break
 
     ans = nx.node_link_data(graph)
 

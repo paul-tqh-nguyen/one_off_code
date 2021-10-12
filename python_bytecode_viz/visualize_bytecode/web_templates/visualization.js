@@ -302,7 +302,7 @@ const visualizationMain = () => {
                     const height = parseInt(svg.select(`#${boundingBoxElementId}`).attr('height'));
                     yDelta = Math.max(yDelta, height);
                 });
-                yPosition += Math.ceil(1.5 * yDelta);
+                yPosition += Math.ceil(2 * yDelta);
             }
             render();
           
