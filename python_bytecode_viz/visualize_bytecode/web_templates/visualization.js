@@ -50,10 +50,13 @@ const visualizationMain = () => {
             document.getElementById('header-sub-title').innerHTML =
                 `Function <code>${data.func_name}</code> from <code>${data.func_file_location}</code>`;
 
+            const codeDisplayElement = document.getElementById('code-table');
             const sourceCodeLineNumberToBasicBlockId = {};
             const basicBlockIdToBasicBlockDict = {};
             data.nodes.forEach((basicBlockDict, basicBlockIndex) => {
                 basicBlockDict.sequentialIndex = basicBlockIndex;
+                basicBlockDict.x = codeDisplayElement.offsetWidth/2;
+                basicBlockDict.y = codeDisplayElement.offsetHeight/2;
                 basicBlockIdToBasicBlockDict[basicBlockDict.id] = basicBlockDict;
                 basicBlockDict.source_code_line_numbers.forEach(sourceCodeLineNumber => {
                     sourceCodeLineNumberToBasicBlockId[sourceCodeLineNumber] = basicBlockDict.id;
@@ -63,16 +66,15 @@ const visualizationMain = () => {
                 }
             });
 
-            const codeDisplayElement = document.getElementById('code-table');
             let sourceCodeLineNumber = data.source_code_line_number;
-            let previousBasicBlockId = -1;
+            let previousBasicBlockId;
             let previousBytecodeTdElement;
             const lineNumberWidth = Math.ceil(Math.log(data.source_code_lines.length + sourceCodeLineNumber));
             const numLeadingSpaces = data.source_code_lines[0].search(/\S/);
             const colorMap = createRainbowColormap(data.nodes.length+1);
             data.source_code_lines.forEach(sourceLine => {
                 const rowElement = document.createElement('tr');
-    
+                
                 const sourceTdElement = document.createElement('td');
                 const sourceDivElement = document.createElement('div');
                 const sourcePreElement = document.createElement('pre');
@@ -83,8 +85,8 @@ const visualizationMain = () => {
                 sourceDivElement.append(sourcePreElement);
                 sourceTdElement.append(sourceDivElement);
                 rowElement.append(sourceTdElement);
-    
-                let colorIndex = data.nodes.length+1;
+                
+                let colorIndex;
                 const bytecodeTdElement = document.createElement('td');
                 const bytecodeDivElement = document.createElement('div');
                 bytecodeTdElement.append(bytecodeDivElement);
@@ -92,7 +94,8 @@ const visualizationMain = () => {
                     const basicBlockId = sourceCodeLineNumberToBasicBlockId[sourceCodeLineNumber];
                     colorIndex = basicBlockIdToBasicBlockDict[basicBlockId].sequentialIndex;
                     if (previousBasicBlockId == basicBlockId) {
-                        const newRowSpanValue = parseInt(previousBytecodeTdElement.getAttribute('rowspan')) + 1;
+                        const newRowSpanValue =
+                              parseInt(previousBytecodeTdElement.getAttribute('rowspan')) + 1;
                         previousBytecodeTdElement.setAttribute('rowspan', newRowSpanValue);
                     } else {
                         previousBasicBlockId = basicBlockId;
@@ -108,61 +111,87 @@ const visualizationMain = () => {
                 } else if (!isUndefined(previousBytecodeTdElement)) {
                     const newRowSpanValue = parseInt(previousBytecodeTdElement.getAttribute('rowspan')) + 1;
                     previousBytecodeTdElement.setAttribute('rowspan', newRowSpanValue);
+                } else {
+                    rowElement.append(bytecodeTdElement);
                 }
                 codeDisplayElement.append(rowElement);
-    
-                const rowColor = colorMap[colorIndex];
+                
+                const rowColor = isUndefined(colorIndex) ? '#c5cfd4' : colorMap[colorIndex];
                 sourceTdElement.style.borderColor = rowColor;
                 // FIXME sometimes this is useless when we don't use the td element
                 bytecodeTdElement.style.borderColor = rowColor;
-    
+                
                 sourceCodeLineNumber++;
             });
 
             const plotContainer = document.getElementById('cfg-container');
             const svg = d3.select('#cfg-svg');
 
-            const render = () => {
+            const basicBlockTextBoundingBoxPadding = 15;
+            const alphaDecay = 0.05;
+            const velocityDecay = 0.9;
+            
+            svg
+	        .attr('width', `0px`)
+	        .attr('height', `0px`)
+	        .attr('width', `${plotContainer.clientWidth}px`)
+	        .attr('height', `${plotContainer.clientHeight}px`);
 
-                const basicBlockTextBoundingBoxPadding = 15;
-    
+            const drag = d3.drag();
+            
+            const basicBlockGroup = svg.append('g');
+
+            const basicBlockDataJoin = basicBlockGroup
+                  .selectAll('text')
+                  .data(data.nodes);  
+            
+            const basicBlockTextEnterSelection = basicBlockDataJoin
+                  .enter()
+                  .append('text')
+                  .attr('id', datum => `basic-block-${datum.id}`)
+                  .attr('class', 'basic-block')
+                  .html(datum => {
+                      return datum.pretty_strings.map(
+                          string => `<tspan x=${datum.x} dx=0 dy=22>${string}</tspan>`
+                      ).join('\n');
+                  })
+                  .call(drag);
+
+            const  basicBlockBoundingBoxEnterSelection = basicBlockDataJoin
+                  .enter()
+                  .append('rect')
+                  .attr('id', datum => `basic-block-bounding-box-${datum.id}`)
+                  .attr('stroke', datum => colorMap[datum.sequentialIndex])
+                  .attr('class', 'basic-block-bounding-box')
+                  .attr('width', datum => {
+                      const textElementId = `basic-block-${datum.id}`;
+                      const textElementBBox = svg.select(`#${textElementId}`).node().getBBox();
+                      return textElementBBox.width + 2 * basicBlockTextBoundingBoxPadding;
+                  })
+                  .attr('height', datum => {
+                      const textElementId = `basic-block-${datum.id}`;;
+                      const textElementBBox = svg.select(`#${textElementId}`).node().getBBox();
+                      return textElementBBox.height + 2 * basicBlockTextBoundingBoxPadding;
+                  })
+                  .call(drag);
+
+            basicBlockTextEnterSelection.moveToFront();
+
+            const render = () => {
                 svg
 	            .attr('width', `0px`)
 	            .attr('height', `0px`)
 	            .attr('width', `${plotContainer.clientWidth}px`)
 	            .attr('height', `${plotContainer.clientHeight}px`);
-    
-                const basicBlockGroup = svg.append('g');
 
-                const basicBlockDataJoin = basicBlockGroup
-                      .selectAll('text')
-                      .data(data.nodes);
-
-                const basicBlockTextEnterSelection = basicBlockDataJoin
-                      .enter()
-                      .append('text')
-                      .attr('id', datum => `basic-block-${datum.id}`)
-                      .attr('class', 'basic-block')
-                      .attr('x', datum => {
-                          return 10*(2+datum.id);
-                      })
-                      .attr('y', datum => {
-                          return 10*(2+datum.id);
-                      })
-                      .html(datum => {
-                          const textElementId = `basic-block-${datum.id}`;
-                          const textElementBBox = svg.select(`#${textElementId}`).node().getBBox();
-                          return datum.pretty_strings.map(
-                              string => `<tspan x=${textElementBBox.x} dx=0 dy=22>${string}</tspan>`
-                          ).join('\n');
-                      });
-
-                const  basicBlockBoundingBoxEnterSelection = basicBlockDataJoin
-                      .enter()
-                      .append('rect')
-                      .attr('id', datum => `basic-block-bounding-box-{datum.id}`)
-                      .attr('stroke', datum => colorMap[datum.sequentialIndex])
-                      .attr('class', 'basic-block-bounding-box');
+                basicBlockTextEnterSelection
+                    .each(datum => document.querySelectorAll(`#basic-block-${datum.id} tspan`).forEach(e => {
+                        e.setAttribute('x', datum.x);
+                    }));
+                
+                basicBlockTextEnterSelection
+                    .attr('x', datum => datum.x)
+                    .attr('y', datum => datum.y);
 
                 basicBlockBoundingBoxEnterSelection
                     .attr('x', datum => {
@@ -176,23 +205,17 @@ const visualizationMain = () => {
                         const textElementBBox = svg.select(`#${textElementId}`).node().getBBox();
                         const y = textElementBBox.y - basicBlockTextBoundingBoxPadding;
                         return y;
-                    })
-                    .attr('width', datum => {
-                        const textElementId = `basic-block-${datum.id}`;
-                        const textElementBBox = svg.select(`#${textElementId}`).node().getBBox();
-                        return textElementBBox.width + 2 * basicBlockTextBoundingBoxPadding;
-                    })
-                    .attr('height', datum => {
-                        const textElementId = `basic-block-${datum.id}`;;
-                        const textElementBBox = svg.select(`#${textElementId}`).node().getBBox();
-                        return textElementBBox.height + 2 * basicBlockTextBoundingBoxPadding;
                     });
 
-                basicBlockTextEnterSelection.moveToFront();
             };
             render();
+            
+            drag.on('drag', datum => {
+                datum.x += d3.event.dx;
+                datum.y += d3.event.dy;
+                render();
+            });
             window.addEventListener('resize', render);
-
 
         }).catch(err => {
             console.error(err.message);
