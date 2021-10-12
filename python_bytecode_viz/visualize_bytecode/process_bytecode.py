@@ -2,8 +2,10 @@ import dis
 import io
 import os
 import inspect
+import itertools
 import networkx as nx
 
+from collections import defaultdict
 from typing import List, Callable
 
 
@@ -101,5 +103,19 @@ def function_cfg_to_dict(func: Callable) -> dict:
 
     ans['func_name'] = func.__name__
     ans['func_file_location'] = os.path.abspath(inspect.getfile(func))
+
+    seen = {first_node_id}
+    current_frontier = {first_node_id}
+    dist_to_nodes = defaultdict(list)
+    dist_to_nodes[0] = [first_node_id]
+    for dist in range(1, len(graph.nodes)+1):
+        next_frontier = itertools.chain(*(graph.neighbors(node) for node in current_frontier))
+        for node in next_frontier:
+            if node not in seen:
+                dist_to_nodes[dist].append(node)
+                seen.add(node)
+        if len(seen) == len(graph.nodes):
+            break
+    ans['dist_to_nodes'] = dist_to_nodes
     
     return ans

@@ -93,3 +93,8 @@ header p {
     fill: #fff;
     rx: 10;
 }
+
+.cfg-edge {
+    stroke: black;
+    stroke-width: 3;
+}

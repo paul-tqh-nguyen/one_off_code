@@ -42,6 +42,16 @@ d3.selection.prototype.moveToFront = function() {
     });
 };
 
+
+d3.selection.prototype.moveToBack = function() {
+    return this.each(function() {
+        var firstChild = this.parentNode.firstChild;
+        if (firstChild) {
+            this.parentNode.insertBefore(this, firstChild);
+        }
+    });
+};
+    
 const visualizationMain = () => {
     const dataLocation = './bytecode.json';
 
@@ -50,13 +60,17 @@ const visualizationMain = () => {
             document.getElementById('header-sub-title').innerHTML =
                 `Function <code>${data.func_name}</code> from <code>${data.func_file_location}</code>`;
 
+            /*****************************************************/
+            /* Data Prep for displaying source code and bytecode */
+            /*****************************************************/
+            
             const codeDisplayElement = document.getElementById('code-table');
             const sourceCodeLineNumberToBasicBlockId = {};
             const basicBlockIdToBasicBlockDict = {};
             data.nodes.forEach((basicBlockDict, basicBlockIndex) => {
                 basicBlockDict.sequentialIndex = basicBlockIndex;
-                basicBlockDict.x = codeDisplayElement.offsetWidth/2;
-                basicBlockDict.y = codeDisplayElement.offsetHeight/2;
+                basicBlockDict.x = codeDisplayElement.offsetWidth;
+                basicBlockDict.y = codeDisplayElement.offsetHeight;
                 basicBlockIdToBasicBlockDict[basicBlockDict.id] = basicBlockDict;
                 basicBlockDict.source_code_line_numbers.forEach(sourceCodeLineNumber => {
                     sourceCodeLineNumberToBasicBlockId[sourceCodeLineNumber] = basicBlockDict.id;
@@ -66,6 +80,10 @@ const visualizationMain = () => {
                 }
             });
 
+            /************************************/
+            /* Display source code and bytecode */
+            /************************************/
+            
             let sourceCodeLineNumber = data.source_code_line_number;
             let previousBasicBlockId;
             let previousBytecodeTdElement;
@@ -74,7 +92,7 @@ const visualizationMain = () => {
             const colorMap = createRainbowColormap(data.nodes.length+1);
             data.source_code_lines.forEach(sourceLine => {
                 const rowElement = document.createElement('tr');
-                
+              
                 const sourceTdElement = document.createElement('td');
                 const sourceDivElement = document.createElement('div');
                 const sourcePreElement = document.createElement('pre');
@@ -85,7 +103,7 @@ const visualizationMain = () => {
                 sourceDivElement.append(sourcePreElement);
                 sourceTdElement.append(sourceDivElement);
                 rowElement.append(sourceTdElement);
-                
+              
                 let colorIndex;
                 const bytecodeTdElement = document.createElement('td');
                 const bytecodeDivElement = document.createElement('div');
@@ -115,29 +133,33 @@ const visualizationMain = () => {
                     rowElement.append(bytecodeTdElement);
                 }
                 codeDisplayElement.append(rowElement);
-                
+              
                 const rowColor = isUndefined(colorIndex) ? '#c5cfd4' : colorMap[colorIndex];
                 sourceTdElement.style.borderColor = rowColor;
                 // FIXME sometimes this is useless when we don't use the td element
                 bytecodeTdElement.style.borderColor = rowColor;
-                
+              
                 sourceCodeLineNumber++;
             });
 
+            /************/
+            /* Draw CFG */
+            /************/
+            
             const plotContainer = document.getElementById('cfg-container');
             const svg = d3.select('#cfg-svg');
 
             const basicBlockTextBoundingBoxPadding = 15;
             const alphaDecay = 0.05;
             const velocityDecay = 0.9;
-            
+          
             svg
 	        .attr('width', `0px`)
 	        .attr('height', `0px`)
 	        .attr('width', `${plotContainer.clientWidth}px`)
 	        .attr('height', `${plotContainer.clientHeight}px`);
 
-            const basicBlockGroup = svg.append('g');
+            const cfgGroup = svg.append('g');
 
             const drag = d3.drag();
             drag.on('drag', datum => {
@@ -147,15 +169,15 @@ const visualizationMain = () => {
             });
 
             const zoom = d3.zoom().on('zoom', () => {
-                basicBlockGroup
+                cfgGroup
                     .attr('transform', d3.event.transform);
             });
             svg.call(zoom);
 
-            const basicBlockDataJoin = basicBlockGroup
+            const basicBlockDataJoin = cfgGroup
                   .selectAll('text')
-                  .data(data.nodes);  
-            
+                  .data(data.nodes);
+          
             const basicBlockTextEnterSelection = basicBlockDataJoin
                   .enter()
                   .append('text')
@@ -188,22 +210,29 @@ const visualizationMain = () => {
 
             basicBlockTextEnterSelection.moveToFront();
 
+            const edgeDataJoin = cfgGroup
+	          .selectAll('line')
+	          .data(data.links);
+            const edgeEnterSelection = edgeDataJoin
+	          .enter()
+                  .append('line')
+                  .attr('id', datum => `cfg-edge-${datum.source}-${datum.target}`)
+                  .attr('class', 'cfg-edge');
+            
             const render = () => {
                 svg
 	            .attr('width', `0px`)
 	            .attr('height', `0px`)
 	            .attr('width', `${plotContainer.clientWidth}px`)
 	            .attr('height', `${plotContainer.clientHeight}px`);
-
+              
                 basicBlockTextEnterSelection
                     .each(datum => document.querySelectorAll(`#basic-block-${datum.id} tspan`).forEach(e => {
                         e.setAttribute('x', datum.x);
-                    }));
-                
-                basicBlockTextEnterSelection
+                    }))
                     .attr('x', datum => datum.x)
                     .attr('y', datum => datum.y);
-
+                
                 basicBlockBoundingBoxEnterSelection
                     .attr('x', datum => {
                         const textElementId = `basic-block-${datum.id}`;
@@ -218,9 +247,56 @@ const visualizationMain = () => {
                         return y;
                     });
 
+                edgeEnterSelection
+		    .attr('x1', datum => {
+                        const source = document.getElementById(`basic-block-bounding-box-${datum.source}`);
+                        const sourceX = parseInt(source.getAttribute('x'));
+                        const sourceWidth = parseInt(source.getAttribute('width'));
+                        return sourceX + Math.ceil(sourceWidth / 2);
+                    })
+		    .attr('y1', datum => {
+                        const source = document.getElementById(`basic-block-bounding-box-${datum.source}`);
+                        const sourceY = parseInt(source.getAttribute('y'));
+                        const sourceHeight = parseInt(source.getAttribute('width'));
+                        return sourceY + sourceHeight;
+                    })
+		    .attr('x2', datum => {
+                        const target = document.getElementById(`basic-block-bounding-box-${datum.target}`);
+                        const targetX = parseInt(target.getAttribute('x'));
+                        const targetWidth = parseInt(target.getAttribute('width'));
+                        return targetX + Math.ceil(targetWidth / 2);
+                    })
+		    .attr('y2', datum => {
+                        const target = document.getElementById(`basic-block-bounding-box-${datum.target}`);
+                        const targetY = parseInt(target.getAttribute('y'));
+                        return targetY;
+                    })
+                    .moveToBack();
+
             };
-            render();
+
+            /********************************/
+            /* Initial CFG Node Positioning */
+            /********************************/
             
+            let yPosition = 20;
+            for (let dist = 0; dist < Object.keys(data.dist_to_nodes).length; dist++) {
+                const basicBlockIds = data.dist_to_nodes[String(dist)];
+                const range = Math.ceil(plotContainer.clientWidth * 0.9);
+                const delta = range / basicBlockIds.length;
+                const offset = plotContainer.clientWidth - range;
+                let yDelta = 0; 
+                basicBlockIds.forEach((basicBlockId, i) => {
+                    basicBlockIdToBasicBlockDict[basicBlockId].x = offset + i * delta;
+                    basicBlockIdToBasicBlockDict[basicBlockId].y = yPosition;
+                    const boundingBoxElementId = `basic-block-bounding-box-${basicBlockId}`;
+                    const height = parseInt(svg.select(`#${boundingBoxElementId}`).attr('height'));
+                    yDelta = Math.max(yDelta, height);
+                });
+                yPosition += Math.ceil(1.5 * yDelta);
+            }
+            render();
+          
             window.addEventListener('resize', render);
 
         }).catch(err => {
