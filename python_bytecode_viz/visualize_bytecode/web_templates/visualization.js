@@ -217,7 +217,8 @@ const visualizationMain = () => {
 	          .enter()
                   .append('line')
                   .attr('id', datum => `cfg-edge-${datum.source}-${datum.target}`)
-                  .attr('class', 'cfg-edge');
+                  .attr('class', 'cfg-edge')
+                  .attr('marker-end','url(#arrowhead)');;
             
             const render = () => {
                 svg
