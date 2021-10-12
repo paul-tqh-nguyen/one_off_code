@@ -258,7 +258,7 @@ const visualizationMain = () => {
 		    .attr('y1', datum => {
                         const source = document.getElementById(`basic-block-bounding-box-${datum.source}`);
                         const sourceY = parseInt(source.getAttribute('y'));
-                        const sourceHeight = parseInt(source.getAttribute('width'));
+                        const sourceHeight = parseInt(source.getAttribute('height'));
                         const edgeYStart = sourceY + sourceHeight;
                         console.log(`datum.source ${JSON.stringify(datum.source)}`);
                         console.log(`datum.target ${JSON.stringify(datum.target)}`); 
