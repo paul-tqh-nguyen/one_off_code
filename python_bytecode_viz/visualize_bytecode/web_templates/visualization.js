@@ -137,9 +137,20 @@ const visualizationMain = () => {
 	        .attr('width', `${plotContainer.clientWidth}px`)
 	        .attr('height', `${plotContainer.clientHeight}px`);
 
-            const drag = d3.drag();
-            
             const basicBlockGroup = svg.append('g');
+
+            const drag = d3.drag();
+            drag.on('drag', datum => {
+                datum.x += d3.event.dx;
+                datum.y += d3.event.dy;
+                render();
+            });
+
+            const zoom = d3.zoom().on('zoom', () => {
+                basicBlockGroup
+                    .attr('transform', d3.event.transform);
+            });
+            svg.call(zoom);
 
             const basicBlockDataJoin = basicBlockGroup
                   .selectAll('text')
@@ -210,11 +221,6 @@ const visualizationMain = () => {
             };
             render();
             
-            drag.on('drag', datum => {
-                datum.x += d3.event.dx;
-                datum.y += d3.event.dy;
-                render();
-            });
             window.addEventListener('resize', render);
 
         }).catch(err => {
