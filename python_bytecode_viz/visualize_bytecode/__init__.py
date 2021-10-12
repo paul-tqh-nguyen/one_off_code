@@ -18,6 +18,7 @@ VISUALIZATION_JS_LOCATION = os.path.join(
     _MODULE_DIR, "web_templates", "visualization.js"
 )
 
+
 def visualize_bytecode(func: Callable, output_dir: str) -> None:
     json_dict = function_cfg_to_dict(func)
 
@@ -31,5 +32,5 @@ def visualize_bytecode(func: Callable, output_dir: str) -> None:
     shutil.copy(VISUALIZATION_HTML_LOCATION, output_dir)
     shutil.copy(VISUALIZATION_CSS_LOCATION, output_dir)
     shutil.copy(VISUALIZATION_JS_LOCATION, output_dir)
-    
+
     return

@@ -101,21 +101,27 @@ def function_cfg_to_dict(func: Callable) -> dict:
     ans["source_code_lines"] = lines
     ans["source_code_line_number"] = line_number
 
-    ans['func_name'] = func.__name__
-    ans['func_file_location'] = os.path.abspath(inspect.getfile(func))
+    ans["func_name"] = func.__name__
+    ans["func_file_location"] = os.path.abspath(inspect.getfile(func))
 
-    seen = {first_node_id}
     current_frontier = {first_node_id}
+    nodes_to_dist = {}
     dist_to_nodes = defaultdict(list)
     dist_to_nodes[0] = [first_node_id]
-    for dist in range(1, len(graph.nodes)+1):
-        next_frontier = itertools.chain(*(graph.neighbors(node) for node in current_frontier))
+    for dist in range(1, len(graph.nodes) + 1):
+        next_frontier = itertools.chain(
+            *(graph.neighbors(node) for node in current_frontier)
+        )
+        next_frontier = set(next_frontier)
         for node in next_frontier:
-            if node not in seen:
-                dist_to_nodes[dist].append(node)
-                seen.add(node)
-        if len(seen) == len(graph.nodes):
+            if node in nodes_to_dist:
+                old_dist = nodes_to_dist[node]
+                dist_to_nodes[old_dist].remove(node)
+            dist_to_nodes[dist].append(node)
+            nodes_to_dist[node] = dist
+        if len(next_frontier) == 0:
             break
-    ans['dist_to_nodes'] = dist_to_nodes
-    
+        current_frontier = next_frontier
+    ans["dist_to_nodes"] = dist_to_nodes
+
     return ans
