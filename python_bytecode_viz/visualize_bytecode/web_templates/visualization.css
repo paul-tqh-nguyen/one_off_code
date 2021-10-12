@@ -70,7 +70,7 @@ header p {
 
 #code-table td div {
     height: 100%;
-    overflow: scroll;
+    /* overflow: scroll; */
     padding: 10px;
 }
 
