@@ -252,24 +252,32 @@ const visualizationMain = () => {
                         const source = document.getElementById(`basic-block-bounding-box-${datum.source}`);
                         const sourceX = parseInt(source.getAttribute('x'));
                         const sourceWidth = parseInt(source.getAttribute('width'));
-                        return sourceX + Math.ceil(sourceWidth / 2);
+                        const edgeXStart = sourceX + Math.ceil(sourceWidth / 2);
+                        return edgeXStart;
                     })
 		    .attr('y1', datum => {
                         const source = document.getElementById(`basic-block-bounding-box-${datum.source}`);
                         const sourceY = parseInt(source.getAttribute('y'));
                         const sourceHeight = parseInt(source.getAttribute('width'));
-                        return sourceY + sourceHeight;
+                        const edgeYStart = sourceY + sourceHeight;
+                        console.log(`datum.source ${JSON.stringify(datum.source)}`);
+                        console.log(`datum.target ${JSON.stringify(datum.target)}`); 
+                        console.log(`edgeYStart ${JSON.stringify(edgeYStart)}`);
+                        console.log('');
+                        return edgeYStart;
                     })
 		    .attr('x2', datum => {
                         const target = document.getElementById(`basic-block-bounding-box-${datum.target}`);
                         const targetX = parseInt(target.getAttribute('x'));
                         const targetWidth = parseInt(target.getAttribute('width'));
-                        return targetX + Math.ceil(targetWidth / 2);
+                        const edgeXEnd = targetX + Math.ceil(targetWidth / 2);
+                        return edgeXEnd;
                     })
 		    .attr('y2', datum => {
                         const target = document.getElementById(`basic-block-bounding-box-${datum.target}`);
                         const targetY = parseInt(target.getAttribute('y'));
-                        return targetY;
+                        const edgeYEnd = targetY;
+                        return edgeYEnd;
                     })
                     .moveToBack();
 
