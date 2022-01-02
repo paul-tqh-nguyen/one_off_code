@@ -5,7 +5,7 @@
 # TODO make sure these are all used
 import sys
 import heapq
-import math
+import inspect
 from typing import (
     List,
     Tuple,
@@ -96,7 +96,7 @@ class Order:
         return
 
     def disable_max_heap_compatibility(self) -> None:
-        # assert self.is_max_heap_friendly == True # not necessarily true for a pushpop
+        assert self.is_max_heap_friendly == True
         self.is_max_heap_friendly = False
         return
 
@@ -114,19 +114,20 @@ class Order:
 
 class Bid(Order):
     def __lt__(self, other) -> bool:
+        # use order_id for deterministic sorting results
         return (
-            self.price < other.price
+            (self.price, self.order_id) < (other.price, other.order_id)
             if self.is_max_heap_friendly
-            else self.price > other.price
+            else (self.price, self.order_id) > (other.price, other.order_id)
         )
 
 
 class Ask(Order):
     def __lt__(self, other) -> bool:
         return (
-            self.price > other.price
+            (self.price, self.order_id) > (other.price, other.order_id)
             if self.is_max_heap_friendly
-            else self.price < other.price
+            else (self.price, self.order_id) < (other.price, other.order_id)
         )
 
 
@@ -209,22 +210,22 @@ class SimpleMinHeapOfOrders:
                 break
         return order
 
-    def pushpop(self, order: Order) -> Order:
-        """
-        O(log n) where n = len(self.heap) if no invalid orders,
-        but can be up to O(num_invalid_orders * log n).
+    # def pushpop(self, order: Order) -> Order:
+    #     """
+    #     O(log n) where n = len(self.heap) if no invalid orders,
+    #     but can be up to O(num_invalid_orders * log n).
 
-        Faster than a separate push and pop when the pop returns
-        a valid order on first attempt.
-        """
-        assert order.order_id not in self.order_id_to_order
-        self.order_id_to_order[order.order_id] = order
-        order = heapq.heappushpop(self.heap, order)
-        if order.order_id in self.order_id_to_order:
-            del self.order_id_to_order[order.order_id]
-        else:
-            order = self.pop()
-        return order
+    #     Faster than a separate push and pop when the pop returns
+    #     a valid order on first attempt.
+    #     """
+    #     assert order.order_id not in self.order_id_to_order
+    #     self.order_id_to_order[order.order_id] = order
+    #     order = heapq.heappushpop(self.heap, order)
+    #     if order.order_id in self.order_id_to_order:
+    #         del self.order_id_to_order[order.order_id]
+    #     else:
+    #         order = self.pop()
+    #     return order
 
     def peek(self) -> Order:
         """
@@ -266,6 +267,7 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
         return order
 
     def push(self, order: Order) -> None:
+        assert self.total_size < TARGET_SIZE or inspect.stack()[1].function in ('process_add_message', 'peek')
         order.enable_max_heap_compatibility()
         super().push(order)
         self.total_size += order.size
@@ -285,26 +287,26 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
         assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
         return order
 
-    def pushpop(self, input_order: Order) -> Order:
-        input_order.enable_max_heap_compatibility()
-        assert input_order.order_id not in self.order_id_to_order
-        self.order_id_to_order[input_order.order_id] = input_order
+    # def pushpop(self, input_order: Order) -> Order:
+    #     input_order.enable_max_heap_compatibility()
+    #     assert input_order.order_id not in self.order_id_to_order
+    #     self.order_id_to_order[input_order.order_id] = input_order
 
-        order = heapq.heappushpop(self.heap, input_order)
-        self.total_size += input_order.size
-        self.total_price += input_order.size * input_order.price
-        if order.order_id in self.order_id_to_order:
-            del self.order_id_to_order[order.order_id]
-        else:
-            order = super().pop()
-        order.disable_max_heap_compatibility()
-        self.total_size -= order.size
-        self.total_price -= order.size * order.price
+    #     order = heapq.heappushpop(self.heap, input_order)
+    #     self.total_size += input_order.size
+    #     self.total_price += input_order.size * input_order.price
+    #     if order.order_id in self.order_id_to_order:
+    #         del self.order_id_to_order[order.order_id]
+    #     else:
+    #         order = super().pop()
+    #     order.disable_max_heap_compatibility()
+    #     self.total_size -= order.size
+    #     self.total_price -= order.size * order.price
         
-        assert self.total_size >= 0
-        assert round(self.total_price, 2) >= 0
-        assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
-        return order
+    #     assert self.total_size >= 0
+    #     assert round(self.total_price, 2) >= 0
+    #     assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
+    #     return order
 
     def target_price(self) -> float:
         """
@@ -354,7 +356,7 @@ def process_reduce_message(timestamp: str, order_id: str, size: str) -> None:
             if cannot_sell:
                 print(f"{timestamp} S NA")
             elif before_target_price != (after_target_price := USED_BIDS.target_price()):
-                print(f"{timestamp} S {after_target_price:.2f}")
+                print(f"{timestamp} S {after_target_price:.2f}") 
     elif order_id in USED_ASKS:
         if USED_ASKS.total_size < TARGET_SIZE:
             USED_ASKS.reduce_order_size(order_id, size)
@@ -390,11 +392,16 @@ def process_add_message(
             USED_BIDS.push(bid)
             changed = USED_BIDS.total_size >= TARGET_SIZE
             if changed:
+                while USED_BIDS.total_size - USED_BIDS.peek().size > TARGET_SIZE:
+                    REMAINING_BIDS.push(USED_BIDS.pop())
                 after_target_price = USED_BIDS.target_price()
         else:
             before_target_price = USED_BIDS.target_price()
-            worse_bid = USED_BIDS.pushpop(bid)
-            REMAINING_BIDS.push(worse_bid)
+            USED_BIDS.push(bid)
+            assert USED_BIDS.total_size >= TARGET_SIZE
+            while USED_BIDS.total_size - USED_BIDS.peek().size > TARGET_SIZE:
+                REMAINING_BIDS.push(USED_BIDS.pop())
+            assert USED_BIDS.total_size >= TARGET_SIZE
             after_target_price = USED_BIDS.target_price()
             if bid in USED_BIDS:
                 changed = after_target_price != before_target_price
@@ -408,11 +415,16 @@ def process_add_message(
             USED_ASKS.push(ask)
             changed = USED_ASKS.total_size >= TARGET_SIZE
             if changed:
+                while USED_ASKS.total_size - USED_ASKS.peek().size > TARGET_SIZE:
+                    REMAINING_ASKS.push(USED_ASKS.pop())
                 after_target_price = USED_ASKS.target_price()
         else:
             before_target_price = USED_ASKS.target_price()
-            worse_ask = USED_ASKS.pushpop(ask)
-            REMAINING_ASKS.push(worse_ask)
+            USED_ASKS.push(ask)
+            assert USED_ASKS.total_size >= TARGET_SIZE
+            while USED_ASKS.total_size - USED_ASKS.peek().size > TARGET_SIZE:
+                REMAINING_ASKS.push(USED_ASKS.pop())
+            assert USED_ASKS.total_size >= TARGET_SIZE
             after_target_price = USED_ASKS.target_price()
             if ask in USED_ASKS:
                 changed = after_target_price != before_target_price

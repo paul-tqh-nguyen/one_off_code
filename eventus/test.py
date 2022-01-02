@@ -119,7 +119,7 @@ def run_test_data(target_size, num_lines):
 ##########
 
 if __name__ == '__main__':
-    run_test_simple()
-    run_test_data(1, 200)
-    # run_test_data(200, 5500)
+    # run_test_simple()
+    # run_test_data(1, 5500)
+    run_test_data(200, 100)
     # run_test_data(10_000, 5500)
