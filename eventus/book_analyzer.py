@@ -116,8 +116,8 @@ class MinHeapOfOrders:
         Leaves invalid orders (i.e. orders with size <= 0) in self.heap,
         but removes them from self.order_id_to_order.
 
-        An invalid order will be lazily removed from self.heap elsewhere since
-        removing them in a batch is faster.
+        An invalid order will be lazily removed from self.heap elsewhere via
+        self._remove_invalid_orders since removing them in a batch is faster.
         """
         order = self.order_id_to_order[order_id]
         # assert order.size >= reduction_amount
@@ -146,8 +146,9 @@ class MinHeapOfOrders:
 
     def pop(self) -> Order:
         """
-        O(log n) where n = len(self.heap) if no invalid orders,
-        but can be O(n) since we remove the invalid orders.
+        O(log n) where n = len(self.heap) if no invalid orders
+        (this is the common case), but can be O(n) since we
+        remove the invalid orders.
 
         Only pops valid orders (i.e. orders with size > 0).
         """
@@ -161,7 +162,8 @@ class MinHeapOfOrders:
 
     def peek(self) -> Order:
         """
-        O(1) if no invalid orders, but can cost O(n).
+        O(1) if no invalid orders (this is the common case),
+        but can cost O(n).
         """
         order = self.heap[0]
         if order.order_id in self.order_id_to_order:
