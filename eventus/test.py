@@ -105,7 +105,7 @@ def run_test_simple():
             temp_file = os.path.join(tmp_dir, 'asdf.txt')
             with open(temp_file, 'w') as f:
                 f.write(file_contents)
-            cmd = f'cat {temp_file} | python3 {BOOK_ANALYZER_SCRIPT_LOCATION} 200'
+            cmd = f'cat {temp_file} | python3 -OO {BOOK_ANALYZER_SCRIPT_LOCATION} 200'
             stdout_string, stderr_string, returncode = shell(cmd)
             assert returncode == 0
             assert stderr_string == ''
@@ -124,12 +124,12 @@ def run_test_data(target_size, num_lines):
         temp_file = os.path.join(tmp_dir, 'asdf.txt')
         with open(temp_file, 'w') as f:
             f.write(file_contents)
-            cmd = f'cat {temp_file} | python3 {BOOK_ANALYZER_SCRIPT_LOCATION} {target_size}'
-    with timer(f'run_test_data(target_size={target_size}, num_lines={len(file_contents.splitlines())})'):
-        stdout_string, stderr_string, returncode = shell(cmd)
-        assert returncode == 0
-        assert stderr_string == ''
-        assert expected_ans.startswith(stdout_string.strip())
+            cmd = f'cat {temp_file} | python3 -OO {BOOK_ANALYZER_SCRIPT_LOCATION} {target_size}'
+        with timer(f'run_test_data(target_size={target_size}, num_lines={len(file_contents.splitlines())})'):
+            stdout_string, stderr_string, returncode = shell(cmd)
+            assert returncode == 0
+            assert stderr_string == ''
+            assert expected_ans.startswith(stdout_string.strip())
     return
 
 ##########
