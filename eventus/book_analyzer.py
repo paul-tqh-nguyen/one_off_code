@@ -7,7 +7,6 @@ import heapq
 from typing import (
     List,
     Dict,
-    Union,
     Optional,
     Iterable,
 )
@@ -101,10 +100,9 @@ class MinHeapOfOrders:
         )
         return f"{self.__class__.__name__}({attributes_string})"
 
-    def __contains__(self, item: Union[Order, str]) -> bool:
+    def contains_id(self, order_id: str) -> bool:
         """O(1)."""
-        # assert isinstance(item, (Order, str))
-        order_id = item.order_id if isinstance(item, Order) else item
+        # assert isinstance(order_id, str)
         return order_id in self.order_id_to_order
 
     def __len__(self) -> int:
@@ -285,21 +283,21 @@ def determine_reduce_print_string(
 
 def process_reduce_message(timestamp: str, order_id: str, size: str) -> None:
     size = int(size)
-    if order_id in USED_BIDS:
+    if USED_BIDS.contains_id(order_id):
         print_string = determine_reduce_print_string(
             timestamp, order_id, size, USED_BIDS, REMAINING_BIDS, "S"
         )
         if print_string is not None:
             print(print_string)
-    elif order_id in USED_ASKS:
+    elif USED_ASKS.contains_id(order_id):
         print_string = determine_reduce_print_string(
             timestamp, order_id, size, USED_ASKS, REMAINING_ASKS, "B"
         )
         if print_string is not None:
             print(print_string)
-    elif order_id in REMAINING_BIDS:
+    elif REMAINING_BIDS.contains_id(order_id):
         REMAINING_BIDS.reduce_order_size(order_id, size)
-    elif order_id in REMAINING_ASKS:
+    elif REMAINING_ASKS.contains_id(order_id):
         REMAINING_ASKS.reduce_order_size(order_id, size)
     else:
         raise RuntimeError(f"Unknown order id {order_id}.")
@@ -331,7 +329,7 @@ def determine_add_print_string(
             remaining_orders.push(used_orders.pop())
         # assert used_orders.total_size >= TARGET_SIZE
         after_target_price = used_orders.target_price()
-        changed = order in used_orders and after_target_price != before_target_price
+        changed = used_orders.contains_id(order_id) and after_target_price != before_target_price
         # assert (not changed) or (after_target_price > before_target_price if order_class == Bid else after_target_price < before_target_price)
     if changed:
         action = "S" if order_class == Bid else "B"
@@ -402,3 +400,6 @@ if __name__ == "__main__":
     TARGET_SIZE = int(target_size_string)
     for message in sys.stdin:
         process_message(message)
+
+    # import cProfile
+    # cProfile.run("{process_message(message) for message in sys.stdin}")
