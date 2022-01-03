@@ -78,11 +78,10 @@ class Ask(Order):
         )
 
 
-class SimpleMinHeapOfOrders:
+class MinHeapOfOrders:
 
     """
     "Min" means least costly towards us, i.e. cheapest ask and highest bid.
-    "Simple" means it does not track the total sum of the orders' prices or sizes.
     """
 
     def __init__(self, orders: Iterable[Order] = ()):
@@ -132,12 +131,12 @@ class SimpleMinHeapOfOrders:
         order.reduce_size(reduction_amount)
         return order
 
-    # TODO use this somewhere
+    # TODO consider using this somewhere
     def remove_invalid_orders(self) -> None:
         """
         O(n) where n = len(self.heap).
 
-        Utility to explicitly remove all invalid orders. Useful for debugging.
+        Utility to explicitly remove all invalid orders.
         """
         self.heap = [order for order in self.heap if order.size > 0]
         heapq.heapify(self.heap)
@@ -178,7 +177,7 @@ class SimpleMinHeapOfOrders:
         return order
 
 
-class MaxHeapOfOrders(SimpleMinHeapOfOrders):
+class PriceTrackingMaxHeapOfOrders(MinHeapOfOrders):
 
     """
     Tracks total price and size.
@@ -248,11 +247,11 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
 
 TARGET_SIZE: Optional[int] = None
 
-USED_BIDS: MaxHeapOfOrders = MaxHeapOfOrders()
-USED_ASKS: MaxHeapOfOrders = MaxHeapOfOrders()
+USED_BIDS: PriceTrackingMaxHeapOfOrders = PriceTrackingMaxHeapOfOrders()
+USED_ASKS: PriceTrackingMaxHeapOfOrders = PriceTrackingMaxHeapOfOrders()
 
-REMAINING_BIDS: SimpleMinHeapOfOrders = SimpleMinHeapOfOrders()
-REMAINING_ASKS: SimpleMinHeapOfOrders = SimpleMinHeapOfOrders()
+REMAINING_BIDS: MinHeapOfOrders = MinHeapOfOrders()
+REMAINING_ASKS: MinHeapOfOrders = MinHeapOfOrders()
 
 ################################
 # Message Processing Utilities #
@@ -263,8 +262,8 @@ def determine_reduce_print_string(
     timestamp: str,
     order_id: str,
     size: int,
-    used_orders: MaxHeapOfOrders,
-    remaining_orders: SimpleMinHeapOfOrders,
+    used_orders: PriceTrackingMaxHeapOfOrders,
+    remaining_orders: MinHeapOfOrders,
     action: str,
 ) -> Optional[str]:
     if used_orders.total_size < TARGET_SIZE:
@@ -312,8 +311,8 @@ def determine_add_print_string(
     order_id: str,
     price: float,
     size: int,
-    used_orders: MaxHeapOfOrders,
-    remaining_orders: SimpleMinHeapOfOrders,
+    used_orders: PriceTrackingMaxHeapOfOrders,
+    remaining_orders: MinHeapOfOrders,
     order_class: type,
 ) -> Optional[str]:
     order = order_class(order_id, price, size)
