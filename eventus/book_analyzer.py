@@ -270,8 +270,7 @@ def determine_reduce_print_string(
         while (cannot_sell := used_orders.total_size < TARGET_SIZE) and len(
             remaining_orders
         ) > 0:
-            order = remaining_orders.pop()
-            used_orders.push(order)
+            used_orders.push(remaining_orders.pop())
         if cannot_sell:
             return f"{timestamp} {action} NA"
         elif before_target_price != (after_target_price := used_orders.target_price()):
