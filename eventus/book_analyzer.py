@@ -2,74 +2,16 @@
 # Imports #
 ###########
 
-# TODO make sure these are all used
 import sys
 import heapq
 from typing import (
     List,
-    Tuple,
     Dict,
     Union,
     Optional,
-    Generator,
     Iterable,
-    Hashable,
-    Any,
 )
 
-# TODO abstract everything out below
-# TODO remove assertions
-# TODO sweep all doc strings
-
-#######################
-# Debugging Utilities #
-#######################
-
-# TODO remove this
-
-import io
-from typing import Generator
-from contextlib import contextmanager
-@contextmanager
-def std_out(stream: io.TextIOWrapper) -> Generator:
-    import sys
-    original_std_out = sys.stdout
-    sys.stdout = stream
-    yield
-    sys.stdout = original_std_out
-    return
-
-TRACE_INDENT_LEVEL = 0
-TRACE_INDENTATION = '    '
-TRACE_VALUE_SIZE_LIMIT = 2000
-from typing import Callable
-def trace(func: Callable) -> Callable:
-    from inspect import signature
-    import sys
-    import random
-    def human_readable_value(value) -> str:
-        readable_value = repr(value)
-        if len(readable_value) > TRACE_VALUE_SIZE_LIMIT:
-            readable_value = readable_value[:TRACE_VALUE_SIZE_LIMIT]+'...'
-        return readable_value
-    def decorating_function(*args, **kwargs):
-        arg_values_string = ', '.join((f'{param_name}={human_readable_value(value)}' for param_name, value in signature(func).bind(*args, **kwargs).arguments.items()))
-        probably_unique_id = random.randint(10,99)
-        global TRACE_INDENT_LEVEL, TRACE_INDENTATION
-        entry_line = f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] {func.__qualname__}({arg_values_string})'
-        with std_out(sys.__stdout__):
-            print()
-            print(entry_line)
-            print()
-        TRACE_INDENT_LEVEL += 1
-        result = func(*args, **kwargs)
-        TRACE_INDENT_LEVEL -= 1
-        with std_out(sys.__stdout__):
-            print()
-            print(f' {TRACE_INDENTATION * TRACE_INDENT_LEVEL}[{TRACE_INDENT_LEVEL}:{probably_unique_id}] returned {human_readable_value(result)}')
-            print()
-        return result
-    return decorating_function
 
 ################################
 # Application-Specific Classes #
@@ -77,10 +19,16 @@ def trace(func: Callable) -> Callable:
 
 
 class Order:
+
+    """
+    Terminology: The phrase "invalid order" denotes an order with size <= 0 in this script's code.
+    """
+
     def __init__(self, order_id: str, price: float, size: int):
         self.order_id = order_id
         self.price = price
         self.size = size
+
         # TODO this is a hack/workaround for the fact
         # that Python's heapq doesn't support a max heap.
         # TODO this also forces each instance to only be
@@ -90,17 +38,17 @@ class Order:
         return
 
     def enable_max_heap_compatibility(self) -> None:
-        assert self.is_max_heap_friendly == False
+        # assert self.is_max_heap_friendly == False
         self.is_max_heap_friendly = True
         return
 
     def disable_max_heap_compatibility(self) -> None:
-        assert self.is_max_heap_friendly == True
+        # assert self.is_max_heap_friendly == True
         self.is_max_heap_friendly = False
         return
 
     def reduce_size(self, amount: int) -> None:
-        assert self.size >= amount
+        # assert self.size >= amount
         self.size -= amount
         return
 
@@ -142,8 +90,10 @@ class SimpleMinHeapOfOrders:
         O(n) where n = len(orders).
         """
         self.heap: List[Order] = list(orders)
-        heapq.heapify(self.heap)
-        self.order_id_to_order: Dict[str, Order] = {order.order_id: order for order in self.heap}
+        heapq.heapify(self.heap)  # docs say this is linear time
+        self.order_id_to_order: Dict[str, Order] = {
+            order.order_id: order for order in self.heap
+        }
         return
 
     def __repr__(self) -> str:
@@ -154,7 +104,7 @@ class SimpleMinHeapOfOrders:
 
     def __contains__(self, item: Union[Order, str]) -> bool:
         """O(1)."""
-        assert isinstance(item, (Order, str))
+        # assert isinstance(item, (Order, str))
         order_id = item.order_id if isinstance(item, Order) else item
         return order_id in self.order_id_to_order
 
@@ -172,33 +122,31 @@ class SimpleMinHeapOfOrders:
         An invalid order will be lazily removed from self.heap elsewhere since
         doing so eagerly (i.e. here) is O(n) and doing so lazily will be O(log n)
         via self.pop or self.peek.
+
+        Use self.remove_invalid_orders when there are too many invalid orders.
         """
-        order = self.order_id_to_order.get(order_id)
-        if order is None:  # TODO remove if not needed
-            raise KeyError("Unknown order id {order_id}.")
-        assert order.size >= reduction_amount
+        order = self.order_id_to_order[order_id]
+        # assert order.size >= reduction_amount
         if order.size == reduction_amount:
             del self.order_id_to_order[order_id]
-        elif order.size < reduction_amount:  # TODO remove if not needed
-            raise ValueError("Cannot reduce {order} by {reduction_amount}.")
         order.reduce_size(reduction_amount)
         return order
 
+    # TODO use this somewhere
     def remove_invalid_orders(self) -> None:
         """
-        O(n) where n = len(orders).
+        O(n) where n = len(self.heap).
 
         Utility to explicitly remove all invalid orders. Useful for debugging.
         """
-        # TODO use this somewhere
         self.heap = [order for order in self.heap if order.size > 0]
         heapq.heapify(self.heap)
         return
 
     def push(self, order: Order) -> None:
         """O(log n) where n = len(self.heap)."""
-        assert order.size > 0
-        assert order.order_id not in self.order_id_to_order
+        # assert order.size > 0
+        # assert order.order_id not in self.order_id_to_order
         self.order_id_to_order[order.order_id] = order
         heapq.heappush(self.heap, order)
         return
@@ -211,31 +159,12 @@ class SimpleMinHeapOfOrders:
         Only pops valid orders (i.e. orders with size > 0).
         """
         while True:
-            assert len(self.heap) > 0
-            if len(self.heap) == 0:  # TODO remove if not needed
-                raise IndexError("Pop from empty heap.")
+            # assert len(self.heap) > 0
             order = heapq.heappop(self.heap)
             if order.order_id in self.order_id_to_order:
                 del self.order_id_to_order[order.order_id]
                 break
         return order
-
-    # def pushpop(self, order: Order) -> Order:
-    #     """
-    #     O(log n) where n = len(self.heap) if no invalid orders,
-    #     but can be up to O(num_invalid_orders * log n).
-
-    #     Faster than a separate push and pop when the pop returns
-    #     a valid order on first attempt.
-    #     """
-    #     assert order.order_id not in self.order_id_to_order
-    #     self.order_id_to_order[order.order_id] = order
-    #     order = heapq.heappushpop(self.heap, order)
-    #     if order.order_id in self.order_id_to_order:
-    #         del self.order_id_to_order[order.order_id]
-    #     else:
-    #         order = self.pop()
-    #     return order
 
     def peek(self) -> Order:
         """
@@ -271,9 +200,9 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
         order = super().reduce_order_size(order_id, reduction_amount)
         self.total_size -= reduction_amount
         self.total_price -= reduction_amount * order.price
-        assert self.total_size >= 0
-        assert round(self.total_price, 2) >= 0
-        assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
+        # assert self.total_size >= 0
+        # assert round(self.total_price, 2) >= 0
+        # assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
         return order
 
     def push(self, order: Order) -> None:
@@ -281,9 +210,9 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
         super().push(order)
         self.total_size += order.size
         self.total_price += order.size * order.price
-        assert self.total_size >= 0
-        assert round(self.total_price, 2) >= 0
-        assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
+        # assert self.total_size >= 0
+        # assert round(self.total_price, 2) >= 0
+        # assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
         return
 
     def pop(self) -> Order:
@@ -291,31 +220,10 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
         order.disable_max_heap_compatibility()
         self.total_size -= order.size
         self.total_price -= order.size * order.price
-        assert self.total_size >= 0
-        assert round(self.total_price, 2) >= 0
-        assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
+        # assert self.total_size >= 0
+        # assert round(self.total_price, 2) >= 0
+        # assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
         return order
-
-    # def pushpop(self, input_order: Order) -> Order:
-    #     input_order.enable_max_heap_compatibility()
-    #     assert input_order.order_id not in self.order_id_to_order
-    #     self.order_id_to_order[input_order.order_id] = input_order
-
-    #     order = heapq.heappushpop(self.heap, input_order)
-    #     self.total_size += input_order.size
-    #     self.total_price += input_order.size * input_order.price
-    #     if order.order_id in self.order_id_to_order:
-    #         del self.order_id_to_order[order.order_id]
-    #     else:
-    #         order = super().pop()
-    #     order.disable_max_heap_compatibility()
-    #     self.total_size -= order.size
-    #     self.total_price -= order.size * order.price
-        
-    #     assert self.total_size >= 0
-    #     assert round(self.total_price, 2) >= 0
-    #     assert round(self.total_price, 2) == round(sum(e.size*e.price for e in self.heap), 2)
-    #     return order
 
     def target_price(self) -> float:
         """
@@ -323,7 +231,7 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
 
         Assumes TARGET_SIZE <= self.total_size.
         """
-        assert TARGET_SIZE <= self.total_size
+        # assert TARGET_SIZE <= self.total_size
         excess_num_shares = self.total_size - TARGET_SIZE
         if excess_num_shares == 0:
             ans = self.total_price
@@ -366,7 +274,7 @@ def process_reduce_message(timestamp: str, order_id: str, size: str) -> None:
             if cannot_sell:
                 print(f"{timestamp} S NA")
             elif before_target_price != (after_target_price := USED_BIDS.target_price()):
-                print(f"{timestamp} S {after_target_price:.2f}") 
+                print(f"{timestamp} S {after_target_price:.2f}")
     elif order_id in USED_ASKS:
         if USED_ASKS.total_size < TARGET_SIZE:
             USED_ASKS.reduce_order_size(order_id, size)
@@ -408,14 +316,14 @@ def process_add_message(
         else:
             before_target_price = USED_BIDS.target_price()
             USED_BIDS.push(bid)
-            assert USED_BIDS.total_size >= TARGET_SIZE
+            # assert USED_BIDS.total_size >= TARGET_SIZE
             while USED_BIDS.total_size - USED_BIDS.peek().size >= TARGET_SIZE:
                 REMAINING_BIDS.push(USED_BIDS.pop())
-            assert USED_BIDS.total_size >= TARGET_SIZE
+            # assert USED_BIDS.total_size >= TARGET_SIZE
             after_target_price = USED_BIDS.target_price()
             if bid in USED_BIDS:
                 changed = after_target_price != before_target_price
-            assert (not changed) or after_target_price > before_target_price
+            # assert (not changed) or after_target_price > before_target_price
         if changed:
             print(f"{timestamp} S {after_target_price:.2f}")
     elif side == "S":
@@ -431,19 +339,20 @@ def process_add_message(
         else:
             before_target_price = USED_ASKS.target_price()
             USED_ASKS.push(ask)
-            assert USED_ASKS.total_size >= TARGET_SIZE
+            # assert USED_ASKS.total_size >= TARGET_SIZE
             while USED_ASKS.total_size - USED_ASKS.peek().size >= TARGET_SIZE:
                 REMAINING_ASKS.push(USED_ASKS.pop())
-            assert USED_ASKS.total_size >= TARGET_SIZE
+            # assert USED_ASKS.total_size >= TARGET_SIZE
             after_target_price = USED_ASKS.target_price()
             if ask in USED_ASKS:
                 changed = after_target_price != before_target_price
-            assert (not changed) or after_target_price < before_target_price
+            # assert (not changed) or after_target_price < before_target_price
         if changed:
             print(f"{timestamp} B {after_target_price:.2f}")
     else:
         raise RuntimeError(f"Unknown side type {repr(side)}.")
     return
+
 
 def process_message(message: str) -> None:
     timestamp, message_type, *remaining_message_data = message.split()
