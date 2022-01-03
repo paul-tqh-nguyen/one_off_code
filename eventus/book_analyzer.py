@@ -117,10 +117,7 @@ class MinHeapOfOrders:
         but removes them from self.order_id_to_order.
 
         An invalid order will be lazily removed from self.heap elsewhere since
-        doing so eagerly (i.e. here) is O(n) and doing so lazily will be O(log n)
-        via self.pop or self.peek.
-
-        Use self.remove_invalid_orders when there are too many invalid orders.
+        removing them in a batch is faster.
         """
         order = self.order_id_to_order[order_id]
         # assert order.size >= reduction_amount
@@ -129,8 +126,7 @@ class MinHeapOfOrders:
         order.reduce_size(reduction_amount)
         return order
 
-    # TODO consider using this somewhere
-    def remove_invalid_orders(self) -> None:
+    def _remove_invalid_orders(self) -> None:
         """
         O(n) where n = len(self.heap).
 
@@ -151,27 +147,27 @@ class MinHeapOfOrders:
     def pop(self) -> Order:
         """
         O(log n) where n = len(self.heap) if no invalid orders,
-        but can be up to O(num_invalid_orders * log n).
+        but can be O(n) since we remove the invalid orders.
 
         Only pops valid orders (i.e. orders with size > 0).
         """
-        while True:
-            # assert len(self.heap) > 0
+        # assert len(self.heap) > 0
+        order = heapq.heappop(self.heap)
+        if order.order_id not in self.order_id_to_order:
+            self._remove_invalid_orders()
             order = heapq.heappop(self.heap)
-            if order.order_id in self.order_id_to_order:
-                del self.order_id_to_order[order.order_id]
-                break
+        del self.order_id_to_order[order.order_id]
         return order
 
     def peek(self) -> Order:
         """
-        O(1) if no invalid orders, but can cost the same as self.pop + self.push.
+        O(1) if no invalid orders, but can cost O(n).
         """
         order = self.heap[0]
         if order.order_id in self.order_id_to_order:
             return order
-        order = self.pop()
-        self.push(order)
+        self._remove_invalid_orders()
+        order = self.heap[0]
         return order
 
 
@@ -329,7 +325,7 @@ def determine_add_print_string(
             remaining_orders.push(used_orders.pop())
         # assert used_orders.total_size >= TARGET_SIZE
         after_target_price = used_orders.target_price()
-        changed = used_orders.contains_id(order_id) and after_target_price != before_target_price
+        changed = after_target_price != before_target_price
         # assert (not changed) or (after_target_price > before_target_price if order_class == Bid else after_target_price < before_target_price)
     if changed:
         action = "S" if order_class == Bid else "B"
