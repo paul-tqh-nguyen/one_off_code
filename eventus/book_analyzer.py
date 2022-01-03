@@ -5,7 +5,6 @@
 # TODO make sure these are all used
 import sys
 import heapq
-import inspect
 from typing import (
     List,
     Tuple,
@@ -185,6 +184,17 @@ class SimpleMinHeapOfOrders:
         order.reduce_size(reduction_amount)
         return order
 
+    def remove_invalid_orders(self) -> None:
+        """
+        O(n) where n = len(orders).
+
+        Utility to explicitly remove all invalid orders. Useful for debugging.
+        """
+        # TODO use this somewhere
+        self.heap = [order for order in self.heap if order.size > 0]
+        heapq.heapify(self.heap)
+        return
+
     def push(self, order: Order) -> None:
         """O(log n) where n = len(self.heap)."""
         assert order.size > 0
@@ -267,7 +277,6 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
         return order
 
     def push(self, order: Order) -> None:
-        assert self.total_size < TARGET_SIZE or inspect.stack()[1].function in ('process_add_message', 'peek')
         order.enable_max_heap_compatibility()
         super().push(order)
         self.total_size += order.size
@@ -317,9 +326,10 @@ class MaxHeapOfOrders(SimpleMinHeapOfOrders):
         assert TARGET_SIZE <= self.total_size
         excess_num_shares = self.total_size - TARGET_SIZE
         if excess_num_shares == 0:
-            return self.total_price
-        max_order = self.peek()
-        ans = self.total_price - excess_num_shares * max_order.price
+            ans = self.total_price
+        else:
+            max_order = self.peek()
+            ans = self.total_price - excess_num_shares * max_order.price
         ans = round(ans, 2)
         return ans
 
@@ -392,14 +402,14 @@ def process_add_message(
             USED_BIDS.push(bid)
             changed = USED_BIDS.total_size >= TARGET_SIZE
             if changed:
-                while USED_BIDS.total_size - USED_BIDS.peek().size > TARGET_SIZE:
+                while USED_BIDS.total_size - USED_BIDS.peek().size >= TARGET_SIZE:
                     REMAINING_BIDS.push(USED_BIDS.pop())
                 after_target_price = USED_BIDS.target_price()
         else:
             before_target_price = USED_BIDS.target_price()
             USED_BIDS.push(bid)
             assert USED_BIDS.total_size >= TARGET_SIZE
-            while USED_BIDS.total_size - USED_BIDS.peek().size > TARGET_SIZE:
+            while USED_BIDS.total_size - USED_BIDS.peek().size >= TARGET_SIZE:
                 REMAINING_BIDS.push(USED_BIDS.pop())
             assert USED_BIDS.total_size >= TARGET_SIZE
             after_target_price = USED_BIDS.target_price()
@@ -415,14 +425,14 @@ def process_add_message(
             USED_ASKS.push(ask)
             changed = USED_ASKS.total_size >= TARGET_SIZE
             if changed:
-                while USED_ASKS.total_size - USED_ASKS.peek().size > TARGET_SIZE:
+                while USED_ASKS.total_size - USED_ASKS.peek().size >= TARGET_SIZE:
                     REMAINING_ASKS.push(USED_ASKS.pop())
                 after_target_price = USED_ASKS.target_price()
         else:
             before_target_price = USED_ASKS.target_price()
             USED_ASKS.push(ask)
             assert USED_ASKS.total_size >= TARGET_SIZE
-            while USED_ASKS.total_size - USED_ASKS.peek().size > TARGET_SIZE:
+            while USED_ASKS.total_size - USED_ASKS.peek().size >= TARGET_SIZE:
                 REMAINING_ASKS.push(USED_ASKS.pop())
             assert USED_ASKS.total_size >= TARGET_SIZE
             after_target_price = USED_ASKS.target_price()

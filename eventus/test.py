@@ -40,13 +40,31 @@ def debug_on_error(func: Callable) -> Callable:
             pdb.post_mortem(tb)
     return decorating_function
 
+from typing import Callable, Generator
+from contextlib import contextmanager
+@contextmanager
+def timer(section_name: str = None, exitCallback: Callable[[float], None] = None) -> Generator:
+    import time
+    start_time = time.time()
+    yield
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    if exitCallback != None:
+        exitCallback(elapsed_time)
+    elif section_name:
+        print(f'{section_name} took {elapsed_time} seconds.')
+    else:
+        print(f'Execution took {elapsed_time} seconds.')
+    return
+
 #########
 # Tests #
 #########
 
 @debug_on_error
 def run_test_simple():
-    file_contents = '''
+    with timer(f'run_test_simple()'):
+        file_contents = '''
 28800538 A b S 44.26 100
 28800562 A c B 44.10 100
 28800744 R b 100
@@ -68,7 +86,7 @@ def run_test_simple():
 28815937 R j 1000
 28816245 A m S 44.22 100
 '''.strip()
-    expected_ans = '''
+        expected_ans = '''
 28800758 S 8832.56
 28800796 S NA
 28800812 S 8832.56
@@ -83,16 +101,16 @@ def run_test_simple():
 28815937 B 8845.00
 28816245 B 8840.00
 '''
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        temp_file = os.path.join(tmp_dir, 'asdf.txt')
-        with open(temp_file, 'w') as f:
-            f.write(file_contents)
-        cmd = f'cat {temp_file} | python3 {BOOK_ANALYZER_SCRIPT_LOCATION} 200'
-        stdout_string, stderr_string, returncode = shell(cmd)
-        assert returncode == 0
-        assert stderr_string == ''
-        assert stdout_string.strip() == expected_ans.strip()
-    print('run_test_simple success')
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temp_file = os.path.join(tmp_dir, 'asdf.txt')
+            with open(temp_file, 'w') as f:
+                f.write(file_contents)
+            cmd = f'cat {temp_file} | python3 {BOOK_ANALYZER_SCRIPT_LOCATION} 200'
+            stdout_string, stderr_string, returncode = shell(cmd)
+            assert returncode == 0
+            assert stderr_string == ''
+            assert stdout_string.strip() == expected_ans.strip()
+        print('run_test_simple')
     return
 
 @debug_on_error
@@ -106,12 +124,12 @@ def run_test_data(target_size, num_lines):
         temp_file = os.path.join(tmp_dir, 'asdf.txt')
         with open(temp_file, 'w') as f:
             f.write(file_contents)
-        cmd = f'cat {temp_file} | python3 {BOOK_ANALYZER_SCRIPT_LOCATION} {target_size}'
+            cmd = f'cat {temp_file} | python3 {BOOK_ANALYZER_SCRIPT_LOCATION} {target_size}'
+    with timer(f'run_test_data(target_size={target_size}, num_lines={len(file_contents.splitlines())})'):
         stdout_string, stderr_string, returncode = shell(cmd)
         assert returncode == 0
         assert stderr_string == ''
         assert expected_ans.startswith(stdout_string.strip())
-    print(f'run_test_data {target_size} success')
     return
 
 ##########
@@ -119,7 +137,7 @@ def run_test_data(target_size, num_lines):
 ##########
 
 if __name__ == '__main__':
-    # run_test_simple()
-    # run_test_data(1, 5500)
-    run_test_data(200, 100)
-    # run_test_data(10_000, 5500)
+    run_test_simple()
+    run_test_data(1, 2_000_000)
+    run_test_data(200, 2_000_000)
+    run_test_data(10_000, 2_000_000)
