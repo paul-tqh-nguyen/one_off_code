@@ -259,35 +259,45 @@ REMAINING_ASKS: SimpleMinHeapOfOrders = SimpleMinHeapOfOrders()
 ################################
 
 
+def determine_reduce_print_string(
+    timestamp: str,
+    order_id: str,
+    size: int,
+    used_orders: MaxHeapOfOrders,
+    remaining_orders: SimpleMinHeapOfOrders,
+    action: str,
+) -> Optional[str]:
+    if used_orders.total_size < TARGET_SIZE:
+        used_orders.reduce_order_size(order_id, size)
+    else:
+        before_target_price = used_orders.target_price()
+        used_orders.reduce_order_size(order_id, size)
+        while (cannot_sell := used_orders.total_size < TARGET_SIZE) and len(
+            remaining_orders
+        ) > 0:
+            order = remaining_orders.pop()
+            used_orders.push(order)
+        if cannot_sell:
+            return f"{timestamp} {action} NA"
+        elif before_target_price != (after_target_price := used_orders.target_price()):
+            return f"{timestamp} {action} {after_target_price:.2f}"
+    return
+
+
 def process_reduce_message(timestamp: str, order_id: str, size: str) -> None:
     size = int(size)
-    # TODO abstract this stuff out
     if order_id in USED_BIDS:
-        if USED_BIDS.total_size < TARGET_SIZE:
-            USED_BIDS.reduce_order_size(order_id, size)
-        else:
-            before_target_price = USED_BIDS.target_price()
-            USED_BIDS.reduce_order_size(order_id, size)
-            while (cannot_sell := USED_BIDS.total_size < TARGET_SIZE) and len(REMAINING_BIDS) > 0:
-                order = REMAINING_BIDS.pop()
-                USED_BIDS.push(order)
-            if cannot_sell:
-                print(f"{timestamp} S NA")
-            elif before_target_price != (after_target_price := USED_BIDS.target_price()):
-                print(f"{timestamp} S {after_target_price:.2f}")
+        print_string = determine_reduce_print_string(
+            timestamp, order_id, size, USED_BIDS, REMAINING_BIDS, "S"
+        )
+        if print_string is not None:
+            print(print_string)
     elif order_id in USED_ASKS:
-        if USED_ASKS.total_size < TARGET_SIZE:
-            USED_ASKS.reduce_order_size(order_id, size)
-        else:
-            before_target_price = USED_ASKS.target_price()
-            USED_ASKS.reduce_order_size(order_id, size)
-            while (cannot_buy := USED_ASKS.total_size < TARGET_SIZE) and len(REMAINING_ASKS) > 0:
-                order = REMAINING_ASKS.pop()
-                USED_ASKS.push(order)
-            if cannot_buy:
-                print(f"{timestamp} B NA")
-            elif before_target_price != (after_target_price := USED_ASKS.target_price()):
-                print(f"{timestamp} B {after_target_price:.2f}")
+        print_string = determine_reduce_print_string(
+            timestamp, order_id, size, USED_ASKS, REMAINING_ASKS, "B"
+        )
+        if print_string is not None:
+            print(print_string)
     elif order_id in REMAINING_BIDS:
         REMAINING_BIDS.reduce_order_size(order_id, size)
     elif order_id in REMAINING_ASKS:
@@ -297,58 +307,68 @@ def process_reduce_message(timestamp: str, order_id: str, size: str) -> None:
     return
 
 
+def determine_add_print_string(
+    timestamp: str,
+    order_id: str,
+    price: float,
+    size: int,
+    used_orders: MaxHeapOfOrders,
+    remaining_orders: SimpleMinHeapOfOrders,
+    order_class: type,
+) -> Optional[str]:
+    order = order_class(order_id, price, size)
+    if used_orders.total_size < TARGET_SIZE:
+        used_orders.push(order)
+        changed = used_orders.total_size >= TARGET_SIZE
+        if changed:
+            while used_orders.total_size - used_orders.peek().size >= TARGET_SIZE:
+                remaining_orders.push(used_orders.pop())
+            after_target_price = used_orders.target_price()
+    else:
+        before_target_price = used_orders.target_price()
+        used_orders.push(order)
+        # assert used_orders.total_size >= TARGET_SIZE
+        while used_orders.total_size - used_orders.peek().size >= TARGET_SIZE:
+            remaining_orders.push(used_orders.pop())
+        # assert used_orders.total_size >= TARGET_SIZE
+        after_target_price = used_orders.target_price()
+        changed = order in used_orders and after_target_price != before_target_price
+        # assert (not changed) or (after_target_price > before_target_price if order_class == Bid else after_target_price < before_target_price)
+    if changed:
+        action = "S" if order_class == Bid else "B"
+        return f"{timestamp} {action} {after_target_price:.2f}"
+    return
+
+
 def process_add_message(
     timestamp: str, order_id: str, side: str, price: str, size: str
 ) -> None:
     price = float(price)
     size = int(size)
-    # TODO abstract this stuff out
     if side == "B":
-        bid = Bid(order_id, price, size)
-        changed = False
-        if USED_BIDS.total_size < TARGET_SIZE:
-            USED_BIDS.push(bid)
-            changed = USED_BIDS.total_size >= TARGET_SIZE
-            if changed:
-                while USED_BIDS.total_size - USED_BIDS.peek().size >= TARGET_SIZE:
-                    REMAINING_BIDS.push(USED_BIDS.pop())
-                after_target_price = USED_BIDS.target_price()
-        else:
-            before_target_price = USED_BIDS.target_price()
-            USED_BIDS.push(bid)
-            # assert USED_BIDS.total_size >= TARGET_SIZE
-            while USED_BIDS.total_size - USED_BIDS.peek().size >= TARGET_SIZE:
-                REMAINING_BIDS.push(USED_BIDS.pop())
-            # assert USED_BIDS.total_size >= TARGET_SIZE
-            after_target_price = USED_BIDS.target_price()
-            if bid in USED_BIDS:
-                changed = after_target_price != before_target_price
-            # assert (not changed) or after_target_price > before_target_price
-        if changed:
-            print(f"{timestamp} S {after_target_price:.2f}")
+        print_string = determine_add_print_string(
+            timestamp,
+            order_id,
+            price,
+            size,
+            USED_BIDS,
+            REMAINING_BIDS,
+            Bid,
+        )
+        if print_string is not None:
+            print(print_string)
     elif side == "S":
-        ask = Ask(order_id, price, size)
-        changed = False
-        if USED_ASKS.total_size < TARGET_SIZE:
-            USED_ASKS.push(ask)
-            changed = USED_ASKS.total_size >= TARGET_SIZE
-            if changed:
-                while USED_ASKS.total_size - USED_ASKS.peek().size >= TARGET_SIZE:
-                    REMAINING_ASKS.push(USED_ASKS.pop())
-                after_target_price = USED_ASKS.target_price()
-        else:
-            before_target_price = USED_ASKS.target_price()
-            USED_ASKS.push(ask)
-            # assert USED_ASKS.total_size >= TARGET_SIZE
-            while USED_ASKS.total_size - USED_ASKS.peek().size >= TARGET_SIZE:
-                REMAINING_ASKS.push(USED_ASKS.pop())
-            # assert USED_ASKS.total_size >= TARGET_SIZE
-            after_target_price = USED_ASKS.target_price()
-            if ask in USED_ASKS:
-                changed = after_target_price != before_target_price
-            # assert (not changed) or after_target_price < before_target_price
-        if changed:
-            print(f"{timestamp} B {after_target_price:.2f}")
+        print_string = determine_add_print_string(
+            timestamp,
+            order_id,
+            price,
+            size,
+            USED_ASKS,
+            REMAINING_ASKS,
+            Ask,
+        )
+        if print_string is not None:
+            print(print_string)
     else:
         raise RuntimeError(f"Unknown side type {repr(side)}.")
     return
