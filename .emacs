@@ -32,6 +32,10 @@
   (interactive) 
   (tramp-term '("pnguyen" "colo-dgx-01.corp.continuum.io")))
 
+;; Framemove
+
+(load "framemove.el")
+
 ;; Undo Tree
 
 (load "undo-tree.el")
@@ -106,6 +110,23 @@
 
 ;; Custom Functions
 
+(defun general-metapoint (search-string)
+  (interactive "M(General Metapoint) Search Text: ")
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  (progn ;; visit file in same window ; stolen from https://emacs.stackexchange.com/questions/33857/open-search-result-in-the-same-window
+    (defun my-compile-goto-error-same-window ()
+      (interactive)
+      (let ((display-buffer-overriding-action '((display-buffer-reuse-window display-buffer-same-window)
+						(inhibit-same-window . nil))))
+	(call-interactively #'compile-goto-error)))
+    (defun my-compilation-mode-hook ()
+      (local-set-key (kbd "SPC") #'my-compile-goto-error-same-window))
+    (add-hook 'compilation-mode-hook #'my-compilation-mode-hook))
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  (let ((grep-bash-command (format "cd %s ; echo ; git grep -IrFn \"%s\"" default-directory search-string)))
+    (grep grep-bash-command)))
+
+
 (defun escape-quotes (@begin @end)
   "Escapes quotes in a region"
   (interactive
@@ -127,7 +148,8 @@
 (defun scratch ()
    "Create a scratch buffer"
    (interactive)
-   (switch-to-buffer (get-buffer-create "*scratch*")))
+   ;;(switch-to-buffer (get-buffer-create "*scratch*"))
+   (find-file "~/scratch/scratch.txt"))
 
 (defun new-shell ()
   "Creates a new shell buffer"
@@ -181,166 +203,12 @@
 
  ssh-tunnel
  )
+(fmakunbound 'secrets-show-secrets) ;; don't have a similar name to "second"
 
 (defun start-remote-ssh-shell-buffer-with-name (username host buffer-name shell-start-up-command)
   (let ((default-directory (format "/ssh:%s@%s:" username host)))
     (add-to-list 'display-buffer-alist `(,buffer-name . (display-buffer-same-window)))
     (start-shell-buffer-with-name buffer-name shell-start-up-command)))
-
-(defmacro create-named-cuda-shell-function (function-name)
-  (let ((buffer-name (format "*%s*" function-name)))
-    `(defun ,function-name ()
-       (interactive)
-       (let* ((username "pnguyen")
-	      (host "colo-dgx-01.corp.continuum.io")
-	      (buffer-name ,buffer-name)
-	      (default-directory (format "/ssh:%s@%s:" username host)))
-	 (start-remote-ssh-shell-buffer-with-name username host buffer-name "cd /home/pnguyen/code/metagraph ; conda activate mg")))))
-
-(defmacro create-named-cuda-shell-functions (&rest function-names)
-  (let (commands)
-    (dolist (function-name function-names)
-      (push `(create-named-cuda-shell-function ,function-name) commands))
-    (setq commands (nreverse commands))
-    `(list ,@commands)))
-
-(create-named-cuda-shell-functions
- cuda
- cuda-shell
- cuda-python
- cuda-test
- cuda-second
- cuda-third
- cuda-fourth
- cuda-fifth
- jupyter
- gpu1
- gpu2
- gpu3
- gpu4
- gpu5
- gpu6
- gpu7
- gpu8
- gpu9
- )
-
-(defun start-cuda-shells ()
-  (interactive)
-  (mapcar #'funcall '(
-		      cuda
-		      cuda-shell
-		      cuda-test
-		      cuda-python
-		      cuda-second
-		      cuda-third
-		      cuda-fourth
-		      cuda-fifth
-		      jupyter
-		      )))
-
-(defun broadcast-cuda ()
-  (interactive)
-  (let ((broadcast-command (read-string "Command to broadcast: "))
-	(shell-loaders '(
-			 cuda
-			 cuda-shell
-			 cuda-test
-			 cuda-python
-			 cuda-second
-			 cuda-third
-			 cuda-fourth
-			 cuda-fifth
-			 jupyter
-			 )))
-    (dolist (shell-loader shell-loaders)
-      (funcall shell-loader)
-      (end-of-buffer)
-      (insert broadcast-command)
-      (comint-send-input)
-      )))
-
-(defun gpu-farm-int (func-for-cuda-id)
-  (interactive)
-  (delete-other-windows)
-  (gpu3)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 1)
-  (split-window-right)
-  (gpu2)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 1)
-  (split-window-right)
-  (gpu1)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 1)
-  (split-window-below)
-  (other-window 1)
-  (gpu4)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 2)
-  (other-window 1)
-  (split-window-below)
-  (other-window 1)
-  (gpu5)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 2)
-  (other-window 1)
-  (split-window-below)
-  (other-window 1)
-  (gpu6)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 2)
-  (other-window 2)
-  (split-window-below)
-  (other-window 1)
-  (gpu7)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 3)
-  (other-window 2)
-  (split-window-below)
-  (other-window 1)
-  (gpu8)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 3)
-  (other-window 2)
-  (split-window-below)
-  (other-window 1)
-  (gpu9)
-  (comint-delete-output)
-  (funcall func-for-cuda-id 3)
-  (balance-windows)
-  )
-
-(defvar *gpu-command-template* "conda deactivate
-conda activate greviews
-cd ~/code/one_off_code/google_reviews
-for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
-
-(defun gpu-farm ()
-  (interactive)
-  (gpu-farm-int 'identity))
-
-(defun gpu-farm-kill ()
-  (interactive)
-  (gpu-farm-int (lambda (device-id)
-		  (setq kill-buffer-query-functions (delq 'process-kill-buffer-query-function kill-buffer-query-functions))
-		  (kill-this-buffer)
-		  (add-to-list 'kill-buffer-query-functions 'process-kill-buffer-query-function))))
-
-(defun gpu-farm-load ()
-  (interactive)
-  (gpu-farm-int (lambda (device-id)
-		  (erase-buffer)
-		  (comint-send-input)
-		  (insert (format *gpu-command-template* device-id)))))
-
-(defun gpu-farm-initialize ()
-  (interactive)
-  (gpu-farm-int (lambda (device-id)
-		  (erase-buffer)
-		  (insert (format *gpu-command-template* device-id))
-		  (comint-send-input))))
 
 ;; Start Up Shells
 
@@ -378,7 +246,8 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
       (end-of-buffer)
       (insert broadcast-command)
       (comint-send-input)
-      )))
+      )
+    (shell)))
 
 ;; Shortcut Keys
 
@@ -390,6 +259,13 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
 (global-set-key (kbd "C-c :") 'uncomment-region)
 (global-set-key (kbd "<M-down>") 'forward-paragraph)
 (global-set-key (kbd "<M-up>") 'backward-paragraph)
+(global-set-key (kbd "M-,") 'general-metapoint)
+
+(global-set-key (kbd "C-c <up>") 'windmove-up)
+(global-set-key (kbd "C-c <down>") 'windmove-down)
+(global-set-key (kbd "C-c <left>") 'windmove-left)
+(global-set-key (kbd "C-c <right>") 'windmove-right)
+
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
 (put 'dired-find-alternate-file 'disabled nil)
@@ -457,8 +333,7 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
   (setq ispell-program-name "/usr/local/bin/aspell")
   (setq mac-command-modifier 'meta)
   (setq mac-function-modifier 'control)
-  (setq mac-option-modifier nil)
-  (start-cuda-shells))
+  (setq mac-option-modifier ni))
  ((eq system-type 'gnu/linux)
   )
  (t
@@ -467,7 +342,9 @@ for i in $(seq 1 1000) ; do python3 main.py -cuda-device-id %d ; done")
 ;; Continuous Functions
 
 (setq hourly-timer (run-at-time nil 3600 (lambda ()
-					   (let ((default-directory "~/"))
+					   (let ((default-directory "~/")
+						 (async-shell-command-buffer nil))
 					     (async-shell-command "(cd ~/code/one_off_code/ ; git pull)"))
 					   )))
+
 (put 'erase-buffer 'disabled nil)
