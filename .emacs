@@ -126,7 +126,6 @@
   (let ((grep-bash-command (format "cd %s ; echo ; git grep -IrFn \"%s\"" default-directory search-string)))
     (grep grep-bash-command)))
 
-
 (defun escape-quotes (@begin @end)
   "Escapes quotes in a region"
   (interactive
@@ -144,6 +143,24 @@
   (interactive) 
   (replace-regexp "\\([A-Z]\\)" "_\\1" nil (region-beginning) (region-end))
   (downcase-region (region-beginning) (region-end)))
+
+(defun htop ()
+  (interactive)
+  (let* ((buffer-basename "htop")
+	 (buffer-name (format "*%s*" buffer-basename)))
+    (if (get-buffer buffer-name)
+	(switch-to-buffer buffer-name)
+      (let* ((bash-executable (shell-command-to-string "which bash | xargs echo -n")))
+	(ansi-term bash-executable buffer-basename)
+        (display-line-numbers-mode -1)
+	(term-send-raw-string "htop -d1 ; exit \n")
+	))))
+
+(advice-add ;; for htop
+ 'term-handle-exit
+ :after (lambda (&optional process-name msg)
+	  (when (string= process-name "*htop*")
+	    (kill-buffer process-name))))
 
 (defun scratch ()
    "Create a scratch buffer"
