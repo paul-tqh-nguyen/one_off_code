@@ -1,0 +1,9 @@
+name: anime_blog
+dependencies:
+  - python>=3.11
+  - black
+  - conda-forge::autoflake
+  - isort
+  - mypy
+  - pandas
+  - networkx
