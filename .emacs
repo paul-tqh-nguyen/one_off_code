@@ -112,6 +112,14 @@
 
 ;; Custom Functions
 
+(defun grep-os-specific (grep-bash-command)
+  (cond
+   ((eq system-type 'windows-nt)
+    (let ((dwimmed-grep-bash-command (format "set \"PATH=C:\\Users\\trslcj\\AppData\\Local\\miniconda3\\Library\\bin\" && %s && REM " grep-bash-command)))
+      (grep dwimmed-grep-bash-command)))
+   (t
+    (grep grep-bash-command))))
+
 (defun general-metapoint (search-string)
   (interactive "M(General Metapoint) Search Text: ")
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,7 +134,7 @@
     (add-hook 'compilation-mode-hook #'my-compilation-mode-hook))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   (let ((grep-bash-command (format "cd %s && echo && git grep -IrFn \"%s\"" default-directory search-string)))
-    (grep grep-bash-command)))
+    (grep-os-specific grep-bash-command)))
 
 (defun escape-quotes (@begin @end)
   "Escapes quotes in a region"
