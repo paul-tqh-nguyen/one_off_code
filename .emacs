@@ -121,7 +121,8 @@
 (defun grep-os-specific (grep-bash-command)
   (cond
    ((eq system-type 'windows-nt)
-    (let ((dwimmed-grep-bash-command (format "set \"PATH=C:\\Users\\trslcj\\AppData\\Local\\miniconda3\\Library\\bin\" && %s && REM " grep-bash-command)))
+    (let ((dwimmed-grep-bash-command (format "set \"PATH=C:\\Users\\trslcj\\AppData\\Local\\miniconda3\\Library\\bin\" && %s && REM " grep-bash-command))
+	  (default-directory *dev-dir*))
       (grep dwimmed-grep-bash-command)))
    (t
     (grep grep-bash-command))))
