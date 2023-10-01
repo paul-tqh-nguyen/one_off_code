@@ -125,7 +125,7 @@
       (local-set-key (kbd "SPC") #'my-compile-goto-error-same-window))
     (add-hook 'compilation-mode-hook #'my-compilation-mode-hook))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  (let ((grep-bash-command (format "cd %s ; echo ; git grep -IrFn \"%s\"" default-directory search-string)))
+  (let ((grep-bash-command (format "cd %s && echo && git grep -IrFn \"%s\"" default-directory search-string)))
     (grep grep-bash-command)))
 
 (defun escape-quotes (@begin @end)
