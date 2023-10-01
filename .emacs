@@ -112,6 +112,12 @@
 
 ;; Custom Functions
 
+(defvar *dev-dir* "c:\\Users\\trslcj\\code\\MSG-Quant")
+
+(defun set-dev-dir (new-dev-dir)
+  (interactive "DNew Dev Dir: ")
+  (setq *dev-dir* new-dev-dir))
+
 (defun grep-os-specific (grep-bash-command)
   (cond
    ((eq system-type 'windows-nt)
@@ -133,7 +139,7 @@
       (local-set-key (kbd "SPC") #'my-compile-goto-error-same-window))
     (add-hook 'compilation-mode-hook #'my-compilation-mode-hook))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  (let ((grep-bash-command (format "cd %s && echo && git grep -IrFn \"%s\"" default-directory search-string)))
+  (let ((grep-bash-command (format "cd %s && echo && git grep -IrFn \"%s\"" *dev-dir* search-string)))
     (grep-os-specific grep-bash-command)))
 
 (defun escape-quotes (@begin @end)
