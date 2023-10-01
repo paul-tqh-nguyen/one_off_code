@@ -11,10 +11,6 @@
 (add-to-list 'display-buffer-alist (cons "\\*Async Shell Command\\*.*" (cons #'display-buffer-no-window nil)))
 (add-to-list 'display-buffer-alist (cons "\\*Shell Command Output\\*.*" (cons #'display-buffer-no-window nil)))
 
-;; Keep Settings updated
-
-(shell-command-to-string "pushd ~/code/one_off_code/ ; git pull ; popd")
-
 ;; Update EMACS Load Path
 
 (package-initialize)
@@ -24,6 +20,12 @@
        (absolute-file-name-directory (file-name-directory absolute-file-name))
        (emacs-files-directory (format "%s%s" absolute-file-name-directory "emacs_files/")))
   (add-to-list 'load-path emacs-files-directory))
+
+;; GUI Settings
+
+(tool-bar-mode -1)
+(menu-bar-mode -1)
+(set-frame-font "Consolas" nil t)
 
 ;; TRAMP Term
 
@@ -165,8 +167,9 @@
 (defun scratch ()
    "Create a scratch buffer"
    (interactive)
-   ;;(switch-to-buffer (get-buffer-create "*scratch*"))
-   (find-file "~/scratch/scratch.txt"))
+   (switch-to-buffer (get-buffer-create "*scratch*"))
+   ;;(find-file "~/scratch/scratch.txt")
+   )
 
 (defun new-shell ()
   "Creates a new shell buffer"
@@ -240,13 +243,13 @@
 		    fifth
 
 		    ssh-tunnel
+		    ielm
 		    
 		    shell))
 
-(defun broadcast-local ()
-  (interactive)
-  (let ((broadcast-command (read-string "Command to broadcast: "))
-	(shell-loaders '(
+(defun broadcast-local (broadcast-command)
+  (interactive "MCommand to broadcast: ")
+  (let ((shell-loaders '(
 			 shell
 			 python
  
@@ -353,15 +356,9 @@
   (setq mac-option-modifier ni))
  ((eq system-type 'gnu/linux)
   )
+ ((eq system-type 'windows-nt)
+  (setq shell-dirstack-query "echo %cd%")
+  (broadcast-local "conda activate base")
+  (broadcast-local "conda activate msg"))
  (t
   (format "Could not determine OS flavor.")))
-
-;; Continuous Functions
-
-(setq hourly-timer (run-at-time nil 3600 (lambda ()
-					   (let ((default-directory "~/")
-						 (async-shell-command-buffer nil))
-					     (async-shell-command "(cd ~/code/one_off_code/ ; git pull)"))
-					   )))
-
-(put 'erase-buffer 'disabled nil)
