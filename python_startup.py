@@ -36,16 +36,8 @@ from inspect import signature
 from statistics import mean
 from functools import reduce
 
-
-if os.uname()[1] == "demouser-DGX-Station":
-    try:
-        import numpy as np
-    except:
-        pass
-    try:
-        import networkx as nx
-    except:
-        pass
+import pandas as pd
+import numpy as np
 
 # Debugging Utilities
 
